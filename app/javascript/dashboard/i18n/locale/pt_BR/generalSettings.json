@@ -3,7 +3,7 @@
     "TITLE": "Configurações da conta",
     "SUBMIT": "Atualizar configurações",
     "BACK": "Anterior",
-    "DISMISS": "Recusar",
+    "DISMISS": "Fechar",
     "UPDATE": {
       "ERROR": "Não foi possível atualizar as configurações, tente novamente!",
       "SUCCESS": "Configurações de conta atualizadas com sucesso"
@@ -48,7 +48,7 @@
         "CUSTOM_EMAIL_DOMAIN_ENABLED": "Você pode receber e-mails em seu domínio personalizado agora."
       }
     },
-    "UPDATE_CHATWOOT": "Uma atualização %{latestChatwootVersion} para o Many Talks está disponível. Por favor, atualize sua instância.",
+    "UPDATE_CHATWOOT": "Novidade!🐙🚀 Agora somos ManyTalks, trazendo ainda mais praticidade e eficiência!",
     "LEARN_MORE": "Saiba mais",
     "PAYMENT_PENDING": "Seu pagamento está pendente. Por favor, atualize suas informações de pagamento para continuar usando o Many Talks",
     "LIMITS_UPGRADE": "Sua conta excedeu os limites de uso. Por favor, faça um upgrade do seu plano para continuar usando o Many Talks",

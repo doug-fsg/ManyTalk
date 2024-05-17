@@ -4,7 +4,7 @@
       <div>
         <woot-label
           :title="$t('MACROS.EDITOR.START_FLOW')"
-          color-scheme="primary"
+          color-scheme="secondary"
         />
       </div>
     </div>
@@ -37,7 +37,7 @@
     </draggable>
     <div class="macro__node">
       <div>
-        <woot-button
+        <woot-button 
           :title="$t('MACROS.EDITOR.ADD_BTN_TOOLTIP')"
           class="macros__action-button"
           color-scheme="success"
@@ -53,7 +53,7 @@
       <div>
         <woot-label
           :title="$t('MACROS.EDITOR.END_FLOW')"
-          color-scheme="primary"
+          color-scheme="secondary"
         />
       </div>
     </div>
