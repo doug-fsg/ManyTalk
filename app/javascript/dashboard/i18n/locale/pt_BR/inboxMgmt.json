@@ -17,7 +17,7 @@
         "body": "Autenticar sua conta e criar um novo canal de entrada."
       },
       {
-        "title": "Adicionar Atendentets",
+        "title": "Adicionar Atendentes",
         "route": "settings_inboxes_add_agents",
         "body": "Adicionar atendentes ao canal de entrada criado."
       },
@@ -348,7 +348,7 @@
         "DESC": "O Many Talks suporta widgets de chats ao vivo, Facebook Messenger, perfis do Twitter, WhatsApp, E-mails, etc., como canais. Se você quiser criar um canal personalizado, você pode criá-lo usando o canal API. Para começar, escolha um dos canais abaixo."
       },
       "AGENTS": {
-        "TITLE": "Atendentets",
+        "TITLE": "Atendentes",
         "DESC": "Aqui você pode adicionar atendentes para gerenciar seu canal de entrada recém-criada. Somente esses atendentes selecionados terão acesso ao seu canal de entrada. Os atendentes que não fazem parte deste canal de entrada não poderão ver ou responder a mensagens nesse canal de entrada quando fizerem login. <br> <b> PS: </b> Como administrador, se você precisar acessar todas as canais de entrada, adicione-se como atendente a todas as canais de entrada criadas.",
         "VALIDATION_ERROR": "Adicione ao menos um atendente ao seu novo canal de entrada",
         "PICK_AGENTS": "Escolha atendentes para o canal de entrada"
@@ -482,7 +482,7 @@
     "SETTINGS_POPUP": {
       "MESSENGER_HEADING": "Código Menssageiro <scripit>",
       "MESSENGER_SUB_HEAD": "Favor, insira essse código <script> dentro da tag Body de sua página html",
-      "INBOX_AGENTS": "Atendentets",
+      "INBOX_AGENTS": "Atendentes",
       "INBOX_AGENTS_SUB_TEXT": "Adicionar ou remover atendentes desse canal de entrada",
       "AGENT_ASSIGNMENT": "Atribuição de conversa",
       "AGENT_ASSIGNMENT_SUB_TEXT": "Atualizar configurações de atribuição de conversa",
