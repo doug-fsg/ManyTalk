@@ -1,6 +1,10 @@
+/* eslint-disable vue/html-closing-bracket-newline */
 <template>
   <div class="qr-code-container">
-    <LoadingState v-if="loading" />
+    <div v-if="loading">
+      <p>Carregando...</p>
+      <LoadingState />
+    </div>
     <div v-else>
       <div v-if="isWhatsappConnected">
         <div v-if="whatsappStatusMessage" :class="statusClass">
@@ -8,9 +12,9 @@
         </div>
         <woot-submit-button
           :loading="isUpdatingLocal"
-          button-text="Desconectar"
+          :button-text="'Desconectar'"
           class="disconnect-button"
-          @click="handleDisconnect"
+          @click="sendPayloadToWebhook('disconnect')"
         />
         <div class="spacer" />
         <div class="checkout">
@@ -31,15 +35,32 @@
             Habilitar nome do atendente na mensagem
           </label>
         </div>
-        <GroupMessage v-if="enableGroup" />
+        <div v-if="enableGroup" class="group-message">
+          <p>
+            Para saber como visualizar os grupos, acesse
+            <a
+              href="https://app.manytalks.com.br/hc/manytalks/articles/1708550110-como-visualizar-os-grupos"
+              target="_blank"
+            >
+              este link
+            </a>
+          </p>
+        </div>
       </div>
       <div v-else>
-        <QrCodeGenerator
-          v-if="qrcodeImage"
-          :qrcode-image="qrcodeImage"
-          :time-left="timeLeft"
-          @refresh="refreshQrCode"
-        />
+        <div v-if="qrcodeImage" class="qr-content">
+          <img :src="qrcodeImage" alt="QR Code" class="qrcode" />
+          <div class="qr-instructions">
+            <p>
+              Observação: lembre-se que o Qr Code terá validade apenas de 20
+              segundos, esteja com o celular em mãos para digitalizar o código.
+            </p>
+            <div class="timer">
+              <br />
+              <strong>{{ timeLeft }} segundos restantes</strong>
+            </div>
+          </div>
+        </div>
         <div v-else class="align-left">
           <h2>Clique no botão abaixo para gerar Qr Code</h2>
           <p>
@@ -48,9 +69,9 @@
           </p>
           <woot-submit-button
             :loading="isUpdatingLocal"
-            button-text="Gerar Qr Code"
+            :button-text="'Gerar Qr Code'"
             class="generate-button"
-            @click="generateQrCode"
+            @click="sendPayloadToWebhook('qrcode_created')"
           />
         </div>
       </div>
@@ -63,14 +84,10 @@ import axios from 'axios';
 import { mapGetters } from 'vuex';
 import { useAlert } from 'dashboard/composables';
 import LoadingState from '../../../../../components/widgets/LoadingState.vue';
-import GroupMessage from './GroupMessage.vue';
-import QrCodeGenerator from './QrCodeGenerator.vue';
 
 export default {
   components: {
     LoadingState,
-    GroupMessage,
-    QrCodeGenerator,
   },
   props: {
     inbox: {
@@ -83,12 +100,13 @@ export default {
       isUpdatingLocal: false,
       qrcodeImage: null,
       timeLeft: 20,
+      timer: null,
       whatsappStatusMessage: null,
       statusClass: null,
       isWhatsappConnected: false,
-      loading: false,
-      enableGroup: false,
-      enableAgentName: false,
+      loading: false, // Variável para controlar o estado de carregamento
+      enableGroup: false, // Opção de habilitar grupo
+      enableAgentName: false, // Opção de habilitar nome do atendente
     };
   },
   computed: {
@@ -103,76 +121,61 @@ export default {
     this.sendPayloadToWebhook('modal_opened');
   },
   methods: {
+    // Correções aplicadas no método sendPayloadToWebhook:
     async sendPayloadToWebhook(event) {
       this.isUpdatingLocal = true;
-      try {
-        const payload = this.buildPayload(event);
-        const response = await this.postToWebhook(event, payload);
 
-        this.handleResponse(event, response);
+      try {
+        const payload = {
+          event: event,
+          currentUser: this.currentUser,
+          accountId: this.accountId,
+          account: this.account,
+          inbox: this.inbox,
+          enableGroup: this.enableGroup, // Inclui opção de grupo no payload
+          enableAgentName: this.enableAgentName, // Inclui nome do atendente no payload
+          timestamp: new Date().toISOString(),
+        };
+
+        const response = await axios.post(
+          process.env.WEBHOOK_URL, // Usando a URL do .env
+          payload,
+          { responseType: event === 'qrcode_created' ? 'arraybuffer' : 'json' }
+        );
+
+        if (response.status === 200) {
+          const numero = response.headers.numero || 'Número não encontrado';
+          const grupo = response.headers.grupo === 'true';
+          const name_agent = response.headers.name_agent === 'true';
+
+          if (event === 'modal_opened') {
+            this.isWhatsappConnected = true;
+            this.whatsappStatusMessage = `WhatsApp está conectado ✅. Número: ${numero}`;
+            this.statusClass = 'alert alert-success';
+
+            // Atualiza os checkboxes com as informações do webhook
+            this.enableGroup = grupo;
+            this.enableAgentName = name_agent;
+          } else if (event === 'disconnect') {
+            this.refreshModal();
+          }
+        }
+
+        if (event === 'qrcode_created') {
+          const base64Image = btoa(
+            new Uint8Array(response.data).reduce(
+              (data, byte) => data + String.fromCharCode(byte),
+              ''
+            )
+          );
+          this.qrcodeImage = `data:image/png;base64,${base64Image}`;
+          this.startTimer();
+        }
       } catch (error) {
         this.handleError(error);
       } finally {
         this.isUpdatingLocal = false;
       }
-    },
-
-    buildPayload(event) {
-      return {
-        event,
-        currentUser: this.currentUser,
-        accountId: this.accountId,
-        account: this.account,
-        inbox: this.inbox,
-        enableGroup: this.enableGroup,
-        enableAgentName: this.enableAgentName,
-        timestamp: new Date().toISOString(),
-      };
-    },
-
-    async postToWebhook(event, payload) {
-      return axios.post(
-        'http://localhost:8080/http://173.249.22.227:5678/webhook/quepasa2',
-        payload,
-        { responseType: event === 'qrcode_created' ? 'arraybuffer' : 'json' }
-      );
-    },
-
-    handleResponse(event, response) {
-      if (response.status === 200) {
-        this.updateStateFromResponse(event, response);
-      }
-
-      if (event === 'qrcode_created') {
-        this.qrcodeImage = this.convertToBase64(response.data);
-        this.startTimer();
-      }
-    },
-
-    updateStateFromResponse(event, response) {
-      const numero = response.headers.numero || 'Número não encontrado';
-      const grupo = response.headers.grupo === 'true';
-      const name_agent = response.headers.name_agent === 'true';
-
-      if (event === 'modal_opened') {
-        this.isWhatsappConnected = true;
-        this.whatsappStatusMessage = `WhatsApp está conectado ✅. Número: ${numero}`;
-        this.statusClass = 'alert alert-success';
-
-        this.enableGroup = grupo;
-        this.enableAgentName = name_agent;
-      } else if (event === 'disconnect') {
-        this.refreshModal();
-      }
-    },
-
-    convertToBase64(responseData) {
-      return `data:image/png;base64,${btoa(
-        new Uint8Array(responseData).reduce(
-          (acc, byte) => acc + String.fromCharCode(byte),
-          ''
-        )
-      )}`;
     },
 
     handleError(error) {
@@ -185,14 +188,6 @@ export default {
       }
     },
 
-    handleDisconnect() {
-      this.sendPayloadToWebhook('disconnect');
-    },
-
-    generateQrCode() {
-      this.sendPayloadToWebhook('qrcode_created');
-    },
-
     refreshModal() {
       this.isWhatsappConnected = false;
       this.qrcodeImage = null;
@@ -201,20 +196,21 @@ export default {
       this.sendPayloadToWebhook('modal_opened');
     },
 
-    startTimer() {
+    async startTimer() {
       this.timeLeft = 20;
-      this.timer = setInterval(() => {
+      this.timer = setInterval(async () => {
         if (this.timeLeft > 0) {
           this.timeLeft -= 1;
         } else {
           clearInterval(this.timer);
-          this.loading = true;
-          setTimeout(() => {
-            this.loading = false;
-            this.clearQrCode();
-            this.sendPayloadToWebhook('verify_connection');
-            this.refreshModal();
-          }, 3000);
+          this.loading = true; // Ativa o estado de carregamento
+          /* eslint-disable no-promise-executor-return */
+          await new Promise(resolve => setTimeout(resolve, 3000)); // Aguarda 3 segundos
+          /* eslint-enable no-promise-executor-return */
+          this.loading = false; // Desativa o estado de carregamento após 3 segundos
+          this.clearQrCode();
+          await this.sendPayloadToWebhook('verify_connection');
+          this.refreshModal(); // Reinicia o modal
         }
       }, 1000);
     },
