@@ -58,7 +58,7 @@
   enabled: true
   help_url: https://chwt.app/hc/reports
 - name: crm
-  enabled: true
+  enabled: false
 - name: auto_resolve_conversations
   enabled: true
 - name: custom_reply_email
@@ -119,3 +119,5 @@
   enabled: false
 - name: channel_api
   enabled: true
+- name: kanban
+  enabled: false

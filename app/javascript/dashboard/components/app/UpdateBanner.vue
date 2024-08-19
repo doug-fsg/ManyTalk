@@ -3,7 +3,7 @@
     v-if="shouldShowBanner"
     color-scheme="primary"
     :banner-message="bannerMessage"
-    href-link="https://github.com/sendingtk/chatwoot/releases"
+    href-link="https://app.manytalks.com.br/hc/inovechat/articles/1715922311-many-talks-novidades-e-melhorias"
     :href-link-text="$t('GENERAL_SETTINGS.LEARN_MORE')"
     has-close-button
     @close="dismissUpdateBanner"
@@ -14,20 +14,20 @@ import Banner from 'dashboard/components/ui/Banner.vue';
 import { LOCAL_STORAGE_KEYS } from 'dashboard/constants/localStorage';
 import { LocalStorage } from 'shared/helpers/localStorage';
 import { mapGetters } from 'vuex';
-import { useAdmin } from 'dashboard/composables/useAdmin';
+// import { useAdmin } from 'dashboard/composables/useAdmin';
 import { hasAnUpdateAvailable } from './versionCheckHelper';
 
 export default {
   components: { Banner },
   props: {
-    latestChatwootVersion: { type: String, default: '' },
+    // latestChatwootVersion2: { type: String, default: '' },
+    latestChatwootVersion2: { type: String, default: '5.9.0' },
   },
-  setup() {
-    const { isAdmin } = useAdmin();
-    return {
-      isAdmin,
-    };
-  },
+  //   created() {
+  //   console.log('Versão atual do aplicativo:', this.globalConfig.appVersion);
+  //   console.log('Versão mais recente do Chatwoot:', this.latestChatwootVersion2);
+  // },
+
   data() {
     return { userDismissedBanner: false };
   },
@@ -35,13 +35,13 @@ export default {
     ...mapGetters({ globalConfig: 'globalConfig/get' }),
     updateAvailable() {
       return hasAnUpdateAvailable(
-        this.latestChatwootVersion,
+        this.latestChatwootVersion2,
         this.globalConfig.appVersion
       );
     },
     bannerMessage() {
       return this.$t('GENERAL_SETTINGS.UPDATE_CHATWOOT', {
-        latestChatwootVersion: this.latestChatwootVersion,
+        latestChatwootVersion2: this.latestChatwootVersion2,
       });
     },
     shouldShowBanner() {
@@ -49,7 +49,7 @@ export default {
         !this.userDismissedBanner &&
         this.globalConfig.displayManifest &&
         this.updateAvailable &&
-        !this.isVersionNotificationDismissed(this.latestChatwootVersion) &&
+        !this.isVersionNotificationDismissed(this.latestChatwootVersion2) &&
         this.isAdmin
       );
     },
@@ -64,9 +64,9 @@ export default {
       let updatedDismissedItems =
         LocalStorage.get(LOCAL_STORAGE_KEYS.DISMISSED_UPDATES) || [];
       if (updatedDismissedItems instanceof Array) {
-        updatedDismissedItems.push(this.latestChatwootVersion);
+        updatedDismissedItems.push(this.latestChatwootVersion2);
       } else {
-        updatedDismissedItems = [this.latestChatwootVersion];
+        updatedDismissedItems = [this.latestChatwootVersion2];
       }
       LocalStorage.set(
         LOCAL_STORAGE_KEYS.DISMISSED_UPDATES,

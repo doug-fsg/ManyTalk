@@ -177,7 +177,6 @@ const settings = accountId => ({
       toStateName: 'auditlogs_list',
       isEnterpriseOnly: true,
       featureFlag: FEATURE_FLAGS.AUDIT_LOGS,
-      beta: true,
     },
     {
       icon: 'document-list-clock',

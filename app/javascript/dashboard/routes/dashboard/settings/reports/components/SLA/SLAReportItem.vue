@@ -32,7 +32,7 @@ defineProps({
       <span class="text-slate-700 dark:text-slate-200">
         {{ `#${conversationId} ` }}
       </span>
-      <span class="text-slate-600 dark:text-slate-300">with </span>
+      <span class="text-slate-600 dark:text-slate-300">com </span>
       <span class="text-slate-700 dark:text-slate-200 capitalize truncate">{{
         conversation.contact.name
       }}</span>

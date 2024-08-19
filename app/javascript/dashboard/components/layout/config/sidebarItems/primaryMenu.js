@@ -51,6 +51,15 @@ const primaryMenuItems = accountId => [
     toStateName: 'default_portal_articles',
   },
   {
+    icon: 'kanban',
+    key: 'kanban',
+    label: 'KANBAN',
+    featureFlag: FEATURE_FLAGS.WOOFED,
+    toState: frontendURL(`accounts/${accountId}/kanban`),
+    toStateName: 'crm_home',
+    roles: ['administrator', 'agent'],
+  },
+  {
     icon: 'settings',
     key: 'settings',
     label: 'SETTINGS',

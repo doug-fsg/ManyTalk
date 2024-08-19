@@ -6,21 +6,15 @@
       <img
         :src="globalConfig.logo"
         :alt="globalConfig.installationName"
-        class="block w-auto h-8 mx-auto dark:hidden"
+        class="mx-auto h-14 w-auto block dark:hidden"
       />
       <img
         v-if="globalConfig.logoDark"
         :src="globalConfig.logoDark"
         :alt="globalConfig.installationName"
-        class="hidden w-auto h-8 mx-auto dark:block"
+        class="mx-auto h-14 w-auto hidden dark:block"
       />
-      <h2
-        class="mt-6 text-3xl font-medium text-center text-slate-900 dark:text-woot-50"
-      >
-        {{
-          useInstallationName($t('LOGIN.TITLE'), globalConfig.installationName)
-        }}
-      </h2>
+
       <p
         v-if="showSignupLink"
         class="mt-3 text-sm text-center text-slate-600 dark:text-slate-400"

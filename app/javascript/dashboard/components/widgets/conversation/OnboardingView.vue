@@ -17,14 +17,14 @@
               })
             }}
           </p>
-          <p v-if="globalConfig.installationName === 'Chatwoot'">
+          <p v-if="globalConfig.installationName === 'ManyTalks'">
             <a
-              href="https://www.chatwoot.com/changelog"
+              href="https://manytalks.com.br/treinamento/"
               target="_blank"
               rel="noopener nofollow noreferrer"
               class="onboarding--link"
             >
-              {{ $t('ONBOARDING.READ_LATEST_UPDATES') }}
+              {{ $t('ONBOARDING.LINK_TREINAMENTO') }}
             </a>
             <span>🎉</span>
           </p>

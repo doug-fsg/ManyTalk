@@ -423,6 +423,9 @@
     <div v-if="selectedTabKey === 'unoApiConfiguration'">
       <unoapi-configuration :inbox="inbox" />
     </div>
+    <div v-if="selectedTabKey === 'quepasa'">
+      <quepasa :inbox="inbox" />
+    </div>
   </div>
 </template>
 
@@ -444,6 +447,7 @@ import MicrosoftReauthorize from './channels/microsoft/Reauthorize.vue';
 import WidgetBuilder from './WidgetBuilder.vue';
 import BotConfiguration from './components/BotConfiguration.vue';
 import UnoapiConfiguration from './settingsPage/UnoapiConfiguration.vue';
+import quepasa from './settingsPage/quepasa.vue';
 import { FEATURE_FLAGS } from '../../../../featureFlags';
 import SenderNameExamplePreview from './components/SenderNameExamplePreview.vue';
 
@@ -462,6 +466,7 @@ export default {
     SenderNameExamplePreview,
     MicrosoftReauthorize,
     UnoapiConfiguration,
+    quepasa,
   },
   mixins: [configMixin, inboxMixin],
   data() {
@@ -553,6 +558,17 @@ export default {
           },
         ];
       }
+      // MUDEI
+      if (this.isAPIInbox) {
+        visibleToAllChannelTabs = [
+          ...visibleToAllChannelTabs,
+          {
+            key: 'quepasa',
+            name: 'Conexão',
+          },
+        ];
+      }
+      //
 
       if (
         (this.isATwilioChannel ||

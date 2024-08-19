@@ -1,6 +1,6 @@
 <template>
   <div
-    class="h-full w-16 bg-white dark:bg-slate-900 border-r border-slate-50 dark:border-slate-800/50 rtl:border-l rtl:border-r-0 flex justify-between flex-col"
+    class="h-full w-14 bg-violet-400 dark:bg-woot-400 border-r border-slate-50 dark:border-slate-800/50 rtl:border-l rtl:border-r-0 rounded-r-md flex justify-between flex-col"
   >
     <div class="flex flex-col items-center">
       <logo

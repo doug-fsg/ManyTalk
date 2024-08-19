@@ -4,7 +4,7 @@
       <div>
         <woot-label
           :title="$t('MACROS.EDITOR.START_FLOW')"
-          color-scheme="primary"
+          color-scheme="secondary"
         />
       </div>
     </div>
@@ -53,7 +53,7 @@
       <div>
         <woot-label
           :title="$t('MACROS.EDITOR.END_FLOW')"
-          color-scheme="primary"
+          color-scheme="secondary"
         />
       </div>
     </div>
