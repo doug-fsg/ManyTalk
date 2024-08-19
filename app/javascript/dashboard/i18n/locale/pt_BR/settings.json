@@ -10,6 +10,7 @@
     "PASSWORD_UPDATE_SUCCESS": "A sua senha foi alterada com sucesso",
     "AFTER_EMAIL_CHANGED": "Seu perfil foi atualizado com sucesso. Faça login novamente, pois suas credenciais de login foram alteradas",
     "FORM": {
+      "PICTURE": "Profile Picture",
       "AVATAR": "Imagem de Perfil",
       "ERROR": "Por favor, corrija os erros",
       "REMOVE_IMAGE": "Excluir",
@@ -56,11 +57,17 @@
       },
       "ACCESS_TOKEN": {
         "TITLE": "Token de acesso",
-        "NOTE": "Esse token pode ser usado se você estiver criando uma integração baseada em API"
+        "NOTE": "Esse token pode ser usado se você estiver criando uma integração baseada em API",
+        "COPY": "Copy"
       },
       "AUDIO_NOTIFICATIONS_SECTION": {
         "TITLE": "Notificações de Áudio",
         "NOTE": "Habilitar notificações de áudio no painel para novas mensagens e conversas.",
+        "ALERT_TYPES": {
+          "NONE": "Nenhum",
+          "MINE": "Atribuído a mim",
+          "ALL": "Todos"
+      },      
         "ALERT_TYPE": {
           "TITLE": "Tipo de Alerta:",
           "NONE": "Nenhuma",
@@ -87,6 +94,23 @@
         "SLA_MISSED_FIRST_RESPONSE": "Enviar notificações por e-mail quando uma conversa perder a primeira resposta VAR",
         "SLA_MISSED_NEXT_RESPONSE": "Enviar notificações por e-mail quando uma conversa perder a próxima resposta VAR",
         "SLA_MISSED_RESOLUTION": "Enviar notificações por e-mail quando uma conversa perder resolução de resolução VAR"
+      },
+      "NOTIFICATIONS": {
+        "TITLE": "Notification preferences",
+        "TYPE_TITLE": "Notification type",
+        "EMAIL": "Email",
+        "PUSH": "Push notification",
+        "TYPES": {
+          "CONVERSATION_CREATED": "Uma nova conversa foi criada",
+          "CONVERSATION_ASSIGNED": "Uma conversa foi atribuída a você",
+          "CONVERSATION_MENTION": "Você foi mencionado em uma conversa",
+          "ASSIGNED_CONVERSATION_NEW_MESSAGE": "Uma nova mensagem foi criada em uma conversa atribuída",
+          "PARTICIPATING_CONVERSATION_NEW_MESSAGE": "Uma nova mensagem foi criada em uma conversa em que você está participando",
+          "SLA_MISSED_FIRST_RESPONSE": "Uma conversa perdeu o VAR de primeira resposta",
+          "SLA_MISSED_NEXT_RESPONSE": "Uma conversa perdeu o VAR de próxima resposta",
+          "SLA_MISSED_RESOLUTION": "Uma conversa perdeu o VAR de resolução"          
+        },
+        "BROWSER_PERMISSION": "Habilite notificações push para o seu navegador para que você possa recebê-las"
       },
       "API": {
         "UPDATE_SUCCESS": "Suas preferências de notificação foram atualizadas com sucesso",
@@ -255,7 +279,7 @@
     "SLA": "VAR",
     "BETA": "Beta",
     "REPORTS_OVERVIEW": "Visão geral",
-    "FACEBOOK_REAUTHORIZE": "Sua conexão com o Facebook expirou! Por favor, reconecte sua página do Facebook para continuar os serviços",
+    "REAUTHORIZE": "Your inbox connection has expired, please reconnect\n to continue receiving and sending messages",
     "HELP_CENTER": {
       "TITLE": "Central de Ajuda",
       "ALL_ARTICLES": "Todos os artigos",
@@ -321,7 +345,6 @@
       "GO_TO_REPORTS_SIDEBAR": "Ir para a barra lateral de Relatórios",
       "MOVE_TO_NEXT_TAB": "Mover para a próxima aba da lista de conversas",
       "GO_TO_SETTINGS": "Ir para Configurações",
-      "SWITCH_CONVERSATION_STATUS": "Mudar para o próximo status da conversa",
       "SWITCH_TO_PRIVATE_NOTE": "Mudar para Nota Privada",
       "SWITCH_TO_REPLY": "Mudar para resposta",
       "TOGGLE_SNOOZE_DROPDOWN": "Ativar/desativar soneca"

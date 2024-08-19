@@ -7,79 +7,18 @@
     ]"
   >
     <slot />
-    <div
-      class="flex items-center justify-between px-4 py-0"
-      :class="{
-        'pb-3 border-b border-slate-75 dark:border-slate-700':
-          hasAppliedFiltersOrActiveFolders,
-      }"
-    >
-      <div class="flex max-w-[85%] justify-center items-center">
-        <h1
-          class="text-xl font-medium break-words truncate text-black-900 dark:text-slate-100"
-          :title="pageTitle"
-        >
-          {{ pageTitle }}
-        </h1>
-        <span
-          v-if="!hasAppliedFiltersOrActiveFolders"
-          class="p-1 my-0.5 mx-1 rounded-md capitalize bg-slate-50 dark:bg-slate-800 text-xxs text-slate-600 dark:text-slate-300"
-        >
-          {{ $t(`CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.${activeStatus}.TEXT`) }}
-        </span>
-      </div>
-      <div class="flex items-center gap-1">
-        <div v-if="!hideFiltersForAgents || (hasAppliedFilters && !hasActiveFolders)">
-          <woot-button
-            v-tooltip.top-end="$t('FILTER.CUSTOM_VIEWS.ADD.SAVE_BUTTON')"
-            size="tiny"
-            variant="smooth"
-            color-scheme="secondary"
-            icon="save"
-            @click="onClickOpenAddFoldersModal"
-          />
-          <woot-button
-            v-tooltip.top-end="$t('FILTER.CLEAR_BUTTON_LABEL')"
-            size="tiny"
-            variant="smooth"
-            color-scheme="alert"
-            icon="dismiss-circle"
-            @click="resetAndFetchData"
-          />
-        </div>
-        <div v-if="hasActiveFolders">
-          <woot-button
-            v-tooltip.top-end="$t('FILTER.CUSTOM_VIEWS.EDIT.EDIT_BUTTON')"
-            size="tiny"
-            variant="smooth"
-            color-scheme="secondary"
-            icon="edit"
-            @click="onToggleAdvanceFiltersModal"
-          />
-          <woot-button
-            v-tooltip.top-end="$t('FILTER.CUSTOM_VIEWS.DELETE.DELETE_BUTTON')"
-            size="tiny"
-            variant="smooth"
-            color-scheme="alert"
-            icon="delete"
-            @click="onClickOpenDeleteFoldersModal"
-          />
-        </div>
-        <woot-button
-          v-else
-          v-tooltip.right="$t('FILTER.TOOLTIP_LABEL')"
-          variant="smooth"
-          color-scheme="secondary"
-          icon="filter"
-          size="tiny"
-          @click="onToggleAdvanceFiltersModal"
-        />
-        <conversation-basic-filter
-          v-if="!hasAppliedFiltersOrActiveFolders"
-          @changeFilter="onBasicFilterChange"
-        />
-      </div>
-    </div>
+    <chat-list-header
+      :page-title="pageTitle"
+      :has-applied-filters="hasAppliedFilters"
+      :has-hide-filters-for-agents="hideFiltersForAgents"
+      :has-active-folders="hasActiveFolders"
+      :active-status="activeStatus"
+      @add-folders="onClickOpenAddFoldersModal"
+      @delete-folders="onClickOpenDeleteFoldersModal"
+      @filters-modal="onToggleAdvanceFiltersModal"
+      @reset-filters="resetAndFetchData"
+      @basic-filter-change="onBasicFilterChange"
+    />
 
     <add-custom-views
       v-if="showAddFoldersModal"
@@ -178,13 +117,14 @@
 
 <script>
 import { mapGetters } from 'vuex';
+import { useUISettings } from 'dashboard/composables/useUISettings';
+import { useAlert } from 'dashboard/composables';
 import VirtualList from 'vue-virtual-scroll-list';
 
+import ChatListHeader from './ChatListHeader.vue';
 import ConversationAdvancedFilter from './widgets/conversation/ConversationAdvancedFilter.vue';
-import ConversationBasicFilter from './widgets/conversation/ConversationBasicFilter.vue';
 import ChatTypeTabs from './widgets/ChatTypeTabs.vue';
 import ConversationItem from './ConversationItem.vue';
-import timeMixin from '../mixins/time';
 import keyboardEventListenerMixins from 'shared/mixins/keyboardEventListenerMixins';
 import conversationMixin from '../mixins/conversations';
 import wootConstants from 'dashboard/constants/globals';
@@ -193,9 +133,7 @@ import filterQueryGenerator from '../helper/filterQueryGenerator.js';
 import AddCustomViews from 'dashboard/routes/dashboard/customviews/AddCustomViews.vue';
 import DeleteCustomViews from 'dashboard/routes/dashboard/customviews/DeleteCustomViews.vue';
 import ConversationBulkActions from './widgets/conversation/conversationBulkActions/Index.vue';
-import alertMixin from 'shared/mixins/alertMixin';
 import filterMixin from 'shared/mixins/filterMixin';
-import uiSettingsMixin from 'dashboard/mixins/uiSettings';
 import languages from 'dashboard/components/widgets/conversation/advancedFilterItems/languages';
 import countries from 'shared/constants/countries';
 import { generateValuesForEditCustomViews } from 'dashboard/helper/customViewsHelper';
@@ -209,6 +147,7 @@ import IntersectionObserver from './IntersectionObserver.vue';
 
 export default {
   components: {
+    ChatListHeader,
     AddCustomViews,
     ChatTypeTabs,
     // eslint-disable-next-line vue/no-unused-components
@@ -216,18 +155,10 @@ export default {
     ConversationAdvancedFilter,
     DeleteCustomViews,
     ConversationBulkActions,
-    ConversationBasicFilter,
     IntersectionObserver,
     VirtualList,
   },
-  mixins: [
-    timeMixin,
-    conversationMixin,
-    keyboardEventListenerMixins,
-    alertMixin,
-    filterMixin,
-    uiSettingsMixin,
-  ],
+  mixins: [conversationMixin, keyboardEventListenerMixins, filterMixin],
   provide() {
     return {
       // Actions to be performed on virtual list item and context menu.
@@ -272,6 +203,13 @@ export default {
       type: Boolean,
     },
   },
+  setup() {
+    const { uiSettings } = useUISettings();
+
+    return {
+      uiSettings,
+    };
+  },
   data() {
     return {
       activeAssigneeTab: wootConstants.ASSIGNEE_TYPE.ME,
@@ -315,6 +253,7 @@ export default {
       chatLists: 'getAllConversations',
       mineChatsList: 'getMineChats',
       allChatList: 'getAllStatusChats',
+      chatListFilters: 'getChatListFilters',
       unAssignedChatsList: 'getUnAssignedChats',
       chatListLoading: 'getChatListLoadingStatus',
       currentUserID: 'getCurrentUserID',
@@ -329,50 +268,43 @@ export default {
       campaigns: 'campaigns/getAllCampaigns',
       labels: 'labels/getLabels',
       selectedConversations: 'bulkActions/getSelectedConversationIds',
+      contextMenuChatId: 'getContextMenuChatId',
       isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
       currentRole: 'getCurrentRole',
       accountId: 'getCurrentAccountId',
     }),
     hideAllChatsForAgents() {
       return (
+        this.currentRole !== 'administrator' &&
         this.isFeatureEnabledonAccount(
           this.accountId,
           'hide_all_chats_for_agent'
-        ) && this.currentRole !== 'administrator'
+        )
       );
     },
-    // Adicionar la función hideUnassignedForAgents
-    hideUnassignedForAgents() {
+    hideUnassingnedForAgents() {
       return (
+        this.currentRole !== 'administrator' &&
         this.isFeatureEnabledonAccount(
           this.accountId,
           'hide_unassigned_for_agent'
-        ) && this.currentRole !== 'administrator'
+        )
       );
     },
     hideFiltersForAgents() {
       return (
-        this.isFeatureEnabledonAccount(
-          this.accountId,
-          'hide_filters_for_agent'
-        ) && this.currentRole !== 'administrator'
+        this.currentRole !== 'administrator' &&
+        this.isFeatureEnabledonAccount(this.accountId, 'hide_filters_for_agent')
       );
     },
     hasAppliedFilters() {
       return this.appliedFilters.length !== 0;
     },
     hasActiveFolders() {
-      return this.activeFolder && this.foldersId !== 0;
+      return Boolean(this.activeFolder && this.foldersId !== 0);
     },
     hasAppliedFiltersOrActiveFolders() {
       return this.hasAppliedFilters || this.hasActiveFolders;
-    },
-    savedFoldersValue() {
-      if (this.hasActiveFolders) {
-        const payload = this.activeFolder.query;
-        this.fetchSavedFilteredConversations(payload);
-      }
-      return {};
     },
     showEndOfListMessage() {
       return (
@@ -396,12 +328,13 @@ export default {
         //all: 'allCount',
       };
       // Mostrar la pestaña unassigned si se cumple la condición
-      if (!this.hideUnassignedForAgents) {
+      if (!this.hideUnassingnedForAgents) {
         ASSIGNEE_TYPE_TAB_KEYS.unassigned = 'unAssignedCount';
       }
       if (!this.hideAllChatsForAgents) {
         ASSIGNEE_TYPE_TAB_KEYS.all = 'allCount';
       }
+
       return Object.keys(ASSIGNEE_TYPE_TAB_KEYS).map(key => {
         const count = this.conversationStats[ASSIGNEE_TYPE_TAB_KEYS[key]] || 0;
         return {
@@ -457,7 +390,6 @@ export default {
         labels: this.label ? [this.label] : undefined,
         teamId: this.teamId || undefined,
         conversationType: this.conversationType || undefined,
-        folders: this.hasActiveFolders ? this.savedFoldersValue : undefined,
       };
     },
     conversationListPagination() {
@@ -570,7 +502,13 @@ export default {
       this.resetAndFetchData();
       this.updateVirtualListProps('conversationType', this.conversationType);
     },
-    activeFolder() {
+    activeFolder(newVal, oldVal) {
+      if (newVal !== oldVal) {
+        this.$store.dispatch(
+          'customViews/setActiveConversationFolder',
+          newVal || null
+        );
+      }
       this.resetAndFetchData();
       this.updateVirtualListProps('foldersId', this.foldersId);
     },
@@ -580,10 +518,15 @@ export default {
     showAssigneeInConversationCard(newVal) {
       this.updateVirtualListProps('showAssignee', newVal);
     },
+    conversationFilters(newVal, oldVal) {
+      if (newVal !== oldVal) {
+        this.$store.dispatch('updateChatListFilters', newVal);
+      }
+    },
   },
   mounted() {
+    this.$store.dispatch('setChatListFilters', this.conversationFilters);
     this.setFiltersFromUISettings();
-    this.initializeAccount();
     this.$store.dispatch('setChatStatusFilter', this.activeStatus);
     this.$store.dispatch('setChatSortFilter', this.activeSortBy);
     this.resetAndFetchData();
@@ -592,19 +535,11 @@ export default {
       this.$store.dispatch('campaigns/get');
     }
 
-    bus.$on('fetch_conversation_stats', () => {
+    this.$emitter.on('fetch_conversation_stats', () => {
       this.$store.dispatch('conversationStats/get', this.conversationFilters);
     });
   },
   methods: {
-    async initializeAccount() {
-      try {
-        const { features } = this.getAccount(this.accountId);
-        this.features = features;
-      } catch (error) {
-        // Ignore error
-      }
-    },
     updateVirtualListProps(key, value) {
       this.virtualListExtraProps = {
         ...this.virtualListExtraProps,
@@ -781,8 +716,9 @@ export default {
       this.fetchConversations();
     },
     fetchConversations() {
+      this.$store.dispatch('updateChatListFilters', this.conversationFilters);
       this.$store
-        .dispatch('fetchAllConversations', this.conversationFilters)
+        .dispatch('fetchAllConversations')
         .then(this.emitConversationLoaded);
     },
     loadMoreConversations() {
@@ -822,7 +758,7 @@ export default {
     updateAssigneeTab(selectedTab) {
       if (this.activeAssigneeTab !== selectedTab) {
         this.resetBulkActions();
-        bus.$emit('clearSearchInput');
+        this.$emitter.emit('clearSearchInput');
         this.activeAssigneeTab = selectedTab;
         if (!this.currentPage) {
           this.fetchConversations();
@@ -913,7 +849,7 @@ export default {
         });
         this.$store.dispatch('bulkActions/clearSelectedConversationIds');
         if (conversationId) {
-          this.showAlert(
+          useAlert(
             this.$t(
               'CONVERSATION.CARD_CONTEXT_MENU.API.AGENT_ASSIGNMENT.SUCCESFUL',
               {
@@ -923,10 +859,10 @@ export default {
             )
           );
         } else {
-          this.showAlert(this.$t('BULK_ACTION.ASSIGN_SUCCESFUL'));
+          useAlert(this.$t('BULK_ACTION.ASSIGN_SUCCESFUL'));
         }
       } catch (err) {
-        this.showAlert(this.$t('BULK_ACTION.ASSIGN_FAILED'));
+        useAlert(this.$t('BULK_ACTION.ASSIGN_FAILED'));
       }
     },
     async assignPriority(priority, conversationId = null) {
@@ -941,7 +877,7 @@ export default {
             newValue: priority,
             from: 'Context menu',
           });
-          this.showAlert(
+          useAlert(
             this.$t('CONVERSATION.PRIORITY.CHANGE_PRIORITY.SUCCESSFUL', {
               priority,
               conversationId,
@@ -984,7 +920,7 @@ export default {
           conversationId,
           teamId: team.id,
         });
-        this.showAlert(
+        useAlert(
           this.$t(
             'CONVERSATION.CARD_CONTEXT_MENU.API.TEAM_ASSIGNMENT.SUCCESFUL',
             {
@@ -994,7 +930,7 @@ export default {
           )
         );
       } catch (error) {
-        this.showAlert(
+        useAlert(
           this.$t('CONVERSATION.CARD_CONTEXT_MENU.API.TEAM_ASSIGNMENT.FAILED')
         );
       }
@@ -1011,7 +947,7 @@ export default {
         });
         this.$store.dispatch('bulkActions/clearSelectedConversationIds');
         if (conversationId) {
-          this.showAlert(
+          useAlert(
             this.$t(
               'CONVERSATION.CARD_CONTEXT_MENU.API.LABEL_ASSIGNMENT.SUCCESFUL',
               {
@@ -1021,10 +957,10 @@ export default {
             )
           );
         } else {
-          this.showAlert(this.$t('BULK_ACTION.LABELS.ASSIGN_SUCCESFUL'));
+          useAlert(this.$t('BULK_ACTION.LABELS.ASSIGN_SUCCESFUL'));
         }
       } catch (err) {
-        this.showAlert(this.$t('BULK_ACTION.LABELS.ASSIGN_FAILED'));
+        useAlert(this.$t('BULK_ACTION.LABELS.ASSIGN_FAILED'));
       }
     },
     async onAssignTeamsForBulk(team) {
@@ -1037,9 +973,9 @@ export default {
           },
         });
         this.$store.dispatch('bulkActions/clearSelectedConversationIds');
-        this.showAlert(this.$t('BULK_ACTION.TEAMS.ASSIGN_SUCCESFUL'));
+        useAlert(this.$t('BULK_ACTION.TEAMS.ASSIGN_SUCCESFUL'));
       } catch (err) {
-        this.showAlert(this.$t('BULK_ACTION.TEAMS.ASSIGN_FAILED'));
+        useAlert(this.$t('BULK_ACTION.TEAMS.ASSIGN_FAILED'));
       }
     },
     async onUpdateConversations(status, snoozedUntil) {
@@ -1053,9 +989,9 @@ export default {
           snoozed_until: snoozedUntil,
         });
         this.$store.dispatch('bulkActions/clearSelectedConversationIds');
-        this.showAlert(this.$t('BULK_ACTION.UPDATE.UPDATE_SUCCESFUL'));
+        useAlert(this.$t('BULK_ACTION.UPDATE.UPDATE_SUCCESFUL'));
       } catch (err) {
-        this.showAlert(this.$t('BULK_ACTION.UPDATE.UPDATE_FAILED'));
+        useAlert(this.$t('BULK_ACTION.UPDATE.UPDATE_FAILED'));
       }
     },
     toggleConversationStatus(conversationId, status, snoozedUntil) {
@@ -1066,14 +1002,14 @@ export default {
           snoozedUntil,
         })
         .then(() => {
-          this.showAlert(this.$t('CONVERSATION.CHANGE_STATUS'));
+          useAlert(this.$t('CONVERSATION.CHANGE_STATUS'));
           this.isLoading = false;
         });
     },
     allSelectedConversationsStatus(status) {
       if (!this.selectedConversations.length) return false;
       return this.selectedConversations.every(item => {
-        return this.$store.getters.getConversationById(item).status === status;
+        return this.$store.getters.getConversationById(item)?.status === status;
       });
     },
     onContextMenuToggle(state) {

@@ -1,9 +1,9 @@
 {
-  "name": "Chatwoot",
-  "description": "Chatwoot is a customer support tool for instant messaging channels",
-  "website": "https://www.chatwoot.com/",
+  "name": "ManyTalks",
+  "description": "ManyTalks é uma ferramenta de comunicação instantânea amplamente utilizada para suporte ao cliente",
+  "website": "https://www.manytalks.com.br/",
   "repository": "https://github.com/chatwoot/chatwoot",
-  "logo": "https://app.chatwoot.com/brand-assets/logo_thumbnail.svg",
+  "logo": "https://app.manytalks.com.br/brand-assets/logo_thumbnail.svg",
   "keywords": [
     "live chat",
     "customer support",

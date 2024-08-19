@@ -11,13 +11,13 @@ export default {
         {
           path: '',
           name: 'crm_wrapper',
-          roles: ['administrator'],
+          meta: { permissions: ['administrator'] },
           // redirect: 'list',
         },
         {
           path: 'list',
           name: 'crm_home',
-          roles: ['administrator'],
+          meta: { permissions: ['administrator'] },
         },
       ],
     },

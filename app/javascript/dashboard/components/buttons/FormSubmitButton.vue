@@ -2,7 +2,6 @@
   <button
     :type="type"
     data-testid="submit_button"
-    
     :class="computedClass"
     @click="onClick"
   >

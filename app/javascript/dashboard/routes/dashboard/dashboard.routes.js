@@ -6,7 +6,7 @@ import { routes as notificationRoutes } from './notifications/routes';
 import { routes as inboxRoutes } from './inbox/routes';
 import { frontendURL } from '../../helper/URLHelper';
 import helpcenterRoutes from './helpcenter/helpcenter.routes';
-import crm from './crm/routes.js'
+import crm from './crm/routes.js';
 
 const AppContainer = () => import('./Dashboard.vue');
 const Suspended = () => import('./suspended/Index.vue');
@@ -24,13 +24,15 @@ export default {
         ...contactRoutes,
         ...searchRoutes,
         ...notificationRoutes,
-        ...crm.routes
+        ...crm.routes,
       ],
     },
     {
       path: frontendURL('accounts/:accountId/suspended'),
       name: 'account_suspended',
-      roles: ['administrator', 'agent'],
+      meta: {
+        permissions: ['administrator', 'agent'],
+      },
       component: Suspended,
     },
   ],

@@ -75,6 +75,8 @@ pt_BR:
       conversations_count: Conversas atribuídas
       avg_first_response_time: Tempo médio de primeira resposta
       avg_resolution_time: Tempo médio de resolução
+      resolution_count: Contagem de Resolução
+      avg_customer_waiting_time: Tempo médio de espera do cliente
     inbox_csv:
       inbox_name: Nome da Canal de Entrada
       inbox_type: Tipo da Canal de Entrada
@@ -91,11 +93,13 @@ pt_BR:
       conversations_count: Contagem de conversas
       avg_first_response_time: Tempo médio de primeira resposta
       avg_resolution_time: Tempo médio de resolução
+      resolution_count: Contagem de Resolução
+      avg_customer_waiting_time: Tempo médio de espera do cliente
     conversation_traffic_csv:
       timezone: Fuso horário
     sla_csv:
       conversation_id: Conversas
-      sla_policy_breached: Política SLA
+      sla_policy_breached: Política VAR
       assignee: Responsável
       team: Times
       inbox: Canal de Entrada
@@ -113,16 +117,15 @@ pt_BR:
         rating: Classificação
         feedback: Comentário de Feedback
         recorded_at: Data de gravação
-
   notifications:
     notification_title:
       conversation_creation: ""
       conversation_assignment: "Uma conversa (#%{display_id}) foi atribuída a você"
-      assigned_conversation_new_message: "Uma nova mensagem é criada na conversa (#%{display_id})"
+      assigned_conversation_new_message: "Uma nova mensagem foi criada na conversa (#%{display_id})"
       conversation_mention: "Você foi mencionado em uma conversa (#%{display_id})"
-      sla_missed_first_response: "Primeira resposta da meta de SLA perdida para conversa (#%{display_id})"
+      sla_missed_first_response: "Primeira resposta da meta de VAR perdida para conversa (#%{display_id})"
       sla_missed_next_response: ""
-      sla_missed_resolution: "Resolução de meta de SLA perdida para conversa (#%{display_id})"
+      sla_missed_resolution: "Resolução de meta de VAR perdida para conversa (#%{display_id})"
     attachment: "Anexo"
     no_content: "Sem conteúdo"
   conversations:
@@ -157,8 +160,8 @@ pt_BR:
         added: "%{user_name} adicionou %{labels}"
         removed: "%{user_name} removeu %{labels}"
       sla:
-        added: "%{user_name} adicionou política de SLA %{sla_name}"
-        removed: "%{user_name} removeu a política de SLA %{sla_name}"
+        added: "%{user_name} adicionou política de VAR %{sla_name}"
+        removed: "%{user_name} removeu a política de VAR %{sla_name}"
       muted: "%{user_name} silenciou a conversa"
       unmuted: "%{user_name} reativou a conversa"
     templates:
@@ -185,28 +188,34 @@ pt_BR:
     online:
       delete: "%{contact_name} está Online, por favor, tente novamente mais tarde"
   integration_apps:
+    dashboard_apps:
+      name: "Apps da Dashboard"
+      description: "Os Apps da Dashboard permitem que você crie e incorpore aplicações que exibem informações do usuário, pedidos ou histórico de pagamento, fornecendo mais contexto para os agentes de suporte ao cliente."
     dyte:
       name: "Dyte"
       description: "Dyte é uma ferramenta que ajuda você a adicionar áudio e vídeo ao vivo em sua aplicação com apenas algumas linhas de código. Essa integração permite dar uma opção aos seus atendentes para ter uma chamada de vídeo ou voz com os seus clientes sem sair do Many Talks."
       meeting_name: "%{agent_name} começou a reunião"
     slack:
       name: "Slack"
-      description: "Slack é uma ferramenta que reúne todas as suas comunicações em um só lugar. Ao integrar o Slack, você pode ser notificado de todas as novas conversas da sua conta diretamente no seu Slack."
+      description: "Integre o ManyTalks com o Slack para manter sua equipe sincronizada. Esta integração permite que você receba notificações sobre novas conversas e responda diretamente pela interface do Slack."
     webhooks:
       name: "Webhooks"
-      description: "Webhooks fornecem informações em tempo real sobre o que está acontecendo em sua conta. Você pode usar os webhooks para comunicar eventos com seus aplicativos favoritos como Slack ou Github. Clique em Configurar para configurar seus webhooks."
+      description: "Os eventos de Webhook fornecem atualizações em tempo real sobre as atividades na sua conta do ManyTalks. Você pode se inscrever nos eventos preferidos, e o ManyTalks enviará callbacks HTTP com as atualizações."
     dialogflow:
-      name: "Fluxo de diálogo"
-      description: "Construa chatbots usando Dialogflow e conecte-os ao seu canal de entrada rapidamente. Deixe os bots lidarem com as consultas antes de entregá-los a um atendente de atendimento ao cliente."
-    fullcontact:
-      name: "Contato completo"
-      description: "A integração de contatos completos ajuda a enriquecer perfis de visitantes. Identifique os usuários assim que eles compartilham seu endereço de e-mail e ofereça um atendimento ao cliente personalizado. Conecte seu FullContact à sua conta compartilhando a chave de API de Contato Fullcot."
+      name: "Dialogflow"
+      description: "Construa chatbots com o Dialogflow e integre-os facilmente à sua caixa de entrada. Esses bots podem lidar com consultas iniciais antes de transferi-las para um agente de atendimento ao cliente."
     google_translate:
       name: "Tradutor do Google"
-      description: "Torne isso mais fácil para atendentes traduzirem mensagens adicionando uma integração com o Tradutor do Google. O Tradutor do Google ajuda a identificar automaticamente o idioma e convertê-lo para o idioma escolhido pelo administrador de conta/atendentes."
+      description: "Integre o Google Translate para ajudar os agentes a traduzir facilmente as mensagens dos clientes. Esta integração detecta automaticamente o idioma e converte-o para o idioma preferido do agente ou administrador."
     openai:
       name: "OpenAI"
-      description: "Integre os poderosos recursos de IA ao Many Talks aproveitando os modelos GPT da OpenAI."
+      description: "Aproveite o poder dos grandes modelos de linguagem da OpenAI com recursos como sugestões de respostas, resumo, reformulação de mensagens, verificação ortográfica e classificação de rótulos."
+    linear:
+      name: "Linear"
+      description: "Crie issues no Linear diretamente da sua janela de conversa. Alternativamente, vincule issues existentes do Linear para um processo de rastreamento de problemas mais eficiente e simplificado."
+    captain:
+      name: "Captain"
+      description: "O Captain é um assistente de IA nativo construído para o seu produto e treinado na base de conhecimento da sua empresa. Ele responde como um humano e resolve consultas de clientes de forma eficaz. Configure-o facilmente em suas caixas de entrada."
   public_portal:
     search:
       search_placeholder: Pesquisar por artigo por título ou corpo...

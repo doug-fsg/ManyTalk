@@ -4,11 +4,11 @@
       <LoadingState v-if="loading" />
       <iframe
         v-show="!loading"
-        :src="defaultUrl"
-        @load="onIframeLoad"
         ref="iframe"
+        :src="defaultUrl"
         class="iframe-hidden"
-      ></iframe>
+        @load="onIframeLoad"
+      />
     </div>
   </div>
 </template>
@@ -31,7 +31,7 @@ export default {
     return {
       eventData: this.formatEventData(),
       redirected: true,
-      loading: true
+      loading: true,
     };
   },
   computed: {
@@ -53,8 +53,10 @@ export default {
       return { id, name, email };
     },
     defaultUrl() {
-      const dashboardApp = this.dashboardApps.find(dashboardApp => dashboardApp.title === "crm");
-      return dashboardApp?.content[0]?.url || '';
+      const foundDashboardApp = this.dashboardApps.find(
+        app => app.title === 'crm'
+      );
+      return foundDashboardApp?.content[0]?.url || '';
     },
   },
   watch: {
@@ -66,7 +68,10 @@ export default {
   },
   mounted() {
     window.onmessage = e => {
-      if (typeof e.data !== 'string' || e.data !== 'chatwoot-dashboard-app:fetch-info') {
+      if (
+        typeof e.data !== 'string' ||
+        e.data !== 'chatwoot-dashboard-app:fetch-info'
+      ) {
         return;
       }
       this.onIframeLoad();
@@ -102,7 +107,6 @@ export default {
             frameElement.classList.remove('iframe-hidden');
             this.loading = false;
           }, 1500);
-          
         };
       }
     },

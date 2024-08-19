@@ -37,7 +37,7 @@
     </draggable>
     <div class="macro__node">
       <div>
-        <woot-button 
+        <woot-button
           :title="$t('MACROS.EDITOR.ADD_BTN_TOOLTIP')"
           class="macros__action-button"
           color-scheme="success"

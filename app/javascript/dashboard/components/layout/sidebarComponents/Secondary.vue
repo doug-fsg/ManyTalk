@@ -29,6 +29,8 @@ import SecondaryNavItem from './SecondaryNavItem.vue';
 import AccountContext from './AccountContext.vue';
 import { mapGetters } from 'vuex';
 import { FEATURE_FLAGS } from '../../../featureFlags';
+import { hasPermissions } from '../../../helper/permissionsHelper';
+import { routesWithPermissions } from '../../../routes';
 
 export default {
   components: {
@@ -60,9 +62,9 @@ export default {
       type: Object,
       default: () => {},
     },
-    currentRole: {
-      type: String,
-      default: '',
+    currentUser: {
+      type: Object,
+      default: () => {},
     },
     isOnChatwootCloud: {
       type: Boolean,
@@ -72,6 +74,7 @@ export default {
   computed: {
     ...mapGetters({
       isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
+      currentRole: 'getCurrentRole',
     }),
     hasSecondaryMenu() {
       return this.menuConfig.menuItems && this.menuConfig.menuItems.length;
@@ -83,20 +86,35 @@ export default {
       if (!this.currentRole) {
         return [];
       }
-      const menuItemsFilteredByRole = this.menuConfig.menuItems.filter(
-        menuItem =>
-          window.roleWiseRoutes[this.currentRole].indexOf(
-            menuItem.toStateName
-          ) > -1
+      const menuItemsFilteredByPermissions = this.menuConfig.menuItems.filter(
+        menuItem => {
+          const { permissions: userPermissions = [] } = this.currentUser;
+          return hasPermissions(
+            routesWithPermissions[menuItem.toStateName],
+            userPermissions
+          );
+        }
       );
-      return menuItemsFilteredByRole.filter(item => {
+      return menuItemsFilteredByPermissions.filter(item => {
         if (item.showOnlyOnCloud) {
           return this.isOnChatwootCloud;
         }
         return true;
       });
     },
-    inboxSection() {
+
+    hideAllInboxForAgents() {
+    return (
+      this.isFeatureEnabledonAccount(
+        this.accountId,
+        'hide_all_inbox_for_agent'
+      ) && this.currentRole !== 'administrator'
+    );
+  },
+  inboxSection() {
+    if (this.hideAllInboxForAgents && this.currentRole !== 'administrator') {
+      return {};
+    }
       return {
         icon: 'folder',
         label: 'INBOXES',

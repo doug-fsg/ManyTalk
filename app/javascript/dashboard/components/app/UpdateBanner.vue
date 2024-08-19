@@ -14,27 +14,26 @@ import Banner from 'dashboard/components/ui/Banner.vue';
 import { LOCAL_STORAGE_KEYS } from 'dashboard/constants/localStorage';
 import { LocalStorage } from 'shared/helpers/localStorage';
 import { mapGetters } from 'vuex';
-import adminMixin from 'dashboard/mixins/isAdmin';
+// import { useAdmin } from 'dashboard/composables/useAdmin';
 import { hasAnUpdateAvailable } from './versionCheckHelper';
 
 export default {
   components: { Banner },
-  mixins: [adminMixin],
   props: {
-    //latestChatwootVersion2: { type: String, default: '' },
-    latestChatwootVersion2: { type: String, default: '5.9.0' }
+    // latestChatwootVersion2: { type: String, default: '' },
+    latestChatwootVersion2: { type: String, default: '5.9.0' },
   },
-//   created() {
-//   console.log('Versão atual do aplicativo:', this.globalConfig.appVersion);
-//   console.log('Versão mais recente do Chatwoot:', this.latestChatwootVersion2);
-// },
+  //   created() {
+  //   console.log('Versão atual do aplicativo:', this.globalConfig.appVersion);
+  //   console.log('Versão mais recente do Chatwoot:', this.latestChatwootVersion2);
+  // },
 
   data() {
     return { userDismissedBanner: false };
   },
   computed: {
     ...mapGetters({ globalConfig: 'globalConfig/get' }),
-    updateAvailable() { 
+    updateAvailable() {
       return hasAnUpdateAvailable(
         this.latestChatwootVersion2,
         this.globalConfig.appVersion

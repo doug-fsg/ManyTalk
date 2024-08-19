@@ -1,12 +1,23 @@
 {
   "SLA": {
     "HEADER": "VAR",
-    "ADD_ACTION": "Adicionar VAR",
     "HEADER_BTN_TXT": "Adicionar VAR",
     "ADD_ACTION_LONG": "Criar uma nova política de VAR",
-    "DESCRIPTION": "Os VARs (Verificadores de Atendimento Rápido) são como os juízes do atendimento ao cliente, garantindo um jogo limpo. Eles definem tempos para responder e resolver as conversas, criando um ambiente de responsabilidade e assegurando uma experiência de alta qualidade para os clientes.😉",
+    "DESCRIPTION": "Acordos de Nível de Serviço (VARs) são contratos que definem expectativas claras entre sua equipe e os clientes. Eles estabelecem padrões para tempos de resposta e resolução, criando um quadro de responsabilidade e garantindo uma experiência consistente e de alta qualidade.",
     "LEARN_MORE": "Saiba mais sobre VAR",
     "LOADING": "Carregando VARs",
+    "PAYWALL": {
+      "TITLE": "Upgrade to create VARs",
+      "AVAILABLE_ON": "The VAR feature is only available in the Business and Enterprise plans.",
+      "UPGRADE_PROMPT": "Upgrade your plan to get access to advanced features like team management, automations, custom attributes, and more.",
+      "UPGRADE_NOW": "Upgrade now",
+      "CANCEL_ANYTIME": "You can change or cancel your plan anytime"
+    },
+    "ENTERPRISE_PAYWALL": {
+      "AVAILABLE_ON": "The VAR feature is only available in the paid plans.",
+      "UPGRADE_PROMPT": "Upgrade to a paid plan to access advanced features like audit logs, agent capacity, and more.",
+      "ASK_ADMIN": "Please reach out to your administrator for the upgrade."
+    },
     "LIST": {
       "404": "Não há VARs disponíveis nesta conta.",
       "EMPTY": {

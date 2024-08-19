@@ -53,16 +53,17 @@ export default {
       return [
         { key: 'website', name: 'Website' },
         { key: 'facebook', name: 'Messenger' },
-        { key: 'whatsapp', name: 'WhatsApp' },
+        { key: 'whatsapp', name: 'whatsApp Cloud' },
         { key: 'sms', name: 'SMS' },
         { key: 'email', name: 'Email' },
         {
           key: 'api',
-          name: apiChannelName || 'API',
+          name: apiChannelName || 'WhatsApp API',
           thumbnail: apiChannelThumbnail,
         },
         { key: 'telegram', name: 'Telegram' },
         { key: 'line', name: 'Line' },
+        // { key: 'notifica_me', name: 'NotificaMe' },
       ];
     },
     ...mapGetters({
