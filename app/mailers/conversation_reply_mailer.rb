@@ -34,7 +34,7 @@ class ConversationReplyMailer < ApplicationMailer
 
     init_conversation_attributes(message.conversation)
     @message = message
-#new code
+    # new code
     @previous_message = @conversation.messages.chat.where.not(id: message).last
     reply_mail_object = prepare_mail(true)
     message.update(source_id: reply_mail_object.message_id)

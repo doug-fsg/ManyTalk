@@ -6,7 +6,7 @@ class NotificaMe::WebhookSetupService
   def perform
     url = 'https://hub.notificame.com.br/v1/subscriptions'
     callback_webhook_url = inbox.callback_webhook_url
-    Rails.logger.debug("NotificaMe webhook_url #{callback_webhook_url} criteria channel #{channel.notifica_me_id}")
+    Rails.logger.debug { "NotificaMe webhook_url #{callback_webhook_url} criteria channel #{channel.notifica_me_id}" }
     response = HTTParty.post(
       url,
       body: {
@@ -23,9 +23,9 @@ class NotificaMe::WebhookSetupService
       }
     )
 
-    if !response.success?
-      raise "Error on setup NotificaMe webhook: #{response.parsed_response}"
-    end
+    return if response.success?
+
+    raise "Error on setup NotificaMe webhook: #{response.parsed_response}"
   end
 
   private

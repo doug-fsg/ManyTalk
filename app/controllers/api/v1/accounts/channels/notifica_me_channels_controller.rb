@@ -1,25 +1,22 @@
-
 class Api::V1::Accounts::Channels::NotificaMeChannelsController < Api::V1::Accounts::BaseController
   before_action :authorize_request
 
-
   def index
-    unless request.query_parameters["token"]
-      return render :json => { error: "Put the NotificaMe Token" }, status: 422
-    end
-    url = URI("https://hub.notificame.com.br/v1/channels")
+    return render :json => { error: 'Put the NotificaMe Token' }, :status => :unprocessable_entity unless request.query_parameters['token']
+
+    url = URI('https://hub.notificame.com.br/v1/channels')
     response = HTTParty.get(
       url,
       headers: {
-        'X-API-Token' => request.query_parameters["token"],
+        'X-API-Token' => request.query_parameters['token'],
         'Content-Type' => 'application/json'
       },
       format: :json
     )
     if response.success?
-      render json: { data: { channels: response.parsed_response }}, status: 200
+      render json: { data: { channels: response.parsed_response } }, status: :ok
     else
-      render json: { error: response.parsed_response }, status: 422
+      render json: { error: response.parsed_response }, status: :unprocessable_entity
     end
   end
 
@@ -27,7 +24,7 @@ class Api::V1::Accounts::Channels::NotificaMeChannelsController < Api::V1::Accou
     ActiveRecord::Base.transaction do
       build_inbox
       setup_webhooks
-      render json: @inbox, status: 200
+      render json: @inbox, status: :ok
     rescue StandardError => e
       Rails.logger.error("NotificaMe channel create error #{e}, #{e.backtrace}")
       render_could_not_create_error(e.message)
@@ -49,7 +46,7 @@ class Api::V1::Accounts::Channels::NotificaMeChannelsController < Api::V1::Accou
     @notifica_me_channel = Current.account.notifica_me_channels.create!(
       notifica_me_id: permitted_params[:notifica_me_id],
       notifica_me_token: permitted_params[:notifica_me_token],
-      notifica_me_type: permitted_params[:notifica_me_type],
+      notifica_me_type: permitted_params[:notifica_me_type]
     )
     @inbox = Current.account.inboxes.create!(
       name: permitted_params[:name],

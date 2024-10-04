@@ -14,6 +14,7 @@
           :is-ongoing-type="isOngoingType"
           @edit="campaign => $emit('edit', campaign)"
           @delete="campaign => $emit('delete', campaign)"
+          @show-history="onShowHistory"
         />
       </div>
     </div>
@@ -73,6 +74,12 @@ export default {
       return this.inboxes.length
         ? this.$t('CAMPAIGN.ONE_OFF.404')
         : this.$t('CAMPAIGN.ONE_OFF.INBOXES_NOT_FOUND');
+    },
+  },
+
+  methods: {
+    onShowHistory(campaign) {
+      this.$emit('show-history', campaign);
     },
   },
 };

@@ -6,6 +6,13 @@
       "ONE_OFF": "Criar uma campanha única",
       "ONGOING": "Criar uma campanha recorrente"
     },
+    "HISTORY": {
+      "TITLE": "Histórico da Campanha: {campaignTitle}",
+      "TOTAL_SENT": "Total de mensagens enviadas: {count}",
+      "SUCCESSFUL": "Mensagens enviadas com sucesso: {count}",
+      "FAILED": "Mensagens que falharam: {count}",
+      "DETAILS": "Detalhes"
+    },
     "ADD": {
       "TITLE": "Criar uma campanha",
       "DESC": "Mensagens proativas permitem ao cliente enviar mensagens de saída para seus contatos, o que acionaria mais conversas.",
@@ -27,6 +34,18 @@
           "LABEL": "Público",
           "PLACEHOLDER": "Selecionar marcadores dos clientes",
           "ERROR": "Público é necessário"
+        },
+        "CONTACT_LIST": {
+          "LABEL": "Upload de Lista de Contatos",
+          "ERROR_NO_COLUMN": "A coluna 'numeros' não foi encontrada na planilha.",
+          "CONTACT_COUNT": "{count} contatos encontrados",
+          "ERROR_UPLOAD": "Ocorreu um erro ao fazer o upload do arquivo. Por favor, tente novamente.",
+          "SUCCESS_UPLOAD": "Arquivo carregado com sucesso. Você será notificado quando o processamento for concluído."
+        },
+        "MACRO": {
+          "LABEL": "Macro",
+          "PLACEHOLDER": "Selecione uma macro",
+          "ERROR": "Por favor, selecione uma macro"
         },
         "INBOX": {
           "LABEL": "Selecionar canal de entrada",
@@ -55,7 +74,9 @@
         },
         "ENABLED": "Ativar campanha",
         "TRIGGER_ONLY_BUSINESS_HOURS": "Ativar somente durante o horário comercial",
-        "SUBMIT": "Adicionar Campanha"
+        "SUBMIT": "Adicionar Campanha",
+        "ERROR_BOTH_AUDIENCE_AND_CONTACTS": "Selecione apenas a audiência ou a lista de contatos.",
+        "ERROR_NO_AUDIENCE_OR_CONTACTS": "Você precisa selecionar o publico."
       },
       "API": {
         "SUCCESS_MESSAGE": "Campanha criada com sucesso",
@@ -100,7 +121,8 @@
       "BUTTONS": {
         "ADD": "Adicionar",
         "EDIT": "Alterar",
-        "DELETE": "Excluir"
+        "DELETE": "Excluir",
+        "HISTORY": "Relatório"
       },
       "STATUS": {
         "ENABLED": "Ativado",
@@ -115,11 +137,11 @@
     "ONE_OFF": {
       "HEADER": "Campanhas únicas",
       "404": "Não há nenhuma campanha única criada",
-      "INBOXES_NOT_FOUND": "Por favor, crie um novo canal de entrada SMS e comece a adicionar campanhas"
+      "INBOXES_NOT_FOUND": "Não há campanhas criadas"
     },
     "ONGOING": {
-      "HEADER": "Campanhas recorrentes",
-      "404": "Não há campanhas recorrentes criadas",
+      "HEADER": "Campanhas Web",
+      "404": "Não há campanhas web criadas",
       "INBOXES_NOT_FOUND": "Por favor, crie um novo canal de entrada de website e comece a adicionar campanhas"
     }
   }

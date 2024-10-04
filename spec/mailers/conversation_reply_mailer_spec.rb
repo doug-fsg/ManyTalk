@@ -154,7 +154,7 @@ RSpec.describe ConversationReplyMailer do
         expect(mail.message_id).to eq message.source_id
       end
 
-#nwe code
+      # nwe code
       context 'with previous message' do
         let!(:prev_message) { create(:message, conversation: conversation, account: account, message_type: 'incoming', content: 'Prev Message') }
 

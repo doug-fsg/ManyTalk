@@ -268,7 +268,7 @@ RSpec.describe 'Conversation Messages API', type: :request do
         expect(response).to have_http_status(:ok)
       end
     end
-  
+
     context 'when the message id is invalid' do
       let(:agent) { create(:user, account: account, role: :agent) }
 

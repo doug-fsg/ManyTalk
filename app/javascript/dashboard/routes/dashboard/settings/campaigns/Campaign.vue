@@ -7,6 +7,7 @@
       :campaign-type="type"
       @edit="openEditPopup"
       @delete="openDeletePopup"
+      @show-history="openHistoryModal"
     />
     <woot-modal :show.sync="showEditPopup" :on-close="hideEditPopup">
       <edit-campaign
@@ -23,6 +24,11 @@
       :confirm-text="$t('CAMPAIGN.DELETE.CONFIRM.YES')"
       :reject-text="$t('CAMPAIGN.DELETE.CONFIRM.NO')"
     />
+    <campaign-history-modal
+      :show.sync="showHistoryModal"
+      :campaign="selectedCampaign"
+      @close="hideHistoryModal"
+    />
   </div>
 </template>
 <script>
@@ -31,10 +37,13 @@ import { useAlert } from 'dashboard/composables';
 import campaignMixin from 'shared/mixins/campaignMixin';
 import CampaignsTable from './CampaignsTable.vue';
 import EditCampaign from './EditCampaign.vue';
+import CampaignHistoryModal from './CampaignHistoryModal.vue';
+
 export default {
   components: {
     CampaignsTable,
     EditCampaign,
+    CampaignHistoryModal,
   },
   mixins: [campaignMixin],
   props: {
@@ -48,6 +57,7 @@ export default {
       showEditPopup: false,
       selectedCampaign: {},
       showDeleteConfirmationPopup: false,
+      showHistoryModal: false,
     };
   },
   computed: {
@@ -91,6 +101,13 @@ export default {
       } catch (error) {
         useAlert(this.$t('CAMPAIGN.DELETE.API.ERROR_MESSAGE'));
       }
+    },
+    openHistoryModal(campaign) {
+      this.selectedCampaign = campaign;
+      this.showHistoryModal = true;
+    },
+    hideHistoryModal() {
+      this.showHistoryModal = false;
     },
   },
 };

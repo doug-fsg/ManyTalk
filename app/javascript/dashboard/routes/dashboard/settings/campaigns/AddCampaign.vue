@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 <template>
   <div class="h-auto overflow-auto flex flex-col">
     <woot-modal-header
@@ -33,7 +35,8 @@
             </span>
           </div>
         </div>
-
+        <!-- Campo de mensagem para campanhas one-off -->
+        <!--
         <label v-else :class="{ error: $v.message.$error }">
           {{ $t('CAMPAIGN.ADD.FORM.MESSAGE.LABEL') }}
           <textarea
@@ -47,7 +50,7 @@
             {{ $t('CAMPAIGN.ADD.FORM.MESSAGE.ERROR') }}
           </span>
         </label>
-
+-->
         <label :class="{ error: $v.selectedInbox.$error }">
           {{ $t('CAMPAIGN.ADD.FORM.INBOX.LABEL') }}
           <select v-model="selectedInbox" @change="onChangeInbox($event)">
@@ -160,6 +163,72 @@
           />
           {{ $t('CAMPAIGN.ADD.FORM.TRIGGER_ONLY_BUSINESS_HOURS') }}
         </label>
+
+        <label
+          v-if="isOneOffType"
+          class="select-wrap"
+          :class="{ error: $v.selectedMacro.$error }"
+        >
+          {{ $t('CAMPAIGN.ADD.FORM.MACRO.LABEL') }}
+          <select v-model="selectedMacro" @change="$v.selectedMacro.$touch">
+            <option value="">
+              {{ $t('CAMPAIGN.ADD.FORM.MACRO.PLACEHOLDER') }}
+            </option>
+            <option
+              v-for="macro in macrosList"
+              :key="macro.id"
+              :value="macro.id"
+            >
+              {{ macro.name }}
+            </option>
+          </select>
+          <span v-if="$v.selectedMacro.$error" class="message">
+            {{ $t('CAMPAIGN.ADD.FORM.MACRO.ERROR') }}
+          </span>
+        </label>
+
+        <div v-if="isOneOffType" class="file-upload-section">
+          <label>
+            {{ $t('CAMPAIGN.ADD.FORM.CONTACT_LIST.LABEL') }}
+            <input
+              type="file"
+              accept=".xlsx, .xls, .csv"
+              @change="handleFileUpload"
+            />
+          </label>
+          <p v-if="fileUploadError" class="error-message">
+            {{ fileUploadError }}
+          </p>
+          <div v-if="contactCount" class="contact-list-info">
+            <p class="contact-count">
+              {{
+                $t('CAMPAIGN.ADD.FORM.CONTACT_LIST.CONTACT_COUNT', {
+                  count: contactCount,
+                })
+              }}
+            </p>
+            <button class="delete-button" @click="removeContactList">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="3 6 5 6 21 6" />
+                <path
+                  d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                />
+                <line x1="10" y1="11" x2="10" y2="17" />
+                <line x1="14" y1="11" x2="14" y2="17" />
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
 
       <div class="flex flex-row justify-end gap-2 py-2 px-0 w-full">
@@ -181,8 +250,8 @@ import { useAlert } from 'dashboard/composables';
 import WootMessageEditor from 'dashboard/components/widgets/WootWriter/Editor.vue';
 import campaignMixin from 'shared/mixins/campaignMixin';
 import WootDateTimePicker from 'dashboard/components/ui/DateTimePicker.vue';
-import { URLPattern } from 'urlpattern-polyfill';
 import { CAMPAIGNS_EVENTS } from '../../../../helper/AnalyticsHelper/events';
+import * as XLSX from 'xlsx';
 
 export default {
   components: {
@@ -194,7 +263,7 @@ export default {
   data() {
     return {
       title: '',
-      message: '',
+      message: '.',
       selectedSender: 0,
       selectedInbox: null,
       endPoint: '',
@@ -205,6 +274,10 @@ export default {
       scheduledAt: null,
       selectedAudience: [],
       senderList: [],
+      selectedMacro: '',
+      contactList: [],
+      fileUploadError: '',
+      contactCount: 0,
     };
   },
 
@@ -220,6 +293,11 @@ export default {
         required,
       },
     };
+
+    const audienceOrContactListRequired = {
+      required: value => value.length > 0 || this.contactList.length > 0,
+    };
+
     if (this.isOngoingType) {
       return {
         ...commonValidations,
@@ -229,13 +307,7 @@ export default {
         endPoint: {
           required,
           shouldBeAValidURLPattern(value) {
-            try {
-              // eslint-disable-next-line
-              new URLPattern(value);
-              return true;
-            } catch (error) {
-              return false;
-            }
+            return this.shouldBeAValidURLPattern(value);
           },
           shouldStartWithHTTP(value) {
             if (value) {
@@ -251,25 +323,31 @@ export default {
         },
       };
     }
-    return {
-      ...commonValidations,
-      selectedAudience: {
-        isEmpty() {
-          return !!this.selectedAudience.length;
+    if (this.isOneOffType) {
+      return {
+        ...commonValidations,
+        selectedAudience: audienceOrContactListRequired,
+        selectedMacro: {
+          required,
         },
-      },
-    };
+      };
+    }
+    return commonValidations;
   },
   computed: {
     ...mapGetters({
       uiFlags: 'campaigns/getUIFlags',
       audienceList: 'labels/getLabels',
+      macrosList: 'macros/getMacros',
     }),
     inboxes() {
       if (this.isOngoingType) {
         return this.$store.getters['inboxes/getWebsiteInboxes'];
       }
-      return this.$store.getters['inboxes/getSMSInboxes'];
+      return [
+        ...this.$store.getters['inboxes/getSMSInboxes'],
+        ...this.$store.getters['inboxes/getApiInboxes'],
+      ];
     },
     sendersAndBotList() {
       return [
@@ -285,6 +363,7 @@ export default {
     this.$track(CAMPAIGNS_EVENTS.OPEN_NEW_CAMPAIGN_MODAL, {
       type: this.campaignType,
     });
+    this.fetchMacros();
   },
   methods: {
     onClose() {
@@ -308,6 +387,42 @@ export default {
         useAlert(errorMessage);
       }
     },
+    async fetchMacros() {
+      await this.$store.dispatch('macros/get');
+    },
+    handleFileUpload(event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = e => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        if (jsonData.length > 0 && 'numeros' in jsonData[0]) {
+          this.contactList = jsonData.map(row => row.numeros).filter(Boolean);
+          this.contactCount = this.contactList.length;
+          this.fileUploadError = '';
+          this.$v.selectedAudience.$touch();
+        } else {
+          this.fileUploadError = this.$t(
+            'CAMPAIGN.ADD.FORM.CONTACT_LIST.ERROR_NO_COLUMN'
+          );
+          this.contactList = [];
+          this.contactCount = 0;
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    },
+    removeContactList() {
+      this.contactList = [];
+      this.contactCount = 0;
+      this.$v.selectedAudience.$touch();
+    },
     getCampaignDetails() {
       let campaignDetails = null;
       if (this.isOngoingType) {
@@ -326,32 +441,45 @@ export default {
           },
         };
       } else {
-        const audience = this.selectedAudience.map(item => {
-          return {
-            id: item.id,
-            type: 'Label',
-          };
-        });
+        const audience =
+          this.contactList.length > 0
+            ? this.contactList.map(number => ({ id: number, type: 'Contact' }))
+            : this.selectedAudience.map(item => ({
+                id: item.id,
+                type: 'Label',
+              }));
+
         campaignDetails = {
           title: this.title,
           message: this.message,
           inbox_id: this.selectedInbox,
           scheduled_at: this.scheduledAt,
           audience,
+          trigger_rules: {
+            macro_id: this.selectedMacro,
+          },
+          contact_list: this.contactList,
         };
       }
       return campaignDetails;
     },
     async addCampaign() {
       this.$v.$touch();
+
       if (this.$v.$invalid) {
+        if (
+          this.contactList.length === 0 &&
+          this.selectedAudience.length === 0
+        ) {
+          useAlert(this.$t('CAMPAIGN.ADD.FORM.ERROR_NO_AUDIENCE_OR_CONTACTS'));
+        }
         return;
       }
+
       try {
         const campaignDetails = this.getCampaignDetails();
         await this.$store.dispatch('campaigns/create', campaignDetails);
 
-        // tracking this here instead of the store to track the type of campaign
         this.$track(CAMPAIGNS_EVENTS.CREATE_CAMPAIGN, {
           type: this.campaignType,
         });
@@ -367,6 +495,7 @@ export default {
   },
 };
 </script>
+
 <style lang="scss" scoped>
 ::v-deep .ProseMirror-woot-style {
   height: 5rem;
@@ -378,6 +507,44 @@ export default {
   ::v-deep {
     .ProseMirror-menubar {
       @apply rounded-tl-[4px];
+    }
+  }
+}
+
+.file-upload-section {
+  margin-bottom: 1rem;
+
+  .error-message {
+    color: red;
+    margin-top: 0.5rem;
+  }
+
+  .contact-list-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.5rem;
+
+    .contact-count {
+      font-weight: bold;
+    }
+
+    .delete-button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      color: var(--color-body);
+      transition: color 0.3s ease;
+
+      &:hover {
+        color: var(--color-error);
+      }
+
+      svg {
+        width: 20px;
+        height: 20px;
+      }
     }
   }
 }

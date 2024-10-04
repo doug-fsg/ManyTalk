@@ -29,7 +29,5 @@ module MessageFilterHelpers
     inbox.instagram? && try(:content_attributes)[:image_type] == 'story_mention'
   end
 
-  def instagram?
-    inbox.instagram?
-  end
+  delegate :instagram?, to: :inbox
 end

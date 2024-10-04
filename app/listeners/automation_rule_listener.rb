@@ -15,7 +15,6 @@ class AutomationRuleListener < BaseListener
     conversation_event(event, 'conversation_resolved')
   end
 
-
   def message_created(event)
     message = event.data[:message]
 
@@ -57,7 +56,6 @@ class AutomationRuleListener < BaseListener
     message = event.data[:message]
     performed_by_automation?(event) || message.activity?
   end
-
 
   private
 

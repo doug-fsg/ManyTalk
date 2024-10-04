@@ -52,9 +52,7 @@ class Whatsapp::Providers::BaseService
     rows = []
     items.each do |item|
       row = { 'id' => item['value'], 'title' => item['title'] }
-      if item.has_key?("description")
-        row['description'] = item['description']
-      end
+      row['description'] = item['description'] if item.key?('description')
       rows << row
     end
     rows

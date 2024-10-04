@@ -23,7 +23,7 @@ class Webhooks::Trigger
   private
 
   def perform_request
-    Rails.logger.debug { "Webhook Trigger @method: #{@method} @url #{@url}  @payload #{ @payload.to_json} @headers #{@headers}" }
+    Rails.logger.debug { "Webhook Trigger @method: #{@method} @url #{@url}  @payload #{@payload.to_json} @headers #{@headers}" }
     RestClient::Request.execute(
       method: @method,
       url: @url,

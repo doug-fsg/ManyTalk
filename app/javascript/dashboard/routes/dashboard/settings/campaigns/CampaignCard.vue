@@ -34,6 +34,16 @@
         >
           {{ $t('CAMPAIGN.LIST.BUTTONS.DELETE') }}
         </woot-button>
+        <woot-button
+          v-if="campaign.campaign_status === 'completed'"
+          variant="link"
+          icon="clock"
+          size="small"
+          color-scheme="secondary"
+          @click="$emit('show-history', campaign)"
+        >
+          {{ $t('CAMPAIGN.LIST.BUTTONS.HISTORY') }}
+        </woot-button>
       </div>
     </div>
 
