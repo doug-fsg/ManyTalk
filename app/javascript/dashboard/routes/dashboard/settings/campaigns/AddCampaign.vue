@@ -170,6 +170,14 @@
           :class="{ error: $v.selectedMacro.$error }"
         >
           {{ $t('CAMPAIGN.ADD.FORM.MACRO.LABEL') }}
+          <a
+            :href="macroUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="create-macro-link"
+          >
+            Criar macro
+          </a>
           <select v-model="selectedMacro" @change="$v.selectedMacro.$touch">
             <option value="">
               {{ $t('CAMPAIGN.ADD.FORM.MACRO.PLACEHOLDER') }}
@@ -358,8 +366,15 @@ export default {
         ...this.senderList,
       ];
     },
+    macroUrl() {
+      if (typeof window !== 'undefined') {
+        return `${window.location.origin}/app/accounts/${this.$route.params.accountId}/settings/macros`;
+      }
+      return '#';
+    },
   },
   mounted() {
+    console.log('Account ID:', this.accountId);
     this.$track(CAMPAIGNS_EVENTS.OPEN_NEW_CAMPAIGN_MODAL, {
       type: this.campaignType,
     });
@@ -402,8 +417,28 @@ export default {
         const worksheet = workbook.Sheets[firstSheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-        if (jsonData.length > 0 && 'numeros' in jsonData[0]) {
-          this.contactList = jsonData.map(row => row.numeros).filter(Boolean);
+        // Variações possíveis dos nomes das colunas
+        const possibleNumberColumns = ['numeros', 'numero', 'Número', 'número', 'nUmeros'];
+        const possibleNameColumns = ['nome', 'Nome', 'Nomes'];
+        const possibleVariableColumns = ['variavel', 'variável', 'Variavel', 'Variável'];
+
+        // Função para encontrar a chave correta
+        function findColumn(possibleColumns, row) {
+          return possibleColumns.find(column => column in row);
+        }
+
+        // Encontrar as colunas correspondentes no jsonData
+        const numberColumn = findColumn(possibleNumberColumns, jsonData[0]);
+        const nameColumn = findColumn(possibleNameColumns, jsonData[0]);
+        const variableColumn = findColumn(possibleVariableColumns, jsonData[0]);
+
+        if (jsonData.length > 0 && numberColumn) {
+          this.contactList = jsonData.map(row => ({
+            numero: row[numberColumn],
+            nome: row[nameColumn] || '', // Se não houver nome, deixa vazio
+            variavel: row[variableColumn] || '' // Se não houver variável, deixa vazio
+          })).filter(contact => contact.numero);
+
           this.contactCount = this.contactList.length;
           this.fileUploadError = '';
           this.$v.selectedAudience.$touch();
@@ -443,10 +478,15 @@ export default {
       } else {
         const audience =
           this.contactList.length > 0
-            ? this.contactList.map(number => ({ id: number, type: 'Contact' }))
+            ? this.contactList.map(contact => ({
+                id: contact.numero,
+                type: 'Contact',
+                nome: contact.nome,
+                variavel: contact.variavel
+              }))
             : this.selectedAudience.map(item => ({
                 id: item.id,
-                type: 'Label',
+                type: 'Label'
               }));
 
         campaignDetails = {
@@ -548,4 +588,19 @@ export default {
     }
   }
 }
+
+.create-macro-link {
+  display: inline;
+  font-size: 0.750rem; /* Um pouco menor que o padrão para parecer sutil */
+  color: var(--color-woot); /* Use a cor primária que já está em seu sistema para manter a consistência */
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.3s ease; /* Transição suave na cor ao passar o mouse */
+
+  &:hover {
+    color: var(--color-primary-700); /* Um tom mais escuro para diferenciar no hover */
+  }
+}
+
 </style>
+

@@ -77,7 +77,9 @@ class Api::OneoffApiCampaignService
         name: contact['name'],
         email: contact['email'],
         phone_number: contact['phone_number'],
-        identifier: contact['id']
+        identifier: contact['id'],
+        nome: contact['nome'],
+        variavel: contact['variavel']
       }
     else # Se vier do banco de dados
       {
@@ -85,7 +87,8 @@ class Api::OneoffApiCampaignService
         id: contact.id,
         name: contact.name,
         email: contact.email,
-        phone_number: contact.phone_number
+        phone_number: contact.phone_number,
+        variable: contact.variable
       }
     end
   end

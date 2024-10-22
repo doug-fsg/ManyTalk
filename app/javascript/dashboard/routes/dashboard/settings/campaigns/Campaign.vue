@@ -27,7 +27,7 @@
     <campaign-history-modal
       :show.sync="showHistoryModal"
       :campaign="selectedCampaign"
-      @close="hideHistoryModal"
+      @on-close="hideHistoryModal"
     />
   </div>
 </template>

@@ -128,14 +128,14 @@
         "ENABLED": "Ativado",
         "DISABLED": "Desativado",
         "COMPLETED": "Concluído",
-        "ACTIVE": "Ativo"
+        "ACTIVE": "Em espera"
       },
       "SENDER": {
         "BOT": "Bot"
       }
     },
     "ONE_OFF": {
-      "HEADER": "Campanhas únicas",
+      "HEADER": "Disparo para WhatsApp",
       "404": "Não há nenhuma campanha única criada",
       "INBOXES_NOT_FOUND": "Não há campanhas criadas"
     },

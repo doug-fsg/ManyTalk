@@ -70,7 +70,13 @@
         v-if="campaign.scheduled_at"
         class="mb-1 text-xs text-slate-700 dark:text-slate-500"
       >
-        {{ messageStamp(new Date(campaign.scheduled_at), 'LLL d, h:mm a') }}
+        {{ messageStamp(new Date(campaign.scheduled_at), 'dd/MM, h:mm a') }}
+      </div>
+      <div
+        v-if="!isOngoingType"
+        class="mb-1 text-xs text-slate-700 dark:text-slate-500"
+      >
+      {{ `📈 Taxa de Entrega: ${successPercentage()}%` }}
       </div>
     </div>
   </div>
@@ -122,6 +128,13 @@ export default {
   },
   methods: {
     messageStamp,
+    successPercentage() {
+      if (this.isOngoingType || !this.campaign.audience) return 0;
+      const total = this.campaign.audience.length;
+      if (total === 0) return 0;
+      const successful = this.campaign.audience.filter(item => item.status === 'success').length;
+      return Math.round((successful / total) * 100);
+    },
   },
 };
 </script>

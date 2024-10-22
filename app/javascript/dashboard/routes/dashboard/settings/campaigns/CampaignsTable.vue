@@ -75,6 +75,12 @@ export default {
         ? this.$t('CAMPAIGN.ONE_OFF.404')
         : this.$t('CAMPAIGN.ONE_OFF.INBOXES_NOT_FOUND');
     },
+    successfulCount() {
+      return (campaign) => campaign.audience.filter(item => item.status === 'success').length;
+    },
+    failedCount() {
+      return (campaign) => campaign.audience.length - this.successfulCount(campaign);
+    },
   },
 
   methods: {
@@ -84,3 +90,11 @@ export default {
   },
 };
 </script>
+
+<style lang="scss" scoped>
+.campaign-stats {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--s-600);
+}
+</style>
