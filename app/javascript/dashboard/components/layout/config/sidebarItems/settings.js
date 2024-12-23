@@ -39,6 +39,7 @@ const settings = accountId => ({
     'settings_teams_list',
     'settings_teams_new',
     'sla_list',
+    'settings_ia',
   ],
   menuItems: [
     {
@@ -189,7 +190,6 @@ const settings = accountId => ({
       toStateName: 'sla_list',
       isEnterpriseOnly: true,
       featureFlag: FEATURE_FLAGS.SLA,
-      beta: true,
     },
     {
       icon: 'credit-card-person',
@@ -201,6 +201,18 @@ const settings = accountId => ({
       toState: frontendURL(`accounts/${accountId}/settings/billing`),
       toStateName: 'billing_settings_index',
       showOnlyOnCloud: true,
+    },
+    {
+      icon: 'window-new',
+      label: 'INTELLIGENCE_AI',
+      hasSubMenu: false,
+      meta: {
+        permissions: ['administrator'], // Permissão necessária
+      },
+      toState: frontendURL(`accounts/${accountId}/settings/ia`), // Rota fictícia
+      toStateName: 'settings_ia',
+      beta: true,
+      featureFlag: FEATURE_FLAGS.IA,
     },
   ],
 });

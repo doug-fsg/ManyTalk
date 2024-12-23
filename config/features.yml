@@ -121,3 +121,5 @@
   enabled: true
 - name: kanban
   enabled: false
+- name: inteligencia_artificial
+  enabled: false

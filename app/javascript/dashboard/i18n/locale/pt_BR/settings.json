@@ -255,6 +255,7 @@
     "CUSTOM_ATTRIBUTES": "Atributos Personalizados",
     "AUTOMATION": "Automação",
     "MACROS": "Macros",
+    "INTELLIGENCE_AI": "Inteligência Artificial",
     "TEAMS": "Times",
     "BILLING": "Cobrança",
     "CUSTOM_VIEWS_FOLDER": "Pastas",
@@ -294,7 +295,7 @@
       "TEXT": "Marcar offline automaticamente",
       "INFO_TEXT": "Deixe o sistema marcar você automaticamente quando você não estiver usando o app ou o painel de controle."
     },
-    "DOCS": "Ler documentos"
+    "DOCS": "Ajuda"
   },
   "BILLING_SETTINGS": {
     "TITLE": "Cobrança",
