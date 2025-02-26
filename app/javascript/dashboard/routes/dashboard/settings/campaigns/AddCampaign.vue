@@ -374,7 +374,6 @@ export default {
     },
   },
   mounted() {
-    console.log('Macros List:', this.macrosList);
     this.$track(CAMPAIGNS_EVENTS.OPEN_NEW_CAMPAIGN_MODAL, {
       type: this.campaignType,
     });

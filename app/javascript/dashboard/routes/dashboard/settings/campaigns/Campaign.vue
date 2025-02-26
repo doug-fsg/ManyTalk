@@ -113,12 +113,6 @@ export default {
       this.showEditPopup = false;
       this.$nextTick(() => {
         this.showEditPopup = true;
-        
-        // Log adicional para verificar o estado atual
-        console.log('Estado após abertura:', {
-          selectedCampaign: this.selectedCampaign,
-          editComponent: this.editComponent
-        });
       });
     },
     hideEditPopup() {

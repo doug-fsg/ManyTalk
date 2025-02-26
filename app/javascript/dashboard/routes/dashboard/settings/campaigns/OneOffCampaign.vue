@@ -385,8 +385,6 @@ export default {
     }
   },
   mounted() {
-    console.log('OneOffCampaign mounted');
-    console.log('Selected Campaign:', this.selectedCampaign);
     
     // Verifique se selectedCampaign existe e não é nulo
     if (this.selectedCampaign) {
@@ -559,12 +557,8 @@ export default {
       }
     },
     setFormValuesForEdit() {
-      // Log detalhado para diagnóstico
-      console.log('Método setFormValuesForEdit - Dados completos:', this.selectedCampaign);
-
       // Verificação de segurança
       if (!this.selectedCampaign || Object.keys(this.selectedCampaign).length === 0) {
-        console.warn('Campanha inválida para edição');
         return;
       }
 
@@ -591,10 +585,6 @@ export default {
       // Tratamento detalhado para timestamp
       if (scheduledAt) {
         let formattedDate;
-        
-        // Log para diagnóstico
-        console.log('Tipo de scheduledAt:', typeof scheduledAt);
-        console.log('Valor de scheduledAt:', scheduledAt);
 
         try {
           // Tenta múltiplas estratégias de conversão
@@ -614,13 +604,7 @@ export default {
           // Verifica se a data é válida
           if (formattedDate && !isNaN(formattedDate.getTime())) {
             this.scheduledAt = formattedDate;
-            console.log('Data processada com sucesso:', formattedDate);
-          } else {
-            console.error('Data inválida após conversão:', scheduledAt);
           }
-        } catch (error) {
-          console.error('Erro ao processar data:', error);
-        }
       }
 
       // Macro
@@ -645,15 +629,6 @@ export default {
       }
 
       // Log final para verificação
-      console.log('Formulário após processamento:', {
-        title: this.title,
-        message: this.message,
-        selectedInbox: this.selectedInbox,
-        scheduledAt: this.scheduledAt,
-        selectedMacro: this.selectedMacro,
-        selectedAudience: this.selectedAudience,
-        contactList: this.contactList
-      });
     },
     resetForm() {
       this.title = '';
