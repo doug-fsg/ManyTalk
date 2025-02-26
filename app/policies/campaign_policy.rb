@@ -1,21 +1,21 @@
 class CampaignPolicy < ApplicationPolicy
   def index?
-    @account_user.administrator?
-  end
-
-  def update?
-    @account_user.administrator?
+    true  # Permite listar todas as campanhas para qualquer usuário autenticado
   end
 
   def show?
-    @account_user.administrator?
+    true  # Permite visualizar qualquer campanha
   end
 
   def create?
-    @account_user.administrator?
+    true  # Permite criar campanhas
+  end
+
+  def update?
+    true  # Permite editar campanhas
   end
 
   def destroy?
-    @account_user.administrator?
+    true  # Permite excluir campanhas
   end
 end

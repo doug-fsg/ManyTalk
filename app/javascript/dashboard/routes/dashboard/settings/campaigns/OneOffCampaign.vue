@@ -1,10 +1,12 @@
+#OneOffCampaign.vue correto
+
 /* eslint-disable */
 
 <template>
   <div class="h-auto overflow-auto flex flex-col">
     <woot-modal-header
-      :header-title="$t('CAMPAIGN.ADD.TITLE')"
-      :header-content="$t('CAMPAIGN.ADD.DESC')"
+      :header-title="$t(selectedCampaign ? 'CAMPAIGN.EDIT.TITLE' : 'CAMPAIGN.ADD.TITLE')"
+      :header-content="$t(selectedCampaign ? 'CAMPAIGN.EDIT.DESC' : 'CAMPAIGN.ADD.DESC')"
     />
     <form class="flex flex-col w-full" @submit.prevent="addCampaign">
       <div class="w-full">
@@ -12,10 +14,10 @@
           v-model="title"
           :label="$t('CAMPAIGN.ADD.FORM.TITLE.LABEL')"
           type="text"
-          :class="{ error: $v.title.$error }"
-          :error="$v.title.$error ? $t('CAMPAIGN.ADD.FORM.TITLE.ERROR') : ''"
+          :class="{ error: $v && $v.title && $v.title.$error }"
+          :error="$v && $v.title && $v.title.$error ? $t('CAMPAIGN.ADD.FORM.TITLE.ERROR') : ''"
           :placeholder="$t('CAMPAIGN.ADD.FORM.TITLE.PLACEHOLDER')"
-          @blur="$v.title.$touch"
+          @blur="$v && $v.title && $v.title.$touch"
         />
 
         <div v-if="isOngoingType" class="editor-wrap">
@@ -36,7 +38,7 @@
           </div>
         </div>
        
-        <label v-else :class="{ error: $v.message.$error }">
+        <label v-else-if="isOneOffType && !hasMacro" :class="{ error: $v.message.$error }">
           {{ $t('CAMPAIGN.ADD.FORM.MESSAGE.LABEL') }}
           <textarea
             v-model="message"
@@ -163,6 +165,37 @@
           {{ $t('CAMPAIGN.ADD.FORM.TRIGGER_ONLY_BUSINESS_HOURS') }}
         </label>
 
+        <label
+          v-if="isOneOffType && hasMacro"
+          class="select-wrap"
+          :class="{ error: $v.selectedMacro.$error }"
+        >
+          {{ $t('CAMPAIGN.ADD.FORM.MACRO.LABEL') }}
+          <a
+            :href="macroUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="create-macro-link"
+          >
+            Criar macro
+          </a>
+          <select v-model="selectedMacro" @change="$v.selectedMacro.$touch">
+            <option value="">
+              {{ $t('CAMPAIGN.ADD.FORM.MACRO.PLACEHOLDER') }}
+            </option>
+            <option
+              v-for="macro in macrosList"
+              :key="macro.id"
+              :value="macro.id"
+            >
+              {{ macro.name }}
+            </option>
+          </select>
+          <span v-if="$v.selectedMacro.$error" class="message">
+            {{ $t('CAMPAIGN.ADD.FORM.MACRO.ERROR') }}
+          </span>
+        </label>
+
         <div v-if="isOneOffType" class="file-upload-section">
           <label>
             {{ $t('CAMPAIGN.ADD.FORM.CONTACT_LIST.LABEL') }}
@@ -209,7 +242,7 @@
 
       <div class="flex flex-row justify-end gap-2 py-2 px-0 w-full">
         <woot-button :is-loading="uiFlags.isCreating">
-          {{ $t('CAMPAIGN.ADD.CREATE_BUTTON_TEXT') }}
+          {{ $t(selectedCampaign ? 'CAMPAIGN.EDIT.UPDATE_BUTTON_TEXT' : 'CAMPAIGN.ADD.CREATE_BUTTON_TEXT') }}
         </woot-button>
         <woot-button variant="clear" @click.prevent="onClose">
           {{ $t('CAMPAIGN.ADD.CANCEL_BUTTON_TEXT') }}
@@ -236,6 +269,12 @@ export default {
   },
 
   mixins: [campaignMixin],
+  props: {
+    selectedCampaign: {
+      type: Object,
+      default: null
+    }
+  },
   data() {
     return {
       title: '',
@@ -300,10 +339,16 @@ export default {
       };
     }
     if (this.isOneOffType) {
-      return {
+      const validations = {
         ...commonValidations,
         selectedAudience: audienceOrContactListRequired,
       };
+
+      if (this.hasMacro) {
+        validations.selectedMacro = { required };
+      }
+
+      return validations;
     }
     return commonValidations;
   },
@@ -331,8 +376,23 @@ export default {
         ...this.senderList,
       ];
     },
+    hasMacro() {
+      if (this.selectedCampaign && this.selectedCampaign.trigger_rules) {
+        const macroId = this.selectedCampaign.trigger_rules.macro_id;
+        return macroId !== undefined && macroId !== null && macroId !== '';
+      }
+      return false;
+    }
   },
   mounted() {
+    console.log('OneOffCampaign mounted');
+    console.log('Selected Campaign:', this.selectedCampaign);
+    
+    // Verifique se selectedCampaign existe e não é nulo
+    if (this.selectedCampaign) {
+      this.setFormValuesForEdit();
+    }
+
     this.$track(CAMPAIGNS_EVENTS.OPEN_NEW_CAMPAIGN_MODAL, {
       type: this.campaignType,
     });
@@ -455,7 +515,7 @@ export default {
           scheduled_at: this.scheduledAt,
           audience,
           trigger_rules: {
-            macro_id: this.selectedMacro,
+            macro_id: this.selectedMacro || '',
           },
           contact_list: this.contactList,
         };
@@ -477,19 +537,133 @@ export default {
 
       try {
         const campaignDetails = this.getCampaignDetails();
-        await this.$store.dispatch('campaigns/create', campaignDetails);
+        if (this.selectedCampaign && this.selectedCampaign.id) {
+          await this.$store.dispatch('campaigns/update', {
+            id: this.selectedCampaign.id,
+            ...campaignDetails
+          });
+          useAlert(this.$t('CAMPAIGN.EDIT.API.SUCCESS_MESSAGE'));
+        } else {
+          await this.$store.dispatch('campaigns/create', campaignDetails);
+          useAlert(this.$t('CAMPAIGN.ADD.API.SUCCESS_MESSAGE'));
+        }
 
         this.$track(CAMPAIGNS_EVENTS.CREATE_CAMPAIGN, {
           type: this.campaignType,
         });
-
-        useAlert(this.$t('CAMPAIGN.ADD.API.SUCCESS_MESSAGE'));
         this.onClose();
       } catch (error) {
         const errorMessage =
           error?.response?.message || this.$t('CAMPAIGN.ADD.API.ERROR_MESSAGE');
         useAlert(errorMessage);
       }
+    },
+    setFormValuesForEdit() {
+      // Log detalhado para diagnóstico
+      console.log('Método setFormValuesForEdit - Dados completos:', this.selectedCampaign);
+
+      // Verificação de segurança
+      if (!this.selectedCampaign || Object.keys(this.selectedCampaign).length === 0) {
+        console.warn('Campanha inválida para edição');
+        return;
+      }
+
+      // Reset do formulário
+      this.resetForm();
+
+      const {
+        title,
+        message,
+        inbox_id: inboxId,
+        inbox,
+        scheduled_at: scheduledAt,
+        audience,
+        trigger_rules: { macro_id: selectedMacro } = {},
+      } = this.selectedCampaign;
+
+      // Mapeamento detalhado e explícito
+      this.title = title || '';
+      this.message = message || '.';
+      
+      // Inbox
+      this.selectedInbox = inboxId || inbox?.id || null;
+
+      // Tratamento detalhado para timestamp
+      if (scheduledAt) {
+        let formattedDate;
+        
+        // Log para diagnóstico
+        console.log('Tipo de scheduledAt:', typeof scheduledAt);
+        console.log('Valor de scheduledAt:', scheduledAt);
+
+        try {
+          // Tenta múltiplas estratégias de conversão
+          if (typeof scheduledAt === 'number') {
+            // Se for um número muito grande, assume ser milissegundos
+            if (scheduledAt > 10000000000) {
+              formattedDate = new Date(scheduledAt);
+            } else {
+              // Se for um número menor, assume ser segundos
+              formattedDate = new Date(scheduledAt * 1000);
+            }
+          } else if (typeof scheduledAt === 'string') {
+            // Tenta parsing direto
+            formattedDate = new Date(scheduledAt);
+          }
+
+          // Verifica se a data é válida
+          if (formattedDate && !isNaN(formattedDate.getTime())) {
+            this.scheduledAt = formattedDate;
+            console.log('Data processada com sucesso:', formattedDate);
+          } else {
+            console.error('Data inválida após conversão:', scheduledAt);
+          }
+        } catch (error) {
+          console.error('Erro ao processar data:', error);
+        }
+      }
+
+      // Macro
+      this.selectedMacro = selectedMacro || '';
+
+      // Processamento de audience
+      const campaignAudience = audience || [];
+      if (campaignAudience.length > 0) {
+        if (campaignAudience[0].type === 'Label') {
+          this.selectedAudience = campaignAudience.map(item => 
+  this.audienceList.find(a => a.id === item.id) || item
+);
+
+        } else if (campaignAudience[0].type === 'Contact') {
+          this.contactList = campaignAudience.map(contact => ({
+            numero: contact.id,
+            nome: contact.nome || '',
+            variavel: contact.variavel || ''
+          }));
+          this.contactCount = this.contactList.length;
+        }
+      }
+
+      // Log final para verificação
+      console.log('Formulário após processamento:', {
+        title: this.title,
+        message: this.message,
+        selectedInbox: this.selectedInbox,
+        scheduledAt: this.scheduledAt,
+        selectedMacro: this.selectedMacro,
+        selectedAudience: this.selectedAudience,
+        contactList: this.contactList
+      });
+    },
+    resetForm() {
+      this.title = '';
+      this.message = '.';
+      this.selectedInbox = null;
+      this.scheduledAt = null;
+      this.selectedMacro = '';
+      this.selectedAudience = [];
+      this.contactList = [];
+      this.contactCount = 0;
     },
   },
 };
@@ -548,5 +722,3 @@ export default {
   }
 }
 </style>
-
-

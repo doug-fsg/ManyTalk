@@ -97,8 +97,9 @@
       }
     },
     "EDIT": {
-      "TITLE": "Campanha Editar",
+      "TITLE": "Editar Campanha",
       "UPDATE_BUTTON_TEXT": "Atualizar",
+      "DESC": "Revise e edite esta campanha. Alterações feitas aqui podem impactar a comunicação com seus contatos.",
       "API": {
         "SUCCESS_MESSAGE": "Campanha atualizada com sucesso",
         "ERROR_MESSAGE": "Ocorreu um erro, por favor tente novamente"
@@ -122,7 +123,8 @@
         "ADD": "Adicionar",
         "EDIT": "Alterar",
         "DELETE": "Excluir",
-        "HISTORY": "Relatório"
+        "HISTORY": "Relatório",
+        "RESEND": "Enviar Novamente"
       },
       "STATUS": {
         "ENABLED": "Ativado",

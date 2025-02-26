@@ -1,3 +1,4 @@
+#campaing.vue
 <template>
   <div class="flex-1 overflow-auto">
     <campaigns-table
@@ -8,13 +9,19 @@
       @edit="openEditPopup"
       @delete="openDeletePopup"
       @show-history="openHistoryModal"
+      @resend="handleResend"
     />
+    
     <woot-modal :show.sync="showEditPopup" :on-close="hideEditPopup">
-      <edit-campaign
+      <component
+        v-if="showEditPopup"
+        :is="editComponent"
+        :key="selectedCampaign.id" 
         :selected-campaign="selectedCampaign"
         @on-close="hideEditPopup"
       />
     </woot-modal>
+
     <woot-delete-modal
       :show.sync="showDeleteConfirmationPopup"
       :on-close="closeDeletePopup"
@@ -24,6 +31,7 @@
       :confirm-text="$t('CAMPAIGN.DELETE.CONFIRM.YES')"
       :reject-text="$t('CAMPAIGN.DELETE.CONFIRM.NO')"
     />
+
     <campaign-history-modal
       :show.sync="showHistoryModal"
       :campaign="selectedCampaign"
@@ -31,18 +39,21 @@
     />
   </div>
 </template>
+
 <script>
 import { mapGetters } from 'vuex';
 import { useAlert } from 'dashboard/composables';
 import campaignMixin from 'shared/mixins/campaignMixin';
 import CampaignsTable from './CampaignsTable.vue';
 import EditCampaign from './EditCampaign.vue';
+import OneOffCampaign from './OneOffCampaign.vue';
 import CampaignHistoryModal from './CampaignHistoryModal.vue';
 
 export default {
   components: {
     CampaignsTable,
     EditCampaign,
+    OneOffCampaign,
     CampaignHistoryModal,
   },
   mixins: [campaignMixin],
@@ -58,6 +69,7 @@ export default {
       selectedCampaign: {},
       showDeleteConfirmationPopup: false,
       showHistoryModal: false,
+      editComponent: null, // Armazena o componente correto
     };
   },
   computed: {
@@ -69,15 +81,45 @@ export default {
       return this.$store.getters['campaigns/getCampaigns'](this.campaignType);
     },
     showEmptyResult() {
-      const hasEmptyResults =
-        !this.uiFlags.isFetching && this.campaigns.length === 0;
-      return hasEmptyResults;
+      return !this.uiFlags.isFetching && this.campaigns.length === 0;
     },
   },
   methods: {
+    async handleResend(campaign) {
+      try {
+        // Atualiza localmente para evitar rollback visual
+        this.$set(campaign, 'campaign_status', 0);
+
+        // Faz a requisição para atualizar no backend
+        await this.$store.dispatch('campaigns/update', {
+          id: campaign.id,
+          campaign_status: 0,
+        });
+
+        this.$toast.success('Campanha reenviada com sucesso!');
+      } catch (error) {
+        this.$toast.error('Erro ao reenviar campanha.');
+        this.$set(campaign, 'campaign_status', 1); // Reverte caso dê erro
+      }
+    },
     openEditPopup(campaign) {
-      this.selectedCampaign = campaign;
-      this.showEditPopup = true;
+      // Crie uma cópia profunda para garantir reatividade
+      this.selectedCampaign = JSON.parse(JSON.stringify(campaign));
+
+      // Definir qual componente deve ser renderizado
+      this.editComponent = this.isOngoingType ? EditCampaign : OneOffCampaign;
+
+      // Abrir o modal
+      this.showEditPopup = false;
+      this.$nextTick(() => {
+        this.showEditPopup = true;
+        
+        // Log adicional para verificar o estado atual
+        console.log('Estado após abertura:', {
+          selectedCampaign: this.selectedCampaign,
+          editComponent: this.editComponent
+        });
+      });
     },
     hideEditPopup() {
       this.showEditPopup = false;

@@ -374,7 +374,7 @@ export default {
     },
   },
   mounted() {
-    console.log('Account ID:', this.accountId);
+    console.log('Macros List:', this.macrosList);
     this.$track(CAMPAIGNS_EVENTS.OPEN_NEW_CAMPAIGN_MODAL, {
       type: this.campaignType,
     });
@@ -476,6 +476,10 @@ export default {
           },
         };
       } else {
+        const selectedMacroObj = this.macrosList.find(
+          macro => macro.id === Number(this.selectedMacro)
+        );
+
         const audience =
           this.contactList.length > 0
             ? this.contactList.map(contact => ({

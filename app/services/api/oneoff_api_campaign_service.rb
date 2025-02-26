@@ -1,3 +1,5 @@
+#deu certo
+
 class Api::OneoffApiCampaignService
   pattr_initialize [:campaign!]
 
@@ -5,6 +7,12 @@ class Api::OneoffApiCampaignService
   WEBHOOK_URL = ENV.fetch('WEBHOOK_URL_CAMPANHA', nil)
 
   def perform
+    Rails.logger.info "Campaign Details: #{campaign.inspect}"
+    Rails.logger.info "Campaign Audience: #{campaign.audience.inspect}"
+    Rails.logger.info "Campaign Inbox Type: #{campaign.inbox.inbox_type}"
+    Rails.logger.info "Campaign Type: #{campaign.campaign_type}"
+
+    # Verificações iniciais
     raise "Invalid campaign #{campaign.id}" if campaign.inbox.inbox_type != 'API' || !campaign.one_off?
     raise 'Completed Campaign' if campaign.completed?
 
@@ -12,11 +20,17 @@ class Api::OneoffApiCampaignService
     campaign.completed!
 
     # Filtra os IDs das labels e os contatos da audiência
-    audience_label_ids = campaign.audience.select { |audience| audience['type'] == 'Label' }.pluck('id')
+    audience_label_ids = campaign.audience.select { |audience| audience['type'] == 'Label' }.map { |a| a['id'] }
     audience_contacts = campaign.audience.select { |audience| audience['type'] == 'Contact' }
+
+    Rails.logger.info "Audience Label IDs: #{audience_label_ids}"
+    Rails.logger.info "Audience Contacts: #{audience_contacts}"
 
     # Processa as labels e os contatos
     audience_labels = campaign.account.labels.where(id: audience_label_ids).pluck(:title)
+    
+    Rails.logger.info "Audience Label Titles: #{audience_labels}"
+
     process_audience_labels(audience_labels)
     process_audience_contacts(audience_contacts)
   end
@@ -25,7 +39,22 @@ class Api::OneoffApiCampaignService
 
   # Processa os contatos associados às labels através do banco de dados
   def process_audience_labels(audience_labels)
-    contacts = campaign.account.contacts.tagged_with(audience_labels, any: true)
+    Rails.logger.info "Campaign Audience: #{campaign.audience.inspect}"
+    Rails.logger.info "Processing Labels: #{audience_labels}"
+    
+    if audience_labels.empty?
+      Rails.logger.warn "No labels to process for campaign #{campaign.id}"
+      return
+    end
+
+    # Busca os contatos através do cached_label_list
+    contacts = campaign.account.contacts.joins(:conversations)
+      .where("conversations.cached_label_list ~* ?", audience_labels.join('|'))
+      .distinct
+    
+    Rails.logger.info "Contacts for Conversation Labels: #{contacts.count}"
+    Rails.logger.info "Contacts Details: #{contacts.map(&:attributes)}"
+    
     process_contacts(contacts)
   end
 
@@ -74,7 +103,7 @@ class Api::OneoffApiCampaignService
     if contact.is_a?(Hash) # Se vier diretamente da audiência
       {
         type: 'contact',
-        name: contact['name'],
+        name: contact['name'] || contact['nome'],
         email: contact['email'],
         phone_number: contact['phone_number'],
         identifier: contact['id'],
@@ -88,7 +117,7 @@ class Api::OneoffApiCampaignService
         name: contact.name,
         email: contact.email,
         phone_number: contact.phone_number,
-        variable: contact.variable
+        nome: contact.name
       }
     end
   end

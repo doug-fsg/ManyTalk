@@ -11,36 +11,71 @@ export default {
         permissions: ['administrator'], // Permissões necessárias
       },
       beforeEnter(to, from, next) {
+        console.log('beforeEnter: Rota interceptada.');
+
         // Obtendo informações do usuário logado
         const user = store.getters.getCurrentUser;
+        console.log('Usuário logado:', user);
 
-        // const email = user?.account_id + "@manytalks.com.br";
+        if (!user) {
+          console.warn('Usuário não encontrado. Redirecionando...');
+          useAlert('Usuário não autenticado.');
+          next(false);
+          return;
+        }
+
         const email = user?.account_id
           ? `${user.account_id}@manytalks.com.br`
           : '';
 
-        const name = user?.name;
-        const accountId = user?.account_id;
-        const image = user?.avatar_url;
+        const name = user?.name || 'Desconhecido';
+        const accountId = user?.account_id || 'Sem Account ID';
+        const image = user?.avatar_url || 'Sem Avatar';
+
+        console.log('Email:', email);
+        console.log('Nome:', name);
+        console.log('Account ID:', accountId);
+        console.log('Imagem:', image);
 
         const apiURL = process.env.VUE_APP_API_URL;
+        console.log('API URL:', apiURL);
+
+        if (!apiURL) {
+          console.error('VUE_APP_API_URL não está definido.');
+          useAlert('Erro interno: URL da API não configurada.');
+          next(false);
+          return;
+        }
 
         // Faz a requisição para obter o token
-        fetch(`${apiURL}?email=${email}`)
-          .then(response => response.json())
+        const fetchURL = `${apiURL}?email=${email}`;
+        console.log('Fazendo requisição para:', fetchURL);
+
+        fetch(fetchURL)
+          .then(response => {
+            console.log('Resposta recebida:', response);
+            if (!response.ok) {
+              throw new Error(`Erro HTTP! Status: ${response.status}`);
+            }
+            return response.json();
+          })
           .then(data => {
+            console.log('Dados recebidos:', data);
             if (data.token) {
               const redirectURL = `${apiURL}?email=${email}&name=${encodeURIComponent(
                 name
               )}&manytalksAccountId=${accountId}&image=${image}&token=${
                 data.token
               }`;
+              console.log('Redirecionando para:', redirectURL);
               window.open(redirectURL, '_blank'); // Abre a URL em uma nova aba
             } else {
+              console.warn('Token não recebido:', data);
               useAlert('Erro ao obter informações. Tente novamente.');
             }
           })
-          .catch(() => {
+          .catch(error => {
+            console.error('Erro ao buscar token:', error);
             useAlert('Ocorreu um erro, por favor tente novamente mais tarde.');
           });
 

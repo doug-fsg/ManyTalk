@@ -15,6 +15,7 @@
           @edit="campaign => $emit('edit', campaign)"
           @delete="campaign => $emit('delete', campaign)"
           @show-history="onShowHistory"
+          @resend="campaign => $emit('resend', campaign)"
         />
       </div>
     </div>

@@ -59,6 +59,10 @@ class Campaign < ApplicationRecord
     Api::OneoffApiCampaignService.new(campaign: self).perform if inbox.inbox_type == 'API'
   end
 
+  def has_contact_sheet?
+    audience.present? && audience.any? { |item| item['type'] == 'Contact' }
+  end
+
   private
 
   def set_display_id
@@ -92,7 +96,7 @@ class Campaign < ApplicationRecord
   end
 
   def prevent_completed_campaign_from_update
-    errors.add :status, 'The campaign is already completed' if !campaign_status_changed? && completed?
+    return
   end
 
   # creating db triggers
