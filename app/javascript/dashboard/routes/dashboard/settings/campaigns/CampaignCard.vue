@@ -47,18 +47,17 @@
             class="flex items-center justify-between h-8 px-3 text-xs font-medium rounded-md text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700 focus:outline-none"
             @click="toggleDropdown"
           >
-            <span class="mr-1">Ações</span>
+          <span class="mr-1"> {{ $t('MACROS.ADD.FORM.ACTIONS.LABEL') }} </span>
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
             </svg>
           </button>
-          
           <!-- Dropdown menu -->
-          <div 
-            v-if="isDropdownOpen" 
+          <div
+            v-if="isDropdownOpen"
             class="absolute right-0 mt-1 w-36 py-1 bg-white rounded-md shadow-lg dark:bg-slate-700 z-10 border border-slate-200 dark:border-slate-600"
           >
-            <button 
+            <button
               class="block w-full px-4 py-2 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300"
               @click="handleAction('edit')"
             >
@@ -104,7 +103,7 @@
         v-if="!isOngoingType"
         class="mb-1 text-xs text-slate-700 dark:text-slate-500"
       >
-        {{ `📈 Taxa de Entrega: ${successPercentage()}%` }}
+        {{ $t('CAMPAIGN.LIST.DELIVERY_RATE', { rate: successPercentage() }) }}
       </div>
     </div>
   </div>

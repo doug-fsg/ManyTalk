@@ -509,6 +509,15 @@ export default {
     async addCampaign() {
       this.$v.$touch();
 
+      // Se for campanha contínua, remova a verificação de público
+      if (this.isOngoingType) {
+        // Prossiga com o salvamento mesmo sem público
+        const campaignDetails = this.getCampaignDetails();
+        await this.$store.dispatch('campaigns/create', campaignDetails);
+        return;
+      }
+
+      // Validação original para campanhas one-off
       if (this.$v.$invalid) {
         if (
           this.contactList.length === 0 &&

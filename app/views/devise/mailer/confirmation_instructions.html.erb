@@ -3,15 +3,15 @@
 <% account_user = @resource&.account_users&.first %>
 
 <% if account_user&.inviter.present? && @resource.unconfirmed_email.blank? %>
-  <p><%= account_user.inviter.name %>, with <%= account_user.account.name %>, convidou você para experimentar o <%= global_config['BRAND_NAME'] || 'InoveChat' %>.</p>
+  <p><%= account_user.inviter.name %>, with <%= account_user.account.name %>, convidou você para experimentar o <%= global_config['BRAND_NAME'] || 'ManyTalks' %>.</p>
 <% end %>
 
 <% if @resource.confirmed? %>
-  <p>Você pode fazer login na sua conta <%= global_config['BRAND_NAME'] || 'InoveChat' %> através do link abaixo:</p>
+  <p>Você pode fazer login na sua conta <%= global_config['BRAND_NAME'] || 'ManyTalks' %> através do link abaixo:</p>
 <% else %>
   <% if account_user&.inviter.blank? %>
   <p>
-    Bem-vindo ao <%= global_config['BRAND_NAME'] || 'InoveChat' %>! Temos um conjunto de ferramentas poderosas prontas para você explorar. Antes disso, precisamos verificar rapidamente o seu endereço de e-mail para ter certeza de que é realmente você.
+    Bem-vindo ao <%= global_config['BRAND_NAME'] || 'ManyTalks' %>! Temos um conjunto de ferramentas poderosas prontas para você explorar. Antes disso, precisamos verificar rapidamente o seu endereço de e-mail para ter certeza de que é realmente você.
   </p>
   <% end %>
   <p>Por favor, clique no link abaixo para ativar sua conta.</p>

@@ -1,7 +1,7 @@
 {
   "INBOX_MGMT": {
     "HEADER": "Canais de Entrada",
-    "SIDEBAR_TXT": "<p><b>Canal de entrada</b></p> <p> Quando você conectar um site ou uma página de Facebook ao Many Talks, é chamado de <b>canal de entrada</b>. Você pode ter canais de entrada ilimitadas na sua conta de Many Talks. </p><p> Clique em <b>Adicionar canal de entrada</b> para conectar um site ou uma página do Facebook. </p><p> No Painel, você pode ver todas as conversas de todas as suas canais de entrada em um único lugar e responder a elas sob a guia `Conversations`. </p><p> Você também pode ver conversas específicas para um novo canal de entrada clicando no nome do canal de entrada no painel esquerdo do painel. </p>",
+    "SIDEBAR_TXT": "<p><b>Canal de entrada</b></p> <p> Quando você conectar um site ou uma página de Facebook ao ManyTalks, é chamado de <b>canal de entrada</b>. Você pode ter canais de entrada ilimitadas na sua conta de ManyTalks. </p><p> Clique em <b>Adicionar canal de entrada</b> para conectar um site ou uma página do Facebook. </p><p> No Painel, você pode ver todas as conversas de todas as suas canais de entrada em um único lugar e responder a elas sob a guia `Conversations`. </p><p> Você também pode ver conversas específicas para um novo canal de entrada clicando no nome do canal de entrada no painel esquerdo do painel. </p>",
     "RECONNECTION_REQUIRED": "Your inbox is disconnected. You won't receive new messages until you reauthorize it.",
     "CLICK_TO_RECONNECT": "Click here to reconnect.",
     "LIST": {
@@ -11,7 +11,7 @@
       {
         "title": "Escolha o canal",
         "route": "settings_inbox_new",
-        "body": "Escolha o provedor que você deseja integrar com o Many Talks."
+        "body": "Escolha o provedor que você deseja integrar com o ManyTalks."
       },
       {
         "title": "Criar Canal de Entrada",
@@ -40,7 +40,7 @@
         "PLACEHOLDER": "Informe o nome do seu site (por exemplo: Acme Inc)"
       },
       "FB": {
-        "HELP": "Obs: ao fazer login, apenas temos acesso às mensagens da sua página. Suas mensagens privadas nunca podem ser acessadas pelo Many Talks.",
+        "HELP": "Obs: ao fazer login, apenas temos acesso às mensagens da sua página. Suas mensagens privadas nunca podem ser acessadas pelo ManyTalks.",
         "CHOOSE_PAGE": "Escolher Página",
         "CHOOSE_PLACEHOLDER": "Selecione uma página da lista",
         "INBOX_NAME": "Nome do Canal de Entrada",
@@ -391,7 +391,7 @@
       },
       "AUTH": {
         "TITLE": "Escolha um canal",
-        "DESC": "O Many Talks suporta widgets de chats ao vivo, Facebook Messenger, perfis do Twitter, WhatsApp, E-mails, etc., como canais. Se você quiser criar um canal personalizado, você pode criá-lo usando o canal API. Para começar, escolha um dos canais abaixo."
+        "DESC": "O ManyTalks suporta widgets de chats ao vivo, Facebook Messenger, perfis do Twitter, WhatsApp, E-mails, etc., como canais. Se você quiser criar um canal personalizado, você pode criá-lo usando o canal API. Para começar, escolha um dos canais abaixo."
       },
       "AGENTS": {
         "TITLE": "Atendentes",
@@ -401,11 +401,11 @@
       },
       "DETAILS": {
         "TITLE": "Detalhes do Canal de Entrada",
-        "DESC": "No menu abaixo, selecione a Página do Facebook que você deseja se conectar ao Many Talks. Você também pode dar um nome personalizado para seu canal de entrada para uma melhor identificação."
+        "DESC": "No menu abaixo, selecione a Página do Facebook que você deseja se conectar ao ManyTalks. Você também pode dar um nome personalizado para seu canal de entrada para uma melhor identificação."
       },
       "FINISH": {
         "TITLE": "Tudo funcionando. Deu certo!",
-        "DESC": "Você concluiu a integração da sua página do Facebook com o Many Talks. Na próxima vez que um cliente enviar uma mensagem para sua página, a conversa aparecerá automaticamente no seu canal de entrada. <br> Também estamos fornecendo um script de widget que você pode adicionar facilmente ao seu site. Assim que estiver disponível no seu site, os clientes poderão enviar mensagens diretamente do seu site, sem a ajuda de nenhuma ferramenta externa, e a conversa aparecerá aqui, no Many Talks. Legal, hein? Com certeza estamos tentamos ser :)"
+        "DESC": "Você concluiu a integração da sua página do Facebook com o ManyTalks. Na próxima vez que um cliente enviar uma mensagem para sua página, a conversa aparecerá automaticamente no seu canal de entrada. <br> Também estamos fornecendo um script de widget que você pode adicionar facilmente ao seu site. Assim que estiver disponível no seu site, os clientes poderão enviar mensagens diretamente do seu site, sem a ajuda de nenhuma ferramenta externa, e a conversa aparecerá aqui, no ManyTalks. Legal, hein? Com certeza estamos tentamos ser :)"
       },
       "EMAIL_PROVIDER": {
         "TITLE": "Selecione seu provedor de e-mail",
@@ -796,7 +796,7 @@
         "USER_MESSAGE": "Oi",
         "AGENT_MESSAGE": "Olá"
       },
-      "BRANDING_TEXT": "Desenvolvido por Many Talks",
+      "BRANDING_TEXT": "Desenvolvido por ManyTalks💙",
       "SCRIPT_SETTINGS": "\n      window.chatwootSettings = {options};"
     },
     "EMAIL_PROVIDERS": {

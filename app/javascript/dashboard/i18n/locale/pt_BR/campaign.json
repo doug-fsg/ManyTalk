@@ -6,12 +6,23 @@
       "ONE_OFF": "Criar uma campanha única",
       "ONGOING": "Criar uma campanha recorrente"
     },
+    "MODAL": {
+      "TITLE": "Escolha o tipo de envio",
+      "DESCRIPTION": "Por favor, selecione o tipo de disparo para a campanha única.",
+      "BUTTON_SINGLE": "Disparo Único",
+      "BUTTON_FLOW": "Envio de Fluxo"
+    },
     "HISTORY": {
       "TITLE": "Histórico da Campanha: {campaignTitle}",
-      "TOTAL_SENT": "Total de mensagens enviadas: {count}",
-      "SUCCESSFUL": "Mensagens enviadas com sucesso: {count}",
-      "FAILED": "Mensagens que falharam: {count}",
-      "DETAILS": "Detalhes"
+      "TOTAL_PROCESSED": "Total de números processados: {count}",
+      "SUCCESSFUL": "Bem-sucedidos: {count}",
+      "FAILED": "Falharam: {count}",
+      "DETAILS": "Detalhes",
+      "CLOSE_BUTTON": "Fechar",
+      "TABLE": {
+        "NUMBER": "Números",
+        "STATUS": "Status"
+      }
     },
     "ADD": {
       "TITLE": "Criar uma campanha",
@@ -106,6 +117,7 @@
       }
     },
     "LIST": {
+      "DELIVERY_RATE": "📈 Taxa de Entrega: {rate}%",
       "LOADING_MESSAGE": "Carregando campanhas...",
       "404": "Não há campanhas criadas para este canal de entrada.",
       "TABLE_HEADER": {

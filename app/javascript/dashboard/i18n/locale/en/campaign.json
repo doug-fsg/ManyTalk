@@ -6,6 +6,24 @@
       "ONE_OFF": "Create a one off campaign",
       "ONGOING": "Create a ongoing campaign"
     },
+    "MODAL": {
+      "TITLE": "Choose how to send",
+      "DESCRIPTION": "Select how you'd like to send this one-off campaign.",
+      "BUTTON_SINGLE": "Send once",
+      "BUTTON_FLOW": "Send with flow"
+    },
+    "HISTORY": {
+      "TITLE": "Campaign History: {campaignTitle}",
+      "TOTAL_PROCESSED": "Total numbers processed: {count}",
+      "SUCCESSFUL": "Successful: {count}",
+      "FAILED": "Failed: {count}",
+      "DETAILS": "Details",
+      "CLOSE_BUTTON": "Close",
+      "TABLE": {
+        "NUMBER": "Numbers",
+        "STATUS": "Status"
+      }
+    },
     "ADD": {
       "TITLE": "Create a campaign",
       "DESC": "Proactive messages allow the customer to send outbound messages to their contacts which would trigger more conversations.",
@@ -28,6 +46,18 @@
           "PLACEHOLDER": "Select the customer labels",
           "ERROR": "Audience is required"
         },
+        "CONTACT_LIST": {
+        "LABEL": "Upload Contact List",
+        "ERROR_NO_COLUMN": "The 'numbers' column was not found in the spreadsheet.",
+        "CONTACT_COUNT": "{count} contacts found",
+        "ERROR_UPLOAD": "An error occurred while uploading the file. Please try again.",
+        "SUCCESS_UPLOAD": "File uploaded successfully. You will be notified when processing is complete."
+      },
+      "MACRO": {
+        "LABEL": "Macro",
+        "PLACEHOLDER": "Select a macro",
+        "ERROR": "Please select a macro"
+      },
         "INBOX": {
           "LABEL": "Select Inbox",
           "PLACEHOLDER": "Select Inbox",
@@ -55,7 +85,9 @@
         },
         "ENABLED": "Enable campaign",
         "TRIGGER_ONLY_BUSINESS_HOURS": "Trigger only during business hours",
-        "SUBMIT": "Add Campaign"
+        "SUBMIT": "Add Campaign",
+        "ERROR_BOTH_AUDIENCE_AND_CONTACTS": "Please select either audience or contact list, not both.",
+        "ERROR_NO_AUDIENCE_OR_CONTACTS": "You need to select the audience or contact list."
       },
       "API": {
         "SUCCESS_MESSAGE": "Campaign created successfully",
@@ -78,12 +110,14 @@
     "EDIT": {
       "TITLE": "Edit campaign",
       "UPDATE_BUTTON_TEXT": "Update",
+      "DESC": "Review and edit this campaign. Changes made here may affect communication with your contacts.",
       "API": {
         "SUCCESS_MESSAGE": "Campaign updated successfully",
         "ERROR_MESSAGE": "There was an error, please try again"
       }
     },
     "LIST": {
+      "DELIVERY_RATE": "📈 Delivery Rate: {rate}%",
       "LOADING_MESSAGE": "Loading campaigns...",
       "404": "There are no campaigns created for this inbox.",
       "TABLE_HEADER": {
@@ -100,7 +134,9 @@
       "BUTTONS": {
         "ADD": "Add",
         "EDIT": "Edit",
-        "DELETE": "Delete"
+        "DELETE": "Delete",
+        "HISTORY": "Report",
+        "RESEND": "Resend"
       },
       "STATUS": {
         "ENABLED": "Enabled",
@@ -113,7 +149,7 @@
       }
     },
     "ONE_OFF": {
-      "HEADER": "One off campaigns",
+      "HEADER": "Campaign for WhatsApp",
       "404": "There are no one off campaigns created",
       "INBOXES_NOT_FOUND": "Please create an sms inbox and start adding campaigns"
     },

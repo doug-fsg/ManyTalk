@@ -310,7 +310,12 @@ export default {
     };
 
     const audienceOrContactListRequired = {
-      required: value => value.length > 0 || this.contactList.length > 0,
+      required: value => {
+        if (this.isOngoingType) {
+          return true;
+        }
+        return value.length > 0 || this.contactList.length > 0;
+      },
     };
 
     if (this.isOngoingType) {
@@ -605,8 +610,10 @@ export default {
           if (formattedDate && !isNaN(formattedDate.getTime())) {
             this.scheduledAt = formattedDate;
           }
+        } catch (error) {
+          console.error('Erro ao formatar data da campanha:', error);
+        }
       }
-
       // Macro
       this.selectedMacro = selectedMacro || '';
 

@@ -17,22 +17,22 @@
     <woot-modal v-if="isOneOffType" :show.sync="showOneOffPopup" :on-close="hideOneOffPopup">
       <div class="p-4 flex flex-col justify-center items-center text-center">
 
-        <h3>Escolha o tipo de envio</h3> <!-- CAMPAIGN.MODAL.TITLE -->
-        <p>Por favor, selecione o tipo de disparo para a campanha única.</p> <!-- CAMPAIGN.MODAL.DESCRIPTION -->
+        <h3>{{ $t('CAMPAIGN.MODAL.TITLE') }}</h3>
+        <p>{{ $t('CAMPAIGN.MODAL.DESCRIPTION') }}</p>
         <div class="flex justify-center gap-4 mt-4">
   <woot-button
     class="hover-woot"
     color-scheme="secondary"
     @click="handleSingleBlast"
   >
-    Disparo Único <!-- CAMPAIGN.MODAL.BUTTON_SINGLE -->
+  {{ $t('CAMPAIGN.MODAL.BUTTON_SINGLE') }}
   </woot-button>
   <woot-button
     class="hover-woot"
     color-scheme="secondary"
     @click="handleFlowBlast"
   >
-    Envio de Fluxo <!-- CAMPAIGN.MODAL.BUTTON_FLOW -->
+  {{ $t('CAMPAIGN.MODAL.BUTTON_FLOW') }}
   </woot-button>
 </div>
       </div>
@@ -69,9 +69,9 @@ export default {
   computed: {
     buttonText() {
       if (this.isOngoingType) {
-        return 'Campanha em andamento';
+        return this.$t('CAMPAIGN.ONGOING.HEADER');
       }
-      return 'Criar Campanha';
+      return this.$t('CAMPAIGN.ADD.CREATE_BUTTON_TEXT');
     },
     isOneOffType() {
       return !this.isOngoingType;

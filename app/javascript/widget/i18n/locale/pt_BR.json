@@ -46,7 +46,7 @@
   "BUBBLE": {
     "LABEL": "Fale conosco no chat"
   },
-  "POWERED_BY": "Desenvolvido por Many Talks",
+  "POWERED_BY": "Feito por ManyTalks 💙 Clique para conhecer", 
   "EMAIL_PLACEHOLDER": "Por favor, insira seu e-mail",
   "CHAT_PLACEHOLDER": "Digite sua mensagem",
   "TODAY": "Hoje",
@@ -56,7 +56,7 @@
       "FULL_NAME": {
         "LABEL": "Nome Completo",
         "PLACEHOLDER": "Por favor, digite seu nome completo",
-        "REQUIRED_ERROR": "Nome Completo é mandatório"
+        "REQUIRED_ERROR": "Nome Completo é obrigatório"
       },
       "EMAIL_ADDRESS": {
         "LABEL": "Endereço de e-mail",
