@@ -17,9 +17,9 @@ export const getters = {
     return _state.uiFlags;
   },
   getCampaigns: _state => campaignType => {
-    return _state.records.filter(
-      record => record.campaign_type === campaignType
-    );
+    return _state.records
+      .filter(record => record.campaign_type === campaignType)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   },
   getAllCampaigns: _state => {
     return _state.records;

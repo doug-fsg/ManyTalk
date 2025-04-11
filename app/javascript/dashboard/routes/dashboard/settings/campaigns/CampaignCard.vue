@@ -179,7 +179,7 @@ export default {
       event.stopPropagation();
       this.isDropdownOpen = !this.isDropdownOpen;
     },
-    handleAction(action) {
+    handleAction(action) { 
       if (action === 'edit') {
         this.$emit('edit', this.campaign);
       } else if (action === 'delete') {

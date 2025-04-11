@@ -3,7 +3,7 @@
 /* eslint-disable */
 
 <template>
-  <div class="h-auto overflow-auto flex flex-col">
+  <div class="h-auto overflow-auto flex flex-col campaign-modal">
     <woot-modal-header
       :header-title="$t(selectedCampaign ? 'CAMPAIGN.EDIT.TITLE' : 'CAMPAIGN.ADD.TITLE')"
       :header-content="$t(selectedCampaign ? 'CAMPAIGN.EDIT.DESC' : 'CAMPAIGN.ADD.DESC')"
@@ -208,6 +208,20 @@
           <p v-if="fileUploadError" class="error-message">
             {{ fileUploadError }}
           </p>
+          <div v-if="validationMessages.length > 0" class="validation-messages">
+            <p class="validation-title">{{ $t('CAMPAIGN.ADD.FORM.CONTACT_LIST.VALIDATION_TITLE') }}</p>
+            <ul class="validation-list">
+              <li v-for="(message, index) in validationMessages" :key="index" class="validation-item">
+                {{ message }}
+              </li>
+            </ul>
+            <p v-if="hasMoreInvalidNumbers" class="more-invalid-note">
+              {{ $t('CAMPAIGN.ADD.FORM.CONTACT_LIST.SHOWING_SAMPLE', {
+                shown: validationMessages.length,
+                total: totalInvalidNumbers
+              }) }}
+            </p>
+          </div>
           <div v-if="contactCount" class="contact-list-info">
             <p class="contact-count">
               {{
@@ -238,6 +252,33 @@
             </button>
           </div>
         </div>
+
+        <!-- Checkbox temporariamente comentado
+        <div class="row">
+          <div class="medium-12 columns">
+            <div class="settings-section">
+              <label class="checkbox-wrap">
+                <input
+                  v-model="showInSystem"
+                  type="checkbox"
+                  :checked="showInSystem"
+                />
+                {{ $t('CAMPAIGN.ADD.FORM.SHOW_IN_SYSTEM.LABEL') }}
+                <span
+                  v-tooltip="{
+                    content: $t('CAMPAIGN.ADD.FORM.SHOW_IN_SYSTEM.TOOLTIP'),
+                    placement: 'top',
+                    appendTo: 'body'
+                  }"
+                  class="help-icon"
+                >
+                  <i class="ion-help-circled" />
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+        -->
       </div>
 
       <div class="flex flex-row justify-end gap-2 py-2 px-0 w-full">
@@ -261,6 +302,7 @@ import campaignMixin from 'shared/mixins/campaignMixin';
 import WootDateTimePicker from 'dashboard/components/ui/DateTimePicker.vue';
 import { CAMPAIGNS_EVENTS } from '../../../../helper/AnalyticsHelper/events';
 import * as XLSX from 'xlsx';
+import { validatePhoneList } from './utils/phoneValidation';
 
 export default {
   components: {
@@ -293,6 +335,11 @@ export default {
       contactList: [],
       fileUploadError: '',
       contactCount: 0,
+      invalidNumbers: [],
+      validationMessages: [],
+      hasMoreInvalidNumbers: false,
+      totalInvalidNumbers: 0,
+      showInSystem: true,
     };
   },
 
@@ -390,6 +437,16 @@ export default {
     }
   },
   mounted() {
+    // Adicione esta linha para garantir que o componente esteja totalmente montado antes de exibir tooltips
+    this.$nextTick(() => {
+      // Força todos os tooltips a serem anexados diretamente ao body
+      const tooltipElements = document.querySelectorAll('[data-tooltip]');
+      tooltipElements.forEach(el => {
+        if (el._tooltip) {
+          el._tooltip.options.appendTo = 'body';
+        }
+      });
+    });
     
     // Verifique se selectedCampaign existe e não é nulo
     if (this.selectedCampaign) {
@@ -427,54 +484,93 @@ export default {
       await this.$store.dispatch('macros/get');
     },
     handleFileUpload(event) {
-  const file = event.target.files[0];
-  const reader = new FileReader();
+      const file = event.target.files[0];
+      const reader = new FileReader();
 
-  reader.onload = e => {
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, { type: 'array' });
+      reader.onload = e => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
 
-    const firstSheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[firstSheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-    // Variações possíveis dos nomes das colunas
-    const possibleNumberColumns = ['numeros', 'numero', 'Número', 'número', 'nUmeros'];
-    const possibleNameColumns = ['nome', 'Nome', 'Nomes'];
-    const possibleVariableColumns = ['variavel', 'variável', 'Variavel', 'Variável'];
+        // Variações possíveis dos nomes das colunas
+        const possibleNumberColumns = ['numeros', 'numero', 'Número', 'número', 'nUmeros'];
+        const possibleNameColumns = ['nome', 'Nome', 'Nomes'];
+        const possibleVariableColumns = ['variavel', 'variável', 'Variavel', 'Variável'];
 
-    // Função para encontrar a chave correta
-    function findColumn(possibleColumns, row) {
-      return possibleColumns.find(column => column in row);
-    }
+        // Função para encontrar a chave correta
+        function findColumn(possibleColumns, row) {
+          return possibleColumns.find(column => column in row);
+        }
 
-    // Encontrar as colunas correspondentes no jsonData
-    const numberColumn = findColumn(possibleNumberColumns, jsonData[0]);
-    const nameColumn = findColumn(possibleNameColumns, jsonData[0]);
-    const variableColumn = findColumn(possibleVariableColumns, jsonData[0]);
+        // Encontrar as colunas correspondentes no jsonData
+        const numberColumn = findColumn(possibleNumberColumns, jsonData[0]);
+        const nameColumn = findColumn(possibleNameColumns, jsonData[0]);
+        const variableColumn = findColumn(possibleVariableColumns, jsonData[0]);
 
-    if (jsonData.length > 0 && numberColumn) {
-      this.contactList = jsonData.map(row => ({
-        numero: row[numberColumn],
-        nome: row[nameColumn] || '', // Se não houver nome, deixa vazio
-        variavel: row[variableColumn] || '' // Se não houver variável, deixa vazio
-      })).filter(contact => contact.numero);
+        if (jsonData.length > 0 && numberColumn) {
+          const contacts = jsonData.map(row => ({
+            numero: row[numberColumn],
+            nome: row[nameColumn] || '',
+            variavel: row[variableColumn] || ''
+          })).filter(contact => contact.numero);
 
-      this.contactCount = this.contactList.length;
-      this.fileUploadError = '';
-      this.$v.selectedAudience.$touch();
-    } else {
-      this.fileUploadError = this.$t(
-        'CAMPAIGN.ADD.FORM.CONTACT_LIST.ERROR_NO_COLUMN'
-      );
-      this.contactList = [];
-      this.contactCount = 0;
-    }
-  };
+          // Validar os números de telefone
+          const validationResult = validatePhoneList(contacts);
+          
+          if (validationResult.hasErrors) {
+            // Verificar se há muitos números inválidos
+            if (validationResult.totalInvalid > 50) {
+              this.fileUploadError = this.$t('CAMPAIGN.ADD.FORM.CONTACT_LIST.ERROR_TOO_MANY_INVALID', {
+                count: validationResult.totalInvalid
+              });
+            } else {
+              this.fileUploadError = this.$t('CAMPAIGN.ADD.FORM.CONTACT_LIST.ERROR_INVALID_NUMBERS', {
+                count: validationResult.totalInvalid,
+                total: contacts.length
+              });
+            }
+            
+            // Armazenar os números inválidos e suas mensagens
+            this.invalidNumbers = validationResult.invalidNumbers;
+            
+            // Mostrar apenas uma amostra dos números inválidos
+            this.validationMessages = validationResult.limitedInvalidNumbers.map(contact => 
+              `${contact.numero}: ${this.$t(contact.messageKey)}`
+            );
+            
+            this.hasMoreInvalidNumbers = validationResult.hasMoreInvalid;
+            this.totalInvalidNumbers = validationResult.totalInvalid;
+            
+            // Limpar a lista de contatos se houver números inválidos
+            this.contactList = [];
+            this.contactCount = 0;
+          } else {
+            this.contactList = validationResult.validNumbers;
+            this.contactCount = this.contactList.length;
+            this.fileUploadError = '';
+            this.invalidNumbers = [];
+            this.validationMessages = [];
+            this.hasMoreInvalidNumbers = false;
+            this.totalInvalidNumbers = 0;
+          }
+          
+          this.$v.selectedAudience.$touch();
+        } else {
+          this.fileUploadError = this.$t('CAMPAIGN.ADD.FORM.CONTACT_LIST.ERROR_NO_COLUMN');
+          this.contactList = [];
+          this.contactCount = 0;
+          this.invalidNumbers = [];
+          this.validationMessages = [];
+          this.hasMoreInvalidNumbers = false;
+          this.totalInvalidNumbers = 0;
+        }
+      };
 
-  reader.readAsArrayBuffer(file);
-},
-
+      reader.readAsArrayBuffer(file);
+    },
     removeContactList() {
       this.contactList = [];
       this.contactCount = 0;
@@ -489,12 +585,11 @@ export default {
           inbox_id: this.selectedInbox,
           sender_id: this.selectedSender || null,
           enabled: this.enabled,
-          trigger_only_during_business_hours:
-            // eslint-disable-next-line prettier/prettier
-            this.triggerOnlyDuringBusinessHours,
+          trigger_only_during_business_hours: this.triggerOnlyDuringBusinessHours,
           trigger_rules: {
             url: this.endPoint,
             time_on_page: this.timeOnPage,
+            show_in_system: this.showInSystem,
           },
         };
       } else {
@@ -519,6 +614,7 @@ export default {
           audience,
           trigger_rules: {
             macro_id: this.selectedMacro || '',
+            show_in_system: this.showInSystem,
           },
           contact_list: this.contactList,
         };
@@ -528,6 +624,15 @@ export default {
     async addCampaign() {
       this.$v.$touch();
 
+      // Se for campanha contínua, remova a verificação de público
+      if (this.isOngoingType) {
+        // Prossiga com o salvamento mesmo sem público
+        const campaignDetails = this.getCampaignDetails();
+        await this.$store.dispatch('campaigns/create', campaignDetails);
+        return;
+      }
+
+      // Validação para campanhas one-off
       if (this.$v.$invalid) {
         if (
           this.contactList.length === 0 &&
@@ -538,22 +643,43 @@ export default {
         return;
       }
 
+      // Validar os números de telefone antes de salvar
+      if (this.contactList.length > 0) {
+        const validationResult = validatePhoneList(this.contactList);
+        if (validationResult.hasErrors) {
+          // Verificar se há muitos números inválidos
+          if (validationResult.totalInvalid > 50) {
+            useAlert(this.$t('CAMPAIGN.ADD.FORM.CONTACT_LIST.ERROR_TOO_MANY_INVALID', {
+              count: validationResult.totalInvalid
+            }));
+          } else {
+            useAlert(this.$t('CAMPAIGN.ADD.FORM.CONTACT_LIST.ERROR_INVALID_NUMBERS', {
+              count: validationResult.totalInvalid,
+              total: this.contactList.length
+            }));
+          }
+          
+          // Atualizar o estado para mostrar os erros
+          this.invalidNumbers = validationResult.invalidNumbers;
+          this.validationMessages = validationResult.limitedInvalidNumbers.map(contact => 
+            `${contact.numero}: ${this.$t(contact.messageKey)}`
+          );
+          this.hasMoreInvalidNumbers = validationResult.hasMoreInvalid;
+          this.totalInvalidNumbers = validationResult.totalInvalid;
+          
+          return;
+        }
+      }
+
       try {
         const campaignDetails = this.getCampaignDetails();
-        if (this.selectedCampaign && this.selectedCampaign.id) {
-          await this.$store.dispatch('campaigns/update', {
-            id: this.selectedCampaign.id,
-            ...campaignDetails
-          });
-          useAlert(this.$t('CAMPAIGN.EDIT.API.SUCCESS_MESSAGE'));
-        } else {
-          await this.$store.dispatch('campaigns/create', campaignDetails);
-          useAlert(this.$t('CAMPAIGN.ADD.API.SUCCESS_MESSAGE'));
-        }
+        await this.$store.dispatch('campaigns/create', campaignDetails);
 
         this.$track(CAMPAIGNS_EVENTS.CREATE_CAMPAIGN, {
           type: this.campaignType,
         });
+
+        useAlert(this.$t('CAMPAIGN.ADD.API.SUCCESS_MESSAGE'));
         this.onClose();
       } catch (error) {
         const errorMessage =
@@ -577,7 +703,7 @@ export default {
         inbox,
         scheduled_at: scheduledAt,
         audience,
-        trigger_rules: { macro_id: selectedMacro } = {},
+        trigger_rules: { macro_id: selectedMacro, show_in_system: showInSystem } = {},
       } = this.selectedCampaign;
 
       // Mapeamento detalhado e explícito
@@ -635,6 +761,9 @@ export default {
         }
       }
 
+      // Atualizado para pegar o valor do trigger_rules
+      this.showInSystem = showInSystem !== undefined ? showInSystem : true;
+
       // Log final para verificação
     },
     resetForm() {
@@ -646,6 +775,55 @@ export default {
       this.selectedAudience = [];
       this.contactList = [];
       this.contactCount = 0;
+      this.showInSystem = true; // Reinicia para o valor padrão
+    },
+    validatePhoneNumber(number) {
+      if (!number) {
+        return {
+          isValid: false,
+          message: this.$t('CAMPAIGN.CONTACT_LIST.ERROR_EMPTY_NUMBER'),
+        };
+      }
+
+      // Remove todos os caracteres não numéricos
+      const cleanNumber = number.toString().replace(/\D/g, '');
+
+      // Verifica se é um número internacional (mais de 11 dígitos)
+      if (cleanNumber.length > 11) {
+        return {
+          isValid: true,
+          isInternational: true,
+          message: this.$t('CAMPAIGN.CONTACT_LIST.INFO_INTERNATIONAL'),
+        };
+      }
+
+      // Se o número tem menos de 11 dígitos ou não é internacional
+      if (cleanNumber.length < 11) {
+        return {
+          isValid: false,
+          message: this.$t('CAMPAIGN.CONTACT_LIST.ERROR_MISSING_DDD'),
+        };
+      }
+
+      // Se tem exatamente 11 dígitos, verifica se é um número brasileiro válido
+      if (cleanNumber.length === 11) {
+        const ddd = cleanNumber.substring(0, 2);
+        if (!/^[1-9][1-9]$/.test(ddd)) {
+          return {
+            isValid: false,
+            message: this.$t('CAMPAIGN.CONTACT_LIST.ERROR_MISSING_DDD'),
+          };
+        }
+        return {
+          isValid: true,
+          message: this.$t('CAMPAIGN.CONTACT_LIST.ERROR_VALID'),
+        };
+      }
+
+      return {
+        isValid: false,
+        message: this.$t('CAMPAIGN.CONTACT_LIST.ERROR_BRAZILIAN_FORMAT'),
+      };
     },
   },
 };
@@ -702,5 +880,89 @@ export default {
       }
     }
   }
+}
+
+.validation-messages {
+  margin-top: 1rem;
+  padding: 0.5rem;
+  border-left: 3px solid var(--color-error);
+  border-radius: 4px;
+
+  .validation-title {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: var(--color-error);
+  }
+
+  .validation-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    max-height: 150px;
+    overflow-y: auto;
+  }
+
+  .validation-item {
+    padding: 0.25rem 0;
+    color: var(--color-error);
+    font-size: 0.875rem;
+    border-bottom: 1px solid var(--b-100);
+  }
+
+  .more-invalid-note {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    font-style: italic;
+    color: var(--s-600);
+  }
+}
+
+.checkbox-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-smaller);
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    margin: 0;
+    cursor: pointer;
+  }
+}
+
+.settings-section {
+  padding: var(--space-normal) 0;
+  position: relative;
+  z-index: 2;
+}
+
+.help-icon {
+  display: inline-flex;
+  margin-left: var(--space-smaller);
+  color: var(--color-gray-medium);
+  font-size: var(--font-size-small);
+  cursor: help;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--color-primary-dark);
+  }
+}
+
+.campaign-modal {
+  position: relative;
+  z-index: 1;
+}
+</style>
+
+<style lang="scss">
+/* Estilos não escoped para afetar elementos fora do componente */
+body > .tooltip {
+  z-index: 999999 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+body > .v-tooltip-container {
+  z-index: 999999 !important;
 }
 </style>

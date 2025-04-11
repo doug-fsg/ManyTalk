@@ -51,7 +51,17 @@
         "ERROR_NO_COLUMN": "The 'numbers' column was not found in the spreadsheet.",
         "CONTACT_COUNT": "{count} contacts found",
         "ERROR_UPLOAD": "An error occurred while uploading the file. Please try again.",
-        "SUCCESS_UPLOAD": "File uploaded successfully. You will be notified when processing is complete."
+        "SUCCESS_UPLOAD": "File uploaded successfully. You will be notified when processing is complete.",
+        "PLACEHOLDER": "Select an Excel or CSV file",
+        "ERROR_INVALID_NUMBERS": "{count} invalid numbers found out of {total}",
+        "VALIDATION_TITLE": "Invalid numbers found:",
+        "ERROR_EMPTY_NUMBER": "Invalid number: empty value",
+        "ERROR_MISSING_DDD": "Invalid number: missing or incorrect area code",
+        "ERROR_VALID": "Valid number",
+        "ERROR_BRAZILIAN_FORMAT": "Brazilian numbers should only contain area code and number",
+        "INFO_INTERNATIONAL": "International number detected. Brazilian validation will be skipped",
+        "ERROR_TOO_MANY_INVALID": "Too many invalid numbers ({count}). Please check the format.",
+        "SHOWING_SAMPLE": "Showing {shown} out of {total} invalid numbers"
       },
       "MACRO": {
         "LABEL": "Macro",
@@ -87,7 +97,11 @@
         "TRIGGER_ONLY_BUSINESS_HOURS": "Trigger only during business hours",
         "SUBMIT": "Add Campaign",
         "ERROR_BOTH_AUDIENCE_AND_CONTACTS": "Please select either audience or contact list, not both.",
-        "ERROR_NO_AUDIENCE_OR_CONTACTS": "You need to select the audience or contact list."
+        "ERROR_NO_AUDIENCE_OR_CONTACTS": "You need to select the audience or contact list.",
+        "SHOW_IN_SYSTEM": {
+          "LABEL": "Only on WhatsApp",
+          "TOOLTIP": "When enabled, messages will appear both in WhatsApp and in the system. If disabled, messages will only appear in WhatsApp."
+        }
       },
       "API": {
         "SUCCESS_MESSAGE": "Campaign created successfully",

@@ -51,7 +51,17 @@
           "ERROR_NO_COLUMN": "A coluna 'numeros' não foi encontrada na planilha.",
           "CONTACT_COUNT": "{count} contatos encontrados",
           "ERROR_UPLOAD": "Ocorreu um erro ao fazer o upload do arquivo. Por favor, tente novamente.",
-          "SUCCESS_UPLOAD": "Arquivo carregado com sucesso. Você será notificado quando o processamento for concluído."
+          "SUCCESS_UPLOAD": "Arquivo carregado com sucesso. Você será notificado quando o processamento for concluído.",
+          "PLACEHOLDER": "Selecione um arquivo Excel ou CSV",
+          "ERROR_INVALID_NUMBERS": "Encontrados {count} números inválidos de {total}",
+          "VALIDATION_TITLE": "Números inválidos encontrados:",
+          "ERROR_EMPTY_NUMBER": "Número inválido: número vazio",
+          "ERROR_MISSING_DDD": "Número inválido: faltando DDD ou inválido",
+          "ERROR_VALID": "Número válido",
+          "ERROR_BRAZILIAN_FORMAT": "Número brasileiro deve conter apenas DDD + número",
+          "INFO_INTERNATIONAL": "Número internacional detectado. Nenhuma validação brasileira será aplicada",
+          "ERROR_TOO_MANY_INVALID": "Muitos números inválidos ({count}). Verifique se o formato está correto.",
+          "SHOWING_SAMPLE": "Mostrando {shown} de {total} números inválidos."
         },
         "MACRO": {
           "LABEL": "Macro",
@@ -87,7 +97,11 @@
         "TRIGGER_ONLY_BUSINESS_HOURS": "Ativar somente durante o horário comercial",
         "SUBMIT": "Adicionar Campanha",
         "ERROR_BOTH_AUDIENCE_AND_CONTACTS": "Selecione apenas a audiência ou a lista de contatos.",
-        "ERROR_NO_AUDIENCE_OR_CONTACTS": "Você precisa selecionar o publico."
+        "ERROR_NO_AUDIENCE_OR_CONTACTS": "Você precisa selecionar o publico.",
+        "SHOW_IN_SYSTEM": {
+          "LABEL": "Somente no WhatsApp",
+          "TOOLTIP": "Quando ativado, as mensagens serão exibidas no Manytalks. Se desativado, as mensagens serão visíveis apenas no WhatsApp."
+        }
       },
       "API": {
         "SUCCESS_MESSAGE": "Campanha criada com sucesso",
