@@ -80,6 +80,10 @@ class ContactAPI extends ApiClient {
   exportContacts(queryPayload) {
     return axios.post(`${this.url}/export`, queryPayload);
   }
+
+  updateContact(contactId, contactParams) {
+    return axios.patch(`${this.url}/${contactId}`, contactParams);
+  }
 }
 
 export default new ContactAPI();

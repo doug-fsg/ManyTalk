@@ -353,5 +353,21 @@
       "ALT_OR_OPTION_KEY": "Alt / ⌥",
       "FORWARD_SLASH_KEY": "/"
     }
+  },
+  "KANBAN": {
+    "TITLE": "Kanban",
+    "SUBTITLE": "Visualização baseada em atributos personalizados",
+    "REFRESH": "Atualizar",
+    "FILTER": "Filtrar",
+    "SELECT_ATTRIBUTE": "Selecione um atributo para visualizar no Kanban",
+    "SELECT_ATTRIBUTE_DESCRIPTION": "Escolha um atributo do tipo lista para organizar seus contatos",
+    "NO_LIST_ATTRIBUTES": "Não há atributos do tipo lista disponíveis",
+    "CREATE_ATTRIBUTE": "Criar atributo",
+    "VIEWING_BY_ATTRIBUTE": "Visualizando por: {attribute}",
+    "CHANGE_ATTRIBUTE": "Mudar",
+    "NO_VALUE": "Sem valor",
+    "NO_CONTACTS": "Nenhum contato",
+    "FILTER_CONTACTS": "Filtrar Contatos",
+    "FILTER_DESCRIPTION": "Filtre os contatos exibidos no Kanban"
   }
 }

@@ -29,8 +29,8 @@
           "PLACEHOLDER": "Selecione um tipo",
           "ERROR": "O tipo é obrigatório",
           "LIST": {
-            "LABEL": "Listar valores",
-            "PLACEHOLDER": "Por favor, digite o valor e pressione Enter",
+            "LABEL": "Listar etapas",
+            "PLACEHOLDER": "Por favor, digite o nome e pressione Enter",
             "ERROR": "Deve ter pelo menos um valor"
           }
         },

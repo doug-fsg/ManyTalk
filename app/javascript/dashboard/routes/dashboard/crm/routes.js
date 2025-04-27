@@ -1,23 +1,18 @@
 /* eslint arrow-body-style: 0 */
 import { frontendURL } from '../../../helper/URLHelper';
-import CrmWrapper from './components/teste.vue';
+import KanbanAttributes from './components/KanbanAttributes.vue';
+
 export default {
   routes: [
     {
       path: frontendURL('accounts/:accountId/kanban'),
-      component: CrmWrapper,
+      component: KanbanAttributes,
       props: {},
       children: [
         {
           path: '',
-          name: 'crm_wrapper',
-          meta: { permissions: ['administrator'] },
-          // redirect: 'list',
-        },
-        {
-          path: 'list',
-          name: 'crm_home',
-          meta: { permissions: ['administrator'] },
+          name: 'kanban_view',
+          meta: { permissions: ['administrator', 'agent'] },
         },
       ],
     },

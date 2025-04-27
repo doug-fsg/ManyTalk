@@ -1,0 +1,28 @@
+{
+  "KANBAN": {
+    "TITLE": "Kanban",
+    "SUBTITLE": "Visualização baseada em atributos personalizados",
+    "REFRESH": "Atualizar",
+    "SEARCH_PLACEHOLDER": "Buscar contatos por nome ou número",
+    "CREATE_NEW": "Criar Kanban",
+    "CREATE_NEW_ATTRIBUTE": "Criar novo atributo Kanban",
+    "CREATE_NEW_ATTRIBUTE_DESC": "Crie um atributo personalizado para usar no Kanban",
+    "SELECT_ATTRIBUTE": "Selecione um atributo para visualizar no Kanban",
+    "SELECT_ATTRIBUTE_DESCRIPTION": "Escolha um atributo do tipo lista para organizar seus contatos",
+    "NO_KANBAN_ATTRIBUTES": "Nenhum atributo para Kanban disponível",
+    "CREATE_KANBAN_ATTRIBUTE_DESCRIPTION": "Para usar o Kanban, crie um atributo personalizado do tipo lista (tipo 6) para contatos (modelo 1)",
+    "CREATE_ATTRIBUTE": "Criar atributo",
+    "CHANGE_ATTRIBUTE": "Mudar",
+    "VIEWING_BY_ATTRIBUTE": "Visualizando por: {{attribute}}",
+    "NO_CONTACTS": "Nenhum contato",
+    "NO_VALUE": "Sem valor",
+    "FILTER_CONTACTS": "Filtrar Contatos",
+    "FILTER_DESCRIPTION": "Filtre os contatos exibidos no Kanban",
+    "CARD_MOVED_SUCCESS": "Cartão movido com sucesso",
+    "CARD_REMOVED_SUCCESS": "Cartão removido do Kanban com sucesso",
+    "CONTACT_ATTRIBUTE_REMOVED": "O contato foi removido do Kanban porque o atributo foi apagado",
+    "SYNC_DESCRIPTION": "O Kanban mantém-se sincronizado com o atributo do contato em ambas as direções",
+    "VIEW_CONTACT": "Visualizar contato",
+    "REMOVE_CARD": "Remover do Kanban"
+  }
+} 

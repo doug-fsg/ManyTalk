@@ -1,0 +1,22 @@
+{
+  "KANBAN": {
+    "TITLE": "Kanban",
+    "SUBTITLE": "Custom attribute based visualization",
+    "REFRESH": "Refresh",
+    "SEARCH_PLACEHOLDER": "Search contacts by name or number",
+    "CREATE_NEW": "Create Kanban",
+    "CREATE_NEW_ATTRIBUTE": "Create new Kanban attribute",
+    "CREATE_NEW_ATTRIBUTE_DESC": "Create a custom attribute to use in Kanban",
+    "SELECT_ATTRIBUTE": "Select an attribute to view in Kanban",
+    "SELECT_ATTRIBUTE_DESCRIPTION": "Choose a list type attribute to organize your contacts",
+    "NO_KANBAN_ATTRIBUTES": "No Kanban attributes available",
+    "CREATE_KANBAN_ATTRIBUTE_DESCRIPTION": "To use Kanban, create a list type custom attribute (type 6) for contacts (model 1)",
+    "CREATE_ATTRIBUTE": "Create attribute",
+    "CHANGE_ATTRIBUTE": "Change",
+    "VIEWING_BY_ATTRIBUTE": "Viewing by: {{attribute}}",
+    "NO_CONTACTS": "No contacts",
+    "NO_VALUE": "No value",
+    "FILTER_CONTACTS": "Filter Contacts",
+    "FILTER_DESCRIPTION": "Filter contacts displayed in Kanban"
+  }
+} 

@@ -116,6 +116,19 @@
       "ENABLE_REGEX": {
         "LABEL": "Ativar validação de regex"
       }
+    },
+    "FORM": {
+      "NAME": {
+        "LABEL": "Nome do Atributo",
+        "PLACEHOLDER": "Digite o nome do atributo personalizado"
+      },
+      "VALUES": {
+        "LABEL": "Valores do Atributo",
+        "PLACEHOLDER": "Adicione os valores para este atributo"
+      }
+    },
+    "API": {
+      "FETCH_ERROR": "Houve um erro ao obter atributos"
     }
   }
 }

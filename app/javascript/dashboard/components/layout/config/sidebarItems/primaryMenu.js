@@ -56,7 +56,7 @@ const primaryMenuItems = accountId => [
     label: 'KANBAN',
     featureFlag: FEATURE_FLAGS.WOOFED,
     toState: frontendURL(`accounts/${accountId}/kanban`),
-    toStateName: 'crm_home',
+    toStateName: 'kanban_view',
     roles: ['administrator', 'agent'],
   },
   {
