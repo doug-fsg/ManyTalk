@@ -117,7 +117,8 @@ class Api::OneoffApiCampaignService
         name: contact.name,
         email: contact.email,
         phone_number: contact.phone_number,
-        nome: contact.name
+        nome: contact.name,
+        identifier: contact.identifier
       }
     end
   end
