@@ -2,7 +2,7 @@
   "KANBAN": {
     "TITLE": "Kanban",
     "SUBTITLE": "Visualização baseada em atributos personalizados",
-    "REFRESH": "Atualizar",
+    "REFRESH": "Atualizar Kanban",
     "SEARCH_PLACEHOLDER": "Buscar contatos por nome ou número",
     "CREATE_NEW": "Criar Kanban",
     "CREATE_NEW_ATTRIBUTE": "Criar novo atributo Kanban",
@@ -13,13 +13,43 @@
     "CREATE_KANBAN_ATTRIBUTE_DESCRIPTION": "Para usar o Kanban, crie um atributo personalizado do tipo lista (tipo 6) para contatos (modelo 1)",
     "CREATE_ATTRIBUTE": "Criar atributo",
     "CHANGE_ATTRIBUTE": "Mudar",
-    "VIEWING_BY_ATTRIBUTE": "Visualizando por: {{attribute}}",
+    "VIEWING_BY_ATTRIBUTE": "Visualizando por: {attribute}",
     "NO_CONTACTS": "Nenhum contato",
     "NO_VALUE": "Sem valor",
     "FILTER_CONTACTS": "Filtrar Contatos",
     "FILTER_DESCRIPTION": "Filtre os contatos exibidos no Kanban",
     "CARD_MOVED_SUCCESS": "Cartão movido com sucesso",
+    "CARD_REMOVED_SUCCESS": "Cartão removido do Kanban com sucesso",
     "CONTACT_ATTRIBUTE_REMOVED": "O contato foi removido do Kanban porque o atributo foi apagado",
-    "SYNC_DESCRIPTION": "O Kanban mantém-se sincronizado com o atributo do contato em ambas as direções"
+    "SYNC_DESCRIPTION": "As alterações são sincronizadas automaticamente",
+    "VIEW_CONTACT": "Visualizar contato",
+    "REMOVE_CARD": "Remover do Kanban",
+    "DELETE_PIPELINE": {
+      "TITLE": "Excluir Pipeline",
+      "MESSAGE": "Tem certeza que deseja excluir o pipeline {name}?",
+      "CONFIRM": "Sim, excluir",
+      "CANCEL": "Não, manter",
+      "PLACEHOLDER": "Digite {name} para confirmar"
+    },
+    "ERRORS": {
+      "PIPELINE_IN_USE": "Este pipeline está sendo usado por contatos e não pode ser excluído",
+      "DELETE_FAILED": "Não foi possível excluir o pipeline",
+      "NO_PIPELINE_SELECTED": "Nenhum pipeline selecionado",
+      "TOO_MANY_UPDATES": "Detectamos muitas atualizações no Kanban. O componente foi resetado para evitar problemas de desempenho."
+    },
+    "SUCCESS": {
+      "PIPELINE_DELETED": "Pipeline excluído com sucesso"
+    },
+    "DEBUG": {
+      "RECEIVED_EVENT_REMOVED": "Evento de remoção de atributo recebido",
+      "UPDATING_COLUMNS": "Atualizando colunas"
+    },
+    "REMOVE_CARD_MODAL": {
+      "TITLE": "Remover cartão",
+      "MESSAGE": "Tem certeza que deseja remover este cartão do Kanban?",
+      "CONFIRM": "Sim, remover",
+      "CANCEL": "Não, manter"
+    },
+    "PARTIAL_CONTACTS_LOADED": "Carregados {loaded} contatos de um total de {total}."
   }
 } 

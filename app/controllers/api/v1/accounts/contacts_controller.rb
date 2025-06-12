@@ -79,18 +79,7 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
 
   # TODO : refactor this method into dedicated contacts/custom_attributes controller class and routes
   def destroy_custom_attributes
-    # Verificar se os atributos a serem excluídos existem no contato
-    attributes_to_remove = params[:custom_attributes].select do |attr|
-      @contact.custom_attributes.key?(attr)
-    end
-    
-    # Se não houver atributos para remover, retorne sucesso sem fazer nada
-    if attributes_to_remove.empty?
-      return render json: { message: 'No matching attributes found to delete' }, status: :ok
-    end
-    
-    # Remove os atributos da lista de atributos personalizados
-    @contact.custom_attributes = @contact.custom_attributes.excluding(attributes_to_remove)
+    @contact.custom_attributes = @contact.custom_attributes.excluding(params[:custom_attributes])
     @contact.save!
   end
 

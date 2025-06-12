@@ -2,7 +2,6 @@ import {
   DuplicateContactException,
   ExceptionWithMessage,
 } from 'shared/helpers/CustomErrors';
-import Vue from 'vue';
 import types from '../../mutation-types';
 import ContactAPI from '../../../api/contacts';
 import AccountActionsAPI from '../../../api/accountActions';
@@ -43,9 +42,6 @@ export const raiseContactCreateErrors = error => {
     throw new Error(error);
   }
 };
-
-// Fallback para o caso de não haver bus global
-const eventBus = new Vue();
 
 export const actions = {
   search: async ({ commit }, { search, page, sortAttr, label }) => {
@@ -174,8 +170,10 @@ export const actions = {
 
   deleteCustomAttributes: async ({ commit }, { id, customAttributes }) => {
     try {
-      const response = await ContactAPI.destroyCustomAttributes(id, customAttributes);
-      
+      const response = await ContactAPI.destroyCustomAttributes(
+        id,
+        customAttributes
+      );
       commit(types.EDIT_CONTACT, response.data.payload);
     } catch (error) {
       throw new Error(error);
@@ -239,52 +237,13 @@ export const actions = {
     });
   },
 
-  updateContact: async ({ commit }, { id, skipEventEmit = false, _fromKanban = false, _kanbanOperation = null, _kanbanUpdateTimestamp = null, ...contactParams }) => {
+  updateContact: async ({ commit }, updateObj) => {
     commit(types.SET_CONTACT_UI_FLAG, { isUpdating: true });
-    
     try {
-      // Chamar a API para atualizar o contato
-      const response = await ContactAPI.updateContact(id, contactParams);
-      
-      // Atualizar o estado no store
-      commit(types.EDIT_CONTACT, response.data.payload);
-      
-      // Se tem atributos customizados E não está marcado para pular a emissão de eventos
-      if (contactParams.custom_attributes && !skipEventEmit) {
-        const bus = Vue.prototype.$bus || eventBus;
-        
-        // Incluir todos os flags kanban no payload do evento
-        const eventPayload = { 
-          _fromKanban,
-          _kanbanOperation,
-          _kanbanUpdateTimestamp,
-        };
-        
-        // Adicionar log para depuração
-        if (_fromKanban) {
-          console.log(
-            '[ContactStore] Emitindo evento com flag kanban:',
-            eventPayload
-          );
-        }
-        
-        // Evitar emitir eventos de atualização secundários se a operação veio do Kanban
-        // Isso impede que novas atualizações sejam processadas em cascata
-        if (!_fromKanban) {
-          bus.$emit(
-            'contact_attribute_updated',
-            response.data.payload,
-            contactParams.custom_attributes,
-            eventPayload
-          );
-        }
-      }
-      
+      commit(types.EDIT_CONTACT, updateObj);
       commit(types.SET_CONTACT_UI_FLAG, { isUpdating: false });
-      return response.data.payload;
     } catch (error) {
       commit(types.SET_CONTACT_UI_FLAG, { isUpdating: false });
-      throw new Error(error);
     }
   },
 
@@ -316,44 +275,5 @@ export const actions = {
 
   clearContactFilters({ commit }) {
     commit(types.CLEAR_CONTACT_FILTERS);
-  },
-
-  deleteContactCustomAttribute: async (
-    { commit },
-    { id, attributeKey, fromKanban = false, _kanbanOperation = null }
-  ) => {
-    commit(types.SET_CONTACT_UI_FLAG, { isUpdating: true });
-    
-    try {
-      // Enviar a chave como array para a API
-      const response = await ContactAPI.destroyCustomAttributes(id, [attributeKey]);
-      
-      // Atualizar o contato no store
-      commit(types.EDIT_CONTACT, response.data.payload);
-      
-      // Emitir evento com informações completas sobre a origem
-      const bus = Vue.prototype.$bus || eventBus;
-      if (bus) {
-        // Escolher o evento correto com base na origem
-        const eventName = fromKanban 
-          ? 'contact_attribute_removed_from_kanban' 
-          : 'contact_attribute_removed';
-          
-        // Adicionar informações completas no payload
-        const eventPayload = {
-          fromKanban,
-          _kanbanOperation,
-        };
-        
-        bus.$emit(eventName, id, attributeKey, eventPayload);
-      }
-      
-      return response.data.payload;
-    } catch (error) {
-      commit(types.SET_CONTACT_UI_FLAG, { isUpdating: false });
-      throw new Error(error);
-    } finally {
-      commit(types.SET_CONTACT_UI_FLAG, { isUpdating: false });
-    }
   },
 };
