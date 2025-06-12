@@ -355,29 +355,5 @@
       "ALT_OR_OPTION_KEY": "Alt / ⌥",
       "FORWARD_SLASH_KEY": "/"
     }
-  },
-  "KANBAN": {
-    "TITLE": "Kanban",
-    "SUBTITLE": "Visualização baseada em atributos personalizados",
-    "REFRESH": "Atualizar",
-    "FILTER": "Filtrar",
-    "SELECT_ATTRIBUTE": "Selecione um atributo para visualizar no Kanban",
-    "SELECT_ATTRIBUTE_DESCRIPTION": "Escolha um atributo do tipo lista para organizar seus contatos",
-    "NO_LIST_ATTRIBUTES": "Não há atributos do tipo lista disponíveis",
-    "CREATE_ATTRIBUTE": "Criar atributo",
-    "VIEWING_BY_ATTRIBUTE": "Visualizando por: {attribute}",
-    "CHANGE_ATTRIBUTE": "Mudar",
-    "NO_VALUE": "Sem valor",
-    "NO_CONTACTS": "Nenhum contato",
-    "FILTER_CONTACTS": "Filtrar Contatos",
-    "FILTER_DESCRIPTION": "Filtre os contatos exibidos no Kanban",
-    "NO_KANBAN_ATTRIBUTES": "Nenhum atributo para Kanban disponível",
-    "CREATE_KANBAN_ATTRIBUTE_DESCRIPTION": "Para usar o Kanban, crie um atributo personalizado do tipo lista (list) para contatos (contact_attribute)",
-    "AUTO_UPDATE": "Atualizando Automaticamente",
-    "AUTO_UPDATE_DESCRIPTION": "Contatos serão automaticamente atualizados no Kanban quando seus atributos forem modificados",
-    "CREATE_NEW_ATTRIBUTE": "Criar novo atributo Kanban",
-    "CREATE_NEW_ATTRIBUTE_DESC": "Crie um atributo personalizado do tipo lista para organizar contatos no Kanban",
-    "CREATE_NEW": "Criar Kanban",
-    "SEARCH_PLACEHOLDER": "Buscar contatos por nome ou número"
   }
 }

@@ -1,0 +1,56 @@
+{
+  "KANBAN": {
+    "CARD": {
+      "HIDE_CONVERSATIONS": "Ocultar conversaciones",
+      "VIEW_CONVERSATIONS": "Ver conversaciones",
+      "LOADING": "Cargando...",
+      "NO_CONVERSATIONS": "No se encontraron conversaciones",
+      "NO_MESSAGES": "Sin mensajes",
+      "NO_USER_MESSAGES": "Sin mensajes de usuarios",
+      "NO_CONTENT": "Sin contenido",
+      "MORE_CONVERSATIONS": "+{count} conversaciones",
+      "STATUS": {
+        "OPEN": "Abierta",
+        "RESOLVED": "Resuelta",
+        "PENDING": "Pendiente",
+        "SNOOZED": "Pausada"
+      }
+    },
+    "ERRORS": {
+      "LOAD_FAILED": "Error al cargar datos",
+      "UPDATE_FAILED": "Error al actualizar",
+      "MOVE_FAILED": "Error al mover tarjeta",
+      "DELETE_FAILED": "Error al eliminar",
+      "PIPELINE_IN_USE": "El pipeline está en uso por contactos",
+      "NO_PIPELINE_SELECTED": "Ningún pipeline seleccionado",
+      "TOO_MANY_UPDATES": "Demasiadas actualizaciones detectadas. Sistema reiniciado."
+    },
+    "SUCCESS": {
+      "PIPELINE_DELETED": "Pipeline eliminado con éxito"
+    },
+    "DEBUG": {
+      "REMOVING_CARD": "Eliminando tarjeta del kanban",
+      "CARD_REMOVED": "Tarjeta eliminada con éxito",
+      "OPERATION_REGISTER_FAILED": "Error al registrar operación"
+    },
+    "TITLE": "Kanban",
+    "SELECT_ATTRIBUTE": "Seleccione un pipeline",
+    "SELECT_ATTRIBUTE_DESCRIPTION": "Seleccione un pipeline para ver sus contactos en un tablero kanban",
+    "NO_KANBAN_ATTRIBUTES": "No se encontraron pipelines",
+    "CREATE_KANBAN_ATTRIBUTE_DESCRIPTION": "Cree un nuevo pipeline para comenzar",
+    "CREATE_ATTRIBUTE": "Crear Pipeline",
+    "FILTER_CONTACTS": "Filtrar Contactos",
+    "FILTER_DESCRIPTION": "Filtre los contactos mostrados en el tablero kanban",
+    "CREATE_NEW_ATTRIBUTE": "Crear Nuevo Pipeline",
+    "CREATE_NEW_ATTRIBUTE_DESC": "Cree un nuevo pipeline para su tablero kanban",
+    "PARTIAL_CONTACTS_LOADED": "Es posible que algunos contactos no se muestren debido al gran volumen",
+    "CONTACT_ATTRIBUTE_REMOVED": "Contacto eliminado del pipeline",
+    "CARD_REMOVED_SUCCESS": "Contacto eliminado del pipeline con éxito",
+    "REMOVE_CARD_MODAL": {
+      "TITLE": "Eliminar del Pipeline",
+      "MESSAGE": "¿Está seguro de que desea eliminar este contacto del pipeline?",
+      "CONFIRM": "Eliminar",
+      "CANCEL": "Cancelar"
+    }
+  }
+} 

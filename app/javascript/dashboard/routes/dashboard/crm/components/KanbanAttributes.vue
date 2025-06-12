@@ -2,7 +2,6 @@
   <div class="kanban-container" :class="{ 'dark-mode': isDarkMode }">
     <kanban-header
       :pipeline-name="selectedAttribute ? selectedAttribute.attribute_display_name : $t('KANBAN.TITLE')"
-      :is-admin="isAdmin"
       :current-view="currentView"
       :pipelines="listTypeAttributes"
       @update:current-view="currentView = $event"
@@ -138,11 +137,16 @@
           >
             {{ $t('ATTRIBUTES_MGMT.ADD.FORM.NAME.LABEL') }}
           </label>
-          <tags-input
+          <multiselect
+            ref="tagInput"
             v-model="attributeValues"
             :placeholder="$t('ATTRIBUTES_MGMT.ADD.FORM.TYPE.LIST.PLACEHOLDER')"
-            :allow-duplicates="false"
-            class="attribute-input"
+            label="name"
+            track-by="name"
+            :options="attributeOptions"
+            :multiple="true"
+            :taggable="true"
+            @tag="addTagValue"
           />
           <div class="modal-footer">
             <woot-button variant="clear" @click="closeCreateAttributeModal">
@@ -205,15 +209,13 @@ import { BUS_EVENTS } from 'shared/constants/busEvents';
 import { getRandomColor } from 'dashboard/helper/labelColor';
 import { formatUnixDate } from 'shared/helpers/DateHelper';
 import Vue from 'vue';
-import TagsInput from 'shared/components/ui/TagsInput';
+import Multiselect from 'vue-multiselect';
 import { KanbanLogger } from '../utils/KanbanLogger';
 import { KanbanOperationManager } from '../utils/KanbanOperationManager';
 import { KanbanAttributeService } from '../utils/KanbanAttributeService';
 import KanbanColumn from './KanbanColumn.vue';
 import KanbanHeader from './Header.vue';
-import WootDeleteModal from 'dashboard/components/widgets/modal/DeleteModal';
 import EditAttribute from 'dashboard/routes/dashboard/settings/attributes/EditAttribute.vue';
-import WootConfirmDeleteModal from 'dashboard/components/widgets/modal/ConfirmDeleteModal';
 
 // Criar um barramento de eventos local se não existir um global
 const eventBus = new Vue();
@@ -222,12 +224,13 @@ export default {
   name: 'KanbanAttributes',
   components: {
     draggable,
-    TagsInput,
+    Multiselect,
     KanbanColumn,
     KanbanHeader,
-    WootDeleteModal,
     EditAttribute,
-    WootConfirmDeleteModal,
+  },
+  created() {
+    this.initializeComponent();
   },
   data() {
     return {
@@ -246,6 +249,7 @@ export default {
         display_name: '',
       },
       attributeValues: [],
+      attributeOptions: [],
       processingUpdate: false,
       recentUpdates: new Map(),
       debugMode: false,
@@ -261,12 +265,14 @@ export default {
       logger: null,
       operationManager: null,
       updateDebounceTimeout: null,
-      _searchDebounce: null,
-      _setupColumnsTimeout: null,
+      searchDebounce: null,
+      setupColumnsTimeout: null,
       showRemoveCardModal: false,
       cardToRemove: null,
       showEditPipelineModal: false,
       showDeletePipelineModal: false,
+      isCreating: false,
+      currentLocale: this.$i18n.locale,
     };
   },
   computed: {
@@ -344,45 +350,50 @@ export default {
         }
       },
     },
-  },
-  created() {
-    this.logger = new KanbanLogger(this.debugMode);
-    this.operationManager = new KanbanOperationManager(this.logger);
-    this.attributeService = new KanbanAttributeService(this.$store, this.logger);
+    // Observar mudanças no locale
+    '$i18n.locale': {
+      immediate: true,
+      handler(newLocale) {
+        console.log('Locale mudou para:', newLocale);
+        this.currentLocale = newLocale;
+        this.updateTranslations();
+      },
+    },
   },
   mounted() {
     this.fetchAttributes();
-    
-    // Usar o bus global se existir, caso contrário, usar o local
     this.bus = this.$bus || eventBus;
     
     if (this.bus) {
       this.bus.$on(BUS_EVENTS.THEME_CHANGE, this.checkDarkMode);
-      this.bus.$on(
-        'contact_attribute_updated',
-        this.handleContactAttributeUpdate
-      );
+      this.bus.$on('contact_attribute_updated', this.handleContactAttributeUpdate);
       this.bus.$on('contact_updated', this.handleContactUpdate);
       this.bus.$on('kanban_clear_updates', this.clearUpdateCache);
     }
     
-    // Iniciar sistema de detecção de ciclos
     this.startCycleDetection();
-
     this.$el.addEventListener('scroll', this.updateScrollPosition);
     document.addEventListener('click', this.handleClickOutside);
+
+    // Definir idioma correto
+    const userLocale = this.$store.getters['auth/currentUser']?.ui_settings?.locale || 'pt_BR';
+    if (this.$i18n.locale !== userLocale) {
+      this.$i18n.locale = userLocale;
+      this.$root.$i18n.locale = userLocale;
+    }
+
+    this.$nextTick(() => {
+      this.updateTranslations();
+    });
   },
   beforeDestroy() {
     clearTimeout(this.updateDebounceTimeout);
-    clearTimeout(this._searchDebounce);
-    clearTimeout(this._setupColumnsTimeout);
+    clearTimeout(this.searchDebounce);
+    clearTimeout(this.setupColumnsTimeout);
     
     if (this.bus) {
       this.bus.$off(BUS_EVENTS.THEME_CHANGE, this.checkDarkMode);
-      this.bus.$off(
-        'contact_attribute_updated',
-        this.handleContactAttributeUpdate
-      );
+      this.bus.$off('contact_attribute_updated', this.handleContactAttributeUpdate);
       this.bus.$off('contact_updated', this.handleContactUpdate);
       this.bus.$off('kanban_clear_updates', this.clearUpdateCache);
     }
@@ -395,14 +406,56 @@ export default {
     cancelAnimationFrame(this.requestID);
   },
   methods: {
+    async initializeComponent() {
+      const userLocale = this.$store.getters['auth/currentUser']?.ui_settings?.locale || 'pt_BR';
+      this.initializeLocale(userLocale);
+      await this.initializeServices();
+      await this.loadInitialData();
+    },
+    initializeLocale(userLocale) {
+      if (this.$i18n.locale !== userLocale) {
+        this.$i18n.locale = userLocale;
+        this.$root.$i18n.locale = userLocale;
+      }
+    },
+    async initializeServices() {
+      this.logger = new KanbanLogger(false);
+      this.operationManager = new KanbanOperationManager(this.logger);
+      this.attributeService = new KanbanAttributeService(this.$store, this.logger);
+    },
+    async loadInitialData() {
+      try {
+        await this.fetchAttributes();
+        if (this.listTypeAttributes.length > 0) {
+          // Always select the first pipeline if none is selected
+          if (!this.selectedAttribute) {
+            this.selectedAttribute = this.listTypeAttributes[0];
+          }
+          await this.fetchContacts();
+          this.setupColumns();
+        }
+      } catch (error) {
+        this.safeShowNotification(
+          'error',
+          this.$t('KANBAN.ERRORS.LOAD_FAILED')
+        );
+      }
+    },
+    safeShowNotification(type, message) {
+      try {
+        if (window.bus) {
+          window.bus.$emit('show-alert', {
+            type,
+            message,
+            show: true,
+          });
+        }
+      } catch (error) {
+        console.log('Failed to show notification:', message);
+      }
+    },
     checkDarkMode() {
       // Método para atualizar o isDarkMode quando o tema mudar
-    },
-    debug(message, data) {
-      if (this.debugMode) {
-        // eslint-disable-next-line no-console
-        console.log(`[KanbanDebug] ${message}`, data || '');
-      }
     },
     async handleContactAttributeUpdate(contact, attribute, payload) {
       const attributeKey = Object.keys(attribute)[0];
@@ -598,20 +651,10 @@ export default {
       return operation && operation.status === 'failed';
     },
 
-    // Método para mostrar notificações de forma segura
-    safeShowNotification(type, message) {
-      if (this.bus) {
-        this.bus.$emit('show-alert', {
-          message: message,
-          type: type,
-        });
-      }
-    },
-
     handleSearch() {
       // Debounce para evitar sobrecarga em buscas rápidas
-      clearTimeout(this._searchDebounce);
-      this._searchDebounce = setTimeout(() => {
+      clearTimeout(this.searchDebounce);
+      this.searchDebounce = setTimeout(() => {
         if (!this.searchQuery || this.searchQuery.trim() === '') {
           this.filteredColumns = [...this.columns];
           return;
@@ -645,11 +688,7 @@ export default {
     },
 
     handleContactAttributeRemoved(contact, attributeKey) {
-      this.debug(this.$t('KANBAN.DEBUG.RECEIVED_EVENT_REMOVED'), { 
-        contactId: contact.id, 
-        attributeKey,
-        selectedAttribute: this.selectedAttribute?.attribute_key
-      });
+      this.logger.log('info', this.$t('KANBAN.CONTACT_ATTRIBUTE_REMOVED'));
       
       // Se o kanban estiver aberto e for o mesmo atributo que foi removido
       if (
@@ -657,8 +696,6 @@ export default {
         this.selectedAttribute.attribute_key === attributeKey && 
         !this.processingUpdate // Adiciona verificação para evitar loop
       ) {
-        this.logger.log('info', this.$t('KANBAN.CONTACT_ATTRIBUTE_REMOVED'));
-        
         // Atualizar colunas para remover o card
         this.setupColumns();
         
@@ -670,11 +707,7 @@ export default {
       }
     },
     handleAttributeRemovedFromKanban(contactId, attributeKey) {
-      this.debug(this.$t('KANBAN.DEBUG.RECEIVED_EVENT_REMOVED'), { contactId, attributeKey });
-      // Este evento é acionado quando um atributo é removido a partir do Kanban
-      // Já com a flag fromKanban, então apenas atualizamos as colunas sem emitir outros eventos
       if (this.selectedAttribute && this.selectedAttribute.attribute_key === attributeKey) {
-        this.debug(this.$t('KANBAN.DEBUG.UPDATING_COLUMNS'));
         this.setupColumns();
       }
     },
@@ -782,10 +815,10 @@ export default {
         }
         
         // Cancelar qualquer atualização pendente
-        clearTimeout(this._setupColumnsTimeout);
+        clearTimeout(this.setupColumnsTimeout);
         
         // Agendar apenas uma atualização futura
-        this._setupColumnsTimeout = setTimeout(() => {
+        this.setupColumnsTimeout = setTimeout(() => {
           // Verificar novamente se podemos atualizar
           if (!this.processingUpdate && !this.syncLock) {
             this.setupColumns();
@@ -851,30 +884,10 @@ export default {
         return matches;
       });
     },
-    async onItemMoved({ contactId, sourceColumnId, targetColumnId, sourceColumnTitle, targetColumnTitle, timestamp }) {
-      console.log('[KanbanDebug] Recebido evento item-moved', {
-        contactId,
-        sourceColumnId,
-        targetColumnId,
-        sourceColumnTitle,
-        targetColumnTitle,
-        timestamp
-      });
-
+    async onItemMoved({ contactId, sourceColumnId, targetColumnId, sourceColumnTitle, targetColumnTitle }) {
       // Verificar se o contato existe
       const contact = this.contacts.find(c => c.id === contactId);
-      if (!contact) {
-        console.error('[KanbanDebug] Contato não encontrado', { contactId });
-        return;
-      }
-
-      console.log('[KanbanDebug] Contato encontrado', { contact });
-
-      // Verificar se o atributo está selecionado
-      if (!this.selectedAttribute) {
-        console.error('[KanbanDebug] Nenhum atributo selecionado');
-        return;
-      }
+      if (!contact || !this.selectedAttribute) return;
 
       try {
         // Preparar dados para atualização
@@ -885,22 +898,13 @@ export default {
           }
         };
 
-        console.log('[KanbanDebug] Iniciando atualização do contato', { 
-          contactParams,
-          attributeKey: this.selectedAttribute.attribute_key,
-          store: this.$store
-        });
-
         // Atualizar o contato usando o store
         await this.$store.dispatch('contacts/update', contactParams);
-        
-        console.log('[KanbanDebug] Contato atualizado com sucesso');
       } catch (error) {
-        console.error('[KanbanDebug] Erro ao atualizar contato', { 
-          error,
-          errorMessage: error.message,
-          errorStack: error.stack
-        });
+        this.safeShowNotification(
+          'error',
+          this.$t('KANBAN.ERRORS.UPDATE_FAILED')
+        );
       }
     },
     openContact(contactId) {
@@ -940,6 +944,7 @@ export default {
         display_name: '',
       };
       this.attributeValues = [];
+      this.attributeOptions = [];
     },
     
     closeCreateAttributeModal() {
@@ -948,46 +953,47 @@ export default {
         display_name: '',
       };
       this.attributeValues = [];
+      this.attributeOptions = [];
     },
     
     async createKanbanAttribute() {
-      // Validar campos
-      if (!this.newAttributeData.display_name || !this.attributeValues.length) {
-        this.$store.dispatch('notifications/show', {
-          type: 'error',
-          message: this.$t('ATTRIBUTES_MGMT.ADD.FORM.VALIDATION_ERROR'),
-        });
-        return;
-      }
-      
-        // Criar atributo personalizado do tipo lista
-        const attributeData = {
-          attribute_display_name: this.newAttributeData.display_name,
-          attribute_display_type: 'list',
-          attribute_description: this.newAttributeData.display_name,
-          attribute_key: this.newAttributeData.display_name.toLowerCase().replace(/\s+/g, '_'),
-          attribute_values: this.attributeValues,
-          attribute_model: 'contact_attribute',
-        };
+      try {
+        this.isCreating = true;
         
-      this.$store.dispatch('attributes/create', attributeData)
-        .then(() => {
-        // Fechar o modal e recarregar atributos
+        // Verifique se há valores de atributos
+        if (!this.attributeValues.length) {
+          // Exibir mensagem de erro
+          return;
+        }
+
+        // Preparar valores para envio
+        const attributeListValues = this.attributeValues.map(item => item.name);
+        
+        await this.$store.dispatch('attributes/create', {
+          attribute_display_name: this.newAttributeData.display_name,
+          attribute_description: 'Kanban attribute',
+          attribute_model: 1, // Contact
+          attribute_display_type: 6, // List
+          attribute_key: this.newAttributeData.display_name.toLowerCase().replace(/\s+/g, '_'),
+          attribute_values: attributeListValues,
+        });
+        
         this.closeCreateAttributeModal();
         this.fetchAttributes();
-        
-          this.safeShowNotification(
-            'success',
-            this.$t('ATTRIBUTES_MGMT.API.CREATE_SUCCESS')
-          );
-        })
-        .catch(() => {
-                    this.safeShowNotification(
-            'error',
-            this.$t('ATTRIBUTES_MGMT.API.CREATE_ERROR')
-          );
-        });
+      } catch (error) {
+        console.error('Error creating kanban attribute:', error);
+      } finally {
+        this.isCreating = false;
+      }
     },
+    
+    addTagValue(tagValue) {
+      const tag = {
+        name: tagValue,
+      };
+      this.attributeValues.push(tag);
+    },
+
     // Método para garantir a mesma cor para o mesmo estágio sempre
     getStageColor(stageName) {
       if (!this.colorMap[stageName]) {
@@ -1045,46 +1051,51 @@ export default {
     },
     
     // Confirmar a remoção do card após confirmação do usuário
-    confirmRemoveCard() {
-      const contactId = this.cardToRemove;
-      this.showRemoveCardModal = false;
-      
-      if (!contactId || !this.selectedAttribute) {
-        return;
-      }
-      
-      const attrKey = this.selectedAttribute.attribute_key;
-      this.logger.log('info', this.$t('KANBAN.DEBUG.REMOVING_CARD'), { contactId, attrKey });
-      
-      // Gerar ID de operação para rastreamento
-      const operationId = `remove-${contactId}-${attrKey}-${Date.now()}`;
-      
-      // Registrar a operação no gerenciador
-      if (!this.operationManager.registerOperation(contactId, 'remove')) {
-        this.logger.log('warn', this.$t('KANBAN.DEBUG.OPERATION_REGISTER_FAILED'), { contactId });
-        return;
-      }
-      
-      this.attributeService.removeContactAttribute(contactId, attrKey, operationId)
-        .then(() => {
-          this.logger.log('info', this.$t('KANBAN.DEBUG.CARD_REMOVED'));
-          this.safeShowNotification(
-            'success',
-            this.$t('KANBAN.CARD_REMOVED_SUCCESS')
-          );
-        
-          // Atualizar as colunas localmente
-          this.setupColumnsWithLock();
-          this.operationManager.completeOperation(operationId, true);
-        })
-        .catch(error => {
-          this.logger.log('error', 'Erro ao remover card', { contactId, error });
-          this.safeShowNotification(
-            'error',
-            this.$t('CONTACTS.EDIT.API.DELETE_ERROR')
-          );
-          this.operationManager.completeOperation(operationId, false);
+    async confirmRemoveCard() {
+      if (!this.cardToRemove || !this.selectedAttribute) return;
+
+      try {
+        // Get the contact object from the columns
+        const contact = this.columns.reduce((found, column) => {
+          if (found) return found;
+          return column.items.find(item => item.id === this.cardToRemove);
+        }, null);
+
+        if (!contact) {
+          console.log('[KanbanDebug] Contact not found:', this.cardToRemove);
+          return;
+        }
+
+        // Update the contact
+        await this.$store.dispatch('contacts/update', {
+          id: contact.id,
+          custom_attributes: {
+            [this.selectedAttribute.attribute_key]: null
+          }
         });
+
+        // Update local state
+        this.setupColumns();
+        
+        // Show success message
+        if (window.bus) {
+          window.bus.$emit('show-alert', {
+            message: this.$t('KANBAN.CARD_REMOVED_SUCCESS'),
+            type: 'success',
+          });
+        }
+
+        // Close the modal
+        this.closeRemoveCardModal();
+      } catch (error) {
+        console.log('[KanbanDebug] Error removing card:', error);
+        if (window.bus) {
+          window.bus.$emit('show-alert', {
+            message: this.$t('KANBAN.ERRORS.REMOVE_FAILED'),
+            type: 'error',
+          });
+        }
+      }
     },
     toggleDebugMode() {
       this.debugMode = !this.debugMode;
@@ -1176,8 +1187,8 @@ export default {
       // Limpar todos os timeouts
       clearTimeout(this.syncOperationTimeout);
       clearTimeout(this.updateDebounceTimeout);
-      clearTimeout(this._searchDebounce);
-      clearTimeout(this._setupColumnsTimeout);
+      clearTimeout(this.searchDebounce);
+      clearTimeout(this.setupColumnsTimeout);
       
       // Resetar sistema de detecção de ciclos
       this.updateTimestamps = [];
@@ -1197,102 +1208,53 @@ export default {
       this.logger.log('warn', 'Todas as travas foram redefinidas');
     },
     setupColumnsWithLock() {
-      // Verificar se podemos atualizar a coluna agora ou precisamos esperar
       const now = Date.now();
-      if (now - this.lastColumnUpdateTime < 1200) {
-        if (this.debugMode) {
-          // eslint-disable-next-line no-console
-          console.log('[KanbanLog] Limitando taxa de atualizações da coluna, reagendando...');
-        }
-        // Reagendar a atualização para mais tarde
+      if (now - this.lastColumnUpdateTime < 1500) {
         setTimeout(() => {
-          if (!this.syncLock && !this.processingUpdate) {
-            this.setupColumnsWithLock();
+          if (!this.processingUpdate && !this.syncLock) {
+            this.setupColumns();
           }
-        }, 1500);
+        }, 1800);
         return;
       }
       
-      // Registrar esta atualização
       this.lastColumnUpdateTime = now;
-      
-      // Processar a atualização de coluna normal
       this.setupColumns();
     },
     // Método para debugging das colunas
     logColumnsContent() {
-      if (!this.debugMode) return;
-      
-      // eslint-disable-next-line no-console
-      console.log('[KanbanLog] === CONTEÚDO DAS COLUNAS ===');
-      
-      this.columns.forEach(column => {
-        // eslint-disable-next-line no-console
-        console.log(
-          `[KanbanLog] Coluna: "${column.title}" - ${column.items.length} itens`
-        );
-        
-        if (column.items && column.items.length) {
-          column.items.forEach(contact => {
-            // eslint-disable-next-line no-console
-            console.log(
-              `[KanbanLog]   - Contato ID: ${contact.id}, Nome: ${contact.name}, Atributos: `,
-              contact.custom_attributes
-            );
-          });
-        }
-      });
+      // Método mantido vazio para compatibilidade, mas sem logs
     },
     // Adicionar este novo método para limpar o cache de atualizações
     clearUpdateCache() {
-      if (this.debugMode) {
-        // eslint-disable-next-line no-console
-        console.log('[KanbanLog] Limpando cache de atualizações');
-      }
       this.recentUpdates.clear();
       this.processingUpdate = false;
       this.releaseSyncLock();
     },
     startCycleDetection() {
-      // Limpar qualquer timer existente
       this.stopCycleDetection();
       
-      // Iniciar novo timer para monitorar atualizações, mas com frequência menor
       this.cycleDetectionTimer = setInterval(() => {
         try {
-        // Registrar timestamp da atualização
-        const now = Date.now();
-        
-        // Manter apenas os últimos 10 segundos de atividade
-        const tenSecondsAgo = now - 10000;
-        this.updateTimestamps = this.updateTimestamps.filter(
-          timestamp => timestamp > tenSecondsAgo
-        );
-        
-          // Verificar frequência de atualizações - mais conservador
+          const now = Date.now();
+          const tenSecondsAgo = now - 10000;
+          this.updateTimestamps = this.updateTimestamps.filter(
+            timestamp => timestamp > tenSecondsAgo
+          );
+          
           if (this.updateTimestamps.length > 20) {
-            // Mais de 20 atualizações em 10 segundos indica um ciclo
-          if (!this.cycleDetectionActive) {
-            this.cycleDetectionActive = true;
-            
-              this.logger.log('warn', 'Ciclo de atualizações detectado! Resetando componente...');
-              
-              // Parar o ciclo de detecção durante o reset
+            if (!this.cycleDetectionActive) {
+              this.cycleDetectionActive = true;
               this.stopCycleDetection();
-            
-            // Reset completo
-            this.resetAllLocks();
+              this.resetAllLocks();
               
-              // Usar método seguro para notificação
               this.safeShowNotification(
                 'warning',
                 this.$t('KANBAN.ERRORS.TOO_MANY_UPDATES')
               );
               
-              // Restore após um tempo mais longo
-            setTimeout(() => {
-              this.cycleDetectionActive = false;
-                // Reiniciar detecção com delay
+              setTimeout(() => {
+                this.cycleDetectionActive = false;
                 setTimeout(() => {
                   if (!this.cycleDetectionTimer) {
                     this.startCycleDetection();
@@ -1302,11 +1264,9 @@ export default {
             }
           }
         } catch (error) {
-          // Proteção contra erros no sistema de detecção
-          this.logger.log('error', 'Erro no sistema de detecção de ciclos', { error });
           this.stopCycleDetection();
         }
-      }, 2000); // Aumentado para 2 segundos para reduzir sobrecarga
+      }, 2000);
     },
     stopCycleDetection() {
       if (this.cycleDetectionTimer) {
@@ -1315,14 +1275,12 @@ export default {
       }
     },
     handleColumnItemsUpdate({ columnId, items }) {
-      // Atualizar os itens da coluna específica
       const columnIndex = this.columns.findIndex(col => col.id === columnId);
       if (columnIndex !== -1) {
         this.columns[columnIndex].items = items;
       }
     },
     openConversation(conversationId) {
-      // Navegar para a página da conversa
       const conversationUrl = frontendURL(`accounts/${this.$route.params.accountId}/conversations/${conversationId}`);
       window.open(conversationUrl, '_blank');
     },
@@ -1347,10 +1305,12 @@ export default {
       try {
         const contactsUsingPipeline = this.contacts.filter(contact => {
           const customAttributes = contact.custom_attributes || {};
-          return customAttributes[this.selectedAttribute.attribute_key] !== undefined;
+          const attributeValue = customAttributes[this.selectedAttribute.attribute_key];
+          return attributeValue !== undefined && attributeValue !== null && attributeValue !== '';
         });
 
         if (contactsUsingPipeline.length > 0) {
+          this.showDeletePipelineModal = false;
           this.safeShowNotification(
             'error',
             this.$t('KANBAN.ERRORS.PIPELINE_IN_USE')
@@ -1359,9 +1319,7 @@ export default {
         }
 
         await this.$store.dispatch('attributes/delete', this.selectedAttribute.id);
-        
         this.selectedAttribute = null;
-        
         await this.fetchAttributes();
         
         this.safeShowNotification(
@@ -1371,6 +1329,7 @@ export default {
         
         this.showDeletePipelineModal = false;
       } catch (error) {
+        this.showDeletePipelineModal = false;
         this.safeShowNotification(
           'error',
           error?.message || this.$t('KANBAN.ERRORS.DELETE_FAILED')
@@ -1380,7 +1339,6 @@ export default {
     closeDeletePipelineModal() {
       this.showDeletePipelineModal = false;
     },
-    // Método chamado quando o usuário clica em Editar no menu de ações
     editKanban() {
       if (!this.selectedAttribute) {
         this.safeShowNotification('error', this.$t('KANBAN.ERRORS.NO_PIPELINE_SELECTED'));
@@ -1388,14 +1346,52 @@ export default {
       }
       this.showEditPipelineModal = true;
     },
-
-    // Método chamado quando o usuário clica em Excluir no menu de ações
     deleteKanban() {
       if (!this.selectedAttribute) {
         this.safeShowNotification('error', this.$t('KANBAN.ERRORS.NO_PIPELINE_SELECTED'));
         return;
       }
       this.showDeletePipelineModal = true;
+    },
+    updateTranslations() {
+      this.$forceUpdate();
+      if (this.$refs.kanbanHeader) {
+        this.$refs.kanbanHeader.$forceUpdate();
+      }
+    },
+    async handleDrop({ removedIndex, addedIndex, payload }, columnId) {
+      if (removedIndex === null && addedIndex === null) return;
+      
+      const contact = payload;
+      const targetColumn = this.columns.find(col => col.id === columnId);
+      if (!targetColumn) return;
+
+      const operationId = `move-${contact.id}-${Date.now()}`;
+      const oldValue = contact.custom_attributes[this.selectedAttribute.attribute_key];
+      const newValue = targetColumn.value;
+
+      try {
+        this.operationManager.startOperation(operationId);
+        await this.updateContactAttribute(contact, newValue);
+        this.operationManager.completeOperation(operationId);
+      } catch (error) {
+        this.operationManager.failOperation(operationId);
+        this.safeShowNotification(
+          'error',
+          this.$t('KANBAN.ERRORS.MOVE_FAILED')
+        );
+      }
+    },
+    async updateContactAttribute(contact, newValue) {
+      const customAttributes = {
+        ...contact.custom_attributes,
+        [this.selectedAttribute.attribute_key]: newValue,
+      };
+
+      await this.$store.dispatch('contacts/update', {
+        id: contact.id,
+        custom_attributes: customAttributes,
+      });
     },
   },
 };
@@ -1576,6 +1572,90 @@ export default {
       .dark-mode & {
         background: var(--b-600);
       }
+    }
+  }
+}
+
+.attribute-modal {
+  .attribute-form {
+    padding: var(--space-normal);
+  }
+  
+  ::v-deep {
+    .multiselect {
+      margin-bottom: var(--space-normal);
+      position: relative;
+    }
+    
+    .multiselect__tags {
+      min-height: 38px;
+      padding: 8px 40px 0 8px;
+      border: 1px solid var(--s-200);
+      border-radius: var(--border-radius-normal);
+      background: var(--white);
+    }
+    
+    .multiselect__tag {
+      position: relative;
+      display: inline-block;
+      padding: 4px 26px 4px 10px;
+      border-radius: 5px;
+      margin-right: 10px;
+      color: var(--w-900);
+      background: var(--w-50);
+      margin-bottom: 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      max-width: 100%;
+      text-overflow: ellipsis;
+    }
+    
+    .multiselect__tag-icon {
+      cursor: pointer;
+      margin-left: 7px;
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      font-weight: 700;
+      font-style: initial;
+      width: 22px;
+      text-align: center;
+      line-height: 22px;
+      transition: all 0.2s ease;
+      border-radius: 5px;
+    }
+    
+    .multiselect__tag-icon:after {
+      content: "×";
+      color: var(--w-700);
+      font-size: 14px;
+    }
+    
+    .multiselect__tag-icon:focus,
+    .multiselect__tag-icon:hover {
+      background: var(--w-100);
+    }
+    
+    .multiselect--active .multiselect__tags {
+      border-color: var(--w-500);
+    }
+    
+    .multiselect__input,
+    .multiselect__single {
+      position: relative;
+      display: inline-block;
+      min-height: 20px;
+      line-height: 20px;
+      border: none;
+      border-radius: 5px;
+      background: var(--white);
+      padding: 0 0 0 5px;
+      width: 100%;
+      transition: border 0.1s ease;
+      box-sizing: border-box;
+      margin-bottom: 8px;
+      vertical-align: top;
     }
   }
 }

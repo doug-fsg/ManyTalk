@@ -85,7 +85,7 @@
     <div 
       class="conversation-expander"
       @click.stop="toggleConversations"
-      v-tooltip="isExpanded ? 'Ocultar conversas' : 'Ver conversas'"
+      v-tooltip="isExpanded ? $t('KANBAN.CARD.HIDE_CONVERSATIONS') : $t('KANBAN.CARD.VIEW_CONVERSATIONS')"
     >
       <div class="expander-line"></div>
       <fluent-icon 
@@ -98,10 +98,10 @@
     <!-- Seção de conversas -->
     <div v-if="isExpanded" class="conversations-preview">
       <div v-if="isFetchingConversations" class="conversations-loading">
-        <span class="loading-text">Carregando...</span>
+        <span class="loading-text">{{ $t('KANBAN.CARD.LOADING') }}</span>
       </div>
       <div v-else-if="conversations.length === 0" class="no-conversations">
-        <span>Nenhuma conversa encontrada</span>
+        <span>{{ $t('KANBAN.CARD.NO_CONVERSATIONS') }}</span>
       </div>
       <div v-else class="conversations-list">
         <div 
@@ -127,7 +127,7 @@
           </div>
         </div>
         <div v-if="conversations.length > 5" class="more-conversations">
-          <span>+{{ conversations.length - 5 }} conversas</span>
+          <span>{{ $t('KANBAN.CARD.MORE_CONVERSATIONS', { count: conversations.length - 5 }) }}</span>
         </div>
       </div>
     </div>
@@ -184,10 +184,10 @@ export default {
     getStatusLabel() {
       return (status) => {
         const labels = {
-          open: 'Aberta',
-          resolved: 'Resolvida',
-          pending: 'Pendente',
-          snoozed: 'Pausada'
+          open: this.$t('KANBAN.CARD.STATUS.OPEN'),
+          resolved: this.$t('KANBAN.CARD.STATUS.RESOLVED'),
+          pending: this.$t('KANBAN.CARD.STATUS.PENDING'),
+          snoozed: this.$t('KANBAN.CARD.STATUS.SNOOZED')
         };
         return labels[status] || status;
       };
@@ -253,7 +253,7 @@ export default {
     },
     getMessageContent(conversation) {
       if (!conversation.messages || !conversation.messages.length) {
-        return 'Sem mensagens';
+        return this.$t('KANBAN.CARD.NO_MESSAGES');
       }
 
       // Filtra apenas mensagens de humanos (incoming ou outgoing)
@@ -263,12 +263,12 @@ export default {
       );
 
       if (!humanMessages.length) {
-        return 'Sem mensagens de usuários';
+        return this.$t('KANBAN.CARD.NO_USER_MESSAGES');
       }
 
       // Pega a última mensagem de humano
       const lastHumanMessage = humanMessages[0];
-      return lastHumanMessage.content || 'Sem conteúdo';
+      return lastHumanMessage.content || this.$t('KANBAN.CARD.NO_CONTENT');
     },
     openConversation(conversation) {
       if (!conversation.id) return;

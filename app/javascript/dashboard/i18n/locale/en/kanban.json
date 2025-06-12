@@ -1,7 +1,7 @@
 {
   "KANBAN": {
     "TITLE": "Kanban",
-    "SUBTITLE": "Custom attribute based view",
+    "SUBTITLE": "Attribute-based visualization",
     "REFRESH": "Refresh Kanban",
     "SEARCH_PLACEHOLDER": "Search contacts by name or number",
     "CREATE_NEW": "Create Kanban",
@@ -10,10 +10,10 @@
     "SELECT_ATTRIBUTE": "Select an attribute to view in Kanban",
     "SELECT_ATTRIBUTE_DESCRIPTION": "Choose a list type attribute to organize your contacts",
     "NO_KANBAN_ATTRIBUTES": "No Kanban attributes available",
-    "CREATE_KANBAN_ATTRIBUTE_DESCRIPTION": "To use Kanban, create a list type custom attribute (type 6) for contacts (model 1)",
+    "CREATE_KANBAN_ATTRIBUTE_DESCRIPTION": "To use Kanban, create a custom list type attribute (type 6) for contacts (model 1)",
     "CREATE_ATTRIBUTE": "Create attribute",
     "CHANGE_ATTRIBUTE": "Change",
-    "VIEWING_BY_ATTRIBUTE": "Viewing by {attribute}",
+    "VIEWING_BY_ATTRIBUTE": "Viewing by: {attribute}",
     "NO_CONTACTS": "No contacts",
     "NO_VALUE": "No value",
     "FILTER_CONTACTS": "Filter Contacts",
@@ -24,20 +24,54 @@
     "SYNC_DESCRIPTION": "Changes are synchronized automatically",
     "VIEW_CONTACT": "View contact",
     "REMOVE_CARD": "Remove from Kanban",
+    "ACTIONS": {
+      "TITLE": "Actions",
+      "NEW": "New Kanban",
+      "EDIT": "Edit Kanban",
+      "DELETE": "Delete Kanban"
+    },
     "DELETE_PIPELINE": {
       "TITLE": "Delete Pipeline",
-      "MESSAGE": "Are you sure you want to delete this pipeline? This action cannot be undone.",
-      "CONFIRM": "Delete",
-      "CANCEL": "Cancel",
-      "PLACEHOLDER": "Type pipeline name to confirm"
+      "MESSAGE": "Are you sure you want to delete pipeline {name}?",
+      "CONFIRM": "Yes, delete",
+      "CANCEL": "No, keep it",
+      "PLACEHOLDER": "Type {name} to confirm"
+    },
+    "ERRORS": {
+      "PIPELINE_IN_USE": "This pipeline is being used by contacts and cannot be deleted",
+      "DELETE_FAILED": "Failed to delete pipeline",
+      "NO_PIPELINE_SELECTED": "No pipeline selected",
+      "TOO_MANY_UPDATES": "We detected too many updates in Kanban. Component was reset to prevent performance issues."
     },
     "SUCCESS": {
       "PIPELINE_DELETED": "Pipeline deleted successfully"
     },
-    "ERRORS": {
-      "NO_PIPELINE_SELECTED": "No pipeline selected",
-      "PIPELINE_IN_USE": "This pipeline is being used by contacts. Remove the contacts first.",
-      "DELETE_FAILED": "Failed to delete pipeline"
+    "DEBUG": {
+      "RECEIVED_EVENT_REMOVED": "Attribute removal event received",
+      "UPDATING_COLUMNS": "Updating columns"
+    },
+    "REMOVE_CARD_MODAL": {
+      "TITLE": "Remove card",
+      "MESSAGE": "Are you sure you want to remove this card from Kanban?",
+      "CONFIRM": "Yes, remove",
+      "CANCEL": "No, keep it"
+    },
+    "PARTIAL_CONTACTS_LOADED": "Loaded {loaded} contacts out of {total}.",
+    "CARD": {
+      "HIDE_CONVERSATIONS": "Hide conversations",
+      "VIEW_CONVERSATIONS": "View conversations",
+      "LOADING": "Loading...",
+      "NO_CONVERSATIONS": "No conversations found",
+      "NO_MESSAGES": "No messages",
+      "NO_USER_MESSAGES": "No user messages",
+      "NO_CONTENT": "No content",
+      "MORE_CONVERSATIONS": "+{count} conversations",
+      "STATUS": {
+        "OPEN": "Open",
+        "RESOLVED": "Resolved",
+        "PENDING": "Pending",
+        "SNOOZED": "Snoozed"
+      }
     }
   },
   "ERRORS": {

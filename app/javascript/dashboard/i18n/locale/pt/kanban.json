@@ -6,30 +6,36 @@
     "SEARCH_PLACEHOLDER": "Buscar contatos por nome ou número",
     "CREATE_NEW": "Criar Kanban",
     "CREATE_NEW_ATTRIBUTE": "Criar novo atributo Kanban",
-    "CREATE_NEW_ATTRIBUTE_DESC": "Crie um atributo personalizado para usar no Kanban",
+    "CREATE_NEW_ATTRIBUTE_DESC": "Criar um atributo personalizado para usar no Kanban",
     "SELECT_ATTRIBUTE": "Selecione um atributo para visualizar no Kanban",
     "SELECT_ATTRIBUTE_DESCRIPTION": "Escolha um atributo do tipo lista para organizar seus contatos",
-    "NO_KANBAN_ATTRIBUTES": "Nenhum atributo para Kanban disponível",
+    "NO_KANBAN_ATTRIBUTES": "Nenhum atributo Kanban disponível",
     "CREATE_KANBAN_ATTRIBUTE_DESCRIPTION": "Para usar o Kanban, crie um atributo personalizado do tipo lista (tipo 6) para contatos (modelo 1)",
     "CREATE_ATTRIBUTE": "Criar atributo",
-    "CHANGE_ATTRIBUTE": "Mudar",
+    "CHANGE_ATTRIBUTE": "Alterar",
     "VIEWING_BY_ATTRIBUTE": "Visualizando por {attribute}",
     "NO_CONTACTS": "Nenhum contato",
     "NO_VALUE": "Sem valor",
     "FILTER_CONTACTS": "Filtrar Contatos",
-    "FILTER_DESCRIPTION": "Filtre os contatos exibidos no Kanban",
+    "FILTER_DESCRIPTION": "Filtrar contatos exibidos no Kanban",
     "CARD_MOVED_SUCCESS": "Cartão movido com sucesso",
     "CARD_REMOVED_SUCCESS": "Cartão removido do Kanban com sucesso",
-    "CONTACT_ATTRIBUTE_REMOVED": "O contato foi removido do Kanban porque o atributo foi apagado",
+    "CONTACT_ATTRIBUTE_REMOVED": "Contato foi removido do Kanban porque o atributo foi excluído",
     "SYNC_DESCRIPTION": "As alterações são sincronizadas automaticamente",
-    "VIEW_CONTACT": "Visualizar contato",
+    "VIEW_CONTACT": "Ver contato",
     "REMOVE_CARD": "Remover do Kanban",
+    "REMOVE_CARD_MODAL": {
+      "TITLE": "Remover Cartão",
+      "MESSAGE": "Tem certeza que deseja remover este contato do Kanban?",
+      "CONFIRM": "Remover",
+      "CANCEL": "Cancelar"
+    },
     "DELETE_PIPELINE": {
       "TITLE": "Excluir Pipeline",
-      "MESSAGE": "Tem certeza que deseja excluir o pipeline \"{name}\"? Esta ação não pode ser desfeita.",
+      "MESSAGE": "Tem certeza que deseja excluir este pipeline? Esta ação não pode ser desfeita.",
       "CONFIRM": "Excluir",
       "CANCEL": "Cancelar",
-      "PLACEHOLDER": "Digite \"{name}\" para excluir"
+      "PLACEHOLDER": "Digite o nome do pipeline para confirmar"
     },
     "SUCCESS": {
       "PIPELINE_DELETED": "Pipeline excluído com sucesso"
@@ -37,10 +43,62 @@
     "ERRORS": {
       "NO_PIPELINE_SELECTED": "Nenhum pipeline selecionado",
       "PIPELINE_IN_USE": "Este pipeline está sendo usado por contatos. Remova os contatos primeiro.",
-      "DELETE_FAILED": "Erro ao excluir o pipeline"
+      "DELETE_FAILED": "Falha ao excluir pipeline"
+    },
+    "CARD": {
+      "HIDE_CONVERSATIONS": "Ocultar conversas",
+      "VIEW_CONVERSATIONS": "Ver conversas",
+      "LOADING": "A carregar...",
+      "NO_CONVERSATIONS": "Nenhuma conversa encontrada",
+      "NO_MESSAGES": "Sem mensagens",
+      "NO_USER_MESSAGES": "Sem mensagens de utilizadores",
+      "NO_CONTENT": "Sem conteúdo",
+      "MORE_CONVERSATIONS": "+{count} conversas",
+      "STATUS": {
+        "OPEN": "Aberta",
+        "RESOLVED": "Resolvida",
+        "PENDING": "Pendente",
+        "SNOOZED": "Em pausa"
+      }
+    },
+    "ERRORS": {
+      "LOAD_FAILED": "Falha ao carregar dados",
+      "UPDATE_FAILED": "Falha ao atualizar",
+      "MOVE_FAILED": "Falha ao mover cartão",
+      "DELETE_FAILED": "Falha ao eliminar",
+      "PIPELINE_IN_USE": "Pipeline está em uso por contactos",
+      "NO_PIPELINE_SELECTED": "Nenhum pipeline selecionado",
+      "TOO_MANY_UPDATES": "Demasiadas atualizações detetadas. Sistema reiniciado."
+    },
+    "SUCCESS": {
+      "PIPELINE_DELETED": "Pipeline eliminado com sucesso"
+    },
+    "DEBUG": {
+      "REMOVING_CARD": "A remover cartão do kanban",
+      "CARD_REMOVED": "Cartão removido com sucesso",
+      "OPERATION_REGISTER_FAILED": "Falha ao registar operação"
+    },
+    "TITLE": "Kanban",
+    "SELECT_ATTRIBUTE": "Selecione um pipeline",
+    "SELECT_ATTRIBUTE_DESCRIPTION": "Selecione um pipeline para visualizar os seus contactos num quadro kanban",
+    "NO_KANBAN_ATTRIBUTES": "Nenhum pipeline encontrado",
+    "CREATE_KANBAN_ATTRIBUTE_DESCRIPTION": "Crie um novo pipeline para começar",
+    "CREATE_ATTRIBUTE": "Criar Pipeline",
+    "FILTER_CONTACTS": "Filtrar Contactos",
+    "FILTER_DESCRIPTION": "Filtre os contactos exibidos no quadro kanban",
+    "CREATE_NEW_ATTRIBUTE": "Criar Novo Pipeline",
+    "CREATE_NEW_ATTRIBUTE_DESC": "Crie um novo pipeline para o seu quadro kanban",
+    "PARTIAL_CONTACTS_LOADED": "Alguns contactos podem não ser exibidos devido ao grande volume",
+    "CONTACT_ATTRIBUTE_REMOVED": "Contacto removido do pipeline",
+    "CARD_REMOVED_SUCCESS": "Contacto removido do pipeline com sucesso",
+    "REMOVE_CARD_MODAL": {
+      "TITLE": "Remover do Pipeline",
+      "MESSAGE": "Tem a certeza que deseja remover este contacto do pipeline?",
+      "CONFIRM": "Remover",
+      "CANCEL": "Cancelar"
     }
   },
   "ERRORS": {
-    "UPDATE_FAILED": "Não foi possível atualizar a posição do card. Por favor, tente novamente."
+    "UPDATE_FAILED": "Falha ao atualizar posição do cartão. Por favor, tente novamente."
   }
 } 

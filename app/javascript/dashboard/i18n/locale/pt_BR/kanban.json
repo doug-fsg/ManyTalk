@@ -5,25 +5,31 @@
     "REFRESH": "Atualizar Kanban",
     "SEARCH_PLACEHOLDER": "Buscar contatos por nome ou número",
     "CREATE_NEW": "Criar Kanban",
-    "CREATE_NEW_ATTRIBUTE": "Criar novo atributo Kanban",
-    "CREATE_NEW_ATTRIBUTE_DESC": "Crie um atributo personalizado para usar no Kanban",
-    "SELECT_ATTRIBUTE": "Selecione um atributo para visualizar no Kanban",
-    "SELECT_ATTRIBUTE_DESCRIPTION": "Escolha um atributo do tipo lista para organizar seus contatos",
-    "NO_KANBAN_ATTRIBUTES": "Nenhum atributo para Kanban disponível",
-    "CREATE_KANBAN_ATTRIBUTE_DESCRIPTION": "Para usar o Kanban, crie um atributo personalizado do tipo lista (tipo 6) para contatos (modelo 1)",
-    "CREATE_ATTRIBUTE": "Criar atributo",
+    "CREATE_NEW_ATTRIBUTE": "Criar Novo Pipeline",
+    "CREATE_NEW_ATTRIBUTE_DESC": "Crie um novo pipeline para seu quadro kanban",
+    "SELECT_ATTRIBUTE": "Selecione um pipeline",
+    "SELECT_ATTRIBUTE_DESCRIPTION": "Selecione um pipeline para visualizar seus contatos em um quadro kanban",
+    "NO_KANBAN_ATTRIBUTES": "Nenhum pipeline encontrado",
+    "CREATE_KANBAN_ATTRIBUTE_DESCRIPTION": "Crie um novo pipeline para começar",
+    "CREATE_ATTRIBUTE": "Criar Pipeline",
     "CHANGE_ATTRIBUTE": "Mudar",
     "VIEWING_BY_ATTRIBUTE": "Visualizando por: {attribute}",
     "NO_CONTACTS": "Nenhum contato",
     "NO_VALUE": "Sem valor",
     "FILTER_CONTACTS": "Filtrar Contatos",
-    "FILTER_DESCRIPTION": "Filtre os contatos exibidos no Kanban",
+    "FILTER_DESCRIPTION": "Filtre os contatos exibidos no quadro kanban",
     "CARD_MOVED_SUCCESS": "Cartão movido com sucesso",
-    "CARD_REMOVED_SUCCESS": "Cartão removido do Kanban com sucesso",
-    "CONTACT_ATTRIBUTE_REMOVED": "O contato foi removido do Kanban porque o atributo foi apagado",
+    "CARD_REMOVED_SUCCESS": "Contato removido do pipeline com sucesso",
+    "CONTACT_ATTRIBUTE_REMOVED": "Contato removido do pipeline",
     "SYNC_DESCRIPTION": "As alterações são sincronizadas automaticamente",
     "VIEW_CONTACT": "Visualizar contato",
     "REMOVE_CARD": "Remover do Kanban",
+    "ACTIONS": {
+      "TITLE": "Ações",
+      "NEW": "Novo Kanban",
+      "EDIT": "Editar Kanban",
+      "DELETE": "Excluir Kanban"
+    },
     "DELETE_PIPELINE": {
       "TITLE": "Excluir Pipeline",
       "MESSAGE": "Tem certeza que deseja excluir o pipeline {name}?",
@@ -32,24 +38,46 @@
       "PLACEHOLDER": "Digite {name} para confirmar"
     },
     "ERRORS": {
-      "PIPELINE_IN_USE": "Este pipeline está sendo usado por contatos e não pode ser excluído",
-      "DELETE_FAILED": "Não foi possível excluir o pipeline",
+      "LOAD_FAILED": "Falha ao carregar dados",
+      "UPDATE_FAILED": "Falha ao atualizar",
+      "MOVE_FAILED": "Falha ao mover cartão",
+      "DELETE_FAILED": "Falha ao excluir",
+      "PIPELINE_IN_USE": "Pipeline está em uso por contatos",
       "NO_PIPELINE_SELECTED": "Nenhum pipeline selecionado",
-      "TOO_MANY_UPDATES": "Detectamos muitas atualizações no Kanban. O componente foi resetado para evitar problemas de desempenho."
+      "TOO_MANY_UPDATES": "Muitas atualizações detectadas. Sistema reiniciado."
     },
     "SUCCESS": {
       "PIPELINE_DELETED": "Pipeline excluído com sucesso"
     },
     "DEBUG": {
       "RECEIVED_EVENT_REMOVED": "Evento de remoção de atributo recebido",
-      "UPDATING_COLUMNS": "Atualizando colunas"
+      "UPDATING_COLUMNS": "Atualizando colunas",
+      "REMOVING_CARD": "Removendo cartão do kanban",
+      "CARD_REMOVED": "Cartão removido com sucesso",
+      "OPERATION_REGISTER_FAILED": "Falha ao registrar operação"
     },
     "REMOVE_CARD_MODAL": {
-      "TITLE": "Remover cartão",
-      "MESSAGE": "Tem certeza que deseja remover este cartão do Kanban?",
-      "CONFIRM": "Sim, remover",
-      "CANCEL": "Não, manter"
+      "TITLE": "Remover do Pipeline",
+      "MESSAGE": "Tem certeza que deseja remover este contato do pipeline?",
+      "CONFIRM": "Remover",
+      "CANCEL": "Cancelar"
     },
-    "PARTIAL_CONTACTS_LOADED": "Carregados {loaded} contatos de um total de {total}."
+    "PARTIAL_CONTACTS_LOADED": "Alguns contatos podem não ser exibidos devido ao grande volume",
+    "CARD": {
+      "HIDE_CONVERSATIONS": "Ocultar conversas",
+      "VIEW_CONVERSATIONS": "Ver conversas",
+      "LOADING": "Carregando...",
+      "NO_CONVERSATIONS": "Nenhuma conversa encontrada",
+      "NO_MESSAGES": "Sem mensagens",
+      "NO_USER_MESSAGES": "Sem mensagens de usuários",
+      "NO_CONTENT": "Sem conteúdo",
+      "MORE_CONVERSATIONS": "+{count} conversas",
+      "STATUS": {
+        "OPEN": "Aberta",
+        "RESOLVED": "Resolvida",
+        "PENDING": "Pendente",
+        "SNOOZED": "Pausada"
+      }
+    }
   }
 } 
