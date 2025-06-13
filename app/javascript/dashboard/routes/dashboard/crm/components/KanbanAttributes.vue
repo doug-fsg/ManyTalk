@@ -70,7 +70,13 @@
       </div>
     </div>
 
-    <div v-if="selectedAttribute && !uiFlags.isFetching" class="kanban-board">
+    <!-- Loading state para o carregamento de contatos -->
+    <woot-loading-state
+      v-if="isLoadingContacts"
+      :message="loadingMessage"
+    />
+
+    <div v-else-if="selectedAttribute && !uiFlags.isFetching" class="kanban-board">
       <div class="kanban-columns-container">
         <draggable
           v-model="columns"
@@ -273,6 +279,10 @@ export default {
       showDeletePipelineModal: false,
       isCreating: false,
       currentLocale: this.$i18n.locale,
+      isLoadingContacts: false,
+      loadingProgress: null,
+      loadingMessage: '',
+      isLoadingInitialData: false,
     };
   },
   computed: {
@@ -318,7 +328,7 @@ export default {
   },
   watch: {
     selectedAttribute(newVal) {
-      if (newVal) {
+      if (newVal && !this.isLoadingInitialData) {
         this.fetchContacts();
         this.setupColumns();
       }
@@ -332,7 +342,7 @@ export default {
         }
       },
     },
-    // Observa mudanças nos contatos para atualizar as colunas
+    // Observar mudanças nos contatos para atualizar as colunas
     contacts: {
       handler() {
         if (this.selectedAttribute) {
@@ -425,6 +435,8 @@ export default {
     },
     async loadInitialData() {
       try {
+        this.isLoadingInitialData = true; // Definir flag como true no início
+        
         await this.fetchAttributes();
         if (this.listTypeAttributes.length > 0) {
           // Always select the first pipeline if none is selected
@@ -439,6 +451,8 @@ export default {
           'error',
           this.$t('KANBAN.ERRORS.LOAD_FAILED')
         );
+      } finally {
+        this.isLoadingInitialData = false; // Definir flag como false ao final
       }
     },
     safeShowNotification(type, message) {
@@ -729,64 +743,140 @@ export default {
     },
     async fetchContacts() {
       try {
-        this.logger.log('info', 'Iniciando busca de contatos');
+        const caller = new Error().stack.split('\n')[2].trim();
+        console.log(`🔄 Iniciando carregamento de contatos em lotes... (chamado por: ${caller})`);
         
-        // Limpar contatos anteriores e buscar a primeira página
-        await this.$store.dispatch('contacts/get', { 
-          page: 1, 
-          per_page: 100  // Aumentamos para reduzir número de chamadas
+        // Ativar o estado de loading
+        this.isLoadingContacts = true;
+        this.loadingProgress = { current: 0, total: 0 };
+        this.loadingMessage = this.$t('KANBAN.LOADING_CONTACTS');
+
+        const limit = 15; // Manter o limite padrão da API
+        const batchSize = 3; // Número de páginas a carregar por lote (reduzido para evitar sobrecarregar o sistema)
+        let allContacts = [];
+        let totalContacts = 0;
+
+        // Primeiro, vamos buscar a página inicial para saber o total
+        await this.$store.dispatch('contacts/get', {
+          page: 1,
+          per_page: limit
         });
+
+        // Obter contatos do store após a primeira chamada
+        const contactsFromStore = this.$store.getters['contacts/getContacts'];
+        const contactMeta = this.$store.getters['contacts/getMeta'];
         
-        // Calcular número total de páginas necessárias
-        const totalPages = Math.ceil(this.contactMeta.count / 100);
-        const maxPages = 3;  // Limite máximo de páginas para evitar sobrecarga
+        if (!contactsFromStore || contactsFromStore.length === 0) {
+          console.log('⚠️ Nenhum contato encontrado na primeira página');
+          this.isLoadingContacts = false;
+          return;
+        }
         
-        // Logging para diagnóstico
-        this.logger.log('info', 'Planejamento de carregamento de contatos', {
-          total: this.contactMeta.count,
-          pages: totalPages,
-          limitedTo: Math.min(totalPages, maxPages)
-        });
+        // Adicionar contatos da primeira página ao nosso array
+        allContacts = [...contactsFromStore];
         
-        // Carregar páginas adicionais se necessário
+        // Obter total de contatos e calcular páginas restantes
+        totalContacts = contactMeta.count || 0;
+        const totalPages = Math.ceil(totalContacts / limit);
+        
+        // Atualizar o progresso
+        this.loadingProgress = { 
+          current: allContacts.length, 
+          total: totalContacts 
+        };
+        this.loadingMessage = `${this.$t('KANBAN.LOADING_CONTACTS')} (${Math.round((allContacts.length / totalContacts) * 100)}%)`;
+        
+        // Continuar buscando as páginas restantes se houver mais de uma página
         if (totalPages > 1) {
-          const pagesToLoad = Math.min(totalPages, maxPages);
-          
-          // Usar Promise.all para carregar em paralelo e melhorar performance
-          const pagePromises = [];
-          
-          for (let page = 2; page <= pagesToLoad; page++) {
-            pagePromises.push(
-              this.$store.dispatch('contacts/get', { 
-              page, 
-                per_page: 100, 
-              append: true 
-              })
-            );
+          // Calcular quantos lotes precisamos
+          const batches = [];
+          for (let page = 2; page <= totalPages; page += batchSize) {
+            const batchPages = [];
+            for (let i = 0; i < batchSize && page + i <= totalPages; i++) {
+              batchPages.push(page + i);
+            }
+            batches.push(batchPages);
           }
           
-          await Promise.all(pagePromises);
+          // Processar cada lote sequencialmente
+          for (const batch of batches) {
+            console.log(`🔄 Carregando lote de páginas: ${batch.join(', ')}...`);
+            
+            // Carregar todas as páginas do lote sequencialmente para evitar erros
+            for (const page of batch) {
+              try {
+                // Como a action contacts/get sempre limpa o store, precisamos salvar os contatos já carregados
+                const currentContacts = [...allContacts];
+                
+                // Buscar a próxima página (a action sempre limpa o store)
+                await this.$store.dispatch('contacts/get', {
+                  page,
+                  per_page: limit
+                });
+                
+                // Obter apenas os novos contatos desta página
+                const pageContacts = this.$store.getters['contacts/getContacts'];
+                
+                if (pageContacts && pageContacts.length) {
+                  // Filtrar possíveis duplicatas antes de adicionar ao array total
+                  const newContacts = pageContacts.filter(contact => 
+                    !currentContacts.some(existing => existing.id === contact.id)
+                  );
+                  
+                  // Adicionar ao array total
+                  allContacts = [...currentContacts, ...newContacts];
+                  
+                  // Atualizar o progresso
+                  this.loadingProgress = { 
+                    current: Math.min(allContacts.length, totalContacts), 
+                    total: totalContacts 
+                  };
+                  
+                  // Atualizar a mensagem de loading com a porcentagem
+                  const percentage = Math.round((allContacts.length / totalContacts) * 100);
+                  this.loadingMessage = `${this.$t('KANBAN.LOADING_CONTACTS')} (${percentage}%)`;
+                  
+                  console.log(`📊 Progresso: ${allContacts.length}/${totalContacts} contatos carregados (${percentage}%)`);
+                }
+              } catch (pageError) {
+                console.error(`❌ Erro ao carregar página ${page}:`, pageError.message);
+                // Continuar para a próxima página mesmo em caso de erro
+              }
+            }
+          }
+          
+          console.log('🎉 TODOS OS CONTATOS FORAM CARREGADOS!', {
+            totalDeContatos: allContacts.length,
+            esperado: totalContacts
+          });
         }
         
-        // Se o total exceder o que carregamos, mostrar aviso
-        if (totalPages > maxPages) {
-          this.safeShowNotification(
-            'info',
-            this.$t('KANBAN.PARTIAL_CONTACTS_LOADED')
-          );
+        // Mesmo se não conseguimos carregar todos os contatos, vamos usar o que temos
+        if (allContacts.length > 0) {
+          // Limpar o store APENAS UMA VEZ antes de adicionar todos os contatos
+          this.$store.commit('contacts/CLEAR_CONTACTS');
+          
+          // Adicionar todos os contatos de uma vez
+          this.$store.commit('contacts/SET_CONTACTS', allContacts);
+          
+          // Configurar as colunas com os contatos carregados
+          this.setupColumns();
         }
-        
-        // Configurar colunas com os contatos carregados
-        this.setupColumns();
         
       } catch (error) {
-        this.logger.log('error', 'Erro ao buscar contatos', { error });
-        this.safeShowNotification(
-          'error',
-          this.$t('CONTACTS.LIST.FETCH_ERROR')
-        );
+        console.error('❌ Erro ao carregar contatos:', error.message);
+        
+        // Mostrar notificação de erro
+        this.$store.dispatch('notifications/show', {
+          type: 'error',
+          message: this.$t('CONTACTS.LIST.FETCH_ERROR')
+        });
+      } finally {
+        // Garantir que o estado de loading seja desativado
+        this.isLoadingContacts = false;
       }
     },
+
     selectAttribute(attribute) {
       this.selectedAttribute = attribute;
     },
@@ -857,6 +947,23 @@ export default {
       
       // Debug log para mostrar o conteúdo de cada coluna
       this.logColumnsContent();
+
+      // Forçar atualização imediata da UI
+      this.$nextTick(() => {
+        // Garantir que a UI seja atualizada imediatamente
+        this.$forceUpdate();
+        
+        // Adicionar uma pequena animação de fade-in para melhorar a experiência do usuário
+        if (this.$el && this.$el.querySelector('.kanban-columns')) {
+          const columns = this.$el.querySelector('.kanban-columns');
+          columns.style.opacity = '0';
+          columns.style.transition = 'opacity 0.3s ease-in-out';
+          
+          setTimeout(() => {
+            columns.style.opacity = '1';
+          }, 100);
+        }
+      });
     },
     getContactsForColumn(columnValue) {
       if (!this.selectedAttribute) return [];
@@ -1472,6 +1579,17 @@ export default {
   flex-direction: column;
   overflow: hidden;
   margin-top: var(--space-small);
+  transition: opacity 0.2s ease-in-out;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .kanban-columns-container {
@@ -1657,6 +1775,77 @@ export default {
       margin-bottom: 8px;
       vertical-align: top;
     }
+  }
+}
+
+.kanban-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: var(--space-large);
+  
+  .loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 400px;
+    
+    h3 {
+      font-size: var(--font-size-medium);
+      margin: var(--space-normal) 0;
+      color: var(--s-700);
+      
+      .dark-mode & {
+        color: var(--s-200);
+      }
+    }
+    
+    .loading-progress {
+      font-size: var(--font-size-big);
+      font-weight: var(--font-weight-bold);
+      color: var(--w-500);
+      margin-top: var(--space-smaller);
+      
+      .dark-mode & {
+        color: var(--w-400);
+      }
+    }
+  }
+  
+  .loading-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-normal);
+    
+    .spinner-circle {
+      width: 12px;
+      height: 12px;
+      margin: 0 4px;
+      border-radius: 50%;
+      background-color: var(--w-400);
+      animation: bounce 1.4s infinite ease-in-out both;
+      
+      &:nth-child(1) {
+        animation-delay: -0.32s;
+      }
+      
+      &:nth-child(2) {
+        animation-delay: -0.16s;
+      }
+    }
+  }
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
   }
 }
 </style> 

@@ -24,6 +24,7 @@
     "SYNC_DESCRIPTION": "As alterações são sincronizadas automaticamente",
     "VIEW_CONTACT": "Visualizar contato",
     "REMOVE_CARD": "Remover do Kanban",
+    "LOADING_CONTACTS": "Carregando contatos...",
     "ACTIONS": {
       "TITLE": "Ações",
       "NEW": "Novo Kanban",
