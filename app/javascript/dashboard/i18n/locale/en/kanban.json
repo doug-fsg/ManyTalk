@@ -1,20 +1,20 @@
 {
   "KANBAN": {
-    "TITLE": "Kanban",
+    "TITLE": "Pipeline",
     "SUBTITLE": "Attribute-based visualization",
     "REFRESH": "Refresh Kanban",
     "SEARCH_PLACEHOLDER": "Search contacts by name or number",
     "CREATE_NEW": "Create Kanban",
     "CREATE_NEW_ATTRIBUTE": "Create new Kanban attribute",
     "CREATE_NEW_ATTRIBUTE_DESC": "Create a custom attribute to use in Kanban",
-    "SELECT_ATTRIBUTE": "Select an attribute to view in Kanban",
-    "SELECT_ATTRIBUTE_DESCRIPTION": "Choose a list type attribute to organize your contacts",
-    "NO_KANBAN_ATTRIBUTES": "No Kanban attributes available",
-    "CREATE_KANBAN_ATTRIBUTE_DESCRIPTION": "To use Kanban, create a custom list type attribute (type 6) for contacts (model 1)",
-    "CREATE_ATTRIBUTE": "Create attribute",
+    "SELECT_ATTRIBUTE": "Select a Pipeline",
+    "SELECT_ATTRIBUTE_DESCRIPTION": "Choose a pipeline to view your contacts",
+    "NO_KANBAN_ATTRIBUTES": "No Pipelines Found",
+    "CREATE_KANBAN_ATTRIBUTE_DESCRIPTION": "You don't have any pipelines yet. Click below to create one.",
+    "CREATE_ATTRIBUTE": "Create Pipeline",
     "CHANGE_ATTRIBUTE": "Change",
     "VIEWING_BY_ATTRIBUTE": "Viewing by: {attribute}",
-    "NO_CONTACTS": "No contacts",
+    "NO_CONTACTS": "No contacts in this column",
     "NO_VALUE": "No value",
     "FILTER_CONTACTS": "Filter Contacts",
     "FILTER_DESCRIPTION": "Filter contacts displayed in Kanban",
@@ -25,11 +25,12 @@
     "VIEW_CONTACT": "View contact",
     "REMOVE_CARD": "Remove from Kanban",
     "LOADING_CONTACTS": "Loading contacts...",
+    "LOAD_MORE_CONTACTS": "Load more contacts",
     "ACTIONS": {
       "TITLE": "Actions",
-      "NEW": "New Kanban",
-      "EDIT": "Edit Kanban",
-      "DELETE": "Delete Kanban"
+      "NEW": "New Pipeline",
+      "EDIT": "Edit Pipeline",
+      "DELETE": "Delete Pipeline"
     },
     "DELETE_PIPELINE": {
       "TITLE": "Delete Pipeline",
@@ -61,7 +62,7 @@
     "CARD": {
       "HIDE_CONVERSATIONS": "Hide conversations",
       "VIEW_CONVERSATIONS": "View conversations",
-      "LOADING": "Loading...",
+      "LOADING": "Loading conversations...",
       "NO_CONVERSATIONS": "No conversations found",
       "NO_MESSAGES": "No messages",
       "NO_USER_MESSAGES": "No user messages",
@@ -72,6 +73,39 @@
         "RESOLVED": "Resolved",
         "PENDING": "Pending",
         "SNOOZED": "Snoozed"
+      },
+      "ADD_VALUE": "Add value",
+      "EDIT_DEAL_VALUE": "Edit deal value",
+      "ADD_DEAL_VALUE": "Add deal value",
+      "DEAL_VALUE_MODAL": {
+        "TITLE": "Deal Value",
+        "LABEL": "Value",
+        "PLACEHOLDER": "Enter deal value",
+        "SAVE": "Save",
+        "CANCEL": "Cancel"
+      }
+    },
+    "CREATE_PIPELINE": {
+      "TITLE": "Create New Pipeline",
+      "DESCRIPTION": "Set up a new pipeline to manage your deals",
+      "FORM": {
+        "NAME": {
+          "LABEL": "Pipeline Name",
+          "PLACEHOLDER": "Ex: Sales Pipeline",
+          "ERROR": "Pipeline name is required and must be at least 2 characters"
+        },
+        "DESCRIPTION": {
+          "LABEL": "Description",
+          "PLACEHOLDER": "Describe the purpose of this pipeline",
+          "ERROR": "Description is required and must be at least 10 characters"
+        },
+        "STAGES": {
+          "LABEL": "Pipeline Stages",
+          "PLACEHOLDER": "Stage name",
+          "ADD": "Add stage",
+          "ERROR": "Add at least one stage to the pipeline"
+        },
+        "CREATE": "Create Pipeline"
       }
     }
   },

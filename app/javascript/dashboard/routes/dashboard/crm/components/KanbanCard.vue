@@ -8,6 +8,7 @@
     }"
     :data-contact-id="contact.id"
     :data-contact-name="contact.name"
+    @click="toggleExpand"
   >
     <div class="card-header">
       <span class="card-title">{{ contact.name }}</span>
@@ -27,6 +28,13 @@
           v-tooltip="$t('KANBAN.VIEW_CONTACT')"
         >
           <fluent-icon icon="contact-card" size="14" />
+        </span>
+        <span 
+          class="action-icon value-icon" 
+          @click.stop="toggleValueInput"
+          v-tooltip="dealValue ? $t('KANBAN.CARD.EDIT_DEAL_VALUE') : $t('KANBAN.CARD.ADD_DEAL_VALUE')"
+        >
+          <fluent-icon icon="tag" size="14" />
         </span>
         <span 
           class="action-icon remove-icon" 
@@ -50,7 +58,53 @@
         <span class="info-icon"><i class="icon-phone" /></span>
         <span class="info-value">{{ contact.phone_number }}</span>
       </div>
+      
+      <!-- Valor do Negócio -->
+      <div class="card-info deal-value" v-if="dealValue">
+        <span class="info-icon">
+          <fluent-icon icon="tag" size="12" />
+        </span>
+        <span class="info-value">
+          {{ formatCurrency(dealValue) }}
+        </span>
+      </div>
+      
+      <!-- Tempo na etapa -->
+      <div class="card-info stage-time" v-if="stageTimeDisplay">
+        <span class="info-icon">
+          <fluent-icon icon="clock" size="12" />
+        </span>
+        <span class="info-value" :class="stageTimeClass" :title="stageTimeTooltip">
+          {{ stageTimeDisplay }}
+        </span>
+      </div>
     </div>
+
+    <!-- Input de valor flutuante -->
+    <div v-if="showValueInput" class="value-input-popup" @click.stop>
+      <div class="value-input-container">
+        <input 
+          ref="valueInput"
+          v-model="editingValue" 
+          type="number" 
+          min="0" 
+          step="0.01"
+          class="value-input"
+          :placeholder="$t('KANBAN.CARD.DEAL_VALUE_MODAL.PLACEHOLDER')"
+          @keyup.enter="saveValue"
+          @keyup.esc="cancelValueEdit"
+        />
+        <div class="value-input-actions">
+          <span class="value-action-btn save-btn" @click="saveValue">
+            <fluent-icon icon="checkmark" size="14" />
+          </span>
+          <span class="value-action-btn cancel-btn" @click="cancelValueEdit">
+            <fluent-icon icon="dismiss" size="14" />
+        </span>
+        </div>
+      </div>
+    </div>
+
     <div class="card-footer">
       <div class="card-labels">
         <span 
@@ -157,6 +211,10 @@ export default {
     hasError: {
       type: Boolean,
       default: false
+    },
+    pipelineId: {
+      type: [Number, String],
+      required: true
     }
   },
   data() {
@@ -164,6 +222,8 @@ export default {
       colorMap: {},
       isExpanded: false,
       isLoadingConversations: false,
+      showValueInput: false,
+      editingValue: 0,
     };
   },
   computed: {
@@ -214,6 +274,76 @@ export default {
         };
         return colors[status] || { bg: '#F3F3F3', text: '#4A4A4A' };
       };
+    },
+    kanbanData() {
+      const additionalAttributes = this.contact.additional_attributes || {};
+      return additionalAttributes.kanban || {};
+    },
+    pipelineData() {
+      return this.kanbanData[this.pipelineId] || {};
+    },
+    dealValue() {
+      const deal = this.pipelineData.deal || {};
+      return deal.value;
+    },
+    stageTracking() {
+      return this.pipelineData.stage_tracking || {};
+    },
+    currentStage() {
+      return this.stageTracking.current || {};
+    },
+    stageTimeDisplay() {
+      if (!this.currentStage.entered_at) return null;
+      
+      const enteredAt = new Date(this.currentStage.entered_at).getTime();
+      const now = Date.now();
+      const timeDiff = now - enteredAt;
+      
+      // Menos de 1 hora
+      if (timeDiff < 3600000) {
+        const minutes = Math.floor(timeDiff / 60000);
+        return `${minutes}m`;
+      }
+      
+      // Menos de 1 dia
+      if (timeDiff < 86400000) {
+        const hours = Math.floor(timeDiff / 3600000);
+        return `${hours}h`;
+      }
+      
+      // Mais de 1 dia
+      const days = Math.floor(timeDiff / 86400000);
+      return `${days}d`;
+    },
+    stageTimeClass() {
+      if (!this.currentStage.entered_at) {
+        return '';
+      }
+      
+      const enteredAt = new Date(this.currentStage.entered_at).getTime();
+      const now = Date.now();
+      const timeDiff = now - enteredAt;
+      
+      // Mais de 3 dias (72 horas)
+      if (timeDiff > 259200000) {
+        return 'time-overdue';
+      }
+      
+      // Mais de 2 dias (48 horas)
+      if (timeDiff > 172800000) {
+        return 'time-warning';
+      }
+      
+      return 'time-normal';
+    },
+    stageTimeTooltip() {
+      if (!this.currentStage.entered_at) return '';
+      
+      const enteredAt = new Date(this.currentStage.entered_at);
+      const formattedDate = enteredAt.toLocaleDateString();
+      const formattedTime = enteredAt.toLocaleTimeString();
+      
+      return `Nesta etapa desde ${formattedDate} ${formattedTime}`;
     }
   },
   methods: {
@@ -275,7 +405,72 @@ export default {
       
       const conversationUrl = frontendURL(`accounts/${this.$route.params.accountId}/conversations/${conversation.id}`);
       window.open(conversationUrl, '_blank');
+    },
+    formatCurrency(value) {
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(value);
+    },
+    toggleValueInput() {
+      this.showValueInput = !this.showValueInput;
+      this.editingValue = this.dealValue || 0;
+      
+      if (this.showValueInput) {
+        this.$nextTick(() => {
+          if (this.$refs.valueInput) {
+            this.$refs.valueInput.focus();
+          }
+        });
+      }
+    },
+    saveValue() {
+      const value = parseFloat(this.editingValue) || 0;
+      
+      // Criar estrutura agrupada simplificada
+      const additionalAttributes = {
+        ...this.contact.additional_attributes,
+        kanban: {
+          ...(this.contact.additional_attributes?.kanban || {}),
+          [this.pipelineId]: {
+            ...(this.contact.additional_attributes?.kanban?.[this.pipelineId] || {}),
+            deal: {
+              value
+            }
+          }
+        }
+      };
+      
+      this.$emit('value-updated', {
+        contactId: this.contact.id,
+        value,
+        additionalAttributes
+      });
+      
+      this.showValueInput = false;
+    },
+    cancelValueEdit() {
+      this.showValueInput = false;
+      this.editingValue = this.dealValue || 0;
+    },
+    toggleExpand() {
+      this.isExpanded = !this.isExpanded;
     }
+  },
+  watch: {
+    showValueInput(newValue) {
+      if (newValue) {
+        // Adiciona um event listener global para fechar o input quando clicar fora
+        document.addEventListener('click', this.cancelValueEdit);
+      } else {
+        // Remove o event listener quando o input é fechado
+        document.removeEventListener('click', this.cancelValueEdit);
+      }
+    }
+  },
+  beforeDestroy() {
+    // Limpa o event listener quando o componente é destruído
+    document.removeEventListener('click', this.cancelValueEdit);
   }
 };
 </script>
@@ -283,17 +478,18 @@ export default {
 <style lang="scss" scoped>
 .kanban-card {
   background-color: var(--white);
-  border-radius: var(--border-radius-normal);
-  box-shadow: var(--shadow-small);
-  border: 1px solid var(--s-100);
+  border-radius: var(--border-radius-large);
   padding: var(--space-normal);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-bottom: var(--space-smaller);
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: all 0.2s ease;
   position: relative;
+  border: none;
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-medium);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     background-color: var(--s-50);
     
     .card-actions {
@@ -307,12 +503,13 @@ export default {
   }
 
   &.has-error {
-    border: 1px solid var(--r-400);
+    box-shadow: 0 2px 8px rgba(var(--r-rgb), 0.1);
+    border-left: 3px solid var(--r-400);
   }
 
   &.is-expanded {
     z-index: 10;
-    box-shadow: var(--shadow-medium);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
     
     .conversation-expander {
       background: var(--s-50);
@@ -326,6 +523,24 @@ export default {
       }
     }
   }
+  
+  .dark-mode & {
+    background-color: var(--b-700);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    
+    &:hover {
+      background-color: var(--b-600);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    &.has-error {
+      box-shadow: 0 2px 8px rgba(var(--r-rgb), 0.2);
+    }
+    
+    &.is-expanded {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+  }
 
   .card-overlay {
     position: absolute;
@@ -337,6 +552,11 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: var(--border-radius-large);
+    
+    .dark-mode & {
+      background: rgba(0, 0, 0, 0.3);
+    }
   }
 
   .updating-indicator {
@@ -388,6 +608,10 @@ export default {
 
   &.view-icon:hover {
     color: var(--b-500);
+  }
+  
+  &.value-icon:hover {
+    color: var(--g-500);
   }
 
   &.remove-icon:hover {
@@ -467,9 +691,109 @@ export default {
   }
 }
 
+.value-input-popup {
+  position: absolute;
+  top: 30px;
+  right: 10px;
+  background-color: var(--white);
+  border-radius: var(--border-radius-normal);
+  box-shadow: var(--shadow-medium);
+  border: 1px solid var(--s-200);
+  z-index: 100;
+  padding: var(--space-smaller);
+  
+  .dark-mode & {
+    background-color: var(--b-700);
+    border-color: var(--b-600);
+  }
+}
+
+.value-input-container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-smaller);
+}
+
+.value-input {
+  width: 120px;
+  padding: var(--space-smaller);
+  border: 1px solid var(--s-200);
+  border-radius: var(--border-radius-small);
+  font-size: var(--font-size-small);
+  
+  &:focus {
+    outline: none;
+    border-color: var(--w-500);
+  }
+  
+  .dark-mode & {
+    background-color: var(--b-600);
+    border-color: var(--b-500);
+    color: var(--s-200);
+  }
+}
+
+.value-input-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.value-action-btn {
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--border-radius-small);
+  
+  &.save-btn {
+    background-color: var(--g-100);
+    color: var(--g-600);
+
+  &:hover {
+      background-color: var(--g-200);
+    }
+  }
+  
+  &.cancel-btn {
+    background-color: var(--s-100);
+    color: var(--s-600);
+    
+    &:hover {
+      background-color: var(--s-200);
+    }
+  }
+}
+
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+.deal-value {
+  margin-top: var(--space-smaller);
+  padding-top: var(--space-smaller);
+  border-top: 1px dotted rgba(0, 0, 0, 0.05);
+  opacity: 0.75;
+  
+  .info-icon {
+    font-size: 10px;
+  }
+  
+  .info-value {
+    font-size: var(--font-size-mini);
+    color: var(--s-600);
+    font-weight: var(--font-weight-normal);
+  }
+  
+  .dark-mode & {
+    border-top-color: rgba(255, 255, 255, 0.05);
+    
+    .info-value {
+      color: var(--s-400);
+    }
+  }
 }
 
 .conversation-expander {
@@ -491,7 +815,12 @@ export default {
   border: 1px solid var(--s-100);
   border-top: none;
   box-shadow: var(--shadow-small);
-
+  
+  .dark-mode & {
+    background: var(--b-700);
+    border-color: var(--b-600);
+  }
+  
   &:hover {
     background: var(--s-50);
     
@@ -501,6 +830,18 @@ export default {
     
     .expander-icon {
       color: var(--s-700);
+    }
+    
+    .dark-mode & {
+      background: var(--b-600);
+      
+      .expander-line {
+        background: var(--s-400);
+      }
+      
+      .expander-icon {
+        color: var(--s-300);
+      }
     }
   }
 }
@@ -512,11 +853,19 @@ export default {
   border-radius: 2px;
   margin-bottom: 2px;
   transition: background 0.2s ease;
+  
+  .dark-mode & {
+    background: var(--b-500);
+  }
 }
 
 .expander-icon {
   color: var(--s-500);
   transition: color 0.2s ease;
+  
+  .dark-mode & {
+    color: var(--s-400);
+  }
 }
 
 .conversations-preview {
@@ -526,6 +875,13 @@ export default {
   position: relative;
   z-index: 4;
   background: var(--white);
+  border-radius: 0 0 var(--border-radius-normal) var(--border-radius-normal);
+  overflow: hidden;
+  
+  .dark-mode & {
+    background: var(--b-700);
+    border-color: var(--b-600);
+  }
 }
 
 .conversations-loading,
@@ -603,5 +959,55 @@ export default {
 .slide-leave-to {
   opacity: 0;
   transform: translateY(-10px);
+}
+
+.stage-time {
+  margin-top: var(--space-smaller);
+  padding-top: var(--space-smaller);
+  border-top: 1px dotted rgba(0, 0, 0, 0.05);
+  opacity: 0.75;
+  
+  .info-icon {
+    font-size: 10px;
+  }
+  
+  .info-value {
+    font-size: var(--font-size-mini);
+    color: var(--s-600);
+    font-weight: var(--font-weight-normal);
+    
+    &.time-normal {
+      color: var(--s-600);
+    }
+    
+    &.time-warning {
+      color: var(--y-500);
+    }
+    
+    &.time-overdue {
+      color: var(--r-500);
+      font-weight: var(--font-weight-medium);
+    }
+  }
+  
+  .dark-mode & {
+    border-top-color: rgba(255, 255, 255, 0.05);
+    
+    .info-value {
+      color: var(--s-400);
+      
+      &.time-normal {
+        color: var(--s-400);
+      }
+      
+      &.time-warning {
+        color: var(--y-400);
+      }
+      
+      &.time-overdue {
+        color: var(--r-400);
+      }
+    }
+  }
 }
 </style> 

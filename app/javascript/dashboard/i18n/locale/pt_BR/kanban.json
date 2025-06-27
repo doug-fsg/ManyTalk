@@ -78,6 +78,16 @@
         "RESOLVED": "Resolvida",
         "PENDING": "Pendente",
         "SNOOZED": "Pausada"
+      },
+      "ADD_VALUE": "Adicionar valor",
+      "EDIT_DEAL_VALUE": "Editar valor do negócio",
+      "ADD_DEAL_VALUE": "Adicionar valor do negócio",
+      "DEAL_VALUE_MODAL": {
+        "TITLE": "Valor do Negócio",
+        "LABEL": "Valor",
+        "PLACEHOLDER": "Digite o valor do negócio",
+        "SAVE": "Salvar",
+        "CANCEL": "Cancelar"
       }
     }
   }

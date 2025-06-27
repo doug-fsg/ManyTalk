@@ -3,14 +3,22 @@
     class="kanban-column"
     :data-id="column.id"
     :data-title="column.title"
+    :style="{ backgroundColor: getLightColor(column.color) }"
   >
     <div 
       class="column-header"
-      :style="{ borderTopColor: column.color }"
       :data-title="column.title"
+      :style="{ backgroundColor: getHeaderColor(column.color) }"
     >
-      <span class="column-title">{{ column.title }}</span>
-      <span class="column-count">{{ column.items.length }}</span>
+      <div class="column-header-content">
+        <div class="column-header-left">
+          <span class="column-title">{{ column.title }}</span>
+          <span class="column-count">{{ column.items.length }}</span>
+        </div>
+        <div v-if="columnTotal > 0" class="column-total">
+          {{ formatCurrency(columnTotal) }}
+        </div>
+      </div>
     </div>
     <div class="column-content">
       <draggable
@@ -27,11 +35,13 @@
           v-for="contact in columnItems"
           :key="contact.id"
           :contact="contact"
+          :pipeline-id="pipelineId"
           :is-updating="isCardUpdating(contact.id)"
           :has-error="hasCardError(contact.id)"
           @view="$emit('view-contact', contact.id)"
           @remove="$emit('remove-card', contact.id)"
           @open-conversation="$emit('open-conversation', $event)"
+          @value-updated="handleValueUpdated"
         />
         <div v-if="!columnItems.length" class="empty-column">
           <p>{{ $t('KANBAN.NO_CONTACTS') }}</p>
@@ -60,6 +70,10 @@ export default {
       type: Object,
       default: null,
     },
+    pipelineId: {
+      type: [Number, String],
+      required: true
+    }
   },
   computed: {
     columnItems: {
@@ -72,41 +86,69 @@ export default {
           items: value
         });
       }
+    },
+    columnTotal() {
+      return this.columnItems.reduce((total, contact) => {
+        const additionalAttributes = contact.additional_attributes || {};
+        const kanban = additionalAttributes.kanban || {};
+        const pipelineData = kanban[this.pipelineId] || {};
+        const deal = pipelineData.deal || {};
+        const value = deal.value || 0;
+        return total + parseFloat(value);
+      }, 0);
     }
   },
   methods: {
-    onItemMoved(event) {
-      if (!event || !event.item) {
-        console.log('[KanbanDebug] Evento de movimentação inválido', { event });
-        return;
+    getLightColor(hexColor) {
+      // Função para criar uma versão mais clara da cor
+      if (!hexColor) return 'rgba(245, 245, 250, 0.3)'; // Cor padrão clara
+      
+      // Converter hex para RGB e adicionar transparência
+      let hex = hexColor.replace('#', '');
+      if (hex.length === 3) {
+        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
       }
       
-      console.log('[KanbanDebug] Iniciando movimentação de card', {
-        event,
-        item: event.item,
-        from: event.from,
-        to: event.to
-      });
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
       
-      const contactId = parseInt(event.item.dataset.contactId, 10);
-      const sourceColumnId = event.from.dataset.columnId;
-      const targetColumnId = event.to.dataset.columnId;
+      // Retorna uma versão clara com baixa opacidade
+      return `rgba(${r}, ${g}, ${b}, 0.08)`;
+    },
+    getHeaderColor(hexColor) {
+      // Função para criar uma versão mais forte da cor para o cabeçalho
+      if (!hexColor) return 'rgba(245, 245, 250, 0.5)'; // Cor padrão para o cabeçalho
       
-      console.log('[KanbanDebug] Dados extraídos do evento', {
-        contactId,
-        sourceColumnId,
-        targetColumnId,
-        sourceTitle: event.from.dataset.columnTitle,
-        targetTitle: event.to.dataset.columnTitle
-      });
+      // Converter hex para RGB e adicionar transparência
+      let hex = hexColor.replace('#', '');
+      if (hex.length === 3) {
+        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+      }
+      
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      
+      // Retorna uma versão mais forte com opacidade maior
+      return `rgba(${r}, ${g}, ${b}, 0.15)`;
+    },
+    onItemMoved(event) {
+      if (!event || !event.item) return;
+      
+      const contactId = parseInt(event.item.getAttribute('data-contact-id'), 10);
+      const sourceColumnId = event.from.getAttribute('data-column-id');
+      const targetColumnId = event.to.getAttribute('data-column-id');
+      const sourceTitle = event.from.getAttribute('data-column-title');
+      const targetTitle = event.to.getAttribute('data-column-title');
       
       // Emitir evento para o componente pai processar
       this.$emit('item-moved', {
         contactId,
         sourceColumnId,
         targetColumnId,
-        sourceColumnTitle: event.from.dataset.columnTitle,
-        targetColumnTitle: event.to.dataset.columnTitle,
+        sourceColumnTitle: sourceTitle,
+        targetColumnTitle: targetTitle,
         timestamp: Date.now()
       });
     },
@@ -116,6 +158,18 @@ export default {
     hasCardError(contactId) {
       return this.operationManager && this.operationManager.hasOperationFailed(contactId);
     },
+    handleValueUpdated(data) {
+      this.$emit('value-updated', {
+        ...data,
+        columnId: this.column.id
+      });
+    },
+    formatCurrency(value) {
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(value);
+    }
   }
 };
 </script>
@@ -125,14 +179,17 @@ export default {
   flex: 0 0 320px;
   display: flex;
   flex-direction: column;
-  background-color: var(--white);
   border-radius: var(--border-radius-large);
   box-shadow: var(--shadow-small);
   border: 1px solid var(--s-100);
   overflow: hidden;
+  transition: box-shadow 0.2s ease;
+  
+  &:hover {
+    box-shadow: var(--shadow-medium);
+  }
   
   .dark-mode & {
-    background-color: var(--b-700);
     border-color: var(--b-600);
   }
 }
@@ -140,34 +197,53 @@ export default {
 .column-header {
   padding: var(--space-small) var(--space-normal);
   font-weight: var(--font-weight-medium);
+  cursor: move;
+  position: relative;
+  border-bottom: 1px solid var(--s-100);
+  
+  .dark-mode & {
+    border-color: var(--b-600);
+  }
+}
+
+.column-header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: var(--s-25);
-  border-top: 4px solid;
-  cursor: move;
-  position: relative;
+}
+
+.column-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-smaller);
+}
+
+.column-title {
+  font-size: var(--font-size-normal);
+}
+
+.column-count {
+  font-size: var(--font-size-mini);
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--s-700);
+  border-radius: var(--border-radius-rounded);
+  padding: 1px 6px;
+  font-weight: var(--font-weight-medium);
   
   .dark-mode & {
-    background-color: var(--b-600);
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--s-300);
   }
+}
+
+.column-total {
+  font-size: var(--font-size-mini);
+  color: var(--s-500);
+  font-weight: var(--font-weight-normal);
+  opacity: 0.95;
   
-  .column-title {
-    font-size: var(--font-size-normal);
-  }
-  
-  .column-count {
-    font-size: var(--font-size-small);
-    background-color: var(--s-100);
-    color: var(--s-800);
-    border-radius: var(--border-radius-rounded);
-    padding: 2px 8px;
-    font-weight: var(--font-weight-medium);
-    
-    .dark-mode & {
-      background-color: var(--b-500);
-      color: var(--s-200);
-    }
+  .dark-mode & {
+    color: var(--s-400);
   }
 }
 
@@ -206,13 +282,13 @@ export default {
   font-size: var(--font-size-small);
   text-align: center;
   padding: var(--space-normal);
-  background-color: var(--s-25);
+  background-color: rgba(0, 0, 0, 0.02);
   border-radius: var(--border-radius-normal);
   border: 1px dashed var(--s-200);
   
   .dark-mode & {
     color: var(--s-400);
-    background-color: var(--b-600);
+    background-color: rgba(255, 255, 255, 0.03);
     border-color: var(--b-500);
   }
   
