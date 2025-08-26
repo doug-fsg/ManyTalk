@@ -10,8 +10,10 @@
     "SELECT_ATTRIBUTE": "Selecione um Pipeline",
     "SELECT_ATTRIBUTE_DESCRIPTION": "Escolha um pipeline para visualizar seus contatos",
     "NO_KANBAN_ATTRIBUTES": "Nenhum Pipeline Encontrado",
-    "CREATE_KANBAN_ATTRIBUTE_DESCRIPTION": "Você ainda não tem nenhum pipeline. Clique abaixo para criar um.",
+    "CREATE_KANBAN_ATTRIBUTE_DESCRIPTION": "Você ainda não tem nenhum pipeline configurado para o Kanban. Crie um novo pipeline para começar a organizar seus contatos.",
     "CREATE_ATTRIBUTE": "Criar Pipeline",
+    "MANAGE_ATTRIBUTES": "Gerenciar Atributos",
+    "EMPTY_STATE_HELP": "Os pipelines Kanban ajudam você a visualizar e gerenciar o progresso dos seus contatos através de diferentes estágios do seu processo de vendas.",
     "CHANGE_ATTRIBUTE": "Alterar",
     "VIEWING_BY_ATTRIBUTE": "Visualizando por {attribute}",
     "NO_CONTACTS": "Nenhum contato nesta coluna",
@@ -70,6 +72,44 @@
         "SAVE": "Salvar",
         "CANCEL": "Cancelar"
       }
+    },
+    "CREATE_PIPELINE": {
+      "TITLE": "Criar Novo Pipeline",
+      "DESCRIPTION": "Configure um novo pipeline para gerir os seus negócios",
+      "FORM": {
+        "NAME": {
+          "LABEL": "Nome do Pipeline",
+          "PLACEHOLDER": "Ex: Pipeline de Vendas",
+          "ERROR": "O nome do pipeline é obrigatório e deve ter pelo menos 2 caracteres"
+        },
+        "DESCRIPTION": {
+          "LABEL": "Descrição",
+          "PLACEHOLDER": "Descreva o propósito deste pipeline",
+          "ERROR": "A descrição é obrigatória e deve ter pelo menos 3 caracteres"
+        },
+        "STAGES": {
+          "LABEL": "Estágios do Pipeline",
+          "PLACEHOLDER": "Nome do estágio",
+          "ADD": "Adicionar estágio",
+          "ERROR": "Adicione pelo menos um estágio ao pipeline",
+          "HELPER": "Arraste e solte para reordenar os estágios do seu pipeline",
+          "DRAG_HINT": "Arrastar para reordenar",
+          "REMOVE_HINT": "Remover estágio"
+        },
+        "CREATE": "Criar Pipeline",
+        "CANCEL": "Cancelar"
+      }
+    },
+    "WIN_LOST_MODAL": {
+      "TITLE_WON": "Marcar como Ganho",
+      "TITLE_LOST": "Marcar como Perdido",
+      "STATUS_WON": "Negócio Ganho",
+      "STATUS_LOST": "Negócio Perdido",
+      "NOTES_LABEL": "Observações (Opcional)",
+      "NOTES_PLACEHOLDER": "Adicione detalhes sobre esta decisão...",
+      "CURRENT_VALUE": "Valor Atual",
+      "BUTTON_WON": "Marcar como Ganho",
+      "BUTTON_LOST": "Marcar como Perdido"
     }
   }
 } 

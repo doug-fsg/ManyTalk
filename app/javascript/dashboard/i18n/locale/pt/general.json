@@ -1,5 +1,6 @@
 {
   "GENERAL": {
-    "SHOWING_RESULTS": "A mostrar {firstIndex}-{lastIndex} de {totalCount} itens"
+    "SHOWING_RESULTS": "A mostrar {firstIndex}-{lastIndex} de {totalCount} itens",
+    "CANCEL": "Cancelar"
   }
 }

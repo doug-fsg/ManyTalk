@@ -67,6 +67,19 @@ RSpec.describe 'Custom Attribute Definitions API', type: :request do
       }
     end
 
+    let(:kanban_payload) do
+      {
+        custom_attribute_definition: {
+          attribute_display_name: 'Sales Pipeline',
+          attribute_key: 'sales_pipeline',
+          attribute_model: 'contact_attribute',
+          attribute_display_type: 'list',
+          attribute_values: ['Lead', 'Qualified', 'Proposal', 'Won'],
+          is_kanban: true
+        }
+      }
+    end
+
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do
         expect do
@@ -88,6 +101,25 @@ RSpec.describe 'Custom Attribute Definitions API', type: :request do
         expect(response).to have_http_status(:success)
         json_response = response.parsed_body
         expect(json_response['attribute_key']).to eq 'developer_id'
+      end
+
+      it 'creates a kanban attribute definition' do
+        expect do
+          post "/api/v1/accounts/#{account.id}/custom_attribute_definitions", headers: user.create_new_auth_token,
+                                                                              params: kanban_payload
+        end.to change(CustomAttributeDefinition, :count).by(1)
+
+        expect(response).to have_http_status(:success)
+        json_response = response.parsed_body
+        
+        expect(json_response['attribute_key']).to eq 'sales_pipeline'
+        expect(json_response['is_kanban']).to be true
+        expect(json_response['attribute_display_type']).to eq 'list'
+        
+        # Verificar se foi salvo corretamente no banco
+        created_attr = CustomAttributeDefinition.find(json_response['id'])
+        expect(created_attr.is_kanban).to be true
+        expect(CustomAttributeDefinition.kanban_attributes).to include(created_attr)
       end
     end
   end

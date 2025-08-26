@@ -10,6 +10,7 @@
 #  attribute_model        :integer          default("conversation_attribute")
 #  attribute_values       :jsonb
 #  default_value          :integer
+#  is_kanban              :boolean          default(false), not null
 #  regex_cue              :string
 #  regex_pattern          :string
 #  created_at             :datetime         not null
@@ -20,9 +21,13 @@
 #
 #  attribute_key_model_index                         (attribute_key,attribute_model,account_id) UNIQUE
 #  index_custom_attribute_definitions_on_account_id  (account_id)
+#  index_custom_attribute_definitions_on_is_kanban   (is_kanban)
 #
 class CustomAttributeDefinition < ApplicationRecord
   scope :with_attribute_model, ->(attribute_model) { attribute_model.presence && where(attribute_model: attribute_model) }
+  scope :kanban_attributes, -> { where(is_kanban: true) }
+  scope :non_kanban_attributes, -> { where(is_kanban: false) }
+  
   validates :attribute_display_name, presence: true
 
   validates :attribute_key,

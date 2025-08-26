@@ -73,6 +73,19 @@
               />
             </accordion-item>
           </div>
+          <woot-feature-toggle
+            v-else-if="element.name === 'macros'"
+            feature-key="macros"
+          >
+            <accordion-item
+              :title="$t('CONVERSATION_SIDEBAR.ACCORDION.MACROS')"
+              :is-open="isContactSidebarItemOpen('is_macro_open')"
+              compact
+              @click="value => toggleSidebarUIState('is_macro_open', value)"
+            >
+              <macros-list :conversation-id="conversationId" />
+            </accordion-item>
+          </woot-feature-toggle>
           <div v-else-if="element.name === 'contact_attributes'">
             <accordion-item
               :title="$t('CONVERSATION_SIDEBAR.ACCORDION.CONTACT_ATTRIBUTES')"
@@ -95,6 +108,30 @@
               />
             </accordion-item>
           </div>
+          <woot-feature-toggle
+            v-else-if="element.name === 'kanban'"
+            feature-key="kanban"
+          >
+            <accordion-item
+              :title="$t('CONVERSATION_SIDEBAR.ACCORDION.KANBAN')"
+              :is-open="isContactSidebarItemOpen('is_kanban_open')"
+              compact
+              @click="
+                value =>
+                  toggleSidebarUIState('is_kanban_open', value)
+              "
+            >
+              <kanban-attributes
+                attribute-class="conversation--attribute"
+                class="even"
+                attribute-from="conversation_kanban_panel"
+                :contact-id="contact.id"
+                :empty-state-message="
+                  $t('CONVERSATION_SIDEBAR.KANBAN.NO_RECORDS_FOUND')
+                "
+              />
+            </accordion-item>
+          </woot-feature-toggle>
           <div v-else-if="element.name === 'previous_conversation'">
             <accordion-item
               v-if="contact.id"
@@ -112,19 +149,6 @@
               />
             </accordion-item>
           </div>
-          <woot-feature-toggle
-            v-else-if="element.name === 'macros'"
-            feature-key="macros"
-          >
-            <accordion-item
-              :title="$t('CONVERSATION_SIDEBAR.ACCORDION.MACROS')"
-              :is-open="isContactSidebarItemOpen('is_macro_open')"
-              compact
-              @click="value => toggleSidebarUIState('is_macro_open', value)"
-            >
-              <macros-list :conversation-id="conversationId" />
-            </accordion-item>
-          </woot-feature-toggle>
         </div>
       </transition-group>
     </draggable>
@@ -142,6 +166,7 @@ import ConversationParticipant from './ConversationParticipant.vue';
 import ContactInfo from './contact/ContactInfo.vue';
 import ConversationInfo from './ConversationInfo.vue';
 import CustomAttributes from './customAttributes/CustomAttributes.vue';
+import KanbanAttributes from './customAttributes/KanbanAttributes.vue';
 import draggable from 'vuedraggable';
 import MacrosList from './Macros/List.vue';
 export default {
@@ -151,6 +176,7 @@ export default {
     ContactInfo,
     ConversationInfo,
     CustomAttributes,
+    KanbanAttributes,
     ConversationAction,
     ConversationParticipant,
     draggable,

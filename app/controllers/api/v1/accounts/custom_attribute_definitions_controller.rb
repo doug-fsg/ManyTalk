@@ -41,6 +41,7 @@ class Api::V1::Accounts::CustomAttributeDefinitionsController < Api::V1::Account
       :attribute_model,
       :regex_pattern,
       :regex_cue,
+      :is_kanban,
       attribute_values: []
     )
   end

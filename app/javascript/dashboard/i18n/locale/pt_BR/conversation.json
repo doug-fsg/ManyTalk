@@ -52,7 +52,9 @@
     "REPLY_MESSAGE_NOT_FOUND": "Mensagem não disponível",
     "CARD": {
       "SHOW_LABELS": "Mostrar rótulos",
-      "HIDE_LABELS": "Ocultar os rótulos"
+      "HIDE_LABELS": "Ocultar os rótulos",
+      "SHOW_STAGES": "Mostrar etapas",
+      "HIDE_STAGES": "Ocultar etapas"
     },
     "HEADER": {
       "RESOLVE_ACTION": "Resolver",
@@ -275,8 +277,12 @@
       "CONVERSATION_LABELS": "Marcador da conversa",
       "CONVERSATION_INFO": "Informação da conversa",
       "CONTACT_ATTRIBUTES": "Atributos do contato",
+      "KANBAN": "Kanban",
       "PREVIOUS_CONVERSATION": "Conversas anteriores",
       "MACROS": "Macros"
+    },
+    "KANBAN": {
+      "NO_RECORDS_FOUND": "Nenhum atributo kanban encontrado"
     }
   },
   "CONVERSATION_CUSTOM_ATTRIBUTES": {

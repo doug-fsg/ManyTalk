@@ -50,6 +50,14 @@
           <priority-mark :priority="chat.priority" />
         </div>
       </div>
+      
+      <!-- Kanban Stage Indicator - Acima do nome -->
+      <div class="mx-2 mb-1">
+        <woot-feature-toggle feature-key="kanban">
+          <kanban-stage-indicator :contact="currentContact" />
+        </woot-feature-toggle>
+      </div>
+      
       <h4
         class="conversation--user text-sm my-0 mx-2 capitalize pt-0.5 text-ellipsis font-medium overflow-hidden whitespace-nowrap w-[calc(100%-70px)] text-slate-900 dark:text-slate-100"
       >
@@ -129,6 +137,7 @@ import TimeAgo from 'dashboard/components/ui/TimeAgo.vue';
 import CardLabels from './conversationCardComponents/CardLabels.vue';
 import PriorityMark from './PriorityMark.vue';
 import SLACardLabel from './components/SLACardLabel.vue';
+import KanbanStageIndicator from './KanbanStageIndicator.vue';
 
 export default {
   components: {
@@ -140,6 +149,7 @@ export default {
     MessagePreview,
     PriorityMark,
     SLACardLabel,
+    KanbanStageIndicator,
   },
   mixins: [inboxMixin, conversationMixin],
   props: {

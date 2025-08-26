@@ -73,6 +73,7 @@
     },
     "EDIT": {
       "TITLE": "Editar Atributo Personalizado",
+      "EDIT_PIPELINE": "Editar Pipeline",
       "UPDATE_BUTTON_TEXT": "Atualização",
       "TYPE": {
         "LIST": {

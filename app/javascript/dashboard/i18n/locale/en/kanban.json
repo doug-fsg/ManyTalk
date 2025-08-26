@@ -10,8 +10,10 @@
     "SELECT_ATTRIBUTE": "Select a Pipeline",
     "SELECT_ATTRIBUTE_DESCRIPTION": "Choose a pipeline to view your contacts",
     "NO_KANBAN_ATTRIBUTES": "No Pipelines Found",
-    "CREATE_KANBAN_ATTRIBUTE_DESCRIPTION": "You don't have any pipelines yet. Click below to create one.",
+    "CREATE_KANBAN_ATTRIBUTE_DESCRIPTION": "You don't have any pipelines configured for Kanban yet. Create a new pipeline to start organizing your contacts.",
     "CREATE_ATTRIBUTE": "Create Pipeline",
+    "MANAGE_ATTRIBUTES": "Manage Attributes",
+    "EMPTY_STATE_HELP": "Kanban pipelines help you visualize and manage your contacts' progress through different stages of your sales process.",
     "CHANGE_ATTRIBUTE": "Change",
     "VIEWING_BY_ATTRIBUTE": "Viewing by: {attribute}",
     "NO_CONTACTS": "No contacts in this column",
@@ -97,16 +99,31 @@
         "DESCRIPTION": {
           "LABEL": "Description",
           "PLACEHOLDER": "Describe the purpose of this pipeline",
-          "ERROR": "Description is required and must be at least 10 characters"
+          "ERROR": "Description is required and must be at least 3 characters"
         },
         "STAGES": {
           "LABEL": "Pipeline Stages",
           "PLACEHOLDER": "Stage name",
           "ADD": "Add stage",
-          "ERROR": "Add at least one stage to the pipeline"
+          "ERROR": "Add at least one stage to the pipeline",
+          "HELPER": "Drag and drop to reorder your pipeline stages",
+          "DRAG_HINT": "Drag to reorder",
+          "REMOVE_HINT": "Remove stage"
         },
-        "CREATE": "Create Pipeline"
+        "CREATE": "Create Pipeline",
+        "CANCEL": "Cancel"
       }
+    },
+    "WIN_LOST_MODAL": {
+      "TITLE_WON": "Mark as Won",
+      "TITLE_LOST": "Mark as Lost",
+      "STATUS_WON": "Won Deal",
+      "STATUS_LOST": "Lost Deal",
+      "NOTES_LABEL": "Notes (Optional)",
+      "NOTES_PLACEHOLDER": "Add details about this decision...",
+      "CURRENT_VALUE": "Current Value",
+      "BUTTON_WON": "Mark as Won",
+      "BUTTON_LOST": "Mark as Lost"
     }
   },
   "ERRORS": {

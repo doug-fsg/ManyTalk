@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_05_28_173755) do
+ActiveRecord::Schema[7.0].define(version: 2024_05_30_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -440,6 +440,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_05_28_173755) do
     t.index ["account_id"], name: "index_contacts_on_account_id"
     t.index ["account_id"], name: "index_resolved_contact_account_id", where: "(((email)::text <> ''::text) OR ((phone_number)::text <> ''::text) OR ((identifier)::text <> ''::text))"
     t.index ["blocked"], name: "index_contacts_on_blocked"
+    t.index ["custom_attributes"], name: "index_contacts_on_custom_attributes", using: :gin
     t.index ["email", "account_id"], name: "uniq_email_per_account_contact", unique: true
     t.index ["identifier", "account_id"], name: "uniq_identifier_per_account_contact", unique: true
     t.index ["name", "email", "phone_number", "identifier"], name: "index_contacts_on_name_email_phone_number_identifier", opclass: :gin_trgm_ops, using: :gin
@@ -532,8 +533,10 @@ ActiveRecord::Schema[7.0].define(version: 2024_05_28_173755) do
     t.jsonb "attribute_values", default: []
     t.string "regex_pattern"
     t.string "regex_cue"
+    t.boolean "is_kanban", default: false, null: false
     t.index ["account_id"], name: "index_custom_attribute_definitions_on_account_id"
     t.index ["attribute_key", "attribute_model", "account_id"], name: "attribute_key_model_index", unique: true
+    t.index ["is_kanban"], name: "index_custom_attribute_definitions_on_is_kanban"
   end
 
   create_table "custom_filters", force: :cascade do |t|

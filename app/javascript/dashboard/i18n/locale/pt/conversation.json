@@ -274,8 +274,12 @@
       "CONVERSATION_LABELS": "Etiquetas da conversa",
       "CONVERSATION_INFO": "Informação da conversa",
       "CONTACT_ATTRIBUTES": "Atributos do Contato",
+      "KANBAN": "Kanban",
       "PREVIOUS_CONVERSATION": "Conversas anteriores",
       "MACROS": "Macros"
+    },
+    "KANBAN": {
+      "NO_RECORDS_FOUND": "Nenhum atributo kanban encontrado"
     }
   },
   "CONVERSATION_CUSTOM_ATTRIBUTES": {

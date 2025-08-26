@@ -51,6 +51,17 @@
       "MESSAGE": "¿Está seguro de que desea eliminar este contacto del pipeline?",
       "CONFIRM": "Eliminar",
       "CANCEL": "Cancelar"
+    },
+    "WIN_LOST_MODAL": {
+      "TITLE_WON": "Marcar como Ganado",
+      "TITLE_LOST": "Marcar como Perdido",
+      "STATUS_WON": "Negocio Ganado",
+      "STATUS_LOST": "Negocio Perdido",
+      "NOTES_LABEL": "Notas (Opcional)",
+      "NOTES_PLACEHOLDER": "Agregue detalles sobre esta decisión...",
+      "CURRENT_VALUE": "Valor Actual",
+      "BUTTON_WON": "Marcar como Ganado",
+      "BUTTON_LOST": "Marcar como Perdido"
     }
   }
 } 

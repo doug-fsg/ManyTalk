@@ -7,6 +7,15 @@ FactoryBot.define do
     attribute_display_type { 1 }
     attribute_model { 0 }
     default_value { nil }
+    is_kanban { false }
     account
+
+    # Factory para atributos Kanban
+    trait :kanban do
+      attribute_display_type { 'list' }
+      attribute_model { 'contact_attribute' }
+      is_kanban { true }
+      attribute_values { ['Estágio 1', 'Estágio 2', 'Estágio 3'] }
+    end
   end
 end

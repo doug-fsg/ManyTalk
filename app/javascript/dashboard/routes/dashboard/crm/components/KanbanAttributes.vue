@@ -14,6 +14,8 @@
       @create-new="openCreateAttributeModal"
       @edit-kanban="editKanban"
       @delete-kanban="deleteKanban"
+      :win-lost-filter="winLostFilter"
+      @win-lost-filter="handleWinLostFilter"
     />
 
     <div v-if="showPipelineDropdown" class="pipeline-dropdown">
@@ -59,15 +61,22 @@
       class="kanban-select-attribute"
     >
       <div class="select-attribute-content">
+        <div class="empty-state-icon">
+          <fluent-icon icon="kanban" size="64" />
+        </div>
         <h2>{{ $t('KANBAN.NO_KANBAN_ATTRIBUTES') }}</h2>
         <p>{{ $t('KANBAN.CREATE_KANBAN_ATTRIBUTE_DESCRIPTION') }}</p>
-        <woot-button
-          size="large"
-          variant="primary"
-          @click="goToAttributesSettings"
-        >
-          {{ $t('KANBAN.CREATE_ATTRIBUTE') }}
-        </woot-button>
+        
+        <div class="action-buttons">
+          <woot-button
+            size="large"
+            variant="primary"
+            icon="add"
+            @click="openCreateAttributeModal"
+          >
+            {{ $t('KANBAN.CREATE_NEW_ATTRIBUTE') }}
+          </woot-button>
+        </div>
       </div>
     </div>
 
@@ -100,6 +109,10 @@
             @update:items="handleColumnItemsUpdate"
             @open-conversation="openConversation"
             @value-updated="handleDealValueUpdate"
+            @win-lost-updated="handleWinLostUpdate"
+            @open-win-modal="handleOpenWinModal"
+            @open-lost-modal="handleOpenLostModal"
+            @undo-win-lost="handleUndoWinLost"
           />
         </draggable>
       </div>
@@ -150,7 +163,8 @@
       <edit-attribute
         :selected-attribute="selectedAttribute"
         :is-updating="uiFlags.isUpdating"
-        @on-close="closeEditPipelineModal"
+        @on-close="handleEditPipelineSuccess"
+        @on-cancel="closeEditPipelineModal"
       />
     </woot-modal>
 
@@ -172,6 +186,17 @@
       v-if="uiFlags.isFetching"
       :message="$t('ATTRIBUTES_MGMT.LOADING')"
     />
+
+    <!-- Win/Lost Modal -->
+    <win-lost-modal
+      :show="showWinLostModal"
+      :contact="winLostModalContact"
+      :status="winLostModalStatus"
+      :pipeline-id="selectedAttribute ? selectedAttribute.id : null"
+      :current-deal-value="winLostModalDealValue"
+      @close="closeWinLostModal"
+      @save="handleWinLostModalSave"
+    />
   </div>
 </template>
 
@@ -184,6 +209,7 @@ import KanbanColumn from './KanbanColumn.vue';
 import KanbanHeader from './Header.vue';
 import EditAttribute from 'dashboard/routes/dashboard/settings/attributes/EditAttribute.vue';
 import CreateAttributeModal from './CreateAttributeModal.vue';
+import WinLostModal from './WinLostModal.vue';
 import { KanbanOperationManager } from '../utils/KanbanOperationManager';
 import { KanbanAttributeService } from '../utils/KanbanAttributeService';
 import { PipelineCacheManager } from '../services/PipelineCacheManager';
@@ -203,6 +229,7 @@ export default {
     KanbanHeader,
     EditAttribute,
     CreateAttributeModal,
+    WinLostModal,
   },
   data() {
     return {
@@ -241,11 +268,16 @@ export default {
       isCreating: false,
       currentLocale: this.$i18n.locale,
       isLoadingContacts: false,
+      winLostFilter: 'open', // 'all', 'won', 'lost', 'open'
       loadingProgress: null,
       loadingMessage: '',
       isLoadingInitialData: false,
       pagination: null,
       pipelineCacheManager: null,
+      showWinLostModal: false,
+      winLostModalContact: {},
+      winLostModalStatus: 'won',
+      winLostModalDealValue: 0,
     };
   },
   created() {
@@ -268,14 +300,6 @@ export default {
     this.startCycleDetection();
     this.$el.addEventListener('scroll', this.updateScrollPosition);
     document.addEventListener('click', this.handleClickOutside);
-
-    // Definir idioma correto
-    const userLocale =
-      this.$store.getters['auth/currentUser']?.ui_settings?.locale || 'pt_BR';
-    if (this.$i18n.locale !== userLocale) {
-      this.$i18n.locale = userLocale;
-      this.$root.$i18n.locale = userLocale;
-    }
 
     this.$nextTick(() => {
       this.updateTranslations();
@@ -317,12 +341,18 @@ export default {
       return this.$store.getters['theme/isDarkMode'];
     },
     listTypeAttributes() {
-      // Filtrar apenas atributos do tipo "list" e model "contact_attribute"
-      const filteredAttrs = this.attributes.filter(
-        attr =>
-          attr.attribute_display_type === 'list' &&
-          attr.attribute_model === 'contact_attribute'
-      );
+      // Filtrar apenas atributos marcados como Kanban
+      const filteredAttrs = this.attributes.filter(attr => {
+        // Se a coluna is_kanban existe, usar apenas ela para filtrar
+        if (attr.hasOwnProperty('is_kanban')) {
+          return attr.is_kanban === true && attr.attribute_model === 'contact_attribute';
+        }
+        
+        // Fallback apenas para dados muito antigos (quando coluna não existe)
+        // Esse fallback será removido em futuras versões
+        return attr.attribute_display_type === 'list' && 
+               attr.attribute_model === 'contact_attribute';
+      });
       return filteredAttrs;
     },
     defaultAttribute() {
@@ -345,6 +375,7 @@ export default {
       // Verifica se o usuário atual é administrador
       return this.currentUser && this.currentUser.role === 'administrator';
     },
+
   },
   watch: {
     // Observar mudanças nos contatos para atualizar as colunas
@@ -384,20 +415,12 @@ export default {
         }
       },
     },
+
   },
   methods: {
     async initializeComponent() {
-      const userLocale =
-        this.$store.getters['auth/currentUser']?.ui_settings?.locale || 'pt_BR';
-      this.initializeLocale(userLocale);
       await this.initializeServices();
       await this.loadInitialData();
-    },
-    initializeLocale(userLocale) {
-      if (this.$i18n.locale !== userLocale) {
-        this.$i18n.locale = userLocale;
-        this.$root.$i18n.locale = userLocale;
-      }
     },
     async initializeServices() {
       this.pipelineCacheManager = new PipelineCacheManager(this.$store);
@@ -677,23 +700,52 @@ export default {
       // Debounce para evitar sobrecarga em buscas rápidas
       clearTimeout(this.searchDebounce);
       this.searchDebounce = setTimeout(() => {
-        if (!this.searchQuery || this.searchQuery.trim() === '') {
-          this.filteredColumns = [...this.columns];
-          return;
-        }
-
-        const query = this.searchQuery.toLowerCase();
+        const query = (this.searchQuery || '').toLowerCase();
+        
         this.filteredColumns = this.columns.map(column => {
           const filteredItems = column.items.filter(contact => {
-            const name = (contact.name || '').toLowerCase();
-            const email = (contact.email || '').toLowerCase();
-            const phone = (contact.phone_number || '').toLowerCase();
+            // Search filter
+            let matchesSearch = true;
+            if (query && query.trim() !== '') {
+              const name = (contact.name || '').toLowerCase();
+              const email = (contact.email || '').toLowerCase();
+              const phone = (contact.phone_number || '').toLowerCase();
 
-            return (
-              name.includes(query) ||
-              email.includes(query) ||
-              phone.includes(query)
-            );
+              matchesSearch = (
+                name.includes(query) ||
+                email.includes(query) ||
+                phone.includes(query)
+              );
+            }
+
+            // Win/Lost filter
+            const additionalAttributes = contact.additional_attributes || {};
+            const kanban = additionalAttributes.kanban || {};
+            const pipelineData = kanban[this.selectedAttribute?.id] || {};
+            const winLostStatus = pipelineData.win_lost?.status;
+
+            let matchesWinLost = true;
+            if (this.winLostFilter === 'won') {
+              matchesWinLost = winLostStatus === 'won';
+            } else if (this.winLostFilter === 'lost') {
+              matchesWinLost = winLostStatus === 'lost';
+            } else if (this.winLostFilter === 'open') {
+              matchesWinLost = !winLostStatus || winLostStatus === null || winLostStatus === undefined;
+            }
+            // 'all' shows everything
+
+            // Debug log para verificar filtros
+            if (this.debugMode) {
+              console.log('Filtering contact:', {
+                name: contact.name,
+                winLostFilter: this.winLostFilter,
+                winLostStatus,
+                matchesWinLost,
+                matchesSearch
+              });
+            }
+
+            return matchesSearch && matchesWinLost;
           });
 
           return {
@@ -702,8 +754,9 @@ export default {
           };
         });
 
-        this.logger.log('info', 'Busca realizada', {
+        this.logger.log('info', 'Filtros aplicados', {
           query: this.searchQuery,
+          winLostFilter: this.winLostFilter,
           resultCount: this.filteredColumns.reduce(
             (sum, col) => sum + col.items.length,
             0
@@ -958,14 +1011,13 @@ export default {
         });
       });
 
-      // Inicializa a filteredColumns com todas as colunas
-      this.filteredColumns = [...this.columns];
-
       // Debug log para mostrar o conteúdo de cada coluna
       this.logColumnsContent();
 
-      // Forçar atualização imediata da UI
+      // Aplicar filtros após criar colunas
       this.$nextTick(() => {
+        this.handleSearch();
+        
         // Garantir que a UI seja atualizada imediatamente
         this.$forceUpdate();
 
@@ -1074,14 +1126,7 @@ export default {
         )
       );
     },
-    goToAttributesSettings() {
-      // Navegar para a página de configurações de atributos
-      this.$router.push(
-        frontendURL(
-          `accounts/${this.$route.params.accountId}/settings/custom-attributes`
-        )
-      );
-    },
+
     closeFilterModal() {
       this.showFilterModal = false;
     },
@@ -1107,9 +1152,20 @@ export default {
       this.showCreateAttributeModal = true;
     },
 
-    handleAttributeCreated() {
+    async handleAttributeCreated(attributeData) {
       this.showCreateAttributeModal = false;
-      this.fetchAttributes();
+      await this.fetchAttributes();
+      
+      // Selecionar o atributo recém-criado
+      const newAttribute = this.listTypeAttributes.find(
+        attr => attr.attribute_key === attributeData.attribute_key
+      );
+      if (newAttribute) {
+        this.selectedAttribute = newAttribute;
+        await this.fetchContacts();
+        this.setupColumns();
+      }
+      
       this.safeShowNotification(
         'success',
         this.$t('KANBAN.SUCCESS.ATTRIBUTE_CREATED')
@@ -1442,6 +1498,23 @@ export default {
     closeEditPipelineModal() {
       this.showEditPipelineModal = false;
     },
+    async handleEditPipelineSuccess() {
+      this.showEditPipelineModal = false;
+      
+      // Recarregar dados após edição para refletir mudanças na ordem dos estágios
+      await this.fetchAttributes();
+      if (this.selectedAttribute) {
+        // Atualizar selectedAttribute com os dados mais recentes
+        const updatedAttribute = this.listTypeAttributes.find(
+          attr => attr.id === this.selectedAttribute.id
+        );
+        if (updatedAttribute) {
+          this.selectedAttribute = updatedAttribute;
+          await this.fetchContacts();
+          this.setupColumns();
+        }
+      }
+    },
     async confirmDeletePipeline() {
       try {
         const contactsUsingPipeline = this.contacts.filter(contact => {
@@ -1635,6 +1708,58 @@ export default {
         );
       }
     },
+    async handleWinLostUpdate({ contactId, additionalAttributes, winLostData }) {
+      try {
+        // Register operation for loading state
+        const operationId = this.operationManager?.registerOperation(contactId, 'win_lost_update');
+
+        // Update the cache optimistically
+        this.pipelineCacheManager.updateContactInCache(
+          this.selectedAttribute.id,
+          contactId,
+          'additional_attributes',
+          additionalAttributes
+        );
+
+        // Update on the server
+        await this.$store.dispatch('contacts/update', {
+          id: contactId,
+          additional_attributes: additionalAttributes,
+        });
+
+        // Mark operation as completed
+        if (operationId) {
+          this.operationManager?.completeOperation(operationId);
+        }
+
+        // Show success notification
+        const statusText = winLostData.status === 'won' ? 'won' : 'lost';
+        this.safeShowNotification(
+          'success',
+          `Contact marked as ${statusText}!`
+        );
+      } catch (error) {
+        // Mark operation as failed
+        if (operationId) {
+          this.operationManager?.failOperation(operationId, error);
+        }
+
+        // Revert the cache update in case of error
+        this.pipelineCacheManager.revertContactUpdate(this.selectedAttribute.id);
+
+        this.safeShowNotification(
+          'error',
+          error?.message || 'Failed to update contact status'
+        );
+      }
+    },
+    handleWinLostFilter(filter) {
+      this.winLostFilter = filter;
+      // Forçar re-filtragem imediata
+      this.$nextTick(() => {
+        this.handleSearch(this.searchQuery || '');
+      });
+    },
     migrateToGroupedStructure() {
       // Verificar se há contatos que precisam de migração
       if (!this.contacts || !this.contacts.length) return;
@@ -1783,6 +1908,105 @@ export default {
 
       return operationId;
     },
+    handleOpenWinModal(data) {
+      this.winLostModalContact = data.contact;
+      this.winLostModalStatus = 'won';
+      this.winLostModalDealValue = data.currentDealValue || 0;
+      this.showWinLostModal = true;
+    },
+    handleOpenLostModal(data) {
+      this.winLostModalContact = data.contact;
+      this.winLostModalStatus = 'lost';
+      this.winLostModalDealValue = data.currentDealValue || 0;
+      this.showWinLostModal = true;
+    },
+    closeWinLostModal() {
+      this.showWinLostModal = false;
+      this.winLostModalContact = {};
+      this.winLostModalStatus = 'won';
+      this.winLostModalDealValue = 0;
+    },
+    async handleWinLostModalSave(data) {
+      try {
+        // Usar winLostModalContact que já está disponível
+        const contact = this.winLostModalContact;
+        
+        // Criar estrutura de additional_attributes atualizada
+        const additionalAttributes = {
+          ...contact.additional_attributes,
+          kanban: {
+            ...(contact.additional_attributes?.kanban || {}),
+            [data.pipelineId]: {
+              ...(contact.additional_attributes?.kanban?.[data.pipelineId] || {}),
+              win_lost: data.winLostData,
+              deal: {
+                ...(contact.additional_attributes?.kanban?.[data.pipelineId]?.deal || {}),
+                value: data.dealValue
+              }
+            }
+          }
+        };
+
+        // Chamar o método existente de atualização
+        await this.handleWinLostUpdate({
+          contactId: data.contactId,
+          additionalAttributes,
+          winLostData: data.winLostData
+        });
+
+        // Fechar o modal
+        this.closeWinLostModal();
+      } catch (error) {
+        this.safeShowNotification(
+          'error',
+          error?.message || 'Failed to update contact status'
+        );
+      }
+    },
+    async handleUndoWinLost({ contactId, additionalAttributes }) {
+      try {
+        // Register operation for loading state
+        const operationId = this.operationManager?.registerOperation(contactId, 'undo_win_lost');
+
+        // Update the cache optimistically
+        this.pipelineCacheManager.updateContactInCache(
+          this.selectedAttribute.id,
+          contactId,
+          'additional_attributes',
+          additionalAttributes
+        );
+
+        // Update on the server
+        await this.$store.dispatch('contacts/update', {
+          id: contactId,
+          additional_attributes: additionalAttributes,
+        });
+
+        // Mark operation as completed
+        if (operationId) {
+          this.operationManager?.completeOperation(operationId);
+        }
+
+        // Show success notification
+        this.safeShowNotification(
+          'success',
+          'Contact status has been reset successfully'
+        );
+      } catch (error) {
+        // Mark operation as failed
+        if (operationId) {
+          this.operationManager?.failOperation(operationId, error);
+        }
+
+        // Revert the cache update in case of error
+        this.pipelineCacheManager.revertContactUpdate(this.selectedAttribute.id);
+
+        this.safeShowNotification(
+          'error',
+          error?.message || 'Failed to reset contact status'
+        );
+      }
+    },
   },
 };
 </script>
@@ -1814,17 +2038,44 @@ export default {
     max-width: 600px;
     text-align: center;
 
+    .empty-state-icon {
+      margin-bottom: var(--space-large);
+      color: var(--s-400);
+      
+      .dark-mode & {
+        color: var(--s-500);
+      }
+    }
+
     h2 {
       font-size: var(--font-size-big);
       margin-bottom: var(--space-normal);
+      font-weight: 600;
+      color: var(--s-800);
+      
+      .dark-mode & {
+        color: var(--s-200);
+      }
     }
 
     p {
       margin-bottom: var(--space-large);
       color: var(--s-700);
+      font-size: var(--font-size-normal);
+      line-height: 1.6;
 
       .dark-mode & {
         color: var(--s-300);
+      }
+    }
+
+    .action-buttons {
+      display: flex;
+      justify-content: center;
+      margin-bottom: var(--space-large);
+      
+      .woot-button {
+        min-width: 12rem; /* 192px - largura mínima para botões */
       }
     }
   }

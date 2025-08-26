@@ -5,7 +5,7 @@
       <!-- Left Section -->
       <div class="flex items-center gap-4">
         <!-- View Toggle Buttons -->
-        <div class="hidden md:flex items-center gap-1 bg-neutral-100 rounded-lg p-1 dark:bg-slate-700">
+        <div class="hidden md:flex items-center gap-1 bg-slate-50 rounded-lg p-1 dark:bg-slate-700">
           <button 
             :class="[
               'p-1.5 rounded-md transition-colors flex items-center gap-1',
@@ -63,6 +63,49 @@
               </div>
             </div>
           </transition>
+        </div>
+
+        <!-- Win/Lost Filter -->
+        <div class="hidden md:flex items-center gap-1 bg-slate-25 rounded-lg p-1 dark:bg-slate-600">
+          <button 
+            :class="[
+              'px-2 py-1 rounded-md transition-colors flex items-center gap-1 text-xs',
+              winLostFilter === 'open' ? 'bg-indigo-100 text-indigo-700 shadow-sm' : 'text-neutral-600 hover:text-neutral-800'
+            ]"
+            @click="setWinLostFilter('open')"
+          >
+            <fluent-icon icon="clock" size="12" />
+            Aberto
+          </button>
+          <button 
+            :class="[
+              'px-2 py-1 rounded-md transition-colors flex items-center gap-1 text-xs',
+              winLostFilter === 'won' ? 'bg-green-100 text-green-700 shadow-sm' : 'text-neutral-600 hover:text-neutral-800'
+            ]"
+            @click="setWinLostFilter('won')"
+          >
+            <fluent-icon icon="checkmark-circle" size="12" />
+            Ganho
+          </button>
+          <button 
+            :class="[
+              'px-2 py-1 rounded-md transition-colors flex items-center gap-1 text-xs',
+              winLostFilter === 'lost' ? 'bg-red-100 text-red-700 shadow-sm' : 'text-neutral-600 hover:text-neutral-800'
+            ]"
+            @click="setWinLostFilter('lost')"
+          >
+            <fluent-icon icon="dismiss-circle" size="12" />
+            Perdido
+          </button>
+          <button 
+            :class="[
+              'px-2 py-1 rounded-md transition-colors flex items-center gap-1 text-xs',
+              winLostFilter === 'all' ? 'bg-violet-100 text-violet-700 shadow-sm' : 'text-neutral-600 hover:text-neutral-800'
+            ]"
+            @click="setWinLostFilter('all')"
+          >
+            Todos
+          </button>
         </div>
 
         <!-- Search -->
@@ -164,6 +207,10 @@ export default {
       type: Array,
       default: () => [],
     },
+    winLostFilter: {
+      type: String,
+      default: 'all',
+    },
   },
   data() {
     return {
@@ -222,6 +269,9 @@ export default {
     deleteKanban() {
       this.showKanbanActions = false;
       this.$emit('delete-kanban');
+    },
+    setWinLostFilter(filter) {
+      this.$emit('win-lost-filter', filter);
     },
   },
 };

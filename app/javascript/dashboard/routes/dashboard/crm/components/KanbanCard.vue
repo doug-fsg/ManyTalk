@@ -4,7 +4,9 @@
     :class="{ 
       'is-updating': isUpdating,
       'has-error': hasError,
-      'is-expanded': isExpanded
+      'is-expanded': isExpanded,
+      'status-won': winLostStatus === 'won',
+      'status-lost': winLostStatus === 'lost'
     }"
     :data-contact-id="contact.id"
     :data-contact-name="contact.name"
@@ -35,6 +37,33 @@
           v-tooltip="dealValue ? $t('KANBAN.CARD.EDIT_DEAL_VALUE') : $t('KANBAN.CARD.ADD_DEAL_VALUE')"
         >
           <fluent-icon icon="tag" size="14" />
+        </span>
+        <!-- Win/Lost Actions -->
+        <span
+          v-if="!winLostStatus"
+          class="action-icon win-icon"
+          @click.stop="$emit('open-win-modal', { contact, currentDealValue: dealValue })"
+          v-tooltip="'Marcar como Ganho'"
+        >
+          <fluent-icon icon="checkmark-circle" size="14" />
+        </span>
+        <span
+          v-if="!winLostStatus"
+          class="action-icon lost-icon"
+          @click.stop="$emit('open-lost-modal', { contact, currentDealValue: dealValue })"
+          v-tooltip="'Marcar como Perdido'"
+        >
+          <fluent-icon icon="dismiss-circle" size="14" />
+        </span>
+
+        <!-- Undo Win/Lost Action -->
+        <span
+          v-if="winLostStatus"
+          class="action-icon undo-icon"
+          @click.stop="undoWinLostStatus"
+          v-tooltip="`Desfazer ${winLostStatus === 'won' ? 'Ganho' : 'Perdido'}`"
+        >
+          <fluent-icon icon="dismiss-circle" size="14" />
         </span>
         <span 
           class="action-icon remove-icon" 
@@ -76,6 +105,16 @@
         </span>
         <span class="info-value" :class="stageTimeClass" :title="stageTimeTooltip">
           {{ stageTimeDisplay }}
+        </span>
+      </div>
+      
+      <!-- Win/Lost Status -->
+      <div v-if="winLostStatus" class="card-info win-lost-status" :class="winLostStatusClass">
+        <span class="info-icon">
+          <fluent-icon :icon="winLostIcon" size="12" />
+        </span>
+        <span class="info-value">
+          {{ winLostLabel }} • {{ winLostDate }}
         </span>
       </div>
     </div>
@@ -344,6 +383,33 @@ export default {
       const formattedTime = enteredAt.toLocaleTimeString();
       
       return `Nesta etapa desde ${formattedDate} ${formattedTime}`;
+    },
+    winLostData() {
+      return this.pipelineData.win_lost || {};
+    },
+    winLostStatus() {
+      return this.winLostData.status || null;
+    },
+    winLostLabel() {
+      if (this.winLostStatus === 'won') return 'Won';
+      if (this.winLostStatus === 'lost') return 'Lost';
+      return '';
+    },
+    winLostIcon() {
+      if (this.winLostStatus === 'won') return 'checkmark-circle';
+      if (this.winLostStatus === 'lost') return 'dismiss-circle';
+      return '';
+    },
+    winLostStatusClass() {
+      return {
+        'status-won': this.winLostStatus === 'won',
+        'status-lost': this.winLostStatus === 'lost',
+      };
+    },
+    winLostDate() {
+      if (!this.winLostData.date) return '';
+      const date = new Date(this.winLostData.date);
+      return date.toLocaleDateString();
     }
   },
   methods: {
@@ -455,6 +521,24 @@ export default {
     },
     toggleExpand() {
       this.isExpanded = !this.isExpanded;
+    },
+    undoWinLostStatus() {
+      // Remove the win_lost data from the contact
+      const additionalAttributes = {
+        ...this.contact.additional_attributes,
+        kanban: {
+          ...(this.contact.additional_attributes?.kanban || {}),
+          [this.pipelineId]: {
+            ...(this.contact.additional_attributes?.kanban?.[this.pipelineId] || {}),
+            win_lost: null // Remove the win_lost data
+          }
+        }
+      };
+
+      this.$emit('undo-win-lost', {
+        contactId: this.contact.id,
+        additionalAttributes
+      });
     }
   },
   watch: {
@@ -523,6 +607,24 @@ export default {
       }
     }
   }
+
+  &.status-won {
+    border-left: 4px solid var(--g-500);
+    background-color: rgba(34, 197, 94, 0.02);
+    
+    &:hover {
+      background-color: rgba(34, 197, 94, 0.05);
+    }
+  }
+
+  &.status-lost {
+    border-left: 4px solid var(--r-500);
+    background-color: rgba(239, 68, 68, 0.02);
+    
+    &:hover {
+      background-color: rgba(239, 68, 68, 0.05);
+    }
+  }
   
   .dark-mode & {
     background-color: var(--b-700);
@@ -539,6 +641,24 @@ export default {
     
     &.is-expanded {
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    &.status-won {
+      border-left-color: var(--g-400);
+      background-color: rgba(34, 197, 94, 0.05);
+      
+      &:hover {
+        background-color: rgba(34, 197, 94, 0.1);
+      }
+    }
+
+    &.status-lost {
+      border-left-color: var(--r-400);
+      background-color: rgba(239, 68, 68, 0.05);
+      
+      &:hover {
+        background-color: rgba(239, 68, 68, 0.1);
+      }
     }
   }
 
@@ -616,6 +736,19 @@ export default {
 
   &.remove-icon:hover {
     color: var(--r-500);
+  }
+
+  &.win-icon:hover {
+    color: var(--g-500);
+  }
+
+  &.lost-icon:hover {
+    color: var(--r-500);
+  }
+
+  &.undo-icon:hover {
+    color: var(--w-500);
+    background-color: var(--s-100);
   }
 }
 
@@ -1005,6 +1138,53 @@ export default {
       }
       
       &.time-overdue {
+        color: var(--r-400);
+      }
+    }
+  }
+}
+
+.win-lost-status {
+  margin-top: var(--space-smaller);
+  padding-top: var(--space-smaller);
+  border-top: 1px dotted rgba(0, 0, 0, 0.05);
+  
+  .info-icon {
+    font-size: 10px;
+  }
+  
+  .info-value {
+    font-size: var(--font-size-mini);
+    font-weight: var(--font-weight-medium);
+  }
+  
+  &.status-won {
+    .info-icon,
+    .info-value {
+      color: var(--g-600);
+    }
+  }
+  
+  &.status-lost {
+    .info-icon,
+    .info-value {
+      color: var(--r-600);
+    }
+  }
+  
+  .dark-mode & {
+    border-top-color: rgba(255, 255, 255, 0.05);
+    
+    &.status-won {
+      .info-icon,
+      .info-value {
+        color: var(--g-400);
+      }
+    }
+    
+    &.status-lost {
+      .info-icon,
+      .info-value {
         color: var(--r-400);
       }
     }

@@ -42,6 +42,10 @@
           @remove="$emit('remove-card', contact.id)"
           @open-conversation="$emit('open-conversation', $event)"
           @value-updated="handleValueUpdated"
+          @win-lost-updated="handleWinLostUpdated"
+          @open-win-modal="$emit('open-win-modal', $event)"
+          @open-lost-modal="$emit('open-lost-modal', $event)"
+          @undo-win-lost="$emit('undo-win-lost', $event)"
         />
         <div v-if="!columnItems.length" class="empty-column">
           <p>{{ $t('KANBAN.NO_CONTACTS') }}</p>
@@ -160,6 +164,12 @@ export default {
     },
     handleValueUpdated(data) {
       this.$emit('value-updated', {
+        ...data,
+        columnId: this.column.id
+      });
+    },
+    handleWinLostUpdated(data) {
+      this.$emit('win-lost-updated', {
         ...data,
         columnId: this.column.id
       });

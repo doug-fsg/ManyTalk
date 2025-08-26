@@ -21,7 +21,7 @@ export const getters = {
   },
   getAttributesByModel: _state => attributeModel => {
     return _state.records.filter(
-      record => record.attribute_model === attributeModel
+      record => record.attribute_model === attributeModel && !record.is_kanban
     );
   },
 };
