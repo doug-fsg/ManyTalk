@@ -33,7 +33,8 @@ class Conversations::ForwardMessageJob < ApplicationJob
       inbox_id: @message.inbox_id,
       content: @message.content,
       message_type: :outgoing,
-      sender: @user
+      sender: @user,
+      additional_attributes: { is_forwarded: true }
     }
   end
 
