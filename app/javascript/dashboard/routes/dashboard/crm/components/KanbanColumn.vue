@@ -15,8 +15,20 @@
           <span class="column-title">{{ column.title }}</span>
           <span class="column-count">{{ column.items.length }}</span>
         </div>
-        <div v-if="columnTotal > 0" class="column-total">
-          {{ formatCurrency(columnTotal) }}
+        <div class="column-header-right">
+          <div v-if="columnTotal > 0" class="column-total">
+            {{ formatCurrency(columnTotal) }}
+          </div>
+          <woot-button
+            icon="add"
+            size="tiny"
+            variant="clear"
+            color-scheme="secondary"
+            class="add-contact-btn"
+            @click="addContactToStage"
+            v-tooltip.top="$t('KANBAN.ADD_CONTACT_TO_STAGE', { stage: column.title })"
+          >
+          </woot-button>
         </div>
       </div>
     </div>
@@ -174,6 +186,12 @@ export default {
         columnId: this.column.id
       });
     },
+    addContactToStage() {
+      this.$emit('add-contact-to-stage', {
+        stage: this.column.title,
+        pipelineId: this.pipelineId
+      });
+    },
     formatCurrency(value) {
       return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
@@ -222,6 +240,12 @@ export default {
   align-items: center;
 }
 
+.column-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-smaller);
+}
+
 .column-header-left {
   display: flex;
   align-items: center;
@@ -254,6 +278,15 @@ export default {
   
   .dark-mode & {
     color: var(--s-400);
+  }
+}
+
+.add-contact-btn {
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+  
+  &:hover {
+    opacity: 1;
   }
 }
 

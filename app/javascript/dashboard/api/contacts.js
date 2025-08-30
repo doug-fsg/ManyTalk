@@ -82,27 +82,7 @@ class ContactAPI extends ApiClient {
   }
 
   update(id, data) {
-    console.log('[KanbanDebug] API: Iniciando update do contato', {
-      id,
-      data,
-      url: `${this.url}/${id}`
-    });
-
-    return axios.patch(`${this.url}/${id}`, data).then(response => {
-      console.log('[KanbanDebug] API: Resposta da requisição', {
-        response,
-        data: response.data
-      });
-      return response;
-    }).catch(error => {
-      console.error('[KanbanDebug] API: Erro na requisição', {
-        error,
-        errorMessage: error.message,
-        errorStack: error.stack,
-        errorResponse: error.response
-      });
-      throw error;
-    });
+    return axios.patch(`${this.url}/${id}`, data);
   }
 }
 

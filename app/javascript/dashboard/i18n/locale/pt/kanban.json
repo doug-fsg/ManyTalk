@@ -42,10 +42,35 @@
     "SUCCESS": {
       "PIPELINE_DELETED": "Pipeline excluído com sucesso"
     },
+    "ADD_CONTACT_TO_STAGE": "Adicionar contato à etapa {stage}",
+    "ADD_CONTACT": {
+      "TITLE": "Adicionar Contato à Etapa",
+      "DESC": "Selecione um contato existente para adicionar à etapa {stage}",
+      "SUCCESS": "Contato adicionado com sucesso à etapa {stage}",
+      "FORM": {
+        "CONTACT_INFO": "Informações do Contato",
+        "DEAL_INFO": "Informações do Negócio",
+        "DEAL_VALUE": {
+          "LABEL": "Valor do Negócio",
+          "PLACEHOLDER": "0.00",
+          "HELP": "Opcional - Digite o valor potencial deste negócio"
+        },
+        "COMPANY": {
+          "LABEL": "Empresa",
+          "PLACEHOLDER": "Nome da empresa"
+        },
+        "CREATE_BUTTON": "Criar Contato"
+      }
+    },
+    "NO_CONTACTS_TO_ADD": "Nenhum contato disponível para adicionar",
+    "CONTACTS_FOUND": "contatos encontrados",
+    "ALREADY_IN_KANBAN": "Já está nesta etapa",
     "ERRORS": {
       "NO_PIPELINE_SELECTED": "Nenhum pipeline selecionado",
       "PIPELINE_IN_USE": "Este pipeline está sendo usado por contatos. Remova os contatos primeiro.",
-      "DELETE_FAILED": "Falha ao excluir pipeline"
+      "DELETE_FAILED": "Falha ao excluir pipeline",
+      "FETCH_CONTACTS_FAILED": "Falha ao buscar contatos. Tente novamente.",
+      "ADD_CONTACT_FAILED": "Falha ao adicionar contato à etapa. Tente novamente."
     },
     "CARD": {
       "HIDE_CONVERSATIONS": "Ocultar conversas",

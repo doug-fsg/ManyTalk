@@ -47,11 +47,36 @@
       "DELETE_FAILED": "Falha ao excluir",
       "PIPELINE_IN_USE": "Pipeline está em uso por contatos",
       "NO_PIPELINE_SELECTED": "Nenhum pipeline selecionado",
-      "TOO_MANY_UPDATES": "Muitas atualizações detectadas. Sistema reiniciado."
+      "TOO_MANY_UPDATES": "Muitas atualizações detectadas. Sistema reiniciado.",
+      "FETCH_CONTACTS_FAILED": "Falha ao buscar contatos. Tente novamente.",
+      "ADD_CONTACT_FAILED": "Falha ao adicionar contato à etapa. Tente novamente."
     },
     "SUCCESS": {
       "PIPELINE_DELETED": "Pipeline excluído com sucesso"
     },
+    "ADD_CONTACT_TO_STAGE": "Adicionar contato",
+    "ADD_CONTACT": {
+      "TITLE": "Adicionar Contato à Etapa",
+      "DESC": "Selecione um contato existente para adicionar à etapa {stage}",
+      "SUCCESS": "Contato adicionado com sucesso à etapa {stage}",
+      "FORM": {
+        "CONTACT_INFO": "Informações do Contato",
+        "DEAL_INFO": "Informações do Negócio",
+        "DEAL_VALUE": {
+          "LABEL": "Valor do Negócio",
+          "PLACEHOLDER": "0.00",
+          "HELP": "Opcional - Digite o valor potencial deste negócio"
+        },
+        "COMPANY": {
+          "LABEL": "Empresa",
+          "PLACEHOLDER": "Nome da empresa"
+        },
+        "CREATE_BUTTON": "Criar Contato"
+      }
+    },
+    "NO_CONTACTS_TO_ADD": "Nenhum contato disponível para adicionar",
+    "CONTACTS_FOUND": "contatos encontrados",
+    "ALREADY_IN_KANBAN": "Já está nesta etapa",
     "DEBUG": {
       "RECEIVED_EVENT_REMOVED": "Evento de remoção de atributo recebido",
       "UPDATING_COLUMNS": "Atualizando colunas",

@@ -113,6 +113,7 @@
             @open-win-modal="handleOpenWinModal"
             @open-lost-modal="handleOpenLostModal"
             @undo-win-lost="handleUndoWinLost"
+            @add-contact-to-stage="handleAddContactToStage"
           />
         </draggable>
       </div>
@@ -197,11 +198,23 @@
       @close="closeWinLostModal"
       @save="handleWinLostModalSave"
     />
+
+    <!-- Add Contact to Stage Modal -->
+    <add-contact-to-stage-modal
+      v-if="showAddContactModal"
+      :show="showAddContactModal"
+      :selected-stage="selectedStageForContact"
+      :pipeline-id="selectedAttribute ? selectedAttribute.id : null"
+      :attribute-key="selectedAttribute ? selectedAttribute.attribute_key : ''"
+      @close="handleCloseAddContactModal"
+      @contact-added="handleContactAdded"
+    />
   </div>
 </template>
 
 <script>
 import { mapGetters } from 'vuex';
+import { useAlert } from 'dashboard/composables';
 import draggable from 'vuedraggable';
 import { formatUnixDate } from 'shared/helpers/DateHelper';
 import Vue from 'vue';
@@ -210,6 +223,7 @@ import KanbanHeader from './Header.vue';
 import EditAttribute from 'dashboard/routes/dashboard/settings/attributes/EditAttribute.vue';
 import CreateAttributeModal from './CreateAttributeModal.vue';
 import WinLostModal from './WinLostModal.vue';
+import AddContactToStageModal from './AddContactToStageModal.vue';
 import { KanbanOperationManager } from '../utils/KanbanOperationManager';
 import { KanbanAttributeService } from '../utils/KanbanAttributeService';
 import { PipelineCacheManager } from '../services/PipelineCacheManager';
@@ -230,6 +244,7 @@ export default {
     EditAttribute,
     CreateAttributeModal,
     WinLostModal,
+    AddContactToStageModal,
   },
   data() {
     return {
@@ -278,6 +293,9 @@ export default {
       winLostModalContact: {},
       winLostModalStatus: 'won',
       winLostModalDealValue: 0,
+      // Modal para adicionar contato na etapa
+      showAddContactModal: false,
+      selectedStageForContact: '',
     };
   },
   created() {
@@ -1919,6 +1937,24 @@ export default {
       this.winLostModalStatus = 'lost';
       this.winLostModalDealValue = data.currentDealValue || 0;
       this.showWinLostModal = true;
+    },
+    handleAddContactToStage(data) {
+      this.selectedStageForContact = data.stage;
+      this.showAddContactModal = true;
+    },
+    handleCloseAddContactModal() {
+      this.showAddContactModal = false;
+      this.selectedStageForContact = '';
+    },
+    async handleContactAdded(data) {
+      // Refresh da lista de contatos para mostrar o contato adicionado
+      try {
+        await this.fetchContacts();
+        this.setupColumns();
+        useAlert(this.$t('KANBAN.ADD_CONTACT.SUCCESS', { stage: data.stage }));
+      } catch (error) {
+
+      }
     },
     closeWinLostModal() {
       this.showWinLostModal = false;

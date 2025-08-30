@@ -62,6 +62,33 @@
       "CURRENT_VALUE": "Valor Actual",
       "BUTTON_WON": "Marcar como Ganado",
       "BUTTON_LOST": "Marcar como Perdido"
-    }
+    },
+    "SEARCH_PLACEHOLDER": "Buscar contactos por nombre o número",
+    "LOADING_CONTACTS": "Cargando contactos...",
+    "ADD_CONTACT_TO_STAGE": "Agregar contacto a la etapa {stage}",
+    "ADD_CONTACT": {
+      "TITLE": "Agregar Contacto a la Etapa",
+      "DESC": "Seleccione un contacto existente para agregar a la etapa {stage}",
+      "SUCCESS": "Contacto agregado exitosamente a la etapa {stage}",
+      "FORM": {
+        "CONTACT_INFO": "Información del Contacto",
+        "DEAL_INFO": "Información del Negocio",
+        "DEAL_VALUE": {
+          "LABEL": "Valor del Negocio",
+          "PLACEHOLDER": "0.00",
+          "HELP": "Opcional - Ingrese el valor potencial de este negocio"
+        },
+        "COMPANY": {
+          "LABEL": "Empresa",
+          "PLACEHOLDER": "Nombre de la empresa"
+        },
+        "CREATE_BUTTON": "Crear Contacto"
+      }
+    },
+    "NO_CONTACTS_TO_ADD": "No hay contactos disponibles para agregar",
+    "CONTACTS_FOUND": "contactos encontrados",
+    "ALREADY_IN_KANBAN": "Ya está en esta etapa",
+    "FETCH_CONTACTS_FAILED": "Error al buscar contactos. Inténtelo de nuevo.",
+    "ADD_CONTACT_FAILED": "Error al agregar contacto a la etapa. Inténtelo de nuevo."
   }
 } 

@@ -124,9 +124,34 @@
       "CURRENT_VALUE": "Current Value",
       "BUTTON_WON": "Mark as Won",
       "BUTTON_LOST": "Mark as Lost"
-    }
+    },
+    "ADD_CONTACT_TO_STAGE": "Add contact to {stage}",
+    "ADD_CONTACT": {
+      "TITLE": "Add Contact to Stage",
+      "DESC": "Select an existing contact to add to the {stage} stage",
+      "SUCCESS": "Contact successfully added to {stage}",
+      "FORM": {
+        "CONTACT_INFO": "Contact Information",
+        "DEAL_INFO": "Deal Information",
+        "DEAL_VALUE": {
+          "LABEL": "Deal Value",
+          "PLACEHOLDER": "0.00",
+          "HELP": "Optional - Enter the potential value of this deal"
+        },
+        "COMPANY": {
+          "LABEL": "Company",
+          "PLACEHOLDER": "Company name"
+        },
+        "CREATE_BUTTON": "Create Contact"
+      }
+    },
+    "NO_CONTACTS_TO_ADD": "No contacts available to add",
+    "CONTACTS_FOUND": "contacts found",
+    "ALREADY_IN_KANBAN": "Already in this stage"
   },
   "ERRORS": {
-    "UPDATE_FAILED": "Failed to update card position. Please try again."
+    "UPDATE_FAILED": "Failed to update card position. Please try again.",
+    "FETCH_CONTACTS_FAILED": "Failed to fetch contacts. Please try again.",
+    "ADD_CONTACT_FAILED": "Failed to add contact to stage. Please try again."
   }
 } 
