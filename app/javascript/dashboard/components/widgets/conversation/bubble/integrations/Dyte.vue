@@ -49,16 +49,16 @@ export default {
   },
   computed: {
     meetingLink() {
-      return buildDyteURL(this.meetingData.room_name, this.dyteAuthToken);
+      return buildDyteURL(this.dyteAuthToken);
     },
   },
   methods: {
     async joinTheCall() {
       this.isLoading = true;
       try {
-        const { data: { authResponse: { authToken } = {} } = {} } =
+        const { data: { token } = {} } =
           await DyteAPI.addParticipantToMeeting(this.messageId);
-        this.dyteAuthToken = authToken;
+        this.dyteAuthToken = token;
       } catch (err) {
         useAlert(this.$t('INTEGRATION_SETTINGS.DYTE.JOIN_ERROR'));
       } finally {

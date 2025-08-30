@@ -198,6 +198,16 @@ class Message < ApplicationRecord
       source_id: source_id
     }
     data[:attachments] = attachments.map(&:push_event_data) if attachments.present?
+    
+    # Add Dyte meeting information for integration messages
+    if content_type == 'integrations' && content_attributes['type'] == 'dyte'
+      meeting_id = content_attributes.dig('data', 'meeting_id')
+      if meeting_id.present?
+        data[:dyte_meeting_id] = meeting_id
+        data[:dyte_meeting_link] = generate_dyte_guest_link(meeting_id)
+      end
+    end
+    
     data
   end
 
@@ -242,6 +252,34 @@ class Message < ApplicationRecord
     return false if !inbox.allow_agent_to_delete_message && !Current.user&.administrator?
 
     true
+  end
+
+  def generate_dyte_guest_link(meeting_id)
+    return "https://app.dyte.io/v2/meeting" unless meeting_id.present?
+    
+    begin
+      # Try to generate a guest token for the meeting
+      dyte_hook = account.hooks.find_by(app_id: 'dyte')
+      return "https://app.dyte.io/v2/meeting" unless dyte_hook&.settings.present?
+      
+      credentials = dyte_hook.settings
+      dyte_client = Dyte.new(credentials['organization_id'], credentials['api_key'])
+      
+      # Generate a guest participant token
+      contact_name = conversation.contact.name || 'Convidado'
+      avatar_url = conversation.contact.avatar_url.presence || "#{ENV.fetch('FRONTEND_URL', nil)}/integrations/slack/user.png"
+      
+      response = dyte_client.add_participant_to_meeting(meeting_id, SecureRandom.uuid, contact_name, avatar_url)
+      
+      if response[:token].present?
+        "https://app.dyte.io/v2/meeting?authToken=#{response[:token]}&showSetupScreen=true&disableVideoBackground=true"
+      else
+        "https://app.dyte.io/v2/meeting"
+      end
+    rescue => e
+      Rails.logger.error "Error generating Dyte guest link: #{e.message}"
+      "https://app.dyte.io/v2/meeting"
+    end
   end
 
   private
