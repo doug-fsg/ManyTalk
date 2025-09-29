@@ -69,4 +69,9 @@ export const MACRO_ACTION_TYPES = [
     label: 'Alterar Prioridade',
     inputType: 'search_select',
   },
+  {
+    key: 'change_kanban_stage',
+    label: 'Mover para etapa do pipeline',
+    inputType: 'kanban_stage_select',
+  },
 ];

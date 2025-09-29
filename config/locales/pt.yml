@@ -163,6 +163,8 @@ pt:
         removed: "%{user_name} removeu a política de SLA de %{sla_name}"
       muted: "%{user_name} bloqueou a conversa"
       unmuted: "%{user_name} reativou a conversa"
+      kanban:
+        moved: "%{user_name} moveu o contato para %{stage_name}"
     templates:
       greeting_message_body: "%{account_name} normalmente responde em poucas horas."
       ways_to_reach_you_message_body: "Dê à equipe um jeito de contatá-lo."

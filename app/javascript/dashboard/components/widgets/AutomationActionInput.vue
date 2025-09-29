@@ -73,6 +73,10 @@
             v-model="action_params"
             :initial-file-name="initialFileName"
           />
+          <kanban-stage-select
+            v-if="inputType === 'kanban_stage_select'"
+            v-model="action_params"
+          />
         </div>
       </div>
       <woot-button
@@ -108,11 +112,13 @@
 <script>
 import AutomationActionTeamMessageInput from './AutomationActionTeamMessageInput.vue';
 import AutomationActionFileInput from './AutomationFileInput.vue';
+import KanbanStageSelect from 'dashboard/routes/dashboard/settings/macros/components/KanbanStageSelect.vue';
 import WootMessageEditor from 'dashboard/components/widgets/WootWriter/Editor.vue';
 export default {
   components: {
     AutomationActionTeamMessageInput,
     AutomationActionFileInput,
+    KanbanStageSelect,
     WootMessageEditor,
   },
   props: {

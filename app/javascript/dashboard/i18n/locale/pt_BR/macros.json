@@ -73,6 +73,14 @@
       "BUTTON_TOOLTIP": "Executar",
       "PREVIEW": "Pré-visualizar Macro",
       "EXECUTED_SUCCESSFULLY": "Macro executada com sucesso"
+    },
+    "KANBAN": {
+      "SELECT_PIPELINE": "Selecionar pipeline",
+      "SELECT_STAGE": "Selecionar estágio",
+      "NO_PIPELINES": "Nenhum pipeline kanban encontrado",
+      "NO_STAGES": "Nenhum estágio encontrado para este pipeline",
+      "PIPELINE_SELECTED": "Pipeline selecionado",
+      "STAGE_SELECTED": "Estágio selecionado"
     }
   }
 }

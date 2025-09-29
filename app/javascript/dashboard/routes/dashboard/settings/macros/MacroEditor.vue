@@ -123,17 +123,41 @@ export default {
     },
     async saveMacro(macro) {
       try {
+        console.log('[MACRO-EDITOR] Salvando macro:', {
+          mode: this.mode,
+          name: macro.name,
+          actions: macro.actions
+        });
+        
         const action = this.mode === 'EDIT' ? 'macros/update' : 'macros/create';
         let successMessage =
           this.mode === 'EDIT'
             ? this.$t('MACROS.EDIT.API.SUCCESS_MESSAGE')
             : this.$t('MACROS.ADD.API.SUCCESS_MESSAGE');
         let serializedMacro = JSON.parse(JSON.stringify(macro));
+        
+        // Log antes da serialização
+        const kanbanActions = serializedMacro.actions.filter(a => a.action_name === 'change_kanban_stage');
+        if (kanbanActions.length > 0) {
+          console.log('[MACRO-EDITOR] Ações kanban encontradas antes da serialização:', kanbanActions);
+          console.log('[MACRO-EDITOR] Tipo dos action_params:', typeof kanbanActions[0].action_params, kanbanActions[0].action_params);
+        }
+        
         serializedMacro.actions = actionQueryGenerator(serializedMacro.actions);
+        
+        // Log depois da serialização
+        const serializedKanbanActions = serializedMacro.actions.filter(a => a.action_name === 'change_kanban_stage');
+        if (serializedKanbanActions.length > 0) {
+          console.log('[MACRO-EDITOR] Ações kanban após serialização:', serializedKanbanActions);
+          console.log('[MACRO-EDITOR] Tipo dos action_params após serialização:', typeof serializedKanbanActions[0].action_params, serializedKanbanActions[0].action_params);
+        }
+        
         await this.$store.dispatch(action, serializedMacro);
+        console.log('[MACRO-EDITOR] Macro salva com sucesso');
         useAlert(successMessage);
         this.$router.push({ name: 'macros_wrapper' });
       } catch (error) {
+        console.error('[MACRO-EDITOR] Erro ao salvar macro:', error);
         useAlert(this.$t('MACROS.ERROR'));
       }
     },

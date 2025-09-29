@@ -74,8 +74,41 @@ export default {
         send_message: params[0],
         send_email_transcript: params[0],
         add_private_note: params[0],
+        change_kanban_stage: this.resolveKanbanPipeline(params),
       };
       return actionsMap[key] || '';
+    },
+    resolveKanbanPipeline(params) {
+      try {
+        const [pipelineData, stageData] = params;
+        if (!pipelineData) return 'Pipeline não selecionado';
+        
+        // Extrair ID do pipeline (pode ser objeto ou primitivo)
+        const pipelineId = typeof pipelineData === 'object' ? pipelineData.id : pipelineData;
+        const stageName = typeof stageData === 'object' ? stageData.id : stageData;
+        
+        console.log('[MACRO-PREVIEW] Resolvendo pipeline kanban:', { pipelineId, stageName, params });
+        
+        const kanbanAttributes = this.$store.getters['attributes/getAttributes']
+          .filter(attr => attr.attribute_model === 'contact_attribute' && attr.is_kanban === true);
+        
+        const pipeline = kanbanAttributes.find(attr => attr.id.toString() === pipelineId.toString());
+        
+        if (pipeline) {
+          console.log('[MACRO-PREVIEW] Pipeline encontrado:', pipeline.attribute_display_name);
+          if (stageName) {
+            return `${pipeline.attribute_display_name} → ${stageName}`;
+          } else {
+            return `${pipeline.attribute_display_name} (estágio não selecionado)`;
+          }
+        }
+        
+        console.warn('[MACRO-PREVIEW] Pipeline não encontrado:', pipelineId);
+        return `Pipeline ID: ${pipelineId}`;
+      } catch (error) {
+        console.error('[MACRO-PREVIEW] Erro ao resolver pipeline kanban:', error);
+        return 'Erro ao resolver pipeline';
+      }
     },
   },
 };

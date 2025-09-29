@@ -95,7 +95,7 @@ export default {
   },
   methods: {
     dropdownValues() {
-      return this.getDropdownValues(this.value.action_name, this.$store);
+      return this.getDropdownValues(this.value.action_name);
     },
     hasError(v) {
       return !!(v.action_params.$dirty && v.action_params.$error);
