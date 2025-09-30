@@ -44,6 +44,13 @@ export const AUTOMATIONS = {
         filterOperators: OPERATOR_TYPES_1,
       },
       {
+        key: 'campaign_id',
+        name: 'Campanha',
+        attributeI18nKey: 'CAMPAIGN',
+        inputType: 'search_select',
+        filterOperators: OPERATOR_TYPES_3,
+      },
+      {
         key: 'phone_number',
         name: 'Número do telefone',
         attributeI18nKey: 'PHONE_NUMBER',
@@ -174,6 +181,13 @@ export const AUTOMATIONS = {
         attributeI18nKey: 'CONVERSATION_LANGUAGE',
         inputType: 'multi_select',
         filterOperators: OPERATOR_TYPES_1,
+      },
+      {
+        key: 'campaign_id',
+        name: 'Campanha',
+        attributeI18nKey: 'CAMPAIGN',
+        inputType: 'search_select',
+        filterOperators: OPERATOR_TYPES_3,
       },
       {
         key: 'priority',
@@ -321,6 +335,13 @@ export const AUTOMATIONS = {
         filterOperators: OPERATOR_TYPES_1,
       },
       {
+        key: 'campaign_id',
+        name: 'Campanha',
+        attributeI18nKey: 'CAMPAIGN',
+        inputType: 'search_select',
+        filterOperators: OPERATOR_TYPES_3,
+      },
+      {
         key: 'priority',
         name: 'Prioridade',
         attributeI18nKey: 'PRIORITY',
@@ -459,6 +480,13 @@ export const AUTOMATIONS = {
         filterOperators: OPERATOR_TYPES_1,
       },
       {
+        key: 'campaign_id',
+        name: 'Campanha',
+        attributeI18nKey: 'CAMPAIGN',
+        inputType: 'search_select',
+        filterOperators: OPERATOR_TYPES_3,
+      },
+      {
         key: 'priority',
         name: 'Prioridade',
         attributeI18nKey: 'PRIORITY',
@@ -544,7 +572,7 @@ export const AUTOMATIONS = {
       },
       {
         key: 'country_code',
-        name: 'Country',
+        name: 'País',
         attributeI18nKey: 'COUNTRY_NAME',
         inputType: 'search_select',
         filterOperators: OPERATOR_TYPES_1,
@@ -590,6 +618,13 @@ export const AUTOMATIONS = {
         attributeI18nKey: 'CONVERSATION_LANGUAGE',
         inputType: 'multi_select',
         filterOperators: OPERATOR_TYPES_1,
+      },
+      {
+        key: 'campaign_id',
+        name: 'Campanha',
+        attributeI18nKey: 'CAMPAIGN',
+        inputType: 'search_select',
+        filterOperators: OPERATOR_TYPES_3,
       },
       {
         key: 'priority',

@@ -8,34 +8,34 @@ import actionQueryGenerator from './actionQueryGenerator';
 const MESSAGE_CONDITION_VALUES = [
   {
     id: 'incoming',
-    name: 'Incoming Message',
+    name: 'Mensagem Recebida',
   },
   {
     id: 'outgoing',
-    name: 'Outgoing Message',
+    name: 'Mensagem Enviada',
   },
 ];
 
 export const PRIORITY_CONDITION_VALUES = [
   {
     id: 'nil',
-    name: 'None',
+    name: 'Nenhuma',
   },
   {
     id: 'low',
-    name: 'Low',
+    name: 'Baixa',
   },
   {
     id: 'medium',
-    name: 'Medium',
+    name: 'Média',
   },
   {
     id: 'high',
-    name: 'High',
+    name: 'Alta',
   },
   {
     id: 'urgent',
-    name: 'Urgent',
+    name: 'Urgente',
   },
 ];
 
@@ -124,7 +124,7 @@ export const generateConditionOptions = (options, key = 'id') => {
 export const addNoneToList = agents => [
   {
     id: 'nil',
-    name: 'None',
+    name: 'Nenhum',
   },
   ...(agents || []),
 ];
@@ -178,6 +178,7 @@ export const getConditionOptions = ({
     contact: contacts,
     inbox_id: inboxes,
     team_id: teams,
+    campaign_id: generateConditionOptions(campaigns),
     campaigns: generateConditionOptions(campaigns),
     browser_language: languages,
     conversation_language: languages,

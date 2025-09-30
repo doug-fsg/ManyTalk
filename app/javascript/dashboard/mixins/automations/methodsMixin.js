@@ -82,7 +82,7 @@ export default {
         );
       }
       const type = this.getAutomationType(key);
-      return type.inputType;
+      return type ? type.inputType : 'plain_text';
     },
     getOperators(key) {
       if (this.mode === 'edit') {
@@ -95,18 +95,26 @@ export default {
         }
       }
       const type = this.getAutomationType(key);
-      return type.filterOperators;
+      return type ? type.filterOperators : [];
     },
     getAutomationType(key) {
+      // Proteção contra acesso antes da automação ser definida
+      if (!this.automation || !this.automation.event_name) {
+        return null;
+      }
       return this.automationTypes[this.automation.event_name].conditions.find(
         condition => condition.key === key
       );
     },
     getCustomAttributeType(key) {
-      const type = this.automationTypes[
+      // Proteção contra acesso antes da automação ser definida
+      if (!this.automation || !this.automation.event_name) {
+        return '';
+      }
+      const condition = this.automationTypes[
         this.automation.event_name
-      ].conditions.find(i => i.key === key).customAttributeType;
-      return type;
+      ].conditions.find(i => i.key === key);
+      return condition ? condition.customAttributeType : '';
     },
     getConditionDropdownValues(type) {
       // Verificar se é um atributo kanban
@@ -202,9 +210,28 @@ export default {
     },
     manifestConditions(automation) {
       const customAttributes = filterCustomAttributes(this.allCustomAttributes);
+      const eventName = automation.event_name;
+      
       const conditions = automation.conditions.map(condition => {
-        // Usar o mesmo método getInputType para consistência
-        let inputType = this.getInputType(condition.attribute_key);
+        // Obter inputType diretamente do automationTypes usando o event_name da automação
+        const customAttribute = isACustomAttribute(this.allCustomAttributes, condition.attribute_key);
+        let inputType = 'plain_text';
+        
+        if (customAttribute) {
+          if (customAttribute.is_kanban) {
+            inputType = 'kanban_stage_select';
+          } else {
+            inputType = getCustomAttributeInputType(customAttribute.attribute_display_type);
+          }
+        } else {
+          const conditionType = this.automationTypes[eventName]?.conditions.find(
+            c => c.key === condition.attribute_key
+          );
+          if (conditionType) {
+            inputType = conditionType.inputType;
+          }
+        }
+        
         if (inputType === 'plain_text' || inputType === 'date') {
           return {
             ...condition,
