@@ -17,7 +17,7 @@ export const AUTOMATIONS = {
       },
       {
         key: 'content',
-        name: 'Contéudo da mensagem',
+        name: 'Conteúdo da mensagem',
         attributeI18nKey: 'MESSAGE_CONTAINS',
         inputType: 'comma_separated_plain_text',
         filterOperators: OPERATOR_TYPES_2,
@@ -59,7 +59,7 @@ export const AUTOMATIONS = {
       },
       {
         key: 'assign_team',
-        name: 'Assoociar a um departamento',
+        name: 'Associar a uma equipe',
         attributeI18nKey: 'ASSIGN_TEAM',
       },
       {
@@ -69,7 +69,7 @@ export const AUTOMATIONS = {
       },
       {
         key: 'send_email_to_team',
-        name: 'Enviar um email para o departamento',
+        name: 'Enviar um email para a equipe',
         attributeI18nKey: 'SEND_EMAIL_TO_TEAM',
       },
       {
@@ -100,7 +100,7 @@ export const AUTOMATIONS = {
       },
       {
         key: 'send_webhook_event',
-        name: 'Enviar Webhookk',
+        name: 'Enviar webhook',
         attributeI18nKey: 'SEND_WEBHOOK_EVENT',
       },
       {
@@ -191,7 +191,7 @@ export const AUTOMATIONS = {
       },
       {
         key: 'assign_team',
-        name: 'Atribuir a um departamento',
+        name: 'Atribuir a uma equipe',
         attributeI18nKey: 'ASSIGN_TEAM',
       },
       {
@@ -201,7 +201,7 @@ export const AUTOMATIONS = {
       },
       {
         key: 'send_email_to_team',
-        name: 'Enviar email para o departamento',
+        name: 'Enviar email para a equipe',
         attributeI18nKey: 'SEND_EMAIL_TO_TEAM',
       },
       {
@@ -287,14 +287,14 @@ export const AUTOMATIONS = {
       },
       {
         key: 'assignee_id',
-        name: 'Destinatário',
+        name: 'Atendente',
         attributeI18nKey: 'ASSIGNEE_NAME',
         inputType: 'search_select',
         filterOperators: OPERATOR_TYPES_3,
       },
       {
         key: 'team_id',
-        name: 'Departamento',
+        name: 'Equipe',
         attributeI18nKey: 'TEAM_NAME',
         inputType: 'search_select',
         filterOperators: OPERATOR_TYPES_3,
@@ -336,7 +336,7 @@ export const AUTOMATIONS = {
       },
       {
         key: 'assign_team',
-        name: 'Atribuir um departamento',
+        name: 'Atribuir uma equipe',
         attributeI18nKey: 'ASSIGN_TEAM',
       },
       {
@@ -346,7 +346,7 @@ export const AUTOMATIONS = {
       },
       {
         key: 'send_email_to_team',
-        name: 'Enviar email para um departamento',
+        name: 'Enviar email para uma equipe',
         attributeI18nKey: 'SEND_EMAIL_TO_TEAM',
       },
       {
@@ -404,7 +404,7 @@ export const AUTOMATIONS = {
       },
       {
         key: 'mail_subject',
-        name: 'Assunto do Email ',
+        name: 'Assunto do email',
         attributeI18nKey: 'MAIL_SUBJECT',
         inputType: 'plain_text',
         filterOperators: OPERATOR_TYPES_2,
@@ -425,7 +425,7 @@ export const AUTOMATIONS = {
       },
       {
         key: 'assignee_id',
-        name: 'Destinatário',
+        name: 'Atendente',
         attributeI18nKey: 'ASSIGNEE_NAME',
         inputType: 'search_select',
         filterOperators: OPERATOR_TYPES_3,
@@ -439,7 +439,7 @@ export const AUTOMATIONS = {
       },
       {
         key: 'team_id',
-        name: 'Departamento',
+        name: 'Equipe',
         attributeI18nKey: 'TEAM_NAME',
         inputType: 'search_select',
         filterOperators: OPERATOR_TYPES_3,
@@ -474,7 +474,7 @@ export const AUTOMATIONS = {
       },
       {
         key: 'assign_team',
-        name: 'Atribuir um departamento',
+        name: 'Atribuir uma equipe',
         attributeI18nKey: 'ASSIGN_TEAM',
       },
       {
@@ -484,7 +484,7 @@ export const AUTOMATIONS = {
       },
       {
         key: 'send_email_to_team',
-        name: 'Enviar email para um departamento',
+        name: 'Enviar email para uma equipe',
         attributeI18nKey: 'SEND_EMAIL_TO_TEAM',
       },
       {
@@ -523,7 +523,7 @@ export const AUTOMATIONS = {
     conditions: [
       {
         key: 'browser_language',
-        name: 'Browser Language',
+        name: 'Idioma do navegador',
         attributeI18nKey: 'BROWSER_LANGUAGE',
         inputType: 'search_select',
         filterOperators: OPERATOR_TYPES_1,
@@ -537,7 +537,7 @@ export const AUTOMATIONS = {
       },
       {
         key: 'mail_subject',
-        name: 'Email Subject',
+        name: 'Assunto do email',
         attributeI18nKey: 'MAIL_SUBJECT',
         inputType: 'plain_text',
         filterOperators: OPERATOR_TYPES_2,
@@ -551,49 +551,49 @@ export const AUTOMATIONS = {
       },
       {
         key: 'referer',
-        name: 'Referrer Link',
+        name: 'Link de referência',
         attributeI18nKey: 'REFERER_LINK',
         inputType: 'plain_text',
         filterOperators: OPERATOR_TYPES_2,
       },
       {
         key: 'assignee_id',
-        name: 'Assignee',
+        name: 'Atendente',
         attributeI18nKey: 'ASSIGNEE_NAME',
         inputType: 'search_select',
         filterOperators: OPERATOR_TYPES_3,
       },
       {
         key: 'phone_number',
-        name: 'Phone Number',
+        name: 'Número do telefone',
         attributeI18nKey: 'PHONE_NUMBER',
         inputType: 'plain_text',
         filterOperators: OPERATOR_TYPES_6,
       },
       {
         key: 'team_id',
-        name: 'Team',
+        name: 'Equipe',
         attributeI18nKey: 'TEAM_NAME',
         inputType: 'search_select',
         filterOperators: OPERATOR_TYPES_3,
       },
       {
         key: 'inbox_id',
-        name: 'Inbox',
+        name: 'Canal de entrada',
         attributeI18nKey: 'INBOX',
         inputType: 'multi_select',
         filterOperators: OPERATOR_TYPES_1,
       },
       {
         key: 'conversation_language',
-        name: 'Conversation Language',
+        name: 'Idioma da conversa',
         attributeI18nKey: 'CONVERSATION_LANGUAGE',
         inputType: 'multi_select',
         filterOperators: OPERATOR_TYPES_1,
       },
       {
         key: 'priority',
-        name: 'Priority',
+        name: 'Prioridade',
         attributeI18nKey: 'PRIORITY',
         inputType: 'multi_select',
         filterOperators: OPERATOR_TYPES_1,
@@ -602,37 +602,37 @@ export const AUTOMATIONS = {
     actions: [
       {
         key: 'assign_agent',
-        name: 'Assign to agent',
+        name: 'Atribuir a um atendente',
         attributeI18nKey: 'ASSIGN_AGENT',
       },
       {
         key: 'assign_team',
-        name: 'Assign a team',
+        name: 'Atribuir a uma equipe',
         attributeI18nKey: 'ASSIGN_TEAM',
       },
       {
         key: 'send_email_to_team',
-        name: 'Send an email to team',
+        name: 'Enviar email para uma equipe',
         attributeI18nKey: 'SEND_EMAIL_TO_TEAM',
       },
       {
         key: 'send_message',
-        name: 'Send a message',
+        name: 'Enviar uma mensagem',
         attributeI18nKey: 'SEND_MESSAGE',
       },
       {
         key: 'send_email_transcript',
-        name: 'Send an email transcript',
+        name: 'Enviar transcrição por email',
         attributeI18nKey: 'SEND_EMAIL_TRANSCRIPT',
       },
       {
         key: 'send_webhook_event',
-        name: 'Send Webhook Event',
+        name: 'Enviar webhook',
         attributeI18nKey: 'SEND_WEBHOOK_EVENT',
       },
       {
         key: 'send_attachment',
-        name: 'Send Attachment',
+        name: 'Enviar anexo',
         attributeI18nKey: 'SEND_ATTACHMENT',
       },
     ],
@@ -650,15 +650,15 @@ export const AUTOMATION_RULE_EVENTS = [
   },
   {
     key: 'conversation_resolved',
-    value: 'Conversation Resolved',
+    value: 'Conversa resolvida',
   },
   {
     key: 'message_created',
-    value: 'Mensagem Criada',
+    value: 'Mensagem criada',
   },
   {
     key: 'conversation_opened',
-    value: 'Conversa Aberta',
+    value: 'Conversa aberta',
   },
 ];
 
@@ -670,7 +670,7 @@ export const AUTOMATION_ACTION_TYPES = [
   },
   {
     key: 'assign_team',
-    label: 'Atribuir a um Departamento',
+    label: 'Atribuir a uma equipe',
     inputType: 'search_select',
   },
   {
@@ -680,12 +680,12 @@ export const AUTOMATION_ACTION_TYPES = [
   },
   {
     key: 'remove_label',
-    label: 'Remove etiqueta',
+    label: 'Remover etiqueta',
     inputType: 'multi_select',
   },
   {
     key: 'send_email_to_team',
-    label: 'Enviar email ao departamento',
+    label: 'Enviar email à equipe',
     inputType: 'team_message',
   },
   {
@@ -695,27 +695,27 @@ export const AUTOMATION_ACTION_TYPES = [
   },
   {
     key: 'mute_conversation',
-    label: 'Mutar Conversa',
+    label: 'Mutar conversa',
     inputType: null,
   },
   {
     key: 'snooze_conversation',
-    label: 'Adiar Conversa',
+    label: 'Adiar conversa',
     inputType: null,
   },
   {
     key: 'resolve_conversation',
-    label: 'Resolver a Conversa',
+    label: 'Resolver conversa',
     inputType: null,
   },
   {
     key: 'send_webhook_event',
-    label: 'Enviar Webhook',
+    label: 'Enviar webhook',
     inputType: 'url',
   },
   {
     key: 'send_attachment',
-    label: 'Enviar Anexo',
+    label: 'Enviar anexo',
     inputType: 'attachment',
   },
   {
@@ -725,12 +725,17 @@ export const AUTOMATION_ACTION_TYPES = [
   },
   {
     key: 'change_priority',
-    label: 'Mudar Prioridade',
+    label: 'Mudar prioridade',
     inputType: 'search_select',
   },
   {
     key: 'add_sla',
     label: 'VAR',
     inputType: 'search_select',
+  },
+  {
+    key: 'change_kanban_stage',
+    label: 'Mover para etapa do pipeline',
+    inputType: 'kanban_stage_select',
   },
 ];

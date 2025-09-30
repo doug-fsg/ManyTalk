@@ -12,7 +12,13 @@ const formatArray = params => {
   } else if (allElementsString(params) || allElementsNumbers(params)) {
     params = [...params];
   } else {
-    params = params.map(val => val.id);
+    // Para kanban_stage, os valores são objetos [{ id: pipelineId, name: pipelineName }, { id: stageName, name: stageName }]
+    // Precisamos extrair apenas o nome do estágio (segundo objeto)
+    if (params.length >= 2 && params[0].id && params[1].name) {
+      params = [params[1].name]; // Retorna apenas o nome do estágio
+    } else {
+      params = params.map(val => val.id);
+    }
   }
   return params;
 };

@@ -100,6 +100,18 @@
               class="mb-0 datepicker"
             />
           </div>
+          <div v-else-if="inputType === 'kanban_stage_select'" class="multiselect-wrap--small">
+            <multiselect
+              v-model="values"
+              track-by="id"
+              label="name"
+              :placeholder="$t('AUTOMATION.CONDITION.KANBAN_STAGE.SELECT_STAGE')"
+              :max-height="160"
+              :options="dropdownValues"
+              :allow-empty="false"
+              :disabled="dropdownValues.length === 0"
+            />
+          </div>
           <input
             v-else
             v-model="values"

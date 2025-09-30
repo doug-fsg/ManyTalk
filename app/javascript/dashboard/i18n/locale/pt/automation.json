@@ -88,7 +88,10 @@
     "CONDITION": {
       "DELETE_MESSAGE": "É necessário ter pelo menos uma condição para salvar",
       "CONTACT_CUSTOM_ATTR_LABEL": "Atributos Personalizados do Contato",
-      "CONVERSATION_CUSTOM_ATTR_LABEL": "Atributos Personalizados da Conversa"
+      "CONVERSATION_CUSTOM_ATTR_LABEL": "Atributos Personalizados da Conversa",
+      "KANBAN_STAGE": {
+        "SELECT_STAGE": "Selecionar etapa"
+      }
     },
     "ACTION": {
       "DELETE_MESSAGE": "É necessário ter pelo menos uma ação para salvar",

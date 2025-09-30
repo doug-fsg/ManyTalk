@@ -73,6 +73,10 @@ export default {
     getInputType(key) {
       const customAttribute = isACustomAttribute(this.allCustomAttributes, key);
       if (customAttribute) {
+        // Se for um atributo kanban, usar kanban_stage_select
+        if (customAttribute.is_kanban) {
+          return 'kanban_stage_select';
+        }
         return getCustomAttributeInputType(
           customAttribute.attribute_display_type
         );
@@ -105,6 +109,17 @@ export default {
       return type;
     },
     getConditionDropdownValues(type) {
+      // Verificar se é um atributo kanban
+      const customAttribute = isACustomAttribute(this.allCustomAttributes, type);
+      if (customAttribute && customAttribute.is_kanban) {
+        // Para atributos kanban, retornar as etapas (attribute_values) do atributo específico
+        const stages = customAttribute.attribute_values || [];
+        return stages.map(stage => ({
+          id: stage,
+          name: stage
+        }));
+      }
+      
       const {
         agents,
         allCustomAttributes: customAttributes,
@@ -115,6 +130,11 @@ export default {
         statusFilterOptions,
         teams,
       } = this;
+      
+      // Buscar atributos kanban do store
+      const kanbanAttributes = this.$store.getters['attributes/getAttributes']
+        .filter(attr => attr.attribute_model === 'contact_attribute' && attr.is_kanban === true);
+      
       return getConditionOptions({
         agents,
         booleanFilterOptions,
@@ -126,6 +146,7 @@ export default {
         teams,
         languages,
         countries,
+        kanbanAttributes,
         type,
       });
     },
@@ -182,20 +203,8 @@ export default {
     manifestConditions(automation) {
       const customAttributes = filterCustomAttributes(this.allCustomAttributes);
       const conditions = automation.conditions.map(condition => {
-        const customAttr = isCustomAttribute(
-          customAttributes,
-          condition.attribute_key
-        );
-        let inputType = 'plain_text';
-        if (customAttr) {
-          inputType = getCustomAttributeInputType(customAttr.type);
-        } else {
-          inputType = getStandardAttributeInputType(
-            this.automationTypes,
-            automation.event_name,
-            condition.attribute_key
-          );
-        }
+        // Usar o mesmo método getInputType para consistência
+        let inputType = this.getInputType(condition.attribute_key);
         if (inputType === 'plain_text' || inputType === 'date') {
           return {
             ...condition,
@@ -206,6 +215,21 @@ export default {
           return {
             ...condition,
             values: condition.values.join(','),
+          };
+        }
+        if (inputType === 'kanban_stage_select') {
+          // Para atributos kanban, os valores salvos são apenas o nome do estágio
+          // Precisamos converter para o formato que o multiselect espera
+          const stageName = condition.values[0];
+          if (stageName) {
+            return {
+              ...condition,
+              values: [{ id: stageName, name: stageName }]
+            };
+          }
+          return {
+            ...condition,
+            values: []
           };
         }
         return {
@@ -260,12 +284,18 @@ export default {
     },
     getActionDropdownValues(type) {
       const { agents, labels, teams, slaPolicies } = this;
+      
+      // Buscar atributos kanban do store para ações
+      const kanbanAttributes = this.$store.getters['attributes/getAttributes']
+        .filter(attr => attr.attribute_model === 'contact_attribute' && attr.is_kanban === true);
+      
       return getActionOptions({
         agents,
         labels,
         teams,
         slaPolicies,
         languages,
+        kanbanAttributes,
         type,
       });
     },
@@ -278,12 +308,19 @@ export default {
         this.$store.getters['attributes/getAttributesByModel'](
           'contact_attribute'
         );
+      
+      // Incluir também os atributos kanban (que são excluídos pelo getAttributesByModel)
+      const kanbanAttributesRaw = this.$store.getters['attributes/getAttributes']
+        .filter(attr => attr.attribute_model === 'contact_attribute' && attr.is_kanban === true);
+      
+      // Combinar atributos customizados normais com kanban
+      const allContactAttributesRaw = [...contactCustomAttributesRaw, ...kanbanAttributesRaw];
       const conversationCustomAttributeTypes = generateCustomAttributeTypes(
         conversationCustomAttributesRaw,
         'conversation_attribute'
       );
       const contactCustomAttributeTypes = generateCustomAttributeTypes(
-        contactCustomAttributesRaw,
+        allContactAttributesRaw,
         'contact_attribute'
       );
       let manifestedCustomAttributes = generateCustomAttributes(

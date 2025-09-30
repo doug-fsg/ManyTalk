@@ -134,6 +134,7 @@ export const getActionOptions = ({
   teams,
   labels,
   slaPolicies,
+  kanbanAttributes,
   type,
 }) => {
   const actionsMap = {
@@ -144,6 +145,7 @@ export const getActionOptions = ({
     remove_label: generateConditionOptions(labels, 'title'),
     change_priority: PRIORITY_CONDITION_VALUES,
     add_sla: slaPolicies,
+    change_kanban_stage: kanbanAttributes || [],
   };
   return actionsMap[type];
 };
@@ -159,6 +161,7 @@ export const getConditionOptions = ({
   languages,
   statusFilterOptions,
   teams,
+  kanbanAttributes,
   type,
 }) => {
   if (isCustomAttributeCheckbox(customAttributes, type)) {
@@ -181,6 +184,7 @@ export const getConditionOptions = ({
     country_code: countries,
     message_type: MESSAGE_CONDITION_VALUES,
     priority: PRIORITY_CONDITION_VALUES,
+    kanban_stage: kanbanAttributes || [],
   };
 
   return conditionFilterMaps[type];
