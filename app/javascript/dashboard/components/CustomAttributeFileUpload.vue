@@ -155,7 +155,6 @@ export default {
     async onFileSelect(event) {
       const selectedFiles = Array.from(event.target.files);
       
-      console.log('Files selected:', selectedFiles.length, 'Contact ID:', this.contactId, 'Attribute:', this.attributeKey);
       
       // Validate file count
       if (this.files.length + selectedFiles.length > this.maxFiles) {
@@ -168,7 +167,6 @@ export default {
       // Validate file sizes
       const oversizedFiles = selectedFiles.filter(file => file.size > MAX_FILE_SIZE);
       if (oversizedFiles.length > 0) {
-        console.error('Files too large:', oversizedFiles.map(f => ({ name: f.name, size: f.size })));
         useAlert(this.$t('CUSTOM_ATTRIBUTES.FILE.FILE_TOO_LARGE'));
         return;
       }
@@ -176,24 +174,18 @@ export default {
       this.isUploading = true;
 
       try {
-        console.log('Starting upload...');
         const response = await ContactAttributeFilesAPI.upload(
           this.contactId,
           this.attributeKey,
           selectedFiles.length === 1 ? selectedFiles[0] : selectedFiles
         );
 
-        console.log('Upload response:', response.data);
         const uploadedFiles = response.data.files || [response.data];
         this.files = [...this.files, ...uploadedFiles];
         this.emitUpdate();
 
         useAlert(this.$t('CUSTOM_ATTRIBUTES.FILE.UPLOAD_SUCCESS'));
       } catch (error) {
-        console.error('Upload failed:', error);
-        console.error('Error response:', error?.response?.data);
-        console.error('Error status:', error?.response?.status);
-        
         const errorMessage = error?.response?.data?.error || 
                             error?.message || 
                             this.$t('CUSTOM_ATTRIBUTES.FILE.UPLOAD_ERROR');
@@ -229,11 +221,6 @@ export default {
 
     emitUpdate() {
       const value = this.maxFiles === 1 ? this.files[0] || null : this.files;
-      console.log('CustomAttributeFileUpload - Emitting update:', {
-        attributeKey: this.attributeKey,
-        value: value,
-        files: this.files
-      });
       this.$emit('input', value);
       this.$emit('update', this.attributeKey, value);
     },

@@ -136,13 +136,7 @@ export default {
       });
     },
     async onUpdate(key, value) {
-      console.log('CustomAttributes - onUpdate called:', {
-        key: key,
-        value: value,
-        currentCustomAttributes: this.customAttributes
-      });
       const updatedAttributes = { ...this.customAttributes, [key]: value };
-      console.log('CustomAttributes - updatedAttributes:', updatedAttributes);
       try {
         if (this.attributeType === 'conversation_attribute') {
           await this.$store.dispatch('updateCustomAttributes', {
@@ -150,10 +144,6 @@ export default {
             customAttributes: updatedAttributes,
           });
         } else {
-          console.log('CustomAttributes - Dispatching contacts/update with:', {
-            id: this.contactId,
-            custom_attributes: updatedAttributes,
-          });
           this.$store.dispatch('contacts/update', {
             id: this.contactId,
             custom_attributes: updatedAttributes,
@@ -161,7 +151,6 @@ export default {
         }
         useAlert(this.$t('CUSTOM_ATTRIBUTES.FORM.UPDATE.SUCCESS'));
       } catch (error) {
-        console.error('CustomAttributes - Update error:', error);
         const errorMessage =
           error?.response?.message ||
           this.$t('CUSTOM_ATTRIBUTES.FORM.UPDATE.ERROR');

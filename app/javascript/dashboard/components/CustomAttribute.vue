@@ -330,10 +330,6 @@ export default {
     },
     onFileUpdate(attributeKey, value) {
       // For file attributes, directly emit the update without validation
-      console.log('CustomAttribute - onFileUpdate called:', {
-        attributeKey: attributeKey,
-        value: value
-      });
       this.$emit('update', attributeKey, value);
     },
     onDelete() {

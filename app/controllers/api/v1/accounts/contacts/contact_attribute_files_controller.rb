@@ -2,8 +2,6 @@ class Api::V1::Accounts::Contacts::ContactAttributeFilesController < Api::V1::Ac
   before_action :validate_attribute_key
 
   def create
-    Rails.logger.info "Upload request - Contact: #{@contact.id}, Attribute: #{params[:attribute_key]}, Files: #{params[:files]&.count || (params[:file] ? 1 : 0)}"
-    
     service = ContactAttributeFileUploadService.new(
       account: Current.account,
       contact: @contact,
@@ -19,14 +17,11 @@ class Api::V1::Accounts::Contacts::ContactAttributeFilesController < Api::V1::Ac
       result = service.upload(params[:file])
       render json: result, status: :created
     else
-      Rails.logger.error "No file provided in params: #{params.keys}"
       render json: { error: 'No file provided' }, status: :unprocessable_entity
     end
   rescue ArgumentError => e
-    Rails.logger.error "Validation error: #{e.message}"
     render json: { error: e.message }, status: :unprocessable_entity
   rescue StandardError => e
-    Rails.logger.error "File upload error: #{e.class} - #{e.message}\n#{e.backtrace.first(5).join("\n")}"
     render json: { error: "Failed to upload file: #{e.message}" }, status: :internal_server_error
   end
 
@@ -43,7 +38,6 @@ class Api::V1::Accounts::Contacts::ContactAttributeFilesController < Api::V1::Ac
       render json: { error: 'File not found' }, status: :not_found
     end
   rescue StandardError => e
-    Rails.logger.error "File deletion error: #{e.message}"
     render json: { error: 'Failed to delete file' }, status: :internal_server_error
   end
 
