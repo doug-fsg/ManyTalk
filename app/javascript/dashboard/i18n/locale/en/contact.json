@@ -352,6 +352,17 @@
       "REQUIRED": "Valid value is required",
       "INVALID_URL": "Invalid URL",
       "INVALID_INPUT": "Invalid Input"
+    },
+    "FILE": {
+      "UPLOAD_BUTTON": "Upload file",
+      "UPLOADING": "Uploading...",
+      "UPLOAD_SUCCESS": "File uploaded successfully",
+      "UPLOAD_ERROR": "Failed to upload file",
+      "DELETE_SUCCESS": "File deleted successfully",
+      "DELETE_ERROR": "Failed to delete file",
+      "TOO_MANY_FILES": "Maximum {max} files allowed",
+      "MAX_FILES_REACHED": "Maximum of {max} files reached",
+      "FILE_TOO_LARGE": "File size must be less than 10MB"
     }
   },
   "MERGE_CONTACTS": {

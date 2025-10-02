@@ -352,6 +352,17 @@
       "REQUIRED": "Um valor válido é obrigatório",
       "INVALID_URL": "URL inválida",
       "INVALID_INPUT": "Campo inválido"
+    },
+    "FILE": {
+      "UPLOAD_BUTTON": "Enviar arquivo",
+      "UPLOADING": "Enviando...",
+      "UPLOAD_SUCCESS": "Arquivo enviado com sucesso",
+      "UPLOAD_ERROR": "Falha ao enviar arquivo",
+      "DELETE_SUCCESS": "Arquivo excluído com sucesso",
+      "DELETE_ERROR": "Falha ao excluir arquivo",
+      "TOO_MANY_FILES": "Máximo de {max} arquivos permitidos",
+      "MAX_FILES_REACHED": "Máximo de {max} arquivos atingido",
+      "FILE_TOO_LARGE": "O tamanho do arquivo deve ser menor que 10MB"
     }
   },
   "MERGE_CONTACTS": {

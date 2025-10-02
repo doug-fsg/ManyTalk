@@ -142,6 +142,8 @@ Rails.application.routes.draw do
               resources :contact_inboxes, only: [:create]
               resources :labels, only: [:create, :index]
               resources :notes
+              post 'contact_attribute_files', to: 'contact_attribute_files#create'
+              delete 'contact_attribute_files', to: 'contact_attribute_files#destroy'
             end
           end
           resources :csat_survey_responses, only: [:index] do

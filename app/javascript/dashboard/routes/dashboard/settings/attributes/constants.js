@@ -34,4 +34,8 @@ export const ATTRIBUTE_TYPES = [
     id: 7,
     option: 'Checkbox',
   },
+  {
+    id: 8,
+    option: 'File',
+  },
 ];

@@ -5,7 +5,7 @@ properties:
     description: Attribute display name
   attribute_display_type:
     type: integer
-    description: Attribute display type (text- 0, number- 1, currency- 2, percent- 3, link- 4, date- 5, list- 6, checkbox- 7)
+    description: Attribute display type (text- 0, number- 1, currency- 2, percent- 3, link- 4, date- 5, list- 6, checkbox- 7, file- 8)
   attribute_description:
     type: string
     description: Attribute description

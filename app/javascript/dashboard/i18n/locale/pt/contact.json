@@ -351,6 +351,17 @@
       "REQUIRED": "Valor válido é obrigatório",
       "INVALID_URL": "URL Inválido",
       "INVALID_INPUT": "Entrada inválida"
+    },
+    "FILE": {
+      "UPLOAD_BUTTON": "Enviar ficheiro",
+      "UPLOADING": "A enviar...",
+      "UPLOAD_SUCCESS": "Ficheiro enviado com sucesso",
+      "UPLOAD_ERROR": "Falha ao enviar ficheiro",
+      "DELETE_SUCCESS": "Ficheiro eliminado com sucesso",
+      "DELETE_ERROR": "Falha ao eliminar ficheiro",
+      "TOO_MANY_FILES": "Máximo de {max} ficheiros permitidos",
+      "MAX_FILES_REACHED": "Máximo de {max} ficheiros atingido",
+      "FILE_TOO_LARGE": "O tamanho do ficheiro deve ser inferior a 10MB"
     }
   },
   "MERGE_CONTACTS": {

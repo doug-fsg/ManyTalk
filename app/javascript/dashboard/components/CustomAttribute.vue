@@ -131,6 +131,15 @@
         @click="onUpdateListValue"
       />
     </div>
+    <div v-if="isAttributeTypeFile">
+      <custom-attribute-file-upload
+        :value="value || []"
+        :contact-id="contactId"
+        :attribute-key="attributeKey"
+        :max-files="5"
+        @update="onFileUpdate"
+      />
+    </div>
   </div>
 </template>
 
@@ -140,6 +149,7 @@ import { required, url } from 'vuelidate/lib/validators';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import MultiselectDropdown from 'shared/components/ui/MultiselectDropdown.vue';
 import HelperTextPopup from 'dashboard/components/ui/HelperTextPopup.vue';
+import CustomAttributeFileUpload from 'dashboard/components/CustomAttributeFileUpload.vue';
 import { isValidURL } from '../helper/URLHelper';
 import customAttributeMixin from '../mixins/customAttributeMixin';
 
@@ -149,6 +159,7 @@ export default {
   components: {
     MultiselectDropdown,
     HelperTextPopup,
+    CustomAttributeFileUpload,
   },
   mixins: [customAttributeMixin],
   props: {
@@ -212,6 +223,9 @@ export default {
     isAttributeTypeDate() {
       return this.attributeType === 'date';
     },
+    isAttributeTypeFile() {
+      return this.attributeType === 'file';
+    },
     urlValue() {
       return isValidURL(this.value) ? this.value : '---';
     },
@@ -219,7 +233,7 @@ export default {
       return isValidURL(this.value) ? this.value : '';
     },
     notAttributeTypeCheckboxAndList() {
-      return !this.isAttributeTypeCheckbox && !this.isAttributeTypeList;
+      return !this.isAttributeTypeCheckbox && !this.isAttributeTypeList && !this.isAttributeTypeFile;
     },
     inputType() {
       return this.isAttributeTypeLink ? 'url' : this.attributeType;
@@ -313,6 +327,14 @@ export default {
       }
       this.isEditing = false;
       this.$emit('update', this.attributeKey, updatedValue);
+    },
+    onFileUpdate(attributeKey, value) {
+      // For file attributes, directly emit the update without validation
+      console.log('CustomAttribute - onFileUpdate called:', {
+        attributeKey: attributeKey,
+        value: value
+      });
+      this.$emit('update', attributeKey, value);
     },
     onDelete() {
       this.isEditing = false;

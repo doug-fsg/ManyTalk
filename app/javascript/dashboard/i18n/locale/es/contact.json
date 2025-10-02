@@ -351,6 +351,17 @@
       "REQUIRED": "Se requiere un valor válido",
       "INVALID_URL": "URL inválida",
       "INVALID_INPUT": "Ingreso inválido"
+    },
+    "FILE": {
+      "UPLOAD_BUTTON": "Subir archivo",
+      "UPLOADING": "Subiendo...",
+      "UPLOAD_SUCCESS": "Archivo subido con éxito",
+      "UPLOAD_ERROR": "Error al subir archivo",
+      "DELETE_SUCCESS": "Archivo eliminado con éxito",
+      "DELETE_ERROR": "Error al eliminar archivo",
+      "TOO_MANY_FILES": "Máximo de {max} archivos permitidos",
+      "MAX_FILES_REACHED": "Máximo de {max} archivos alcanzado",
+      "FILE_TOO_LARGE": "El tamaño del archivo debe ser menor de 10MB"
     }
   },
   "MERGE_CONTACTS": {
