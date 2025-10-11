@@ -24,6 +24,7 @@
         {{ contact.additional_attributes.company }}
       </span>
       <div class="card-actions">
+        <!-- Botões principais sempre visíveis -->
         <span 
           class="action-icon view-icon" 
           @click.stop="$emit('view')"
@@ -38,40 +39,58 @@
         >
           <fluent-icon icon="tag" size="14" />
         </span>
-        <!-- Win/Lost Actions -->
-        <span
-          v-if="!winLostStatus"
-          class="action-icon win-icon"
-          @click.stop="$emit('open-win-modal', { contact, currentDealValue: dealValue })"
-          v-tooltip="'Marcar como Ganho'"
-        >
-          <fluent-icon icon="checkmark-circle" size="14" />
-        </span>
-        <span
-          v-if="!winLostStatus"
-          class="action-icon lost-icon"
-          @click.stop="$emit('open-lost-modal', { contact, currentDealValue: dealValue })"
-          v-tooltip="'Marcar como Perdido'"
-        >
-          <fluent-icon icon="dismiss-circle" size="14" />
-        </span>
 
-        <!-- Undo Win/Lost Action -->
-        <span
-          v-if="winLostStatus"
-          class="action-icon undo-icon"
-          @click.stop="undoWinLostStatus"
-          v-tooltip="`Desfazer ${winLostStatus === 'won' ? 'Ganho' : 'Perdido'}`"
-        >
-          <fluent-icon icon="dismiss-circle" size="14" />
-        </span>
-        <span 
-          class="action-icon remove-icon" 
-          @click.stop="$emit('remove')"
-          v-tooltip="$t('KANBAN.REMOVE_CARD')"
-        >
-          <fluent-icon icon="dismiss" size="14" />
-        </span>
+        <!-- Menu dropdown para outras ações -->
+        <div class="actions-menu-wrapper">
+          <span 
+            class="action-icon menu-icon" 
+            @click.stop="toggleActionsMenu"
+            v-tooltip="'Mais ações'"
+          >
+            <fluent-icon icon="more-vertical" size="14" />
+          </span>
+
+          <!-- Dropdown menu -->
+          <div v-if="showActionsMenu" class="actions-dropdown" @click.stop>
+            <!-- Win/Lost Actions -->
+            <div
+              v-if="!winLostStatus"
+              class="dropdown-item"
+              @click="handleWinAction"
+            >
+              <fluent-icon icon="checkmark-circle" size="14" />
+              <span>Marcar como Ganho</span>
+            </div>
+            <div
+              v-if="!winLostStatus"
+              class="dropdown-item"
+              @click="handleLostAction"
+            >
+              <fluent-icon icon="dismiss-circle" size="14" />
+              <span>Marcar como Perdido</span>
+            </div>
+
+            <!-- Undo Win/Lost Action -->
+            <div
+              v-if="winLostStatus"
+              class="dropdown-item"
+              @click="handleUndoAction"
+            >
+              <fluent-icon icon="arrow-undo" size="14" />
+              <span>Desfazer {{ winLostStatus === 'won' ? 'Ganho' : 'Perdido' }}</span>
+            </div>
+
+            <div class="dropdown-divider"></div>
+
+            <div
+              class="dropdown-item dropdown-item-danger"
+              @click="handleRemoveAction"
+            >
+              <fluent-icon icon="dismiss" size="14" />
+              <span>{{ $t('KANBAN.REMOVE_CARD') }}</span>
+            </div>
+          </div>
+        </div>
       </div>
       <!-- ID do contato oculto para garantir que esteja acessível via DOM -->
       <span class="hidden-contact-id" style="display: none">
@@ -164,9 +183,58 @@
           +{{ contact.labels.length - 2 }}
         </span>
       </div>
-      <span class="last-activity">
-        {{ getLastActivityTime(contact) }}
-      </span>
+      <div class="card-footer-right">
+        <!-- Etiquetas primeiro -->
+        <div 
+          v-if="allLabels.length" 
+          class="assignee-labels-container"
+        >
+          <!-- Etiquetas usando woot-label -->
+          <woot-label
+            v-for="label in displayedLabelsInBadge"
+            :key="label"
+            :title="label"
+            :color="getLabelColor(label)"
+            variant="smooth"
+            small
+            class="!mb-0"
+            @click.stop
+          />
+          
+          <!-- Botão "Ver mais" -->
+          <woot-button
+            v-if="hasMoreLabels"
+            :title="showAllLabels ? 'Ocultar etiquetas' : 'Mostrar etiquetas'"
+            class="!mb-0 flex-shrink-0"
+            color-scheme="secondary"
+            variant="hollow"
+            :icon="showAllLabels ? 'chevron-up' : 'chevron-down'"
+            size="tiny"
+            @click.stop="showAllLabels = !showAllLabels"
+          />
+        </div>
+        
+        <!-- Badge do agente responsável -->
+        <div 
+          v-if="lastConversationAssignee"
+          class="assignee-badge"
+          v-tooltip="`Responsável: ${lastConversationAssignee.name}`"
+          @click.stop
+        >
+          <img 
+            v-if="lastConversationAssignee.thumbnail" 
+            :src="lastConversationAssignee.thumbnail" 
+            :alt="lastConversationAssignee.name"
+            class="w-[18px] h-[18px] rounded-full object-cover object-center flex-shrink-0"
+          />
+          <span 
+            v-else 
+            class="assignee-initials"
+          >
+            {{ getAssigneeInitials(lastConversationAssignee) }}
+          </span>
+        </div>
+      </div>
     </div>
     <div v-if="isUpdating" class="card-overlay">
       <span class="updating-indicator">
@@ -232,11 +300,13 @@ import { formatUnixDate } from 'shared/helpers/DateHelper';
 import { getRandomColor } from 'dashboard/helper/labelColor';
 import { frontendURL } from 'dashboard/helper/URLHelper';
 import FluentIcon from 'shared/components/FluentIcon/DashboardIcon.vue';
+import WootLabel from 'dashboard/components/ui/Label.vue';
 
 export default {
   name: 'KanbanCard',
   components: {
     FluentIcon,
+    WootLabel,
   },
   props: {
     contact: {
@@ -263,6 +333,8 @@ export default {
       isLoadingConversations: false,
       showValueInput: false,
       editingValue: 0,
+      showAllLabels: false,
+      showActionsMenu: false,
     };
   },
   computed: {
@@ -279,6 +351,30 @@ export default {
         return b.created_at - a.created_at;
       });
       return sorted.slice(0, 5);
+    },
+    lastOpenConversation() {
+      return this.conversations.find(conv => conv.status === 'open') || null;
+    },
+    lastConversationAssignee() {
+      return this.lastOpenConversation?.meta?.assignee || null;
+    },
+    conversationLabels() {
+      return this.lastOpenConversation?.labels || [];
+    },
+    allLabels() {
+      // Combina etiquetas da conversa e do contato, removendo duplicatas
+      const contactLabels = this.contact.labels || [];
+      const allLabelsList = [...this.conversationLabels, ...contactLabels];
+      return [...new Set(allLabelsList)];
+    },
+    displayedLabelsInBadge() {
+      if (this.showAllLabels || this.allLabels.length <= 2) {
+        return this.allLabels;
+      }
+      return this.allLabels.slice(0, 2);
+    },
+    hasMoreLabels() {
+      return this.allLabels.length > 2;
     },
     getStatusLabel() {
       return (status) => {
@@ -478,6 +574,14 @@ export default {
         currency: 'BRL'
       }).format(value);
     },
+    getAssigneeInitials(assignee) {
+      if (!assignee || !assignee.name) return '';
+      const names = assignee.name.trim().split(' ');
+      if (names.length === 1) {
+        return names[0].charAt(0).toUpperCase();
+      }
+      return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+    },
     toggleValueInput() {
       this.showValueInput = !this.showValueInput;
       this.editingValue = this.dealValue || 0;
@@ -539,7 +643,33 @@ export default {
         contactId: this.contact.id,
         additionalAttributes
       });
+    },
+    toggleActionsMenu() {
+      this.showActionsMenu = !this.showActionsMenu;
+    },
+    closeActionsMenu() {
+      this.showActionsMenu = false;
+    },
+    handleWinAction() {
+      this.$emit('open-win-modal', { contact: this.contact, currentDealValue: this.dealValue });
+      this.closeActionsMenu();
+    },
+    handleLostAction() {
+      this.$emit('open-lost-modal', { contact: this.contact, currentDealValue: this.dealValue });
+      this.closeActionsMenu();
+    },
+    handleUndoAction() {
+      this.undoWinLostStatus();
+      this.closeActionsMenu();
+    },
+    handleRemoveAction() {
+      this.$emit('remove');
+      this.closeActionsMenu();
     }
+  },
+  mounted() {
+    // Carrega conversas automaticamente para exibir assignee e labels
+    this.loadConversations();
   },
   watch: {
     showValueInput(newValue) {
@@ -550,11 +680,23 @@ export default {
         // Remove o event listener quando o input é fechado
         document.removeEventListener('click', this.cancelValueEdit);
       }
+    },
+    showActionsMenu(newValue) {
+      if (newValue) {
+        // Adiciona um event listener global para fechar o menu quando clicar fora
+        this.$nextTick(() => {
+          document.addEventListener('click', this.closeActionsMenu);
+        });
+      } else {
+        // Remove o event listener quando o menu é fechado
+        document.removeEventListener('click', this.closeActionsMenu);
+      }
     }
   },
   beforeDestroy() {
-    // Limpa o event listener quando o componente é destruído
+    // Limpa os event listeners quando o componente é destruído
     document.removeEventListener('click', this.cancelValueEdit);
+    document.removeEventListener('click', this.closeActionsMenu);
   }
 };
 </script>
@@ -734,21 +876,84 @@ export default {
     color: var(--g-500);
   }
 
-  &.remove-icon:hover {
-    color: var(--r-500);
+  &.menu-icon:hover {
+    color: var(--s-700);
+  }
+}
+
+.actions-menu-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.actions-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background-color: var(--white);
+  border-radius: var(--border-radius-normal);
+  box-shadow: var(--shadow-large);
+  border: 1px solid var(--s-200);
+  z-index: 1000;
+  min-width: 180px;
+  overflow: hidden;
+  
+  .dark-mode & {
+    background-color: var(--b-700);
+    border-color: var(--b-600);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: var(--space-small) var(--space-normal);
+  cursor: pointer;
+  color: var(--s-800);
+  font-size: var(--font-size-small);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: var(--s-50);
   }
 
-  &.win-icon:hover {
-    color: var(--g-500);
+  &.dropdown-item-danger {
+    color: var(--r-600);
+
+    &:hover {
+      background-color: var(--r-50);
+      color: var(--r-700);
+    }
   }
 
-  &.lost-icon:hover {
-    color: var(--r-500);
-  }
+  .dark-mode & {
+    color: var(--s-200);
 
-  &.undo-icon:hover {
-    color: var(--w-500);
-    background-color: var(--s-100);
+    &:hover {
+      background-color: var(--b-600);
+    }
+
+    &.dropdown-item-danger {
+      color: var(--r-400);
+
+      &:hover {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: var(--r-300);
+      }
+    }
+  }
+}
+
+.dropdown-divider {
+  height: 1px;
+  background-color: var(--s-100);
+  margin: 4px 0;
+
+  .dark-mode & {
+    background-color: var(--b-600);
   }
 }
 
@@ -792,6 +997,19 @@ export default {
   font-size: var(--font-size-small);
 }
 
+.card-footer-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-smaller);
+}
+
+.assignee-labels-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
 .card-labels {
   display: flex;
   gap: 4px;
@@ -823,6 +1041,44 @@ export default {
     color: var(--s-400);
   }
 }
+
+.assignee-badge {
+  display: flex;
+  align-items: center;
+  background-color: var(--s-100);
+  border-radius: 50%;
+  padding: 0;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--s-700);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 20px;
+  height: 20px;
+  justify-content: center;
+  
+  &:hover {
+    background-color: var(--s-200);
+    transform: scale(1.05);
+  }
+  
+  .dark-mode & {
+    background-color: var(--b-600);
+    color: var(--s-200);
+    
+    &:hover {
+      background-color: var(--b-500);
+    }
+  }
+}
+
+
+.assignee-initials {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
 
 .value-input-popup {
   position: absolute;

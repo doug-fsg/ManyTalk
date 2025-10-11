@@ -286,6 +286,30 @@ export default {
           ].filter(item => [...params[0].team_ids].includes(item.id)),
           message: params[0].message,
         };
+      } else if (inputType === 'kanban_stage_select') {
+        // Para kanban_stage_select, os dados salvos são [pipelineId, stageName]
+        // Precisamos converter para [{ id: pipelineId, name: pipelineName }, { id: stageName, name: stageName }]
+        if (params.length >= 2) {
+          const pipelineId = params[0];
+          const stageName = params[1];
+          
+          // Buscar o pipeline pelo ID
+          const kanbanAttributes = this.$store.getters['attributes/getAttributes']
+            .filter(attr => attr.attribute_model === 'contact_attribute' && attr.is_kanban === true);
+          
+          const pipeline = kanbanAttributes.find(attr => attr.id.toString() === pipelineId.toString());
+          
+          if (pipeline) {
+            actionParams = [
+              { id: pipeline.id, name: pipeline.attribute_display_name },
+              { id: stageName, name: stageName }
+            ];
+          } else {
+            actionParams = [];
+          }
+        } else {
+          actionParams = [];
+        }
       } else actionParams = [...params];
       return actionParams;
     },

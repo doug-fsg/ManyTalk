@@ -13,9 +13,9 @@ const formatArray = params => {
     params = [...params];
   } else {
     // Para kanban_stage, os valores são objetos [{ id: pipelineId, name: pipelineName }, { id: stageName, name: stageName }]
-    // Precisamos extrair apenas o nome do estágio (segundo objeto)
+    // Precisamos extrair o ID do pipeline e o nome do estágio
     if (params.length >= 2 && params[0].id && params[1].name) {
-      params = [params[1].name]; // Retorna apenas o nome do estágio
+      params = [params[0].id, params[1].name]; // Retorna [pipelineId, stageName]
     } else {
       params = params.map(val => val.id);
     }

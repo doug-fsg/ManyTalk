@@ -7,13 +7,6 @@ const generateValues = item => {
     const values = item.values || '';
     return values.split(',');
   }
-  // Verificar se é um atributo kanban (valores são objetos com { id, name })
-  // Para atributos kanban, os valores são objetos [{ id: stageName, name: stageName }]
-  // Precisamos extrair apenas o nome do estágio
-  if (Array.isArray(item.values) && item.values.length > 0 && 
-      typeof item.values[0] === 'object' && item.values[0].name) {
-    return [item.values[0].name]; // Retorna apenas o nome do estágio
-  }
   if (Array.isArray(item.values)) {
     return setArrayValues(item);
   }

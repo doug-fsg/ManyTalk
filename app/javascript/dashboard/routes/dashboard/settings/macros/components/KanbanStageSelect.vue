@@ -70,8 +70,6 @@ export default {
   methods: {
     loadPipelineOptions() {
       try {
-        console.log('[KANBAN-STAGE-SELECT] Carregando opções de pipeline');
-        
         const kanbanAttributes = this.$store.getters['attributes/getAttributes']
           .filter(attr => attr.attribute_model === 'contact_attribute' && attr.is_kanban === true);
         
@@ -81,21 +79,13 @@ export default {
           attribute_key: attr.attribute_key,
           stages: attr.attribute_values || []
         }));
-        
-        console.log('[KANBAN-STAGE-SELECT] Pipelines carregados:', {
-          total: this.pipelineOptions.length,
-          options: this.pipelineOptions
-        });
       } catch (error) {
-        console.error('[KANBAN-STAGE-SELECT] Erro ao carregar pipelines:', error);
         this.pipelineOptions = [];
       }
     },
     
     loadExistingValues(pipelineData, stageData) {
-      console.log('[KANBAN-STAGE-SELECT] Carregando valores existentes:', { pipelineData, stageData });
-      
-      // Se os dados estão no formato antigo [id, name], converter
+      // Converter os dados para o formato esperado
       let pipelineId, stageName;
       if (typeof pipelineData === 'object' && pipelineData.id) {
         pipelineId = pipelineData.id;
@@ -103,8 +93,9 @@ export default {
         pipelineId = pipelineData;
       }
       
-      if (typeof stageData === 'object' && stageData.id) {
-        stageName = stageData.id; // Para stages, o id é o nome
+      if (typeof stageData === 'object') {
+        // Se é objeto, usar o id ou name como nome do estágio
+        stageName = stageData.id || stageData.name;
       } else {
         stageName = stageData;
       }
@@ -112,19 +103,17 @@ export default {
       const pipeline = this.pipelineOptions.find(p => p.id.toString() === pipelineId.toString());
       if (pipeline) {
         this.selectedPipeline = pipeline;
-        this.onPipelineChange(pipeline);
+        // Passar skipUpdate = true para não limpar o selectedStage
+        this.onPipelineChange(pipeline, true);
         
         const stage = this.stageOptions.find(s => s.name === stageName);
         if (stage) {
           this.selectedStage = stage;
-          this.updateValue();
         }
       }
     },
     
-    onPipelineChange(pipeline) {
-      console.log('[KANBAN-STAGE-SELECT] Pipeline selecionado:', pipeline);
-      
+    onPipelineChange(pipeline, skipUpdate = false) {
       if (!pipeline || !pipeline.stages) {
         this.stageOptions = [];
         this.selectedStage = null;
@@ -137,19 +126,15 @@ export default {
         pipeline_id: pipeline.id
       }));
       
-      console.log('[KANBAN-STAGE-SELECT] Estágios carregados:', {
-        pipeline: pipeline.name,
-        stages: this.stageOptions
-      });
-      
-      // Limpar seleção de estágio anterior
-      this.selectedStage = null;
-      this.updateValue();
+      // Limpar seleção de estágio anterior apenas se não estivermos carregando valores existentes
+      if (!skipUpdate) {
+        this.selectedStage = null;
+        this.updateValue();
+      }
     },
     
     updateValue() {
       if (!this.selectedPipeline || !this.selectedStage) {
-        console.log('[KANBAN-STAGE-SELECT] Valores incompletos, não emitindo update');
         this.$emit('input', []);
         return;
       }
@@ -159,7 +144,6 @@ export default {
         { id: this.selectedPipeline.id, name: this.selectedPipeline.name },
         { id: this.selectedStage.name, name: this.selectedStage.name }
       ];
-      console.log('[KANBAN-STAGE-SELECT] Emitindo valor:', value);
       this.$emit('input', value);
     }
   }
