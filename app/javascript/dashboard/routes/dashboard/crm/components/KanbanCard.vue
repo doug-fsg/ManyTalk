@@ -1,39 +1,39 @@
 <template>
   <div
-    class="kanban-card"
+    class="group/card relative bg-slate-900 rounded-lg p-4 shadow-md mb-2 cursor-pointer transition-all duration-200 border border-slate-700 hover:shadow-xl hover:-translate-y-0.5 hover:bg-slate-800 hover:border-slate-600"
     :class="{ 
-      'is-updating': isUpdating,
-      'has-error': hasError,
-      'is-expanded': isExpanded,
-      'status-won': winLostStatus === 'won',
-      'status-lost': winLostStatus === 'lost'
+      'opacity-70 pointer-events-none': isUpdating,
+      'shadow-red-500/20 border-l-[3px] border-l-red-400': hasError,
+      'z-10 shadow-2xl': isExpanded,
+      'border-l-4 border-l-green-500 bg-green-950/30 hover:bg-green-950/40': winLostStatus === 'won',
+      'border-l-4 border-l-red-500 bg-red-950/30 hover:bg-red-950/40': winLostStatus === 'lost'
     }"
     :data-contact-id="contact.id"
     :data-contact-name="contact.name"
     @click="toggleExpand"
   >
-    <div class="card-header">
-      <span class="card-title">{{ contact.name }}</span>
+    <div class="mb-2 flex items-start justify-between relative">
+      <span class="font-medium block mb-0.5 flex-grow pr-[60px] text-white">{{ contact.name }}</span>
       <span 
         v-if="
           contact.additional_attributes &&
           contact.additional_attributes.company
         "
-        class="card-subtitle"
+        class="text-sm text-slate-300 block"
       >
         {{ contact.additional_attributes.company }}
       </span>
-      <div class="card-actions">
+      <div class="hidden group-hover/card:flex gap-2 absolute top-0 right-0 z-10">
         <!-- Botões principais sempre visíveis -->
         <span 
-          class="action-icon view-icon" 
+          class="cursor-pointer p-1 inline-flex items-center justify-center rounded text-slate-300 transition-all duration-200 hover:bg-slate-700 hover:text-blue-400" 
           @click.stop="$emit('view')"
           v-tooltip="$t('KANBAN.VIEW_CONTACT')"
         >
           <fluent-icon icon="contact-card" size="14" />
         </span>
         <span 
-          class="action-icon value-icon" 
+          class="cursor-pointer p-1 inline-flex items-center justify-center rounded text-slate-300 transition-all duration-200 hover:bg-slate-700 hover:text-green-400" 
           @click.stop="toggleValueInput"
           v-tooltip="dealValue ? $t('KANBAN.CARD.EDIT_DEAL_VALUE') : $t('KANBAN.CARD.ADD_DEAL_VALUE')"
         >
@@ -41,9 +41,9 @@
         </span>
 
         <!-- Menu dropdown para outras ações -->
-        <div class="actions-menu-wrapper">
+        <div class="relative inline-flex">
           <span 
-            class="action-icon menu-icon" 
+            class="cursor-pointer p-1 inline-flex items-center justify-center rounded text-slate-300 transition-all duration-200 hover:bg-slate-700 hover:text-slate-100" 
             @click.stop="toggleActionsMenu"
             v-tooltip="'Mais ações'"
           >
@@ -51,11 +51,11 @@
           </span>
 
           <!-- Dropdown menu -->
-          <div v-if="showActionsMenu" class="actions-dropdown" @click.stop>
+          <div v-if="showActionsMenu" class="absolute top-full right-0 mt-1 bg-slate-800 rounded-md shadow-xl border border-slate-700 z-[1000] min-w-[180px] overflow-hidden" @click.stop>
             <!-- Win/Lost Actions -->
             <div
               v-if="!winLostStatus"
-              class="dropdown-item"
+              class="flex items-center gap-2 px-4 py-2 cursor-pointer text-slate-200 text-sm transition-all duration-200 hover:bg-slate-700"
               @click="handleWinAction"
             >
               <fluent-icon icon="checkmark-circle" size="14" />
@@ -63,7 +63,7 @@
             </div>
             <div
               v-if="!winLostStatus"
-              class="dropdown-item"
+              class="flex items-center gap-2 px-4 py-2 cursor-pointer text-slate-200 text-sm transition-all duration-200 hover:bg-slate-700"
               @click="handleLostAction"
             >
               <fluent-icon icon="dismiss-circle" size="14" />
@@ -73,17 +73,17 @@
             <!-- Undo Win/Lost Action -->
             <div
               v-if="winLostStatus"
-              class="dropdown-item"
+              class="flex items-center gap-2 px-4 py-2 cursor-pointer text-slate-200 text-sm transition-all duration-200 hover:bg-slate-700"
               @click="handleUndoAction"
             >
               <fluent-icon icon="arrow-undo" size="14" />
               <span>Desfazer {{ winLostStatus === 'won' ? 'Ganho' : 'Perdido' }}</span>
             </div>
 
-            <div class="dropdown-divider"></div>
+            <div class="h-px bg-slate-700 my-1"></div>
 
             <div
-              class="dropdown-item dropdown-item-danger"
+              class="flex items-center gap-2 px-4 py-2 cursor-pointer text-red-400 text-sm transition-all duration-200 hover:bg-red-950/30 hover:text-red-300"
               @click="handleRemoveAction"
             >
               <fluent-icon icon="dismiss" size="14" />
@@ -93,101 +93,121 @@
         </div>
       </div>
       <!-- ID do contato oculto para garantir que esteja acessível via DOM -->
-      <span class="hidden-contact-id" style="display: none">
+      <span class="hidden" style="display: none">
         {{contact.id}}
       </span>
     </div>
-    <div class="card-content">
-      <div v-if="contact.email" class="card-info">
-        <span class="info-icon"><i class="icon-mail" /></span>
-        <span class="info-value">{{ contact.email }}</span>
+    <div class="mb-3">
+      <div v-if="contact.email" class="flex items-center text-sm mb-1">
+        <span class="mr-1.5 text-slate-400 text-sm"><i class="icon-mail" /></span>
+        <span class="whitespace-nowrap overflow-hidden text-ellipsis text-slate-300">{{ contact.email }}</span>
       </div>
-      <div v-if="contact.phone_number" class="card-info">
-        <span class="info-icon"><i class="icon-phone" /></span>
-        <span class="info-value">{{ contact.phone_number }}</span>
+      <div v-if="contact.phone_number" class="flex items-center text-sm mb-1">
+        <span class="mr-1.5 text-slate-400 text-sm"><i class="icon-phone" /></span>
+        <span class="whitespace-nowrap overflow-hidden text-ellipsis text-slate-300">{{ contact.phone_number }}</span>
       </div>
       
       <!-- Valor do Negócio -->
-      <div class="card-info deal-value" v-if="dealValue">
-        <span class="info-icon">
+      <div v-if="dealValue" class="flex items-center text-sm mb-1 mt-2 pt-2 border-t border-dotted border-white/10 opacity-75">
+        <span class="mr-1.5 text-slate-400 text-[10px]">
           <fluent-icon icon="tag" size="12" />
         </span>
-        <span class="info-value">
+        <span class="text-xs text-slate-300 font-normal">
           {{ formatCurrency(dealValue) }}
         </span>
       </div>
       
       <!-- Tempo na etapa -->
-      <div class="card-info stage-time" v-if="stageTimeDisplay">
-        <span class="info-icon">
+      <div v-if="stageTimeDisplay" class="flex items-center text-sm mb-1 mt-2 pt-2 border-t border-dotted border-white/10 opacity-75">
+        <span class="mr-1.5 text-slate-400 text-[10px]">
           <fluent-icon icon="clock" size="12" />
         </span>
-        <span class="info-value" :class="stageTimeClass" :title="stageTimeTooltip">
+        <span 
+          class="text-xs font-normal" 
+          :class="{
+            'text-slate-300': stageTimeClass === 'time-normal',
+            'text-yellow-400': stageTimeClass === 'time-warning',
+            'text-red-400 font-medium': stageTimeClass === 'time-overdue'
+          }"
+          :title="stageTimeTooltip"
+        >
           {{ stageTimeDisplay }}
         </span>
       </div>
       
       <!-- Win/Lost Status -->
-      <div v-if="winLostStatus" class="card-info win-lost-status" :class="winLostStatusClass">
-        <span class="info-icon">
+      <div v-if="winLostStatus" class="flex items-center text-sm mb-1 mt-2 pt-2 border-t border-dotted border-white/10">
+        <span 
+          class="mr-1.5 text-[10px]"
+          :class="{
+            'text-green-400': winLostStatus === 'won',
+            'text-red-400': winLostStatus === 'lost'
+          }"
+        >
           <fluent-icon :icon="winLostIcon" size="12" />
         </span>
-        <span class="info-value">
+        <span 
+          class="text-xs font-medium"
+          :class="{
+            'text-green-400': winLostStatus === 'won',
+            'text-red-400': winLostStatus === 'lost'
+          }"
+        >
           {{ winLostLabel }} • {{ winLostDate }}
         </span>
       </div>
     </div>
 
     <!-- Input de valor flutuante -->
-    <div v-if="showValueInput" class="value-input-popup" @click.stop>
-      <div class="value-input-container">
+    <div v-if="showValueInput" class="absolute top-[30px] right-2.5 bg-slate-800 rounded-md shadow-xl border border-slate-700 z-[100] p-2" @click.stop>
+      <div class="flex items-center gap-2">
         <input 
           ref="valueInput"
           v-model="editingValue" 
           type="number" 
           min="0" 
           step="0.01"
-          class="value-input"
+          class="w-[120px] p-2 border border-slate-600 rounded text-sm focus:outline-none focus:border-blue-500 bg-slate-700 text-slate-200"
           :placeholder="$t('KANBAN.CARD.DEAL_VALUE_MODAL.PLACEHOLDER')"
           @keyup.enter="saveValue"
           @keyup.esc="cancelValueEdit"
         />
-        <div class="value-input-actions">
-          <span class="value-action-btn save-btn" @click="saveValue">
+        <div class="flex gap-1">
+          <span class="cursor-pointer w-5 h-5 flex items-center justify-center rounded bg-green-500/20 text-green-400 hover:bg-green-500/30" @click="saveValue">
             <fluent-icon icon="checkmark" size="14" />
           </span>
-          <span class="value-action-btn cancel-btn" @click="cancelValueEdit">
+          <span class="cursor-pointer w-5 h-5 flex items-center justify-center rounded bg-slate-700 text-slate-300 hover:bg-slate-600" @click="cancelValueEdit">
             <fluent-icon icon="dismiss" size="14" />
         </span>
         </div>
       </div>
     </div>
 
-    <div class="card-footer">
-      <div class="card-labels">
+    <div class="flex justify-between items-center text-sm">
+      <div class="flex gap-1 flex-wrap">
         <span 
           v-for="(label, index) in (contact.labels || []).slice(
             0,
             2
           )" 
           :key="index"
-          class="label-pill"
+          class="px-2 py-0.5 rounded-full text-white text-[11px]"
           :style="{ backgroundColor: getLabelColor(label) }"
         >
           {{ label }}
         </span>
         <span 
           v-if="contact.labels && contact.labels.length > 2" 
-          class="label-pill more-labels"
+          class="px-2 py-0.5 rounded-full bg-slate-700 text-slate-200 text-[11px]"
         >
           +{{ contact.labels.length - 2 }}
         </span>
       </div>
-      <div class="card-footer-right">
+      <div class="flex items-center gap-2">
         <!-- Etiquetas primeiro -->
         <div 
           v-if="allLabels.length" 
-          class="assignee-labels-container"
+          class="flex items-center gap-1 flex-wrap"
         >
           <!-- Etiquetas usando woot-label -->
           <woot-label
@@ -217,7 +237,7 @@
         <!-- Badge do agente responsável -->
         <div 
           v-if="lastConversationAssignee"
-          class="assignee-badge"
+          class="flex items-center bg-slate-700 rounded-full p-0 text-[10px] font-medium text-slate-200 cursor-pointer transition-all duration-200 w-5 h-5 justify-center hover:bg-slate-600 hover:scale-105"
           v-tooltip="`Responsável: ${lastConversationAssignee.name}`"
           @click.stop
         >
@@ -229,51 +249,53 @@
           />
           <span 
             v-else 
-            class="assignee-initials"
+            class="text-[10px] font-semibold tracking-wider"
           >
             {{ getAssigneeInitials(lastConversationAssignee) }}
           </span>
         </div>
       </div>
     </div>
-    <div v-if="isUpdating" class="card-overlay">
-      <span class="updating-indicator">
-        <i class="icon-refresh spinning"></i>
+    <div v-if="isUpdating" class="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
+      <span class="inline-block text-white">
+        <i class="icon-refresh animate-spin"></i>
       </span>
     </div>
 
     <!-- Novo botão expansível -->
     <div 
-      class="conversation-expander"
+      class="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-10 h-5 flex flex-col items-center justify-center cursor-pointer bg-slate-800 rounded-b-md transition-all duration-200 z-[5] border border-slate-700 border-t-0 shadow-sm hover:bg-slate-700"
+      :class="{ 'bg-slate-700': isExpanded }"
       @click.stop="toggleConversations"
       v-tooltip="isExpanded ? $t('KANBAN.CARD.HIDE_CONVERSATIONS') : $t('KANBAN.CARD.VIEW_CONVERSATIONS')"
     >
-      <div class="expander-line"></div>
+      <div class="w-5 h-0.5 bg-slate-600 rounded-sm mb-0.5 transition-colors" :class="{ 'bg-slate-500': isExpanded }"></div>
       <fluent-icon 
         :icon="isExpanded ? 'chevron-up' : 'chevron-down'" 
         size="12"
-        class="expander-icon"
+        class="text-slate-400 transition-colors" 
+        :class="{ 'text-slate-300': isExpanded }"
       />
     </div>
 
     <!-- Seção de conversas -->
-    <div v-if="isExpanded" class="conversations-preview">
-      <div v-if="isFetchingConversations" class="conversations-loading">
-        <span class="loading-text">{{ $t('KANBAN.CARD.LOADING') }}</span>
+    <div v-if="isExpanded" class="mt-3 border-t border-slate-700 pt-3 relative z-[4] bg-slate-900 rounded-b-md overflow-hidden">
+      <div v-if="isFetchingConversations" class="text-center text-slate-400 text-sm p-2">
+        <span>{{ $t('KANBAN.CARD.LOADING') }}</span>
       </div>
-      <div v-else-if="conversations.length === 0" class="no-conversations">
+      <div v-else-if="conversations.length === 0" class="text-center text-slate-400 text-sm p-2">
         <span>{{ $t('KANBAN.CARD.NO_CONVERSATIONS') }}</span>
       </div>
-      <div v-else class="conversations-list">
+      <div v-else class="p-2 max-h-[300px] overflow-y-auto">
         <div 
           v-for="conversation in sortedConversations" 
           :key="conversation.id"
-          class="conversation-item"
+          class="p-2 border-b border-slate-800 cursor-pointer transition-colors duration-200 hover:bg-slate-800 last:border-b-0"
           @click.stop="openConversation(conversation)"
         >
-          <div class="conversation-header">
+          <div class="flex justify-between items-center mb-1">
             <span 
-              class="status-tag"
+              class="text-[11px] px-2 py-0.5 rounded-xl font-medium transition-all duration-200"
               :style="{
                 backgroundColor: getStatusColor(conversation.status).bg,
                 color: getStatusColor(conversation.status).text
@@ -281,13 +303,13 @@
             >
               {{ getStatusLabel(conversation.status) }}
             </span>
-            <span class="conversation-time">{{ formatTime(conversation.created_at) }}</span>
+            <span class="text-[11px] text-slate-400">{{ formatTime(conversation.created_at) }}</span>
           </div>
-          <div class="conversation-preview">
+          <div class="text-xs text-slate-300 whitespace-nowrap overflow-hidden text-ellipsis">
             {{ getMessageContent(conversation) }}
           </div>
         </div>
-        <div v-if="conversations.length > 5" class="more-conversations">
+        <div v-if="conversations.length > 5" class="p-2 text-center text-xs text-slate-400 bg-slate-800/50 border-t border-slate-800">
           <span>{{ $t('KANBAN.CARD.MORE_CONVERSATIONS', { count: conversations.length - 5 }) }}</span>
         </div>
       </div>
@@ -701,749 +723,14 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
-.kanban-card {
-  background-color: var(--white);
-  border-radius: var(--border-radius-large);
-  padding: var(--space-normal);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  margin-bottom: var(--space-smaller);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-  border: none;
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    background-color: var(--s-50);
-    
-    .card-actions {
-      display: flex;
-    }
-  }
-
-  &.is-updating {
-    opacity: 0.7;
-    pointer-events: none;
-  }
-
-  &.has-error {
-    box-shadow: 0 2px 8px rgba(var(--r-rgb), 0.1);
-    border-left: 3px solid var(--r-400);
-  }
-
-  &.is-expanded {
-    z-index: 10;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    
-    .conversation-expander {
-      background: var(--s-50);
-      
-      .expander-line {
-        background: var(--s-300);
-      }
-      
-      .expander-icon {
-        color: var(--s-700);
-      }
-    }
-  }
-
-  &.status-won {
-    border-left: 4px solid var(--g-500);
-    background-color: rgba(34, 197, 94, 0.02);
-    
-    &:hover {
-      background-color: rgba(34, 197, 94, 0.05);
-    }
-  }
-
-  &.status-lost {
-    border-left: 4px solid var(--r-500);
-    background-color: rgba(239, 68, 68, 0.02);
-    
-    &:hover {
-      background-color: rgba(239, 68, 68, 0.05);
-    }
-  }
-  
-  .dark-mode & {
-    background-color: var(--b-700);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    
-    &:hover {
-      background-color: var(--b-600);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-    
-    &.has-error {
-      box-shadow: 0 2px 8px rgba(var(--r-rgb), 0.2);
-    }
-    
-    &.is-expanded {
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-    }
-
-    &.status-won {
-      border-left-color: var(--g-400);
-      background-color: rgba(34, 197, 94, 0.05);
-      
-      &:hover {
-        background-color: rgba(34, 197, 94, 0.1);
-      }
-    }
-
-    &.status-lost {
-      border-left-color: var(--r-400);
-      background-color: rgba(239, 68, 68, 0.05);
-      
-      &:hover {
-        background-color: rgba(239, 68, 68, 0.1);
-      }
-    }
-  }
-
-  .card-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--border-radius-large);
-    
-    .dark-mode & {
-      background: rgba(0, 0, 0, 0.3);
-    }
-  }
-
-  .updating-indicator {
-    .spinning {
-      animation: spin 1s linear infinite;
-    }
-  }
-}
-
-.card-header {
-  margin-bottom: var(--space-smaller);
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  position: relative;
-}
-
-.card-title {
-  font-weight: var(--font-weight-medium);
-  display: block;
-  margin-bottom: 2px;
-  flex-grow: 1;
-  padding-right: 60px; /* Espaço para os botões de ação */
-}
-
-.card-actions {
-  display: none;
-  gap: 8px;
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 10;
-}
-
-.action-icon {
-  cursor: pointer;
-  padding: var(--space-micro);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--border-radius-small);
-  color: var(--s-600);
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: var(--s-100);
-    color: var(--s-900);
-  }
-
-  &.view-icon:hover {
-    color: var(--b-500);
-  }
-  
-  &.value-icon:hover {
-    color: var(--g-500);
-  }
-
-  &.menu-icon:hover {
-    color: var(--s-700);
-  }
-}
-
-.actions-menu-wrapper {
-  position: relative;
-  display: inline-flex;
-}
-
-.actions-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 4px;
-  background-color: var(--white);
-  border-radius: var(--border-radius-normal);
-  box-shadow: var(--shadow-large);
-  border: 1px solid var(--s-200);
-  z-index: 1000;
-  min-width: 180px;
-  overflow: hidden;
-  
-  .dark-mode & {
-    background-color: var(--b-700);
-    border-color: var(--b-600);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-  }
-}
-
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: var(--space-small) var(--space-normal);
-  cursor: pointer;
-  color: var(--s-800);
-  font-size: var(--font-size-small);
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: var(--s-50);
-  }
-
-  &.dropdown-item-danger {
-    color: var(--r-600);
-
-    &:hover {
-      background-color: var(--r-50);
-      color: var(--r-700);
-    }
-  }
-
-  .dark-mode & {
-    color: var(--s-200);
-
-    &:hover {
-      background-color: var(--b-600);
-    }
-
-    &.dropdown-item-danger {
-      color: var(--r-400);
-
-      &:hover {
-        background-color: rgba(239, 68, 68, 0.1);
-        color: var(--r-300);
-      }
-    }
-  }
-}
-
-.dropdown-divider {
-  height: 1px;
-  background-color: var(--s-100);
-  margin: 4px 0;
-
-  .dark-mode & {
-    background-color: var(--b-600);
-  }
-}
-
-.card-subtitle {
-  font-size: var(--font-size-small);
-  color: var(--s-600);
-  display: block;
-}
-
-.card-content {
-  margin-bottom: var(--space-small);
-}
-
-.card-info {
-  display: flex;
-  align-items: center;
-  font-size: var(--font-size-small);
-  margin-bottom: 4px;
-  
-  .info-icon {
-    margin-right: 6px;
-    color: var(--s-500);
-    font-size: 14px;
-    
-    .dark-mode & {
-      color: var(--s-400);
-    }
-  }
-  
-  .info-value {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-}
-
-.card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: var(--font-size-small);
-}
-
-.card-footer-right {
-  display: flex;
-  align-items: center;
-  gap: var(--space-smaller);
-}
-
-.assignee-labels-container {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-
-.card-labels {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-
-.label-pill {
-  padding: 2px 8px;
-  border-radius: var(--border-radius-rounded);
-  color: var(--white);
-  font-size: 11px;
-}
-
-.more-labels {
-  background-color: var(--s-200);
-  color: var(--s-800);
-  
-  .dark-mode & {
-    background-color: var(--b-600);
-    color: var(--s-200);
-  }
-}
-
-.last-activity {
-  font-size: 11px;
-  color: var(--s-500);
-  
-  .dark-mode & {
-    color: var(--s-400);
-  }
-}
-
-.assignee-badge {
-  display: flex;
-  align-items: center;
-  background-color: var(--s-100);
-  border-radius: 50%;
-  padding: 0;
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--s-700);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  width: 20px;
-  height: 20px;
-  justify-content: center;
-  
-  &:hover {
-    background-color: var(--s-200);
-    transform: scale(1.05);
-  }
-  
-  .dark-mode & {
-    background-color: var(--b-600);
-    color: var(--s-200);
-    
-    &:hover {
-      background-color: var(--b-500);
-    }
-  }
-}
-
-
-.assignee-initials {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-
-.value-input-popup {
-  position: absolute;
-  top: 30px;
-  right: 10px;
-  background-color: var(--white);
-  border-radius: var(--border-radius-normal);
-  box-shadow: var(--shadow-medium);
-  border: 1px solid var(--s-200);
-  z-index: 100;
-  padding: var(--space-smaller);
-  
-  .dark-mode & {
-    background-color: var(--b-700);
-    border-color: var(--b-600);
-  }
-}
-
-.value-input-container {
-  display: flex;
-  align-items: center;
-  gap: var(--space-smaller);
-}
-
-.value-input {
-  width: 120px;
-  padding: var(--space-smaller);
-  border: 1px solid var(--s-200);
-  border-radius: var(--border-radius-small);
-  font-size: var(--font-size-small);
-  
-  &:focus {
-    outline: none;
-    border-color: var(--w-500);
-  }
-  
-  .dark-mode & {
-    background-color: var(--b-600);
-    border-color: var(--b-500);
-    color: var(--s-200);
-  }
-}
-
-.value-input-actions {
-  display: flex;
-  gap: 4px;
-}
-
-.value-action-btn {
-  cursor: pointer;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--border-radius-small);
-  
-  &.save-btn {
-    background-color: var(--g-100);
-    color: var(--g-600);
-
-  &:hover {
-      background-color: var(--g-200);
-    }
-  }
-  
-  &.cancel-btn {
-    background-color: var(--s-100);
-    color: var(--s-600);
-    
-    &:hover {
-      background-color: var(--s-200);
-    }
-  }
-}
-
+<style scoped>
+/* Apenas animações necessárias que não são parte do Tailwind */
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
-.deal-value {
-  margin-top: var(--space-smaller);
-  padding-top: var(--space-smaller);
-  border-top: 1px dotted rgba(0, 0, 0, 0.05);
-  opacity: 0.75;
-  
-  .info-icon {
-    font-size: 10px;
-  }
-  
-  .info-value {
-    font-size: var(--font-size-mini);
-    color: var(--s-600);
-    font-weight: var(--font-weight-normal);
-  }
-  
-  .dark-mode & {
-    border-top-color: rgba(255, 255, 255, 0.05);
-    
-    .info-value {
-      color: var(--s-400);
-    }
-  }
-}
-
-.conversation-expander {
-  position: absolute;
-  bottom: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40px;
-  height: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  background: var(--white);
-  border-radius: 0 0 var(--border-radius-normal) var(--border-radius-normal);
-  transition: all 0.2s ease;
-  z-index: 5;
-  border: 1px solid var(--s-100);
-  border-top: none;
-  box-shadow: var(--shadow-small);
-  
-  .dark-mode & {
-    background: var(--b-700);
-    border-color: var(--b-600);
-  }
-  
-  &:hover {
-    background: var(--s-50);
-    
-    .expander-line {
-      background: var(--s-300);
-    }
-    
-    .expander-icon {
-      color: var(--s-700);
-    }
-    
-    .dark-mode & {
-      background: var(--b-600);
-      
-      .expander-line {
-        background: var(--s-400);
-      }
-      
-      .expander-icon {
-        color: var(--s-300);
-      }
-    }
-  }
-}
-
-.expander-line {
-  width: 20px;
-  height: 2px;
-  background: var(--s-200);
-  border-radius: 2px;
-  margin-bottom: 2px;
-  transition: background 0.2s ease;
-  
-  .dark-mode & {
-    background: var(--b-500);
-  }
-}
-
-.expander-icon {
-  color: var(--s-500);
-  transition: color 0.2s ease;
-  
-  .dark-mode & {
-    color: var(--s-400);
-  }
-}
-
-.conversations-preview {
-  margin-top: var(--space-small);
-  border-top: 1px solid var(--s-100);
-  padding-top: var(--space-small);
-  position: relative;
-  z-index: 4;
-  background: var(--white);
-  border-radius: 0 0 var(--border-radius-normal) var(--border-radius-normal);
-  overflow: hidden;
-  
-  .dark-mode & {
-    background: var(--b-700);
-    border-color: var(--b-600);
-  }
-}
-
-.conversations-loading,
-.no-conversations {
-  text-align: center;
-  color: var(--s-600);
-  font-size: var(--font-size-small);
-  padding: var(--space-smaller);
-}
-
-.conversations-list {
-  padding: 8px;
-  max-height: 300px;
-  overflow-y: auto;
-
-  .conversation-item {
-    padding: 8px;
-    border-bottom: 1px solid var(--color-border);
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-
-    &:hover {
-      background-color: var(--color-background-light);
-    }
-
-    &:last-child {
-      border-bottom: none;
-    }
-  }
-
-  .conversation-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 4px;
-  }
-
-  .status-tag {
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-  }
-
-  .conversation-time {
-    font-size: 11px;
-    color: var(--color-text-light);
-  }
-
-  .conversation-preview {
-    font-size: 12px;
-    color: var(--color-text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .more-conversations {
-    padding: 8px;
-    text-align: center;
-    font-size: 12px;
-    color: var(--color-text-light);
-    background-color: var(--color-background-light);
-    border-top: 1px solid var(--color-border);
-  }
-}
-
-.slide-enter-active,
-.slide-leave-active {
-  transition: all 0.3s ease;
-}
-
-.slide-enter-from,
-.slide-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-
-.stage-time {
-  margin-top: var(--space-smaller);
-  padding-top: var(--space-smaller);
-  border-top: 1px dotted rgba(0, 0, 0, 0.05);
-  opacity: 0.75;
-  
-  .info-icon {
-    font-size: 10px;
-  }
-  
-  .info-value {
-    font-size: var(--font-size-mini);
-    color: var(--s-600);
-    font-weight: var(--font-weight-normal);
-    
-    &.time-normal {
-      color: var(--s-600);
-    }
-    
-    &.time-warning {
-      color: var(--y-500);
-    }
-    
-    &.time-overdue {
-      color: var(--r-500);
-      font-weight: var(--font-weight-medium);
-    }
-  }
-  
-  .dark-mode & {
-    border-top-color: rgba(255, 255, 255, 0.05);
-    
-    .info-value {
-      color: var(--s-400);
-      
-      &.time-normal {
-        color: var(--s-400);
-      }
-      
-      &.time-warning {
-        color: var(--y-400);
-      }
-      
-      &.time-overdue {
-        color: var(--r-400);
-      }
-    }
-  }
-}
-
-.win-lost-status {
-  margin-top: var(--space-smaller);
-  padding-top: var(--space-smaller);
-  border-top: 1px dotted rgba(0, 0, 0, 0.05);
-  
-  .info-icon {
-    font-size: 10px;
-  }
-  
-  .info-value {
-    font-size: var(--font-size-mini);
-    font-weight: var(--font-weight-medium);
-  }
-  
-  &.status-won {
-    .info-icon,
-    .info-value {
-      color: var(--g-600);
-    }
-  }
-  
-  &.status-lost {
-    .info-icon,
-    .info-value {
-      color: var(--r-600);
-    }
-  }
-  
-  .dark-mode & {
-    border-top-color: rgba(255, 255, 255, 0.05);
-    
-    &.status-won {
-      .info-icon,
-      .info-value {
-        color: var(--g-400);
-      }
-    }
-    
-    &.status-lost {
-      .info-icon,
-      .info-value {
-        color: var(--r-400);
-      }
-    }
-  }
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 </style> 

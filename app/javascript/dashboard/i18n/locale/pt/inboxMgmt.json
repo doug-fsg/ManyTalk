@@ -579,11 +579,11 @@
       "WHATSAPP_CONNECT": "Connect",
       "WHATSAPP_DISCONNECT": "Disconnect",
       "WHATSAPP_WEBHOOK_SUBHEADER": "This token is used to verify the authenticity of the webhook endpoint.",
-      "UPDATE_PRE_CHAT_FORM_SETTINGS": "Update Pre Chat Form Settings",
-      "AGENT_PERMISSIONS": "Agent Permissions",
-      "AGENT_PERMISSIONS_SUB_TEXT": "Update agent permissions for this inbox",
-      "AGENT_ALLOW_TO_DELETE_MESSAGE": "Allow an agent to delete a message",
-      "AGENT_ALLOW_TO_DELETE_MESSAGE_SUB_TEXT": "Allow an agent to delete a message from a conversation."
+      "UPDATE_PRE_CHAT_FORM_SETTINGS": "Atualizar configurações do formulário pré-chat",
+      "AGENT_PERMISSIONS": "Permissões de agente",
+      "AGENT_PERMISSIONS_SUB_TEXT": "Atualizar permissões de agente para esta caixa de entrada",
+      "AGENT_ALLOW_TO_DELETE_MESSAGE": "Permitir que um agente elimine uma mensagem",
+      "AGENT_ALLOW_TO_DELETE_MESSAGE_SUB_TEXT": "Permitir que um agente elimine uma mensagem de uma conversa."
     },
     "HELP_CENTER": {
       "LABEL": "Centro de Suporte",

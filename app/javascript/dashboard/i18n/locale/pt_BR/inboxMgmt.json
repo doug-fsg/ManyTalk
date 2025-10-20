@@ -580,10 +580,10 @@
       "WHATSAPP_CONNECT": "Conectar",
       "WHATSAPP_DISCONNECT": "Desconectar",
       "UPDATE_PRE_CHAT_FORM_SETTINGS": "Atualizar configurações do Formulário Pre Chat",
-      "AGENT_PERMISSIONS": "Agent Permissions",
-      "AGENT_PERMISSIONS_SUB_TEXT": "Update agent permissions for this inbox",
-      "AGENT_ALLOW_TO_DELETE_MESSAGE": "Allow an agent to delete a message",
-      "AGENT_ALLOW_TO_DELETE_MESSAGE_SUB_TEXT": "Allow an agent to delete a message from a conversation."
+      "AGENT_PERMISSIONS": "Permissões de Atendente",
+      "AGENT_PERMISSIONS_SUB_TEXT": "Atualizar permissões de atendente para este canal de entrada",
+      "AGENT_ALLOW_TO_DELETE_MESSAGE": "Permitir que um atendente exclua uma mensagem",
+      "AGENT_ALLOW_TO_DELETE_MESSAGE_SUB_TEXT": "Permitir que um atendente exclua uma mensagem de uma conversa."
     },
     "HELP_CENTER": {
       "LABEL": "Centro de Ajuda",

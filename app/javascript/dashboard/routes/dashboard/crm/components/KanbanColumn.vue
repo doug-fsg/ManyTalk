@@ -6,17 +6,17 @@
     :style="{ backgroundColor: getLightColor(column.color) }"
   >
     <div 
-      class="column-header"
+      class="p-3 font-medium cursor-move relative border-b border-slate-800"
       :data-title="column.title"
       :style="{ backgroundColor: getHeaderColor(column.color) }"
     >
-      <div class="column-header-content">
-        <div class="column-header-left">
-          <span class="column-title">{{ column.title }}</span>
-          <span class="column-count">{{ column.items.length }}</span>
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <span class="text-base text-white font-semibold">{{ column.title }}</span>
+          <span class="text-xs bg-white/10 text-slate-200 rounded-full px-2 py-0.5 font-medium">{{ column.items.length }}</span>
         </div>
-        <div class="column-header-right">
-          <div v-if="columnTotal > 0" class="column-total">
+        <div class="flex items-center gap-2">
+          <div v-if="columnTotal > 0" class="text-xs text-slate-300 font-normal opacity-95">
             {{ formatCurrency(columnTotal) }}
           </div>
           <woot-button
@@ -24,7 +24,7 @@
             size="tiny"
             variant="clear"
             color-scheme="secondary"
-            class="add-contact-btn"
+            class="opacity-70 hover:opacity-100 transition-opacity"
             @click="addContactToStage"
             v-tooltip.top="$t('KANBAN.ADD_CONTACT_TO_STAGE', { stage: column.title })"
           >
@@ -59,8 +59,8 @@
           @open-lost-modal="$emit('open-lost-modal', $event)"
           @undo-win-lost="$emit('undo-win-lost', $event)"
         />
-        <div v-if="!columnItems.length" class="empty-column">
-          <p>{{ $t('KANBAN.NO_CONTACTS') }}</p>
+        <div v-if="!columnItems.length" class="flex items-center justify-center h-[100px] text-slate-400 text-sm text-center p-4 bg-black/5 rounded-md border border-dashed border-slate-700">
+          <p class="m-0">{{ $t('KANBAN.NO_CONTACTS') }}</p>
         </div>
       </draggable>
     </div>
@@ -222,74 +222,6 @@ export default {
   }
 }
 
-.column-header {
-  padding: var(--space-small) var(--space-normal);
-  font-weight: var(--font-weight-medium);
-  cursor: move;
-  position: relative;
-  border-bottom: 1px solid var(--s-100);
-  
-  .dark-mode & {
-    border-color: var(--b-600);
-  }
-}
-
-.column-header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.column-header-right {
-  display: flex;
-  align-items: center;
-  gap: var(--space-smaller);
-}
-
-.column-header-left {
-  display: flex;
-  align-items: center;
-  gap: var(--space-smaller);
-}
-
-.column-title {
-  font-size: var(--font-size-normal);
-}
-
-.column-count {
-  font-size: var(--font-size-mini);
-  background-color: rgba(0, 0, 0, 0.05);
-  color: var(--s-700);
-  border-radius: var(--border-radius-rounded);
-  padding: 1px 6px;
-  font-weight: var(--font-weight-medium);
-  
-  .dark-mode & {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--s-300);
-  }
-}
-
-.column-total {
-  font-size: var(--font-size-mini);
-  color: var(--s-500);
-  font-weight: var(--font-weight-normal);
-  opacity: 0.95;
-  
-  .dark-mode & {
-    color: var(--s-400);
-  }
-}
-
-.add-contact-btn {
-  opacity: 0.7;
-  transition: opacity 0.2s ease;
-  
-  &:hover {
-    opacity: 1;
-  }
-}
-
 .column-content {
   flex: 1;
   overflow-y: auto;
@@ -314,30 +246,6 @@ export default {
   display: flex;
   flex-direction: column;
   gap: var(--space-small);
-}
-
-.empty-column {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100px;
-  color: var(--s-500);
-  font-size: var(--font-size-small);
-  text-align: center;
-  padding: var(--space-normal);
-  background-color: rgba(0, 0, 0, 0.02);
-  border-radius: var(--border-radius-normal);
-  border: 1px dashed var(--s-200);
-  
-  .dark-mode & {
-    color: var(--s-400);
-    background-color: rgba(255, 255, 255, 0.03);
-    border-color: var(--b-500);
-  }
-  
-  p {
-    margin: 0;
-  }
 }
 
 .ghost-card {
