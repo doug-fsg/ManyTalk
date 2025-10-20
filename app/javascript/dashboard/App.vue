@@ -19,6 +19,7 @@
       :show="showAddAccountModal"
       :has-accounts="hasAccounts"
     />
+    <announcement-popup />
     <woot-snackbar-box />
     <network-notification />
   </div>
@@ -35,6 +36,7 @@ import UpdateBanner from './components/app/UpdateBanner.vue';
 import UpgradeBanner from './components/app/UpgradeBanner.vue';
 import PaymentPendingBanner from './components/app/PaymentPendingBanner.vue';
 import PendingEmailVerificationBanner from './components/app/PendingEmailVerificationBanner.vue';
+import AnnouncementPopup from './components/ui/AnnouncementPopup.vue';
 import vueActionCable from './helper/actionCable';
 import WootSnackbarBox from './components/SnackbarContainer.vue';
 import rtlMixin from 'shared/mixins/rtlMixin';
@@ -51,6 +53,7 @@ export default {
 
   components: {
     AddAccountModal,
+    AnnouncementPopup,
     LoadingState,
     NetworkNotification,
     UpdateBanner,

@@ -10,6 +10,7 @@
       @toggle-accounts="toggleAccountModal"
       @key-shortcut-modal="toggleKeyShortcutModal"
       @open-notification-panel="openNotificationPanel"
+      @open-announcements-modal="openAnnouncementsModal"
     />
     <secondary-sidebar
       v-if="showSecondarySidebar"
@@ -213,6 +214,9 @@ export default {
     },
     openNotificationPanel() {
       this.$emit('open-notification-panel');
+    },
+    openAnnouncementsModal() {
+      this.$emit('open-announcements-modal');
     },
   },
 };

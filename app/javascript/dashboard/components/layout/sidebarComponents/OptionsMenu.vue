@@ -72,6 +72,17 @@
           </woot-button>
         </woot-dropdown-item>
         <woot-dropdown-item v-if="currentUser.type === 'SuperAdmin'">
+          <woot-button
+            variant="clear"
+            color-scheme="secondary"
+            size="small"
+            icon="megaphone"
+            @click="openAnnouncementsModal"
+          >
+            {{ $t('SIDEBAR_ITEMS.ANNOUNCEMENTS') }}
+          </woot-button>
+        </woot-dropdown-item>
+        <woot-dropdown-item v-if="currentUser.type === 'SuperAdmin'">
           <a
             href="/super_admin"
             class="button small clear secondary bg-white dark:bg-slate-800 h-8"
@@ -157,6 +168,10 @@ export default {
     openAppearanceOptions() {
       const ninja = document.querySelector('ninja-keys');
       ninja.open({ parent: 'appearance_settings' });
+    },
+    openAnnouncementsModal() {
+      this.$emit('open-announcements-modal');
+      this.$emit('close');
     },
   },
 };

@@ -1,0 +1,34 @@
+{
+  "announcements": [
+    {
+      "id": "sistema-anuncios-2024",
+      "title": {
+        "pt_BR": "🎉 Novo: Sistema de Anúncios de Features",
+        "en": "🎉 New: Feature Announcements System"
+      },
+      "description": {
+        "pt_BR": "Agora você será notificado sobre novas funcionalidades do Chatwoot! Este sistema permite que você fique sempre atualizado com as últimas melhorias e recursos disponíveis.",
+        "en": "Now you'll be notified about new Chatwoot features! This system allows you to stay updated with the latest improvements and available resources."
+      },
+      "media_url": "https://via.placeholder.com/800x450/10b981/ffffff?text=Sistema+de+Anuncios",
+      "target_roles": ["administrator", "agent"],
+      "published_at": "2024-10-17T15:30:00Z",
+      "active": true
+    },
+    {
+      "id": "exemplo-kanban-2024",
+      "title": {
+        "pt_BR": "🚀 Exemplo: Quadro Kanban",
+        "en": "🚀 Example: Kanban Board"
+      },
+      "description": {
+        "pt_BR": "Organize suas conversas visualmente! Com o novo quadro Kanban, você pode arrastar e soltar conversas entre diferentes estágios para uma gestão mais eficiente do atendimento.",
+        "en": "Organize your conversations visually! With the new Kanban board, you can drag and drop conversations between different stages for more efficient customer service management."
+      },
+      "media_url": "https://via.placeholder.com/800x450/6366f1/ffffff?text=Kanban+Board+Demo",
+      "target_roles": ["administrator", "agent"],
+      "published_at": "2024-10-17T15:35:00Z",
+      "active": true
+    }
+  ]
+}

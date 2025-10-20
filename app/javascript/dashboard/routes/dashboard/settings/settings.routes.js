@@ -2,6 +2,7 @@ import { frontendURL } from '../../../helper/URLHelper';
 import account from './account/account.routes';
 import agent from './agents/agent.routes';
 import agentBot from './agentBots/agentBot.routes';
+import announcements from './announcements/announcements.routes';
 import attributes from './attributes/attributes.routes';
 import automation from './automation/automation.routes';
 import auditlogs from './auditlogs/audit.routes';
@@ -37,6 +38,7 @@ export default {
     ...account.routes,
     ...agent.routes,
     ...agentBot.routes,
+    ...announcements.routes,
     ...attributes.routes,
     ...automation.routes,
     ...auditlogs.routes,

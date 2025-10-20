@@ -10,6 +10,7 @@
       @open-key-shortcut-modal="toggleKeyShortcutModal"
       @close-key-shortcut-modal="closeKeyShortcutModal"
       @show-add-label-popup="showAddLabelPopup"
+      @open-announcements-modal="openAnnouncementsModal"
     />
     <section class="flex flex-1 h-full min-h-0 px-0 overflow-hidden">
       <router-view />
@@ -177,6 +178,10 @@ export default {
     },
     closeNotificationPanel() {
       this.isNotificationPanel = false;
+    },
+    openAnnouncementsModal() {
+      // Navigate to announcements settings page
+      this.$router.push({ name: 'announcements_settings' });
     },
   },
 };

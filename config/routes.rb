@@ -48,6 +48,11 @@ Rails.application.routes.draw do
           resources :agents, only: [:index, :create, :update, :destroy] do
             post :bulk_create, on: :collection
           end
+          resources :announcements, only: [:index, :create, :update, :destroy] do
+            collection do
+              get :data
+            end
+          end
           resources :agent_bots, only: [:index, :create, :show, :update, :destroy] do
             delete :avatar, on: :member
           end
@@ -269,6 +274,9 @@ Rails.application.routes.draw do
       end
       # end of account scoped api routes
       # ----------------------------------
+
+      # Super Admin routes (outside account scope)
+      resources :announcements, only: [:index, :create, :update, :destroy]
 
       namespace :integrations do
         resources :webhooks, only: [:create]
@@ -503,6 +511,8 @@ Rails.application.routes.draw do
       resource :settings, only: [:show] do
         get :refresh, on: :collection
       end
+
+      resources :announcements, only: [:index, :new, :create, :destroy]
 
       # resources that doesn't appear in primary navigation in super admin
       resources :account_users, only: [:new, :create, :destroy]

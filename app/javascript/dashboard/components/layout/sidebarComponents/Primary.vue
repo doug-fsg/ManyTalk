@@ -32,6 +32,7 @@
         @toggle-accounts="toggleAccountModal"
         @show-support-chat-window="toggleSupportChatWindow"
         @key-shortcut-modal="$emit('key-shortcut-modal')"
+        @open-announcements-modal="openAnnouncementsModal"
         @close="toggleOptions"
       />
     </div>
@@ -101,6 +102,9 @@ export default {
     openNotificationPanel() {
       this.$track(ACCOUNT_EVENTS.OPENED_NOTIFICATIONS);
       this.$emit('open-notification-panel');
+    },
+    openAnnouncementsModal() {
+      this.$emit('open-announcements-modal');
     },
   },
 };
