@@ -1,39 +1,39 @@
 <template>
   <div
-    class="group/card relative bg-slate-900 rounded-lg p-4 shadow-md mb-2 cursor-pointer transition-all duration-200 border border-slate-700 hover:shadow-xl hover:-translate-y-0.5 hover:bg-slate-800 hover:border-slate-600"
+    class="group/card relative bg-white dark:bg-slate-900 rounded-lg p-4 shadow-sm dark:shadow-xl dark:shadow-black/20 mb-2 cursor-pointer transition-all duration-200 border-none dark:border dark:border-slate-800 hover:shadow-md hover:-translate-y-0.5 hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:border-slate-700"
     :class="{ 
       'opacity-70 pointer-events-none': isUpdating,
-      'shadow-red-500/20 border-l-[3px] border-l-red-400': hasError,
-      'z-10 shadow-2xl': isExpanded,
-      'border-l-4 border-l-green-500 bg-green-950/30 hover:bg-green-950/40': winLostStatus === 'won',
-      'border-l-4 border-l-red-500 bg-red-950/30 hover:bg-red-950/40': winLostStatus === 'lost'
+      'shadow-red-100 dark:shadow-red-900/20 border-l-[3px] border-l-red-400 dark:border-l-red-500': hasError,
+      'z-10 shadow-lg dark:shadow-2xl': isExpanded,
+      'border-l-4 border-l-green-500 bg-green-50/20 dark:bg-green-950/40 hover:bg-green-50/50 dark:hover:bg-green-950/60': winLostStatus === 'won',
+      'border-l-4 border-l-red-500 bg-red-50/20 dark:bg-red-950/40 hover:bg-red-50/50 dark:hover:bg-red-950/60': winLostStatus === 'lost'
     }"
     :data-contact-id="contact.id"
     :data-contact-name="contact.name"
     @click="toggleExpand"
   >
     <div class="mb-2 flex items-start justify-between relative">
-      <span class="font-medium block mb-0.5 flex-grow pr-[60px] text-white">{{ contact.name }}</span>
+      <span class="font-medium block mb-0.5 flex-grow pr-[60px] text-slate-900 dark:text-white">{{ contact.name }}</span>
       <span 
         v-if="
           contact.additional_attributes &&
           contact.additional_attributes.company
         "
-        class="text-sm text-slate-300 block"
+        class="text-sm text-slate-600 dark:text-white block"
       >
         {{ contact.additional_attributes.company }}
       </span>
       <div class="hidden group-hover/card:flex gap-2 absolute top-0 right-0 z-10">
         <!-- Botões principais sempre visíveis -->
         <span 
-          class="cursor-pointer p-1 inline-flex items-center justify-center rounded text-slate-300 transition-all duration-200 hover:bg-slate-700 hover:text-blue-400" 
+          class="cursor-pointer p-1 inline-flex items-center justify-center rounded text-slate-600 dark:text-slate-300 transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-500 dark:hover:text-blue-400" 
           @click.stop="$emit('view')"
           v-tooltip="$t('KANBAN.VIEW_CONTACT')"
         >
           <fluent-icon icon="contact-card" size="14" />
         </span>
         <span 
-          class="cursor-pointer p-1 inline-flex items-center justify-center rounded text-slate-300 transition-all duration-200 hover:bg-slate-700 hover:text-green-400" 
+          class="cursor-pointer p-1 inline-flex items-center justify-center rounded text-slate-600 dark:text-slate-300 transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-green-500 dark:hover:text-green-400" 
           @click.stop="toggleValueInput"
           v-tooltip="dealValue ? $t('KANBAN.CARD.EDIT_DEAL_VALUE') : $t('KANBAN.CARD.ADD_DEAL_VALUE')"
         >
@@ -43,7 +43,7 @@
         <!-- Menu dropdown para outras ações -->
         <div class="relative inline-flex">
           <span 
-            class="cursor-pointer p-1 inline-flex items-center justify-center rounded text-slate-300 transition-all duration-200 hover:bg-slate-700 hover:text-slate-100" 
+            class="cursor-pointer p-1 inline-flex items-center justify-center rounded text-slate-600 dark:text-slate-300 transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white" 
             @click.stop="toggleActionsMenu"
             v-tooltip="'Mais ações'"
           >
@@ -51,42 +51,42 @@
           </span>
 
           <!-- Dropdown menu -->
-          <div v-if="showActionsMenu" class="absolute top-full right-0 mt-1 bg-slate-800 rounded-md shadow-xl border border-slate-700 z-[1000] min-w-[180px] overflow-hidden" @click.stop>
+          <div v-if="showActionsMenu" class="absolute top-full right-0 mt-1 bg-white dark:bg-slate-800 rounded-md shadow-lg dark:shadow-2xl dark:shadow-black/40 border border-slate-200 dark:border-slate-700 z-[9999] min-w-[180px] overflow-hidden" @click.stop>
             <!-- Win/Lost Actions -->
             <div
               v-if="!winLostStatus"
-              class="flex items-center gap-2 px-4 py-2 cursor-pointer text-slate-200 text-sm transition-all duration-200 hover:bg-slate-700"
+              class="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer text-slate-800 dark:text-white text-xs transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-700"
               @click="handleWinAction"
             >
-              <fluent-icon icon="checkmark-circle" size="14" />
+              <fluent-icon icon="checkmark-circle" size="12" />
               <span>Marcar como Ganho</span>
             </div>
             <div
               v-if="!winLostStatus"
-              class="flex items-center gap-2 px-4 py-2 cursor-pointer text-slate-200 text-sm transition-all duration-200 hover:bg-slate-700"
+              class="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer text-slate-800 dark:text-white text-xs transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-700"
               @click="handleLostAction"
             >
-              <fluent-icon icon="dismiss-circle" size="14" />
+              <fluent-icon icon="dismiss-circle" size="12" />
               <span>Marcar como Perdido</span>
             </div>
 
             <!-- Undo Win/Lost Action -->
             <div
               v-if="winLostStatus"
-              class="flex items-center gap-2 px-4 py-2 cursor-pointer text-slate-200 text-sm transition-all duration-200 hover:bg-slate-700"
+              class="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer text-slate-800 dark:text-white text-xs transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-700"
               @click="handleUndoAction"
             >
-              <fluent-icon icon="arrow-undo" size="14" />
+              <fluent-icon icon="arrow-undo" size="12" />
               <span>Desfazer {{ winLostStatus === 'won' ? 'Ganho' : 'Perdido' }}</span>
             </div>
 
-            <div class="h-px bg-slate-700 my-1"></div>
+            <div class="h-px bg-slate-100 dark:bg-slate-700 my-1"></div>
 
             <div
-              class="flex items-center gap-2 px-4 py-2 cursor-pointer text-red-400 text-sm transition-all duration-200 hover:bg-red-950/30 hover:text-red-300"
+              class="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer text-red-600 dark:text-red-400 text-xs transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-700 dark:hover:text-red-300"
               @click="handleRemoveAction"
             >
-              <fluent-icon icon="dismiss" size="14" />
+              <fluent-icon icon="dismiss" size="12" />
               <span>{{ $t('KANBAN.REMOVE_CARD') }}</span>
             </div>
           </div>
@@ -99,35 +99,35 @@
     </div>
     <div class="mb-3">
       <div v-if="contact.email" class="flex items-center text-sm mb-1">
-        <span class="mr-1.5 text-slate-400 text-sm"><i class="icon-mail" /></span>
-        <span class="whitespace-nowrap overflow-hidden text-ellipsis text-slate-300">{{ contact.email }}</span>
+        <span class="mr-1.5 text-slate-500 dark:text-slate-400 text-sm"><i class="icon-mail" /></span>
+        <span class="whitespace-nowrap overflow-hidden text-ellipsis text-slate-700 dark:text-slate-200">{{ contact.email }}</span>
       </div>
       <div v-if="contact.phone_number" class="flex items-center text-sm mb-1">
-        <span class="mr-1.5 text-slate-400 text-sm"><i class="icon-phone" /></span>
-        <span class="whitespace-nowrap overflow-hidden text-ellipsis text-slate-300">{{ contact.phone_number }}</span>
+        <span class="mr-1.5 text-slate-500 dark:text-slate-400 text-sm"><i class="icon-phone" /></span>
+        <span class="whitespace-nowrap overflow-hidden text-ellipsis text-slate-700 dark:text-slate-200">{{ contact.phone_number }}</span>
       </div>
       
       <!-- Valor do Negócio -->
-      <div v-if="dealValue" class="flex items-center text-sm mb-1 mt-2 pt-2 border-t border-dotted border-white/10 opacity-75">
-        <span class="mr-1.5 text-slate-400 text-[10px]">
+      <div v-if="dealValue" class="flex items-center text-sm mb-1 mt-2 pt-2 border-t border-dotted border-black/5 dark:border-white/10 opacity-75">
+        <span class="mr-1.5 text-slate-500 dark:text-slate-400 text-[10px]">
           <fluent-icon icon="tag" size="12" />
         </span>
-        <span class="text-xs text-slate-300 font-normal">
+        <span class="text-xs text-slate-600 dark:text-slate-300 font-normal">
           {{ formatCurrency(dealValue) }}
         </span>
       </div>
       
       <!-- Tempo na etapa -->
-      <div v-if="stageTimeDisplay" class="flex items-center text-sm mb-1 mt-2 pt-2 border-t border-dotted border-white/10 opacity-75">
-        <span class="mr-1.5 text-slate-400 text-[10px]">
+      <div v-if="stageTimeDisplay" class="flex items-center text-sm mb-1 mt-2 pt-2 border-t border-dotted border-black/5 dark:border-white/10 opacity-75">
+        <span class="mr-1.5 text-slate-500 dark:text-slate-400 text-[10px]">
           <fluent-icon icon="clock" size="12" />
         </span>
         <span 
           class="text-xs font-normal" 
           :class="{
-            'text-slate-300': stageTimeClass === 'time-normal',
-            'text-yellow-400': stageTimeClass === 'time-warning',
-            'text-red-400 font-medium': stageTimeClass === 'time-overdue'
+            'text-slate-600 dark:text-slate-300': stageTimeClass === 'time-normal',
+            'text-yellow-500 dark:text-yellow-400': stageTimeClass === 'time-warning',
+            'text-red-500 dark:text-red-400 font-medium': stageTimeClass === 'time-overdue'
           }"
           :title="stageTimeTooltip"
         >
@@ -136,12 +136,12 @@
       </div>
       
       <!-- Win/Lost Status -->
-      <div v-if="winLostStatus" class="flex items-center text-sm mb-1 mt-2 pt-2 border-t border-dotted border-white/10">
+      <div v-if="winLostStatus" class="flex items-center text-sm mb-1 mt-2 pt-2 border-t border-dotted border-black/5 dark:border-white/10">
         <span 
           class="mr-1.5 text-[10px]"
           :class="{
-            'text-green-400': winLostStatus === 'won',
-            'text-red-400': winLostStatus === 'lost'
+            'text-green-600 dark:text-green-400': winLostStatus === 'won',
+            'text-red-600 dark:text-red-400': winLostStatus === 'lost'
           }"
         >
           <fluent-icon :icon="winLostIcon" size="12" />
@@ -149,8 +149,8 @@
         <span 
           class="text-xs font-medium"
           :class="{
-            'text-green-400': winLostStatus === 'won',
-            'text-red-400': winLostStatus === 'lost'
+            'text-green-600 dark:text-green-400': winLostStatus === 'won',
+            'text-red-600 dark:text-red-400': winLostStatus === 'lost'
           }"
         >
           {{ winLostLabel }} • {{ winLostDate }}
@@ -159,7 +159,7 @@
     </div>
 
     <!-- Input de valor flutuante -->
-    <div v-if="showValueInput" class="absolute top-[30px] right-2.5 bg-slate-800 rounded-md shadow-xl border border-slate-700 z-[100] p-2" @click.stop>
+    <div v-if="showValueInput" class="absolute top-[30px] right-2.5 bg-white dark:bg-slate-800 rounded-md shadow-md dark:shadow-2xl dark:shadow-black/40 border border-slate-200 dark:border-slate-700 z-[9998] p-2" @click.stop>
       <div class="flex items-center gap-2">
         <input 
           ref="valueInput"
@@ -167,16 +167,16 @@
           type="number" 
           min="0" 
           step="0.01"
-          class="w-[120px] p-2 border border-slate-600 rounded text-sm focus:outline-none focus:border-blue-500 bg-slate-700 text-slate-200"
+          class="w-[120px] p-2 border border-slate-200 dark:border-slate-600 rounded text-sm focus:outline-none focus:border-blue-500 dark:bg-slate-900 dark:text-white dark:focus:border-blue-400"
           :placeholder="$t('KANBAN.CARD.DEAL_VALUE_MODAL.PLACEHOLDER')"
           @keyup.enter="saveValue"
           @keyup.esc="cancelValueEdit"
         />
         <div class="flex gap-1">
-          <span class="cursor-pointer w-5 h-5 flex items-center justify-center rounded bg-green-500/20 text-green-400 hover:bg-green-500/30" @click="saveValue">
+          <span class="cursor-pointer w-5 h-5 flex items-center justify-center rounded bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/60" @click="saveValue">
             <fluent-icon icon="checkmark" size="14" />
           </span>
-          <span class="cursor-pointer w-5 h-5 flex items-center justify-center rounded bg-slate-700 text-slate-300 hover:bg-slate-600" @click="cancelValueEdit">
+          <span class="cursor-pointer w-5 h-5 flex items-center justify-center rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600" @click="cancelValueEdit">
             <fluent-icon icon="dismiss" size="14" />
         </span>
         </div>
@@ -198,7 +198,7 @@
         </span>
         <span 
           v-if="contact.labels && contact.labels.length > 2" 
-          class="px-2 py-0.5 rounded-full bg-slate-700 text-slate-200 text-[11px]"
+          class="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-[11px]"
         >
           +{{ contact.labels.length - 2 }}
         </span>
@@ -237,7 +237,7 @@
         <!-- Badge do agente responsável -->
         <div 
           v-if="lastConversationAssignee"
-          class="flex items-center bg-slate-700 rounded-full p-0 text-[10px] font-medium text-slate-200 cursor-pointer transition-all duration-200 w-5 h-5 justify-center hover:bg-slate-600 hover:scale-105"
+          class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-full p-0 text-[10px] font-medium text-slate-700 dark:text-slate-200 cursor-pointer transition-all duration-200 w-5 h-5 justify-center hover:bg-slate-200 dark:hover:bg-slate-700 hover:scale-105"
           v-tooltip="`Responsável: ${lastConversationAssignee.name}`"
           @click.stop
         >
@@ -256,41 +256,41 @@
         </div>
       </div>
     </div>
-    <div v-if="isUpdating" class="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
-      <span class="inline-block text-white">
+    <div v-if="isUpdating" class="absolute inset-0 bg-white/50 dark:bg-black/50 flex items-center justify-center rounded-lg">
+      <span class="inline-block text-slate-600 dark:text-white">
         <i class="icon-refresh animate-spin"></i>
       </span>
     </div>
 
     <!-- Novo botão expansível -->
     <div 
-      class="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-10 h-5 flex flex-col items-center justify-center cursor-pointer bg-slate-800 rounded-b-md transition-all duration-200 z-[5] border border-slate-700 border-t-0 shadow-sm hover:bg-slate-700"
-      :class="{ 'bg-slate-700': isExpanded }"
+      class="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-10 h-5 flex flex-col items-center justify-center cursor-pointer bg-white dark:bg-slate-800 rounded-b-md transition-all duration-200 z-[5] border border-slate-100 dark:border-slate-700 border-t-0 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700"
+      :class="{ 'bg-slate-50 dark:bg-slate-700': isExpanded }"
       @click.stop="toggleConversations"
       v-tooltip="isExpanded ? $t('KANBAN.CARD.HIDE_CONVERSATIONS') : $t('KANBAN.CARD.VIEW_CONVERSATIONS')"
     >
-      <div class="w-5 h-0.5 bg-slate-600 rounded-sm mb-0.5 transition-colors" :class="{ 'bg-slate-500': isExpanded }"></div>
+      <div class="w-5 h-0.5 bg-slate-200 dark:bg-slate-600 rounded-sm mb-0.5 transition-colors" :class="{ 'bg-slate-300 dark:bg-slate-500': isExpanded }"></div>
       <fluent-icon 
         :icon="isExpanded ? 'chevron-up' : 'chevron-down'" 
         size="12"
-        class="text-slate-400 transition-colors" 
-        :class="{ 'text-slate-300': isExpanded }"
+        class="text-slate-500 dark:text-slate-300 transition-colors" 
+        :class="{ 'text-slate-700 dark:text-white': isExpanded }"
       />
     </div>
 
     <!-- Seção de conversas -->
-    <div v-if="isExpanded" class="mt-3 border-t border-slate-700 pt-3 relative z-[4] bg-slate-900 rounded-b-md overflow-hidden">
-      <div v-if="isFetchingConversations" class="text-center text-slate-400 text-sm p-2">
+    <div v-if="isExpanded" class="mt-3 border-t border-slate-100 dark:border-slate-800 pt-3 relative z-[4] bg-white dark:bg-slate-900 rounded-b-md overflow-hidden">
+      <div v-if="isFetchingConversations" class="text-center text-slate-600 dark:text-slate-300 text-sm p-2">
         <span>{{ $t('KANBAN.CARD.LOADING') }}</span>
       </div>
-      <div v-else-if="conversations.length === 0" class="text-center text-slate-400 text-sm p-2">
+      <div v-else-if="conversations.length === 0" class="text-center text-slate-600 dark:text-slate-300 text-sm p-2">
         <span>{{ $t('KANBAN.CARD.NO_CONVERSATIONS') }}</span>
       </div>
       <div v-else class="p-2 max-h-[300px] overflow-y-auto">
         <div 
           v-for="conversation in sortedConversations" 
           :key="conversation.id"
-          class="p-2 border-b border-slate-800 cursor-pointer transition-colors duration-200 hover:bg-slate-800 last:border-b-0"
+          class="p-2 border-b border-slate-100 dark:border-slate-800 cursor-pointer transition-colors duration-200 hover:bg-slate-50 dark:hover:bg-slate-800 last:border-b-0"
           @click.stop="openConversation(conversation)"
         >
           <div class="flex justify-between items-center mb-1">
@@ -303,13 +303,13 @@
             >
               {{ getStatusLabel(conversation.status) }}
             </span>
-            <span class="text-[11px] text-slate-400">{{ formatTime(conversation.created_at) }}</span>
+            <span class="text-[11px] text-slate-500 dark:text-slate-400">{{ formatTime(conversation.created_at) }}</span>
           </div>
-          <div class="text-xs text-slate-300 whitespace-nowrap overflow-hidden text-ellipsis">
+          <div class="text-xs text-slate-700 dark:text-slate-200 whitespace-nowrap overflow-hidden text-ellipsis">
             {{ getMessageContent(conversation) }}
           </div>
         </div>
-        <div v-if="conversations.length > 5" class="p-2 text-center text-xs text-slate-400 bg-slate-800/50 border-t border-slate-800">
+        <div v-if="conversations.length > 5" class="p-2 text-center text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800">
           <span>{{ $t('KANBAN.CARD.MORE_CONVERSATIONS', { count: conversations.length - 5 }) }}</span>
         </div>
       </div>

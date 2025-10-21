@@ -714,25 +714,29 @@ export default {
       return operation && operation.status === 'failed';
     },
 
-    handleSearch() {
+    handleSearch(query) {
       // Debounce para evitar sobrecarga em buscas rápidas
       clearTimeout(this.searchDebounce);
       this.searchDebounce = setTimeout(() => {
-        const query = (this.searchQuery || '').toLowerCase();
+        // Atualizar searchQuery se um parâmetro foi passado
+        if (query !== undefined) {
+          this.searchQuery = query;
+        }
+        const searchQuery = (this.searchQuery || '').toLowerCase();
         
         this.filteredColumns = this.columns.map(column => {
           const filteredItems = column.items.filter(contact => {
             // Search filter
             let matchesSearch = true;
-            if (query && query.trim() !== '') {
+            if (searchQuery && searchQuery.trim() !== '') {
               const name = (contact.name || '').toLowerCase();
               const email = (contact.email || '').toLowerCase();
               const phone = (contact.phone_number || '').toLowerCase();
 
               matchesSearch = (
-                name.includes(query) ||
-                email.includes(query) ||
-                phone.includes(query)
+                name.includes(searchQuery) ||
+                email.includes(searchQuery) ||
+                phone.includes(searchQuery)
               );
             }
 
@@ -2148,10 +2152,9 @@ export default {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  margin-top: var(--space-small);
   transition: opacity 0.2s ease-in-out;
   animation: fadeIn 0.3s ease-in-out;
-  @apply bg-white dark:bg-slate-800;
+  @apply bg-slate-50 dark:bg-slate-900;
 }
 
 .kanban-columns-container {

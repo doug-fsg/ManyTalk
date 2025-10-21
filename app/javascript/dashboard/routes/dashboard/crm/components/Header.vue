@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <header class="bg-white shadow-sm px-4 py-3 dark:bg-slate-800">
+  <header class="bg-white shadow-sm dark:shadow-none px-4 py-3 dark:bg-slate-800">
     <div class="flex items-center justify-between">
       <!-- Left Section -->
       <div class="flex items-center gap-4">
@@ -66,11 +66,11 @@
         </div>
 
         <!-- Win/Lost Filter -->
-        <div class="hidden md:flex items-center gap-1 bg-slate-25 rounded-lg p-1 dark:bg-slate-600">
+        <div class="hidden md:flex items-center gap-1 bg-slate-25 rounded-lg p-1 dark:bg-slate-700">
           <button 
             :class="[
               'px-2 py-1 rounded-md transition-colors flex items-center gap-1 text-xs',
-              winLostFilter === 'open' ? 'bg-indigo-100 text-indigo-700 shadow-sm' : 'text-neutral-600 hover:text-neutral-800'
+              winLostFilter === 'open' ? 'bg-indigo-100 text-indigo-700 shadow-sm dark:bg-indigo-900/40 dark:text-indigo-300' : 'text-neutral-600 hover:text-neutral-800 dark:text-slate-200 dark:hover:text-white'
             ]"
             @click="setWinLostFilter('open')"
           >
@@ -80,7 +80,7 @@
           <button 
             :class="[
               'px-2 py-1 rounded-md transition-colors flex items-center gap-1 text-xs',
-              winLostFilter === 'won' ? 'bg-green-100 text-green-700 shadow-sm' : 'text-neutral-600 hover:text-neutral-800'
+              winLostFilter === 'won' ? 'bg-green-100 text-green-700 shadow-sm dark:bg-green-900/40 dark:text-green-300' : 'text-neutral-600 hover:text-neutral-800 dark:text-slate-200 dark:hover:text-white'
             ]"
             @click="setWinLostFilter('won')"
           >
@@ -90,7 +90,7 @@
           <button 
             :class="[
               'px-2 py-1 rounded-md transition-colors flex items-center gap-1 text-xs',
-              winLostFilter === 'lost' ? 'bg-red-100 text-red-700 shadow-sm' : 'text-neutral-600 hover:text-neutral-800'
+              winLostFilter === 'lost' ? 'bg-red-100 text-red-700 shadow-sm dark:bg-red-900/40 dark:text-red-300' : 'text-neutral-600 hover:text-neutral-800 dark:text-slate-200 dark:hover:text-white'
             ]"
             @click="setWinLostFilter('lost')"
           >
@@ -100,7 +100,7 @@
           <button 
             :class="[
               'px-2 py-1 rounded-md transition-colors flex items-center gap-1 text-xs',
-              winLostFilter === 'all' ? 'bg-violet-100 text-violet-700 shadow-sm' : 'text-neutral-600 hover:text-neutral-800'
+              winLostFilter === 'all' ? 'bg-violet-100 text-violet-700 shadow-sm dark:bg-violet-900/40 dark:text-violet-300' : 'text-neutral-600 hover:text-neutral-800 dark:text-slate-200 dark:hover:text-white'
             ]"
             @click="setWinLostFilter('all')"
           >
