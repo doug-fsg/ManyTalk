@@ -70,6 +70,7 @@
             variant="clear"
             color-scheme="secondary"
             class="add-stage-btn"
+            type="button"
             @click="addStage"
           >
             <fluent-icon icon="add" size="16" />
@@ -80,6 +81,7 @@
         <div class="modal-footer">
           <woot-button
             variant="clear"
+            type="button"
             @click="onClose"
           >
             {{ $t('KANBAN.CREATE_PIPELINE.FORM.CANCEL') }}

@@ -78,11 +78,6 @@ export default {
       const announcement = this.announcements[this.currentIndex];
       if (!announcement) return null;
 
-      // Debug: ver qual idioma está sendo usado
-      console.log('🌍 Current Locale:', this.currentLocale);
-      console.log('📝 Available titles:', Object.keys(announcement.title));
-      console.log('📝 Available descriptions:', Object.keys(announcement.description));
-
       return {
         ...announcement,
         title: announcement.title[this.currentLocale] || announcement.title.pt_BR || announcement.title.en,
@@ -118,11 +113,6 @@ export default {
       try {
         // ✅ Verificar se currentUser e accountId estão disponíveis
         if (!this.currentUser || !this.currentUser.role || !this.accountId) {
-          console.log('⏳ Aguardando currentUser e accountId...', {
-            hasUser: !!this.currentUser,
-            hasRole: !!this.currentUser?.role,
-            hasAccountId: !!this.accountId
-          });
           // Tentar novamente em 2 segundos
           setTimeout(() => this.load(), 2000);
           return;
@@ -134,12 +124,6 @@ export default {
         const dismissed = this.getDismissed();
         const userRole = this.currentUser.role;
 
-        console.log('📢 Carregando anúncios...', {
-          total: data.announcements?.length || 0,
-          userRole: userRole,
-          dismissed: dismissed.length
-        });
-
         this.announcements = (data.announcements || [])
           .filter(a => a.active)
           .filter(a => {
@@ -149,13 +133,8 @@ export default {
           })
           .filter(a => a.target_roles.includes(userRole));
 
-        console.log('✅ Anúncios filtrados:', this.announcements.length);
-
         if (this.announcements.length > 0) {
           this.show = true;
-          console.log('🎉 Mostrando popup de anúncio!');
-        } else {
-          console.log('ℹ️ Nenhum anúncio para mostrar');
         }
       } catch (error) {
         console.error('❌ Failed to load announcements:', error);
