@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_05_30_120000) do
+ActiveRecord::Schema[7.0].define(version: 2025_03_30_030320) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -37,8 +37,10 @@ ActiveRecord::Schema[7.0].define(version: 2024_05_30_120000) do
     t.datetime "active_at", precision: nil
     t.integer "availability", default: 0, null: false
     t.boolean "auto_offline", default: true, null: false
+    t.bigint "custom_role_id"
     t.index ["account_id", "user_id"], name: "uniq_user_id_per_account_id", unique: true
     t.index ["account_id"], name: "index_account_users_on_account_id"
+    t.index ["custom_role_id"], name: "index_account_users_on_custom_role_id"
     t.index ["user_id"], name: "index_account_users_on_user_id"
   end
 
@@ -145,6 +147,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_05_30_120000) do
     t.jsonb "meta", default: {}
     t.string "slug", null: false
     t.integer "position"
+    t.string "locale", default: "en", null: false
     t.index ["associated_article_id"], name: "index_articles_on_associated_article_id"
     t.index ["author_id"], name: "index_articles_on_author_id"
     t.index ["slug"], name: "index_articles_on_slug", unique: true
@@ -417,6 +420,21 @@ ActiveRecord::Schema[7.0].define(version: 2024_05_30_120000) do
     t.index ["source_id"], name: "index_contact_inboxes_on_source_id"
   end
 
+  create_table "contact_pipeline_positions", force: :cascade do |t|
+    t.bigint "contact_id", null: false
+    t.bigint "pipeline_id", null: false
+    t.string "stage_id", null: false
+    t.decimal "deal_value", precision: 10, scale: 2
+    t.datetime "entered_at"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id", "pipeline_id"], name: "idx_contact_pipeline_positions_unique", unique: true
+    t.index ["contact_id"], name: "idx_contact_pipeline_positions_contact"
+    t.index ["pipeline_id", "stage_id"], name: "idx_contact_pipeline_positions_pipeline_stage"
+    t.index ["pipeline_id"], name: "idx_contact_pipeline_positions_pipeline"
+  end
+
   create_table "contacts", id: :serial, force: :cascade do |t|
     t.string "name", default: ""
     t.string "email"
@@ -434,9 +452,11 @@ ActiveRecord::Schema[7.0].define(version: 2024_05_30_120000) do
     t.string "location", default: ""
     t.string "country_code", default: ""
     t.boolean "blocked", default: false, null: false
+    t.index "((additional_attributes -> 'kanban'::text))", name: "idx_contacts_additional_attrs_kanban", using: :gin
     t.index "lower((email)::text), account_id", name: "index_contacts_on_lower_email_account_id"
     t.index ["account_id", "email", "phone_number", "identifier"], name: "index_contacts_on_nonempty_fields", where: "(((email)::text <> ''::text) OR ((phone_number)::text <> ''::text) OR ((identifier)::text <> ''::text))"
     t.index ["account_id", "last_activity_at"], name: "index_contacts_on_account_id_and_last_activity_at", order: { last_activity_at: "DESC NULLS LAST" }
+    t.index ["account_id"], name: "idx_contacts_account_custom_attrs", where: "(custom_attributes <> '{}'::jsonb)"
     t.index ["account_id"], name: "index_contacts_on_account_id"
     t.index ["account_id"], name: "index_resolved_contact_account_id", where: "(((email)::text <> ''::text) OR ((phone_number)::text <> ''::text) OR ((identifier)::text <> ''::text))"
     t.index ["blocked"], name: "index_contacts_on_blocked"
@@ -551,6 +571,16 @@ ActiveRecord::Schema[7.0].define(version: 2024_05_30_120000) do
     t.index ["user_id"], name: "index_custom_filters_on_user_id"
   end
 
+  create_table "custom_roles", force: :cascade do |t|
+    t.string "name"
+    t.string "description"
+    t.bigint "account_id", null: false
+    t.text "permissions", default: [], array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_custom_roles_on_account_id"
+  end
+
   create_table "dashboard_apps", force: :cascade do |t|
     t.string "title", null: false
     t.jsonb "content", default: []
@@ -625,6 +655,9 @@ ActiveRecord::Schema[7.0].define(version: 2024_05_30_120000) do
     t.integer "sender_name_type", default: 0, null: false
     t.string "business_name"
     t.boolean "allow_agent_to_delete_message", default: true, null: false
+    t.string "external_token"
+    t.boolean "csat_response_visible", default: false, null: false
+    t.integer "csat_lock_period_days", default: 14, null: false
     t.index ["account_id"], name: "index_inboxes_on_account_id"
     t.index ["channel_id", "channel_type"], name: "index_inboxes_on_channel_id_and_channel_type"
     t.index ["portal_id"], name: "index_inboxes_on_portal_id"
@@ -972,6 +1005,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_05_30_120000) do
     t.jsonb "custom_attributes", default: {}
     t.string "type"
     t.text "message_signature"
+    t.string "phone"
     t.index ["email"], name: "index_users_on_email"
     t.index ["pubsub_token"], name: "index_users_on_pubsub_token", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
@@ -1007,6 +1041,10 @@ ActiveRecord::Schema[7.0].define(version: 2024_05_30_120000) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "contact_inboxes", "contacts", on_delete: :cascade
+  add_foreign_key "contact_inboxes", "inboxes", on_delete: :cascade
+  add_foreign_key "contact_pipeline_positions", "contacts"
+  add_foreign_key "contact_pipeline_positions", "custom_attribute_definitions", column: "pipeline_id"
   add_foreign_key "inboxes", "portals"
   create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).
       on("accounts").

@@ -26,7 +26,9 @@
       "TOO_MANY_UPDATES": "Demasiadas actualizaciones detectadas. Sistema reiniciado."
     },
     "SUCCESS": {
-      "PIPELINE_DELETED": "Pipeline eliminado con éxito"
+      "PIPELINE_DELETED": "Pipeline eliminado con éxito",
+      "CARD_MOVED": "Tarjeta movida con éxito",
+      "ATTRIBUTE_CREATED": "Pipeline creado con éxito"
     },
     "DEBUG": {
       "REMOVING_CARD": "Eliminando tarjeta del kanban",
@@ -63,6 +65,47 @@
       "BUTTON_WON": "Marcar como Ganado",
       "BUTTON_LOST": "Marcar como Perdido"
     },
+    "FILTERS": {
+      "TITLE": "Filtros",
+      "LABELS": "Etiquetas",
+      "NO_LABELS": "No hay etiquetas disponibles",
+      "DEAL_VALUE": "Valor del Negocio",
+      "MIN_VALUE": "Mínimo",
+      "MAX_VALUE": "Máximo",
+      "DATE_RANGE": "Período de Entrada",
+      "FROM_DATE": "Fecha inicial",
+      "TO_DATE": "Fecha final",
+      "CLEAR_ALL": "Limpiar todo",
+      "APPLY": "Aplicar"
+    },
+    "DASHBOARD": {
+      "TITLE": "Dashboard del Pipeline",
+      "TOTAL_CARDS": "Total de Tarjetas",
+      "OPEN_CARDS": "Tarjetas Abiertas",
+      "WON_CARDS": "Tarjetas Ganadas",
+      "LOST_CARDS": "Tarjetas Perdidas",
+      "WIN_RATE": "Tasa de Conversión",
+      "AVERAGE_TIME": "Tiempo Promedio en Etapa",
+      "AVERAGE_DEAL_VALUE": "Valor Promedio por Negocio",
+      "BY_STAGE": "Distribución por Etapa",
+      "LONGEST_IN_STAGE": "Más Tiempo en Etapa",
+      "TOP_ASSIGNEES": "Top Responsables",
+      "NO_CARDS": "No se encontraron tarjetas"
+    },
+    "LIST_VIEW": {
+      "TITLE": "Lista de Contactos",
+      "NAME": "Nombre",
+      "STAGE": "Etapa",
+      "VALUE": "Valor",
+      "STATUS": "Estado",
+      "TIME_IN_STAGE": "Tiempo en Etapa",
+      "ACTIONS": "Acciones",
+      "VIEW": "Ver",
+      "WON": "Ganado",
+      "LOST": "Perdido",
+      "OPEN": "Abierto",
+      "NO_CONTACTS": "No se encontraron contactos"
+    },
     "SEARCH_PLACEHOLDER": "Buscar contactos por nombre o número",
     "LOADING_CONTACTS": "Cargando contactos...",
     "ADD_CONTACT_TO_STAGE": "Agregar contacto a la etapa {stage}",
@@ -87,6 +130,7 @@
     },
     "NO_CONTACTS_TO_ADD": "No hay contactos disponibles para agregar",
     "CONTACTS_FOUND": "contactos encontrados",
+    "LOADING_MORE": "Cargando más...",
     "ALREADY_IN_KANBAN": "Ya está en esta etapa",
     "FETCH_CONTACTS_FAILED": "Error al buscar contactos. Inténtelo de nuevo.",
     "ADD_CONTACT_FAILED": "Error al agregar contacto a la etapa. Inténtelo de nuevo."

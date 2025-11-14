@@ -24,6 +24,8 @@
 #
 # Indexes
 #
+#  idx_contacts_account_custom_attrs                     (account_id) WHERE (custom_attributes <> '{}'::jsonb)
+#  idx_contacts_additional_attrs_kanban                  (((additional_attributes -> 'kanban'::text))) USING gin
 #  index_contacts_on_account_id                          (account_id)
 #  index_contacts_on_account_id_and_last_activity_at     (account_id,last_activity_at DESC NULLS LAST)
 #  index_contacts_on_blocked                             (blocked)

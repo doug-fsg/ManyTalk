@@ -10,10 +10,13 @@
 #  auto_assignment_config        :jsonb
 #  business_name                 :string
 #  channel_type                  :string
+#  csat_lock_period_days         :integer          default(14), not null
+#  csat_response_visible         :boolean          default(FALSE), not null
 #  csat_survey_enabled           :boolean          default(FALSE)
 #  email_address                 :string
 #  enable_auto_assignment        :boolean          default(TRUE)
 #  enable_email_collect          :boolean          default(TRUE)
+#  external_token                :string
 #  greeting_enabled              :boolean          default(FALSE)
 #  greeting_message              :string
 #  lock_to_single_conversation   :boolean          default(FALSE), not null

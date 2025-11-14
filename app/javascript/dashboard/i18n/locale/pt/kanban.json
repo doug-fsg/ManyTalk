@@ -40,7 +40,9 @@
       "PLACEHOLDER": "Digite o nome do pipeline para confirmar"
     },
     "SUCCESS": {
-      "PIPELINE_DELETED": "Pipeline excluído com sucesso"
+      "PIPELINE_DELETED": "Pipeline excluído com sucesso",
+      "CARD_MOVED": "Cartão movido com sucesso",
+      "ATTRIBUTE_CREATED": "Pipeline criado com sucesso"
     },
     "ADD_CONTACT_TO_STAGE": "Adicionar contato à etapa {stage}",
     "ADD_CONTACT": {
@@ -64,6 +66,7 @@
     },
     "NO_CONTACTS_TO_ADD": "Nenhum contato disponível para adicionar",
     "CONTACTS_FOUND": "contatos encontrados",
+    "LOADING_MORE": "Carregando mais...",
     "ALREADY_IN_KANBAN": "Já está nesta etapa",
     "ERRORS": {
       "NO_PIPELINE_SELECTED": "Nenhum pipeline selecionado",
@@ -135,6 +138,47 @@
       "CURRENT_VALUE": "Valor Atual",
       "BUTTON_WON": "Marcar como Ganho",
       "BUTTON_LOST": "Marcar como Perdido"
+    },
+    "FILTERS": {
+      "TITLE": "Filtros",
+      "LABELS": "Rótulos",
+      "NO_LABELS": "Nenhum rótulo disponível",
+      "DEAL_VALUE": "Valor do Negócio",
+      "MIN_VALUE": "Mínimo",
+      "MAX_VALUE": "Máximo",
+      "DATE_RANGE": "Período de Entrada",
+      "FROM_DATE": "Data inicial",
+      "TO_DATE": "Data final",
+      "CLEAR_ALL": "Limpar todos",
+      "APPLY": "Aplicar"
+    },
+    "DASHBOARD": {
+      "TITLE": "Dashboard do Pipeline",
+      "TOTAL_CARDS": "Total de Cartões",
+      "OPEN_CARDS": "Cartões Abertos",
+      "WON_CARDS": "Cartões Ganhos",
+      "LOST_CARDS": "Cartões Perdidos",
+      "WIN_RATE": "Taxa de Conversão",
+      "AVERAGE_TIME": "Tempo Médio na Etapa",
+      "AVERAGE_DEAL_VALUE": "Valor Médio por Negócio",
+      "BY_STAGE": "Distribuição por Etapa",
+      "LONGEST_IN_STAGE": "Cartões com Mais Tempo na Etapa",
+      "TOP_ASSIGNEES": "Top Responsáveis",
+      "NO_CARDS": "Nenhum cartão encontrado"
+    },
+    "LIST_VIEW": {
+      "TITLE": "Lista de Contatos",
+      "NAME": "Nome",
+      "STAGE": "Etapa",
+      "VALUE": "Valor",
+      "STATUS": "Status",
+      "TIME_IN_STAGE": "Tempo na Etapa",
+      "ACTIONS": "Ações",
+      "VIEW": "Ver",
+      "WON": "Ganho",
+      "LOST": "Perdido",
+      "OPEN": "Aberto",
+      "NO_CONTACTS": "Nenhum contato encontrado"
     }
   }
 } 

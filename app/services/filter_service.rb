@@ -153,10 +153,27 @@ class FilterService
   end
 
   def build_custom_attr_query(query_hash, current_index)
-    filter_operator_value = filter_operation(query_hash, current_index)
-    query_operator = query_hash[:query_operator]
+    query_operator = query_hash[:query_operator] || ''
     table_name = attribute_model == 'conversation_attribute' ? 'conversations' : 'contacts'
 
+    # Otimização: usar jsonb_exists() para is_present/is_not_present (mais eficiente com índice GIN)
+    # IMPORTANTE: Retornar antes de chamar filter_operation para não adicionar valores não usados ao @filter_values
+    # NOTA: Usamos jsonb_exists() em vez do operador ? para evitar conflitos com bind variables do Rails
+    if query_hash[:filter_operator] == 'is_present'
+      # jsonb_exists() verifica se a chave existe no JSONB (usa índice GIN eficientemente)
+      # E verificar se o valor não é vazio
+      escaped_key = ActiveRecord::Base.connection.quote_string(@attribute_key)
+      operator_suffix = query_operator.present? ? " #{query_operator} " : ' '
+      return "(jsonb_exists(#{table_name}.custom_attributes, '#{escaped_key}') AND #{table_name}.custom_attributes->>'#{escaped_key}' != '')#{operator_suffix}"
+    elsif query_hash[:filter_operator] == 'is_not_present'
+      # jsonb_exists() para verificar se a chave não existe OU se o valor é vazio
+      escaped_key = ActiveRecord::Base.connection.quote_string(@attribute_key)
+      operator_suffix = query_operator.present? ? " #{query_operator} " : ' '
+      return "(NOT jsonb_exists(#{table_name}.custom_attributes, '#{escaped_key}') OR #{table_name}.custom_attributes->>'#{escaped_key}' = '' OR #{table_name}.custom_attributes->>'#{escaped_key}' IS NULL)#{operator_suffix}"
+    end
+
+    # Para outros operadores, manter comportamento original
+    filter_operator_value = filter_operation(query_hash, current_index)
     query = if attribute_data_type == 'text'
               "LOWER(#{table_name}.custom_attributes ->> '#{@attribute_key}')::#{attribute_data_type} #{filter_operator_value} #{query_operator} "
             else

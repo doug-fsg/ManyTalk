@@ -9,18 +9,30 @@
           <button 
             :class="[
               'p-1.5 rounded-md transition-colors flex items-center gap-1',
-              currentView === 'kanban' ? 'bg-white shadow-sm text-neutral-700' : 'text-neutral-600 hover:text-neutral-800'
+              currentView === 'kanban' ? 'bg-white shadow-sm text-neutral-700 dark:bg-slate-600 dark:text-white' : 'text-neutral-600 hover:text-neutral-800 dark:text-slate-300 dark:hover:text-white'
             ]"
             @click="setView('kanban')"
+            v-tooltip.top="'Kanban'"
           >
             <fluent-icon icon="kanban" size="16" />
           </button>
           <button 
             :class="[
               'p-1.5 rounded-md transition-colors flex items-center gap-1',
-              currentView === 'list' ? 'bg-white shadow-sm text-neutral-700' : 'text-neutral-600 hover:text-neutral-800'
+              currentView === 'dashboard' ? 'bg-white shadow-sm text-neutral-700 dark:bg-slate-600 dark:text-white' : 'text-neutral-600 hover:text-neutral-800 dark:text-slate-300 dark:hover:text-white'
+            ]"
+            @click="setView('dashboard')"
+            v-tooltip.top="'Dashboard'"
+          >
+            <fluent-icon icon="chart" size="16" />
+          </button>
+          <button 
+            :class="[
+              'p-1.5 rounded-md transition-colors flex items-center gap-1',
+              currentView === 'list' ? 'bg-white shadow-sm text-neutral-700 dark:bg-slate-600 dark:text-white' : 'text-neutral-600 hover:text-neutral-800 dark:text-slate-300 dark:hover:text-white'
             ]"
             @click="setView('list')"
+            v-tooltip.top="'Lista'"
           >
             <fluent-icon icon="list" size="16" />
           </button>
@@ -64,6 +76,14 @@
             </div>
           </transition>
         </div>
+
+        <!-- Filters -->
+        <kanban-filters
+          :contacts="contacts"
+          :pipeline-id="pipelineId"
+          :filters="filters"
+          @filters-changed="handleFiltersChanged"
+        />
 
         <!-- Win/Lost Filter -->
         <div class="hidden md:flex items-center gap-1 bg-slate-25 rounded-lg p-1 dark:bg-slate-700">
@@ -187,9 +207,13 @@
 
 <script>
 import { directive as onClickaway } from 'vue-clickaway';
+import KanbanFilters from './KanbanFilters.vue';
 
 export default {
   name: 'KanbanHeader',
+  components: {
+    KanbanFilters,
+  },
   directives: {
     onClickaway,
   },
@@ -210,6 +234,24 @@ export default {
     winLostFilter: {
       type: String,
       default: 'all',
+    },
+    contacts: {
+      type: Array,
+      default: () => [],
+    },
+    pipelineId: {
+      type: [Number, String],
+      default: null,
+    },
+    filters: {
+      type: Object,
+      default: () => ({
+        labels: [],
+        dealValueMin: null,
+        dealValueMax: null,
+        dateFrom: null,
+        dateTo: null,
+      }),
     },
   },
   data() {
@@ -256,7 +298,7 @@ export default {
       this.showPipelineDropdown = false;
     },
     setView(view) {
-      this.$emit('update:currentView', view);
+      this.$emit('update:current-view', view);
     },
     createNewKanban() {
       this.showKanbanActions = false;
@@ -272,6 +314,9 @@ export default {
     },
     setWinLostFilter(filter) {
       this.$emit('win-lost-filter', filter);
+    },
+    handleFiltersChanged(filters) {
+      this.$emit('filters-changed', filters);
     },
   },
 };

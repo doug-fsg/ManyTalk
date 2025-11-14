@@ -10,7 +10,7 @@
 #  attribute_model        :integer          default("conversation_attribute")
 #  attribute_values       :jsonb
 #  default_value          :integer
-#  is_kanban              :boolean          default(false), not null
+#  is_kanban              :boolean          default(FALSE), not null
 #  regex_cue              :string
 #  regex_pattern          :string
 #  created_at             :datetime         not null

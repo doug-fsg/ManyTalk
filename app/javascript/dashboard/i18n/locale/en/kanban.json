@@ -48,7 +48,9 @@
       "TOO_MANY_UPDATES": "We detected too many updates in Kanban. Component was reset to prevent performance issues."
     },
     "SUCCESS": {
-      "PIPELINE_DELETED": "Pipeline deleted successfully"
+      "PIPELINE_DELETED": "Pipeline deleted successfully",
+      "CARD_MOVED": "Card moved successfully",
+      "ATTRIBUTE_CREATED": "Pipeline created successfully"
     },
     "DEBUG": {
       "RECEIVED_EVENT_REMOVED": "Attribute removal event received",
@@ -125,6 +127,47 @@
       "BUTTON_WON": "Mark as Won",
       "BUTTON_LOST": "Mark as Lost"
     },
+    "FILTERS": {
+      "TITLE": "Filters",
+      "LABELS": "Labels",
+      "NO_LABELS": "No labels available",
+      "DEAL_VALUE": "Deal Value",
+      "MIN_VALUE": "Min",
+      "MAX_VALUE": "Max",
+      "DATE_RANGE": "Entry Period",
+      "FROM_DATE": "From date",
+      "TO_DATE": "To date",
+      "CLEAR_ALL": "Clear all",
+      "APPLY": "Apply"
+    },
+    "DASHBOARD": {
+      "TITLE": "Pipeline Dashboard",
+      "TOTAL_CARDS": "Total Cards",
+      "OPEN_CARDS": "Open Cards",
+      "WON_CARDS": "Won Cards",
+      "LOST_CARDS": "Lost Cards",
+      "WIN_RATE": "Win Rate",
+      "AVERAGE_TIME": "Average Time in Stage",
+      "AVERAGE_DEAL_VALUE": "Average Deal Value",
+      "BY_STAGE": "Distribution by Stage",
+      "LONGEST_IN_STAGE": "Longest in Stage",
+      "TOP_ASSIGNEES": "Top Assignees",
+      "NO_CARDS": "No cards found"
+    },
+    "LIST_VIEW": {
+      "TITLE": "Contacts List",
+      "NAME": "Name",
+      "STAGE": "Stage",
+      "VALUE": "Value",
+      "STATUS": "Status",
+      "TIME_IN_STAGE": "Time in Stage",
+      "ACTIONS": "Actions",
+      "VIEW": "View",
+      "WON": "Won",
+      "LOST": "Lost",
+      "OPEN": "Open",
+      "NO_CONTACTS": "No contacts found"
+    },
     "ADD_CONTACT_TO_STAGE": "Add contact to {stage}",
     "ADD_CONTACT": {
       "TITLE": "Add Contact to Stage",
@@ -146,6 +189,7 @@
       }
     },
     "NO_CONTACTS_TO_ADD": "No contacts available to add",
+    "LOADING_MORE": "Loading more...",
     "CONTACTS_FOUND": "contacts found",
     "ALREADY_IN_KANBAN": "Already in this stage"
   },

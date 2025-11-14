@@ -32,19 +32,26 @@
         </div>
       </div>
     </div>
-    <div class="column-content">
+    <div 
+      ref="columnContent"
+      class="column-content"
+      @scroll="handleScroll"
+    >
       <draggable
         v-model="columnItems"
         class="column-items"
         :data-column-id="column.id"
         :data-column-title="column.title"
         group="items"
-        animation="150"
+        animation="200"
+        easing="cubic-bezier(0.4, 0, 0.2, 1)"
         ghost-class="ghost-card"
+        chosen-class="chosen-card"
+        drag-class="dragging-card"
         @end="onItemMoved"
       >
         <kanban-card
-          v-for="contact in columnItems"
+          v-for="contact in visibleItems"
           :key="contact.id"
           :contact="contact"
           :pipeline-id="pipelineId"
@@ -63,6 +70,17 @@
           <p>{{ $t('KANBAN.NO_CONTACTS') }}</p>
         </div>
       </draggable>
+      <!-- Intersection Observer para carregar mais itens -->
+      <intersection-observer
+        v-if="hasMoreItems && !isLoadingMore"
+        :options="infiniteLoaderOptions"
+        @observed="loadMoreItems"
+      />
+      <!-- Indicador de carregamento -->
+      <div v-if="isLoadingMore" class="loading-more-indicator">
+        <span class="spinner" />
+        <span>{{ $t('KANBAN.LOADING_MORE') }}</span>
+      </div>
     </div>
   </div>
 </template>
@@ -70,12 +88,14 @@
 <script>
 import draggable from 'vuedraggable';
 import KanbanCard from './KanbanCard.vue';
+import IntersectionObserver from 'dashboard/components/IntersectionObserver.vue';
 
 export default {
   name: 'KanbanColumn',
   components: {
     draggable,
     KanbanCard,
+    IntersectionObserver,
   },
   props: {
     column: {
@@ -91,6 +111,14 @@ export default {
       required: true
     }
   },
+  data() {
+    return {
+      itemsPerPage: 5, // Quantidade de itens por página
+      currentPage: 1, // Página atual
+      isLoadingMore: false, // Flag para indicar carregamento
+      scrollDebounce: null, // Debounce para eventos de scroll
+    };
+  },
   computed: {
     columnItems: {
       get() {
@@ -103,6 +131,7 @@ export default {
         });
       }
     },
+    // IMPORTANTE: columnTotal sempre calcula baseado em TODOS os itens, não apenas visíveis
     columnTotal() {
       return this.columnItems.reduce((total, contact) => {
         const additionalAttributes = contact.additional_attributes || {};
@@ -112,7 +141,24 @@ export default {
         const value = deal.value || 0;
         return total + parseFloat(value);
       }, 0);
-    }
+    },
+    // Itens visíveis baseados na paginação virtual
+    visibleItems() {
+      const startIndex = 0;
+      const endIndex = this.currentPage * this.itemsPerPage;
+      return this.columnItems.slice(startIndex, endIndex);
+    },
+    // Verifica se há mais itens para carregar
+    hasMoreItems() {
+      return this.columnItems.length > this.visibleItems.length;
+    },
+    // Opções para o IntersectionObserver
+    infiniteLoaderOptions() {
+      return {
+        root: this.$refs.columnContent || null,
+        rootMargin: '200px 0px 200px 0px', // Carregar quando estiver a 200px do final
+      };
+    },
   },
   methods: {
     getLightColor(hexColor) {
@@ -197,6 +243,39 @@ export default {
         style: 'currency',
         currency: 'BRL'
       }).format(value);
+    },
+    // Carregar mais itens quando o usuário rola até o final
+    loadMoreItems() {
+      if (this.isLoadingMore || !this.hasMoreItems) return;
+      
+      this.isLoadingMore = true;
+      
+      // Simular um pequeno delay para melhor UX (opcional)
+      setTimeout(() => {
+        this.currentPage += 1;
+        this.isLoadingMore = false;
+      }, 300);
+    },
+    // Handler para eventos de scroll (opcional, para otimizações futuras)
+    handleScroll(event) {
+      // Debounce para evitar muitas chamadas
+      clearTimeout(this.scrollDebounce);
+      this.scrollDebounce = setTimeout(() => {
+        // Pode adicionar lógica de otimização aqui se necessário
+      }, 100);
+    },
+  },
+  mounted() {
+    // Resetar página quando os itens mudarem
+    this.currentPage = 1;
+  },
+  watch: {
+    // Resetar paginação quando os itens da coluna mudarem
+    'column.items': {
+      handler() {
+        this.currentPage = 1;
+      },
+      deep: true
     }
   }
 };
@@ -347,6 +426,64 @@ export default {
 }
 
 .ghost-card {
-  opacity: 0.5;
+  opacity: 0.3;
+  background: var(--w-50);
+  border: 2px dashed var(--w-500);
+  transform: rotate(2deg);
+  
+  .dark-mode & {
+    background: var(--b-700);
+    border-color: var(--w-400);
+  }
+}
+
+.chosen-card {
+  cursor: grabbing !important;
+  transform: scale(1.05);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dragging-card {
+  opacity: 0.8;
+  transform: rotate(-2deg);
+  cursor: grabbing !important;
+}
+
+.loading-more-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-small);
+  color: var(--s-500);
+  font-size: var(--font-size-small);
+  gap: var(--space-smaller);
+  
+  .dark-mode & {
+    color: var(--s-400);
+  }
+  
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--s-200);
+    border-top-color: var(--w-500);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    
+    .dark-mode & {
+      border-color: var(--b-500);
+      border-top-color: var(--w-400);
+    }
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style> 
