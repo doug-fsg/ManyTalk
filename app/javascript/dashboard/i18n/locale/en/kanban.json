@@ -142,17 +142,20 @@
     },
     "DASHBOARD": {
       "TITLE": "Pipeline Dashboard",
-      "TOTAL_CARDS": "Total Cards",
-      "OPEN_CARDS": "Open Cards",
-      "WON_CARDS": "Won Cards",
-      "LOST_CARDS": "Lost Cards",
+      "TOTAL_CARDS": "Total Items",
+      "OPEN_CARDS": "Open",
+      "WON_CARDS": "Won",
+      "LOST_CARDS": "Lost",
       "WIN_RATE": "Win Rate",
       "AVERAGE_TIME": "Average Time in Stage",
       "AVERAGE_DEAL_VALUE": "Average Deal Value",
       "BY_STAGE": "Distribution by Stage",
-      "LONGEST_IN_STAGE": "Longest in Stage",
+      "LONGEST_IN_STAGE": "Items with Longest Time in Stage",
       "TOP_ASSIGNEES": "Top Assignees",
-      "NO_CARDS": "No cards found"
+      "NO_CARDS": "No cards found",
+      "NO_STAGE_DATA": "No stage data available",
+      "ITEMS": "items",
+      "ITEM": "item"
     },
     "LIST_VIEW": {
       "TITLE": "Contacts List",

@@ -56,7 +56,25 @@ class Contacts::FilterService < FilterService
 
   # TODO: @account.contacts.resolved_contacts ? to stay consistant with the behavior in ui
   def base_relation
-    @account.contacts
+    # Check if any filter is for a kanban attribute
+    # If yes, LEFT JOIN with contact_pipeline_positions for better performance
+    kanban_pipeline_ids = get_kanban_pipeline_ids_from_filters
+    
+    if kanban_pipeline_ids.any?
+      # Construir FROM com JOINs usando SQL direto
+      # Rails não aceita SQL string diretamente no joins, então usamos from
+      joins_parts = kanban_pipeline_ids.each_with_index.map do |pipeline_id, index|
+        alias_name = "cpp_#{index}"
+        "LEFT OUTER JOIN contact_pipeline_positions AS #{alias_name} ON #{alias_name}.contact_id = contacts.id AND #{alias_name}.pipeline_id = #{pipeline_id}"
+      end
+      
+      joins_clause = joins_parts.join(' ')
+      
+      # Usar from com SQL completo incluindo os JOINs
+      @account.contacts.from("contacts #{joins_clause}")
+    else
+      @account.contacts
+    end
   end
 
   def filter_config
@@ -66,7 +84,71 @@ class Contacts::FilterService < FilterService
     }
   end
 
+  # Sobrescrever para usar contact_pipeline_positions quando for atributo kanban
+  def build_custom_attr_query(query_hash, current_index)
+    # Verificar se é um atributo kanban
+    is_kanban = @custom_attribute&.is_kanban || false
+
+    if is_kanban
+      build_kanban_query(query_hash, current_index)
+    else
+      # Usar comportamento padrão (JSON) para atributos não-kanban
+      super
+    end
+  end
+
   private
+
+  # Constrói query usando a tabela contact_pipeline_positions para atributos kanban
+  def build_kanban_query(query_hash, current_index)
+    query_operator = query_hash[:query_operator] || ''
+    pipeline_id = @custom_attribute.id
+    
+    # Encontrar o índice do LEFT JOIN para este pipeline
+    kanban_pipeline_ids = get_kanban_pipeline_ids_from_filters
+    join_index = kanban_pipeline_ids.index(pipeline_id)
+    alias_name = "cpp_#{join_index}"
+
+    # Otimização: usar a tabela contact_pipeline_positions com fallback para JSON
+    if query_hash[:filter_operator] == 'is_present'
+      operator_suffix = query_operator.present? ? " #{query_operator} " : ' '
+      # Contato está no pipeline se existe registro na tabela OU se existe no JSON
+      escaped_key = ActiveRecord::Base.connection.quote_string(@attribute_key)
+      return "(#{alias_name}.id IS NOT NULL OR (jsonb_exists(contacts.custom_attributes, '#{escaped_key}') AND contacts.custom_attributes->>'#{escaped_key}' != ''))#{operator_suffix}"
+    elsif query_hash[:filter_operator] == 'is_not_present'
+      operator_suffix = query_operator.present? ? " #{query_operator} " : ' '
+      # Contato NÃO está no pipeline se não existe na tabela E não existe no JSON
+      escaped_key = ActiveRecord::Base.connection.quote_string(@attribute_key)
+      return "(#{alias_name}.id IS NULL AND (NOT jsonb_exists(contacts.custom_attributes, '#{escaped_key}') OR contacts.custom_attributes->>'#{escaped_key}' = '' OR contacts.custom_attributes->>'#{escaped_key}' IS NULL))#{operator_suffix}"
+    end
+
+    # Para outros operadores (equal_to, not_equal_to, etc), usar stage_id da tabela com fallback para JSON
+    filter_operator_value = filter_operation(query_hash, current_index)
+    
+    # Usar COALESCE para pegar da tabela primeiro, JSON como fallback
+    escaped_key = ActiveRecord::Base.connection.quote_string(@attribute_key)
+    "COALESCE(#{alias_name}.stage_id, contacts.custom_attributes->>'#{escaped_key}') #{filter_operator_value} #{query_operator} "
+  end
+
+  # Retorna os IDs dos pipelines kanban que estão nos filtros
+  def get_kanban_pipeline_ids_from_filters
+    return [] unless @params[:payload]
+
+    pipeline_ids = []
+    @params[:payload].each do |query_hash|
+      attribute_key = query_hash[:attribute_key]
+      next if attribute_key.blank? || attribute_key == '_any_list'
+
+      # Verificar se é um atributo kanban
+      custom_attr = @account.custom_attribute_definitions
+        .where(attribute_model: 'contact_attribute', attribute_key: attribute_key, is_kanban: true)
+        .first
+
+      pipeline_ids << custom_attr.id if custom_attr
+    end
+
+    pipeline_ids.uniq
+  end
 
   def equals_to_filter_string(filter_operator, current_index)
     return "= :value_#{current_index}" if filter_operator == 'equal_to'

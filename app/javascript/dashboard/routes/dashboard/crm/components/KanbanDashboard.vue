@@ -100,23 +100,39 @@
       <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
         {{ $t('KANBAN.DASHBOARD.BY_STAGE') }}
       </h3>
-      <div class="space-y-4">
+      <div v-if="stageStats.length === 0" class="text-center text-slate-500 dark:text-slate-400 py-8">
+        {{ $t('KANBAN.DASHBOARD.NO_STAGE_DATA') }}
+      </div>
+      <div v-else class="space-y-4">
         <div
-          v-for="stage in stageStats"
-          :key="stage.name"
+          v-for="(stage, index) in stageStats"
+          :key="`stage-${stage.name}-${stage.percentage}-${index}`"
           class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg"
         >
           <div class="flex-1">
             <div class="flex items-center justify-between mb-2">
               <span class="font-medium text-slate-900 dark:text-white">{{ stage.name }}</span>
               <span class="text-sm text-slate-600 dark:text-slate-400">
-                {{ stage.count }} cards • {{ formatCurrency(stage.value) }}
+                {{ stage.count }} {{ stage.count === 1 ? $t('KANBAN.DASHBOARD.ITEM') : $t('KANBAN.DASHBOARD.ITEMS') }} • {{ formatCurrency(stage.value) }}
               </span>
             </div>
-            <div class="w-full bg-slate-200 dark:bg-slate-600 rounded-full h-2">
+            <div 
+              class="w-full rounded-full relative" 
+              style="height: 8px; overflow: hidden; position: relative; background-color: rgb(226 232 240);"
+            >
               <div
-                class="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                :style="{ width: `${stage.percentage}%` }"
+                class="rounded-full transition-all duration-300"
+                :style="{ 
+                  width: `${Math.max(stage.percentage, 0)}%`,
+                  height: '8px',
+                  minWidth: stage.count > 0 ? '2px' : '0px',
+                  display: 'block',
+                  position: 'absolute',
+                  top: '0',
+                  left: '0',
+                  backgroundColor: '#3b82f6'
+                }"
+                :title="`${stage.percentage.toFixed(1)}%`"
               ></div>
             </div>
           </div>
@@ -174,7 +190,7 @@
             <div>
               <p class="font-medium text-slate-900 dark:text-white">{{ assignee.name }}</p>
               <p class="text-sm text-slate-600 dark:text-slate-400">
-                {{ assignee.count }} cards
+                {{ assignee.count }} {{ assignee.count === 1 ? $t('KANBAN.DASHBOARD.ITEM') : $t('KANBAN.DASHBOARD.ITEMS') }}
               </p>
             </div>
           </div>
@@ -287,29 +303,45 @@ export default {
       return stats;
     },
     stageStats() {
+      if (!this.columns || this.columns.length === 0) {
+        return [];
+      }
+
       const stageMap = {};
-      let maxCount = 0;
+      let totalCount = 0;
 
       this.columns.forEach(column => {
+        if (!column.items || !Array.isArray(column.items)) {
+          return;
+        }
+
         const count = column.items.length;
         const value = column.items.reduce((sum, contact) => {
           const additionalAttributes = contact.additional_attributes || {};
           const kanban = additionalAttributes.kanban || {};
-          const pipelineData = kanban[this.pipelineId] || {};
+          const pipelineIdStr = String(this.pipelineId);
+          const pipelineData = kanban[pipelineIdStr] || {};
           const dealValue = parseFloat(pipelineData.deal?.value || 0);
           return sum + dealValue;
         }, 0);
 
         stageMap[column.title] = { count, value };
-        maxCount = Math.max(maxCount, count);
+        totalCount += count;
       });
 
-      return this.columns.map(column => ({
-        name: column.title,
-        count: stageMap[column.title].count,
-        value: stageMap[column.title].value,
-        percentage: maxCount > 0 ? (stageMap[column.title].count / maxCount) * 100 : 0,
-      }));
+      return this.columns.map(column => {
+        const stage = stageMap[column.title] || { count: 0, value: 0 };
+        const percentage = totalCount > 0 ? (stage.count / totalCount) * 100 : 0;
+        
+        const minPercentage = stage.count > 0 && percentage < 1 ? 1 : percentage;
+        
+        return {
+          name: column.title,
+          count: stage.count,
+          value: stage.value,
+          percentage: minPercentage,
+        };
+      });
     },
     longestInStage() {
       const cards = [];
@@ -379,6 +411,15 @@ export default {
   to {
     opacity: 1;
   }
+}
+
+/* Garantir que a barra de progresso seja visível */
+.bg-blue-500 {
+  background-color: #3b82f6 !important;
+}
+
+.dark .bg-blue-500 {
+  background-color: #3b82f6 !important;
 }
 </style>
 

@@ -8,9 +8,8 @@ class Contacts::KanbanSyncService
   end
 
   # Sincroniza dados do JSON para a tabela (dual-write)
-  # Habilitado via feature flag para permitir rollback
+  # Sempre habilitado - sem feature flag
   def sync_to_table
-    return unless feature_enabled?
     sync_to_table_without_flag_check
   end
 
@@ -48,8 +47,6 @@ class Contacts::KanbanSyncService
 
   # Sincroniza dados da tabela para o JSON (usado durante migração reversa)
   def sync_to_json
-    return unless feature_enabled?
-
     position = ContactPipelinePosition.find_by(
       contact_id: @contact.id,
       pipeline_id: @pipeline_id
@@ -90,8 +87,6 @@ class Contacts::KanbanSyncService
 
   # Remove entrada da tabela quando contato é removido do pipeline
   def remove_from_table
-    return unless feature_enabled?
-
     ContactPipelinePosition.where(
       contact_id: @contact.id,
       pipeline_id: @pipeline_id
@@ -102,12 +97,6 @@ class Contacts::KanbanSyncService
   end
 
   private
-
-  def feature_enabled?
-    # Feature flag para habilitar/desabilitar dual-write
-    # Por padrão desabilitado até validação completa
-    ENV['KANBAN_DUAL_WRITE_ENABLED'] == 'true' || false
-  end
 
   def get_stage_from_json
     @contact.custom_attributes&.dig(@pipeline&.attribute_key)

@@ -173,17 +173,20 @@
     },
     "DASHBOARD": {
       "TITLE": "Dashboard do Pipeline",
-      "TOTAL_CARDS": "Total de Cards",
-      "OPEN_CARDS": "Cards Abertos",
-      "WON_CARDS": "Cards Ganhos",
-      "LOST_CARDS": "Cards Perdidos",
+      "TOTAL_CARDS": "Total de Itens",
+      "OPEN_CARDS": "Abertos",
+      "WON_CARDS": "Ganhos",
+      "LOST_CARDS": "Perdidos",
       "WIN_RATE": "Taxa de Conversão",
       "AVERAGE_TIME": "Tempo Médio na Etapa",
       "AVERAGE_DEAL_VALUE": "Valor Médio por Negócio",
       "BY_STAGE": "Distribuição por Etapa",
-      "LONGEST_IN_STAGE": "Cards com Mais Tempo na Etapa",
+      "LONGEST_IN_STAGE": "Itens com Mais Tempo na Etapa",
       "TOP_ASSIGNEES": "Top Responsáveis",
-      "NO_CARDS": "Nenhum card encontrado"
+      "NO_CARDS": "Nenhum card encontrado",
+      "NO_STAGE_DATA": "Nenhum dado de etapa disponível",
+      "ITEMS": "itens",
+      "ITEM": "item"
     },
     "LIST_VIEW": {
       "TITLE": "Lista de Contatos",

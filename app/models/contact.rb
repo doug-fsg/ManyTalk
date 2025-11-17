@@ -44,6 +44,7 @@
 class Contact < ApplicationRecord
   include Avatarable
   include AvailabilityStatusable
+  include ContactKanbanData
   include Labelable
 
   validates :account_id, presence: true
@@ -57,6 +58,7 @@ class Contact < ApplicationRecord
   belongs_to :account
   has_many :conversations, dependent: :destroy_async
   has_many :contact_inboxes, dependent: :destroy_async
+  has_many :contact_pipeline_positions, dependent: :destroy_async
   has_many :csat_survey_responses, dependent: :destroy_async
   has_many :inboxes, through: :contact_inboxes
   has_many :messages, as: :sender, dependent: :destroy_async
