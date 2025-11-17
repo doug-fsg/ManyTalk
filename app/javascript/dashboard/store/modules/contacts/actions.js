@@ -242,6 +242,12 @@ export const actions = {
     try {
       commit(types.EDIT_CONTACT, updateObj);
       commit(types.SET_CONTACT_UI_FLAG, { isUpdating: false });
+      
+      // Emitir evento no bus para componentes que precisam reagir à atualização
+      // Isso é necessário para sincronizar o Kanban quando ActionCable atualiza o store
+      if (window.bus) {
+        window.bus.$emit('contact_updated', updateObj);
+      }
     } catch (error) {
       commit(types.SET_CONTACT_UI_FLAG, { isUpdating: false });
     }

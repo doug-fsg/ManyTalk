@@ -429,8 +429,10 @@ ActiveRecord::Schema[7.0].define(version: 2025_03_30_030320) do
     t.jsonb "metadata", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "position", default: 0, null: false
     t.index ["contact_id", "pipeline_id"], name: "idx_contact_pipeline_positions_unique", unique: true
     t.index ["contact_id"], name: "idx_contact_pipeline_positions_contact"
+    t.index ["pipeline_id", "stage_id", "position"], name: "idx_contact_pipeline_positions_pipeline_stage_position"
     t.index ["pipeline_id", "stage_id"], name: "idx_contact_pipeline_positions_pipeline_stage"
     t.index ["pipeline_id"], name: "idx_contact_pipeline_positions_pipeline"
   end

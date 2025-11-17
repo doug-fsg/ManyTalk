@@ -149,8 +149,12 @@ Rails.application.routes.draw do
               resources :notes
               post 'contact_attribute_files', to: 'contact_attribute_files#create'
               delete 'contact_attribute_files', to: 'contact_attribute_files#destroy'
+              # Pipeline positions - atualizar apenas contact_pipeline_positions sem tocar em contacts
+              patch 'pipeline_positions/:pipeline_id', to: 'pipeline_positions#update'
             end
           end
+          # Reorder pipeline positions (collection route - não precisa de contact_id)
+          post 'contacts/pipeline_positions/reorder', to: 'contacts/pipeline_positions#reorder'
           resources :csat_survey_responses, only: [:index] do
             collection do
               get :metrics

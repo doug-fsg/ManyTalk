@@ -9,6 +9,17 @@ json.thumbnail resource.avatar_url
 json.custom_attributes resource.custom_attributes
 json.last_activity_at resource.last_activity_at.to_i if resource[:last_activity_at].present?
 json.created_at resource.created_at.to_i if resource[:created_at].present?
+# Incluir pipeline positions para ordenação no Kanban
+if resource.respond_to?(:contact_pipeline_positions)
+  json.pipeline_positions do
+    json.array! resource.contact_pipeline_positions do |position|
+      json.pipeline_id position.pipeline_id
+      json.stage_id position.stage_id
+      json.position position.position
+      json.entered_at position.entered_at&.iso8601
+    end
+  end
+end
 # we only want to output contact inbox when its /contacts endpoints
 if defined?(with_contact_inboxes) && with_contact_inboxes.present?
   json.contact_inboxes do

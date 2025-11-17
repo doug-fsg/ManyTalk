@@ -84,6 +84,27 @@ class ContactAPI extends ApiClient {
   update(id, data) {
     return axios.patch(`${this.url}/${id}`, data);
   }
+
+  // Atualizar posição do contato no pipeline (apenas contact_pipeline_positions)
+  updatePipelinePosition(contactId, pipelineId, stageId, position, enteredAt = null) {
+    const params = {
+      stage_id: stageId,
+      position: position,
+    };
+    if (enteredAt) {
+      params.entered_at = enteredAt;
+    }
+    return axios.patch(`${this.url}/${contactId}/pipeline_positions/${pipelineId}`, params);
+  }
+
+  // Reordenar múltiplas posições de uma vez
+  reorderPipelinePositions(pipelineId, positions) {
+    const accountId = this.accountIdFromRoute;
+    return axios.post(`/api/v1/accounts/${accountId}/contacts/pipeline_positions/reorder`, {
+      pipeline_id: pipelineId,
+      positions: positions,
+    });
+  }
 }
 
 export default new ContactAPI();

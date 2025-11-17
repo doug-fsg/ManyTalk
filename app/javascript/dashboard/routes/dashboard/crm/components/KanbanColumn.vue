@@ -43,15 +43,16 @@
         :data-column-id="column.id"
         :data-column-title="column.title"
         group="items"
-        animation="200"
-        easing="cubic-bezier(0.4, 0, 0.2, 1)"
+        animation="100"
+        easing="cubic-bezier(0.25, 0.46, 0.45, 0.94)"
         ghost-class="ghost-card"
         chosen-class="chosen-card"
         drag-class="dragging-card"
+        @start="onDragStart"
         @end="onItemMoved"
       >
         <kanban-card
-          v-for="contact in visibleItems"
+          v-for="contact in itemsForDrag"
           :key="contact.id"
           :contact="contact"
           :pipeline-id="pipelineId"
@@ -117,6 +118,7 @@ export default {
       currentPage: 1, // Página atual
       isLoadingMore: false, // Flag para indicar carregamento
       scrollDebounce: null, // Debounce para eventos de scroll
+      isDragging: false, // Flag para indicar se está arrastando (renderiza todos os itens)
     };
   },
   computed: {
@@ -148,9 +150,15 @@ export default {
       const endIndex = this.currentPage * this.itemsPerPage;
       return this.columnItems.slice(startIndex, endIndex);
     },
-    // Verifica se há mais itens para carregar
+    // Itens para renderizar durante o drag (todos os itens) ou paginação normal
+    itemsForDrag() {
+      // Durante o drag, mostrar TODOS os itens para permitir posicionamento preciso
+      // Fora do drag, usar paginação virtual para melhor performance
+      return this.isDragging ? this.columnItems : this.visibleItems;
+    },
+    // Verifica se há mais itens para carregar (apenas quando não está arrastando)
     hasMoreItems() {
-      return this.columnItems.length > this.visibleItems.length;
+      return !this.isDragging && this.columnItems.length > this.visibleItems.length;
     },
     // Opções para o IntersectionObserver
     infiniteLoaderOptions() {
@@ -195,7 +203,15 @@ export default {
       // Retorna uma versão mais forte com opacidade maior
       return `rgba(${r}, ${g}, ${b}, 0.15)`;
     },
+    onDragStart() {
+      // Ativar flag de drag imediatamente para renderizar todos os itens
+      // Isso permite posicionamento preciso durante o drag
+      this.isDragging = true;
+    },
     onItemMoved(event) {
+      // Resetar flag de drag
+      this.isDragging = false;
+      
       if (!event || !event.item) return;
       
       const contactId = parseInt(event.item.getAttribute('data-contact-id'), 10);
@@ -204,13 +220,19 @@ export default {
       const sourceTitle = event.from.getAttribute('data-column-title');
       const targetTitle = event.to.getAttribute('data-column-title');
       
-      // Emitir evento para o componente pai processar
+      // Capturar índices exatos para posicionamento preciso
+      const oldIndex = event.oldIndex !== undefined ? event.oldIndex : null;
+      const newIndex = event.newIndex !== undefined ? event.newIndex : null;
+      
+      // Emitir evento para o componente pai processar com índices
       this.$emit('item-moved', {
         contactId,
         sourceColumnId,
         targetColumnId,
         sourceColumnTitle: sourceTitle,
         targetColumnTitle: targetTitle,
+        oldIndex, // Índice na coluna origem
+        newIndex, // Índice na coluna destino (posição exata)
         timestamp: Date.now()
       });
     },
@@ -379,6 +401,7 @@ export default {
   flex: 1;
   overflow-y: auto;
   padding: var(--space-small);
+  transition: background-color 0.2s ease;
   
   &::-webkit-scrollbar {
     width: 4px;
@@ -392,6 +415,15 @@ export default {
       background-color: var(--b-500);
     }
   }
+  
+  // Destacar coluna quando está recebendo um card durante drag
+  &.drag-over {
+    background-color: rgba(59, 130, 246, 0.05);
+    
+    .dark-mode & {
+      background-color: rgba(59, 130, 246, 0.1);
+    }
+  }
 }
 
 .column-items {
@@ -399,6 +431,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: var(--space-small);
+  position: relative;
 }
 
 .empty-column {
@@ -426,10 +459,11 @@ export default {
 }
 
 .ghost-card {
-  opacity: 0.3;
+  opacity: 0.2;
   background: var(--w-50);
   border: 2px dashed var(--w-500);
   transform: rotate(2deg);
+  transition: opacity 0.2s ease;
   
   .dark-mode & {
     background: var(--b-700);
@@ -440,15 +474,19 @@ export default {
 .chosen-card {
   cursor: grabbing !important;
   transform: scale(1.05);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  z-index: 1000;
 }
 
 .dragging-card {
-  opacity: 0.8;
-  transform: rotate(-2deg);
+  opacity: 0.9;
+  transform: rotate(-2deg) scale(1.02);
   cursor: grabbing !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  z-index: 1000;
 }
+
 
 .loading-more-indicator {
   display: flex;

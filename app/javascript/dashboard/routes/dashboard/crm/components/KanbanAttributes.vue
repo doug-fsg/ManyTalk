@@ -339,6 +339,7 @@ import { KanbanLogger } from '../utils/KanbanLogger';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import { frontendURL } from 'dashboard/helper/URLHelper';
 import { getRandomColor } from 'dashboard/helper/labelColor';
+import ContactAPI from 'dashboard/api/contacts';
 
 // Criar um barramento de eventos local se não existir um global
 const bus = new Vue();
@@ -654,7 +655,6 @@ export default {
         }
       },
     },
-
   },
   methods: {
     async initializeComponent() {
@@ -893,7 +893,7 @@ export default {
       );
     },
 
-    updateColumnsLocally(contact, newColumn) {
+    updateColumnsLocally(contact, newColumn, newIndex = null) {
       // Remover card da coluna atual
       this.columns.forEach(column => {
         const index = column.items.findIndex(item => item.id === contact.id);
@@ -902,10 +902,16 @@ export default {
         }
       });
 
-      // Adicionar card na nova coluna
+      // Adicionar card na nova coluna NA POSIÇÃO EXATA
       const targetColumn = this.columns.find(col => col.title === newColumn);
       if (targetColumn) {
-        targetColumn.items.push(contact);
+        // Se newIndex foi fornecido e é válido, inserir na posição específica
+        if (newIndex !== null && newIndex >= 0 && newIndex <= targetColumn.items.length) {
+          targetColumn.items.splice(newIndex, 0, contact);
+        } else {
+          // Fallback: adicionar no final (comportamento antigo para compatibilidade)
+          targetColumn.items.push(contact);
+        }
       }
     },
 
@@ -1331,7 +1337,29 @@ export default {
         // Usar uma cor consistente para cada valor
         const color = this.getStageColor(value);
         // Usar índice pré-calculado em vez de filtrar todos os contatos
-        const contacts = this.contactsByColumn[value] || [];
+        let contacts = this.contactsByColumn[value] || [];
+
+        // Ordenar por position quando disponível (vindo de contact_pipeline_positions)
+        // Se não tiver position, manter ordem atual (que já reflete ordem do drag)
+        contacts = [...contacts].sort((a, b) => {
+          const posA = this.getContactPosition(a.id, this.selectedAttribute.id, value);
+          const posB = this.getContactPosition(b.id, this.selectedAttribute.id, value);
+          
+          // Se ambos têm position, ordenar por position
+          if (posA !== null && posB !== null && posA !== undefined && posB !== undefined) {
+            return posA - posB;
+          }
+          
+          // Se apenas um tem position, ele vem primeiro
+          if (posA !== null && posA !== undefined) return -1;
+          if (posB !== null && posB !== undefined) return 1;
+          
+          // Se nenhum tem position, manter ordem atual (created_at ou ordem de inserção)
+          // Mas ordenar por created_at como fallback para consistência
+          const createdA = a.created_at || 0;
+          const createdB = b.created_at || 0;
+          return createdA - createdB;
+        });
 
         this.columns.push({
           id: `column-${index}`,
@@ -1389,7 +1417,7 @@ export default {
         return matches;
       });
     },
-    async onItemMoved({ contactId, sourceColumnTitle, targetColumnTitle }) {
+    async onItemMoved({ contactId, sourceColumnTitle, targetColumnTitle, oldIndex, newIndex }) {
       // Verificar se o contato existe
       const contact = this.contacts.find(c => c.id === contactId);
       if (!contact) {
@@ -1397,80 +1425,85 @@ export default {
         return;
       }
 
-      try {
-        const now = new Date().toISOString();
-        let additionalAttributes = contact.additional_attributes || {};
+      // ============================================
+      // FASE 1: ATUALIZAÇÃO VISUAL IMEDIATA (UI)
+      // ============================================
+      // Atualizar a UI PRIMEIRO - move o card visualmente na posição exata
+      this.updateColumnsLocally(contact, targetColumnTitle, newIndex);
 
-        // Criar uma cópia profunda para evitar referências
-        additionalAttributes = JSON.parse(JSON.stringify(additionalAttributes));
+      // Atualizar store localmente (apenas para UI - não persiste)
+      const minimalUpdate = {
+        ...contact,
+        custom_attributes: {
+          ...contact.custom_attributes,
+          [this.selectedAttribute.attribute_key]: targetColumnTitle,
+        },
+      };
+      this.$store.commit('contacts/EDIT_CONTACT', minimalUpdate);
 
-        // Garantir que a estrutura base existe
-        if (!additionalAttributes.kanban) {
-          additionalAttributes.kanban = {};
-        }
-
-        if (!additionalAttributes.kanban[this.selectedAttribute.id]) {
-          additionalAttributes.kanban[this.selectedAttribute.id] = {};
-        }
-
-        // Garantir que stage_tracking existe
-        if (
-          !additionalAttributes.kanban[this.selectedAttribute.id].stage_tracking
-        ) {
-          additionalAttributes.kanban[
-            this.selectedAttribute.id
-          ].stage_tracking = {};
-        }
-
-        // Atualizar o estágio atual
-        additionalAttributes.kanban[
-          this.selectedAttribute.id
-        ].stage_tracking.current = {
-          stage_id: targetColumnTitle,
-          entered_at: now,
-        };
-
-        // Preparar os dados para atualização
-        const contactParams = {
-          id: contactId,
-          custom_attributes: {
-            [this.selectedAttribute.attribute_key]: targetColumnTitle,
-          },
-          additional_attributes: additionalAttributes,
-        };
-
-        // Atualização otimista: atualizar o contato localmente antes da API
-        const updatedContactLocal = {
-          ...contact,
-          custom_attributes: {
-            ...contact.custom_attributes,
-            [this.selectedAttribute.attribute_key]: targetColumnTitle,
-          },
-          additional_attributes: additionalAttributes,
-        };
-        
-        // Atualizar no store local imediatamente para atualização otimista
-        this.$store.commit('contacts/EDIT_CONTACT', updatedContactLocal);
-        
-        // Reconstruir colunas imediatamente baseado no estado atualizado do store
-        // Isso garante que a UI reflita a mudança otimista
-        this.$nextTick(() => {
-          this.setupColumns();
+      // ============================================
+      // FASE 2: ATUALIZAR APENAS contact_pipeline_positions
+      // ============================================
+      // NÃO atualizar tabela contacts - apenas contact_pipeline_positions
+      // Isso é muito mais rápido e não bloqueia a UI
+      ContactAPI.updatePipelinePosition(
+        contactId,
+        this.selectedAttribute.id,
+        targetColumnTitle,
+        newIndex,
+        new Date().toISOString()
+      )
+        .then((response) => {
+          // Atualizar o contato no store com os dados de pipeline_positions retornados
+          const updatedContact = this.contacts.find(c => c.id === contactId);
+          if (updatedContact && response.data) {
+            // Atualizar ou criar pipeline_positions no contato
+            if (!updatedContact.pipeline_positions) {
+              this.$set(updatedContact, 'pipeline_positions', []);
+            }
+            
+            // Encontrar ou criar a entrada de pipeline_position
+            const positionIndex = updatedContact.pipeline_positions.findIndex(
+              p => p.pipeline_id === this.selectedAttribute.id && p.stage_id === targetColumnTitle
+            );
+            
+            const positionData = {
+              pipeline_id: response.data.pipeline_id,
+              stage_id: response.data.stage_id,
+              position: response.data.position,
+              entered_at: response.data.entered_at,
+            };
+            
+            if (positionIndex >= 0) {
+              // Atualizar posição existente
+              this.$set(updatedContact.pipeline_positions, positionIndex, positionData);
+            } else {
+              // Adicionar nova posição
+              updatedContact.pipeline_positions.push(positionData);
+            }
+            
+            // Forçar reatividade do Vue
+            this.$forceUpdate();
+          }
+          
+          // Mostrar notificação de sucesso após confirmação do servidor
+          this.safeShowNotification('success', this.$t('KANBAN.SUCCESS.CARD_MOVED'));
+          
+          // Reconstruir colunas após confirmação para garantir sincronização final
+          // Usar nextTick para garantir que o Vue processou as mudanças
+          this.$nextTick(() => {
+            clearTimeout(this.setupColumnsTimeout);
+            this.setupColumnsTimeout = setTimeout(() => {
+              this.setupColumns();
+            }, 100);
+          });
+        })
+        .catch(error => {
+          // Se a API falhar, reverter a mudança local
+          console.error('[Kanban] Error updating pipeline position:', error);
+          this.revertLocalUpdate(contact, sourceColumnTitle);
+          this.safeShowNotification('error', this.$t('KANBAN.ERRORS.UPDATE_FAILED'));
         });
-
-        // Atualizar o contato no servidor
-        await this.$store.dispatch('contacts/update', contactParams);
-        
-        // Mostrar notificação de sucesso
-        this.safeShowNotification('success', this.$t('KANBAN.SUCCESS.CARD_MOVED'));
-      } catch (error) {
-        console.error('[Kanban] Error updating contact:', error);
-        
-        // Reverter a mudança local em caso de erro
-        this.revertLocalUpdate(contact, sourceColumnTitle);
-
-        this.safeShowNotification('error', this.$t('KANBAN.ERRORS.UPDATE_FAILED'));
-      }
     },
     openContact(contactId) {
       // Abre a página de detalhes do contato
@@ -1666,17 +1699,28 @@ export default {
         return;
       }
 
-      // Verificar se o card já está na coluna correta
-      const contact = this.contacts.find(c => c.id === payload.id);
-      if (!contact) {
+      // Buscar o contato atualizado do store (pode ter sido atualizado pelo ActionCable)
+      const updatedContact = this.contacts.find(c => c.id === payload.id);
+      if (!updatedContact) {
+        // Se o contato não existe no store ainda, pode ser novo - reconstruir colunas
+        clearTimeout(this.setupColumnsTimeout);
+        this.setupColumnsTimeout = setTimeout(() => {
+          this.setupColumns();
+        }, 200);
         return;
       }
 
-      // Encontrar a coluna atual do contato
+      // Encontrar a coluna atual do contato nas colunas existentes
       const currentColumn = this.getCurrentColumn(payload.id);
 
-      // Se o card já está na coluna correta, não precisa atualizar
+      // Se o card já está na coluna correta, ainda assim reconstruir para garantir sincronização
+      // (pode haver mudanças em additional_attributes, deal_value, etc)
       if (currentColumn === attributeValue) {
+        // Mesmo na coluna correta, reconstruir para sincronizar dados adicionais
+        clearTimeout(this.setupColumnsTimeout);
+        this.setupColumnsTimeout = setTimeout(() => {
+          this.setupColumns();
+        }, 200);
         return;
       }
 
@@ -1691,10 +1735,15 @@ export default {
         }
       );
 
-      // Aguardar um pouco para evitar concorrência com outras atualizações
-      setTimeout(() => {
-        this.updateColumnsLocally(contact, attributeValue);
-      }, 300);
+      // Atualizar localmente e reconstruir colunas para refletir mudanças do ActionCable
+      // Usar debounce para evitar múltiplas reconstruções
+      clearTimeout(this.setupColumnsTimeout);
+      this.setupColumnsTimeout = setTimeout(() => {
+        this.updateColumnsLocally(updatedContact, attributeValue);
+        // Reconstruir colunas para garantir sincronização completa
+        // Isso é necessário quando a atualização vem do ActionCable (outro usuário ou confirmação do servidor)
+        this.setupColumns();
+      }, 100);
     },
     // Helper para lidar com valores de atributos potencialmente ausentes
     getAttributeValue(customAttributes, attributeKey) {
@@ -1702,6 +1751,36 @@ export default {
         return null;
       }
       return customAttributes[attributeKey] || null;
+    },
+    // Helper para obter position do contato no pipeline
+    getContactPosition(contactId, pipelineId, stageId) {
+      const contact = this.contacts.find(c => c.id === contactId);
+      if (!contact) {
+        return null;
+      }
+      
+      // Se não tem pipeline_positions, retornar null
+      if (!contact.pipeline_positions || !Array.isArray(contact.pipeline_positions)) {
+        return null;
+      }
+      
+      // Converter pipelineId para número se necessário (pode vir como string)
+      const pipelineIdNum = typeof pipelineId === 'string' ? parseInt(pipelineId, 10) : pipelineId;
+      
+      const position = contact.pipeline_positions.find(
+        p => {
+          const pPipelineId = typeof p.pipeline_id === 'string' ? parseInt(p.pipeline_id, 10) : p.pipeline_id;
+          return pPipelineId === pipelineIdNum && p.stage_id === stageId;
+        }
+      );
+      
+      if (!position) {
+        return null;
+      }
+      
+      // Retornar position como número
+      const pos = typeof position.position === 'string' ? parseInt(position.position, 10) : position.position;
+      return pos !== null && pos !== undefined ? pos : null;
     },
     // Versão simplificada da trava de sincronização
     activateSyncLock() {
