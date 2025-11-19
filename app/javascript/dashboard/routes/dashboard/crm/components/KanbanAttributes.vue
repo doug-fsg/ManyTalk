@@ -221,6 +221,7 @@
             @open-lost-modal="handleOpenLostModal"
             @undo-win-lost="handleUndoWinLost"
             @add-contact-to-stage="handleAddContactToStage"
+            @open-card-modal="handleOpenCardModal"
           />
         </draggable>
       </div>
@@ -316,6 +317,20 @@
       @close="handleCloseAddContactModal"
       @contact-added="handleContactAdded"
     />
+
+    <!-- Kanban Card Detail Modal -->
+    <kanban-card-modal
+      v-if="showCardModal"
+      :show="showCardModal"
+      :contact="selectedCardContact"
+      :pipeline-id="selectedAttribute ? selectedAttribute.id : null"
+      :current-stage="getContactCurrentStage(selectedCardContact)"
+      :stage-color="getStageColor(getContactCurrentStage(selectedCardContact))"
+      :available-stages="selectedAttribute ? selectedAttribute.attribute_values || [] : []"
+      @close="handleCloseCardModal"
+      @value-updated="handleDealValueUpdate"
+      @stage-changed="handleStageChangeFromModal"
+    />
   </div>
 </template>
 
@@ -332,6 +347,7 @@ import EditAttribute from 'dashboard/routes/dashboard/settings/attributes/EditAt
 import CreateAttributeModal from './CreateAttributeModal.vue';
 import WinLostModal from './WinLostModal.vue';
 import AddContactToStageModal from './AddContactToStageModal.vue';
+import KanbanCardModal from './KanbanCardModal.vue';
 import { KanbanOperationManager } from '../utils/KanbanOperationManager';
 import { KanbanAttributeService } from '../utils/KanbanAttributeService';
 import { PipelineCacheManager } from '../services/PipelineCacheManager';
@@ -340,6 +356,7 @@ import { BUS_EVENTS } from 'shared/constants/busEvents';
 import { frontendURL } from 'dashboard/helper/URLHelper';
 import { getRandomColor } from 'dashboard/helper/labelColor';
 import ContactAPI from 'dashboard/api/contacts';
+import { LOCAL_STORAGE_KEYS } from 'dashboard/constants/localStorage';
 
 // Criar um barramento de eventos local se não existir um global
 const bus = new Vue();
@@ -355,6 +372,7 @@ export default {
     CreateAttributeModal,
     WinLostModal,
     AddContactToStageModal,
+    KanbanCardModal,
   },
   data() {
     return {
@@ -419,6 +437,9 @@ export default {
         dateFrom: null,
         dateTo: null,
       },
+      // Modal de detalhes do card
+      showCardModal: false,
+      selectedCardContact: {},
     };
   },
   created() {
@@ -679,6 +700,7 @@ export default {
           // Always select the first pipeline if none is selected
           if (!this.selectedAttribute) {
             this.selectedAttribute = this.listTypeAttributes[0];
+            this.saveSelectedPipeline(this.selectedAttribute.id);
           }
           await this.fetchContacts();
           this.setupColumns();
@@ -1081,6 +1103,22 @@ export default {
 
         // Forçar atualização se houver atributos válidos
         if (this.listTypeAttributes.length > 0 && !this.selectedAttribute) {
+          // Tentar restaurar pipeline salvo
+          const savedPipelineId = this.getSavedPipelineId();
+          if (savedPipelineId) {
+            const savedAttribute = this.listTypeAttributes.find(
+              attr => attr.id === parseInt(savedPipelineId, 10)
+            );
+            if (savedAttribute) {
+              this.selectedAttribute = savedAttribute;
+              this.fetchContacts();
+              return;
+            } else {
+              // Pipeline salvo não existe mais, limpar do localStorage
+              this.clearSavedPipeline();
+            }
+          }
+          // Usar defaultAttribute como fallback
           this.selectedAttribute = this.defaultAttribute;
           this.fetchContacts();
         }
@@ -1285,6 +1323,7 @@ export default {
     },
     selectAttribute(attribute) {
       this.selectedAttribute = attribute;
+      this.saveSelectedPipeline(attribute.id);
     },
     setupColumns() {
       if (!this.selectedAttribute || !this.selectedAttribute.attribute_values) {
@@ -1549,6 +1588,7 @@ export default {
       );
       if (newAttribute) {
         this.selectedAttribute = newAttribute;
+        this.saveSelectedPipeline(newAttribute.id);
         await this.fetchContacts();
         this.setupColumns();
       }
@@ -1917,8 +1957,32 @@ export default {
     togglePipelineDropdown() {
       this.showPipelineDropdown = !this.showPipelineDropdown;
     },
+    // Métodos para persistência do pipeline selecionado
+    saveSelectedPipeline(pipelineId) {
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEYS.KANBAN_SELECTED_PIPELINE, pipelineId.toString());
+      } catch (error) {
+        console.warn('[Kanban] Erro ao salvar pipeline no localStorage:', error);
+      }
+    },
+    getSavedPipelineId() {
+      try {
+        return localStorage.getItem(LOCAL_STORAGE_KEYS.KANBAN_SELECTED_PIPELINE);
+      } catch (error) {
+        console.warn('[Kanban] Erro ao recuperar pipeline do localStorage:', error);
+        return null;
+      }
+    },
+    clearSavedPipeline() {
+      try {
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.KANBAN_SELECTED_PIPELINE);
+      } catch (error) {
+        console.warn('[Kanban] Erro ao limpar pipeline do localStorage:', error);
+      }
+    },
     selectPipeline(pipeline) {
       this.selectedAttribute = pipeline;
+      this.saveSelectedPipeline(pipeline.id);
       this.showPipelineDropdown = false;
       this.fetchContacts();
     },
@@ -1974,7 +2038,13 @@ export default {
           'attributes/delete',
           this.selectedAttribute.id
         );
+        // Limpar pipeline salvo se estiver deletando o pipeline atual
+        const deletedPipelineId = this.selectedAttribute.id;
         this.selectedAttribute = null;
+        const savedPipelineId = this.getSavedPipelineId();
+        if (savedPipelineId && parseInt(savedPipelineId, 10) === deletedPipelineId) {
+          this.clearSavedPipeline();
+        }
         await this.fetchAttributes();
 
         this.safeShowNotification(
@@ -2131,6 +2201,14 @@ export default {
         // Atualizar no store local imediatamente
         this.$store.commit('contacts/EDIT_CONTACT', updatedContactLocal);
         
+        // Se o modal estiver aberto para este contato, atualizar o selectedCardContact também
+        if (this.showCardModal && this.selectedCardContact.id === contactId) {
+          this.selectedCardContact = {
+            ...this.selectedCardContact,
+            additional_attributes: additionalAttributes,
+          };
+        }
+        
         // Reconstruir colunas para refletir a mudança (caso afete a ordenação)
         this.$nextTick(() => {
           this.setupColumns();
@@ -2152,6 +2230,11 @@ export default {
         
         // Reverter a atualização local em caso de erro
         this.$store.commit('contacts/EDIT_CONTACT', contact);
+        
+        // Reverter também o selectedCardContact se o modal estiver aberto
+        if (this.showCardModal && this.selectedCardContact.id === contactId) {
+          this.selectedCardContact = contact;
+        }
 
         this.safeShowNotification(
           'error',
@@ -2501,6 +2584,29 @@ export default {
         );
       }
     },
+    handleOpenCardModal(contact) {
+      this.selectedCardContact = contact;
+      this.showCardModal = true;
+    },
+    handleCloseCardModal() {
+      this.showCardModal = false;
+      this.selectedCardContact = {};
+    },
+    getContactCurrentStage(contact) {
+      if (!contact || !this.selectedAttribute) return '';
+      const attrKey = this.selectedAttribute.attribute_key;
+      return contact.custom_attributes?.[attrKey] || '';
+    },
+    async handleStageChangeFromModal({ contactId, newStage, oldStage }) {
+      const contact = this.contacts.find(c => c.id === contactId);
+      if (!contact || !this.selectedAttribute) return;
+
+      // Criar operationId para tracking
+      const operationId = this.operationManager?.registerOperation(contactId, newStage) || `stage-change-${Date.now()}`;
+
+      // Usar o método existente updateCardPosition
+      await this.updateCardPosition(contact, newStage, operationId);
+    },
     async handleUndoWinLost({ contactId, additionalAttributes }) {
       try {
         // Register operation for loading state
@@ -2666,6 +2772,8 @@ export default {
 .kanban-columns-container {
   flex: 1;
   overflow-x: auto;
+  overflow-y: hidden;
+  height: 100%;
   padding: var(--space-small);
   @apply bg-slate-50 dark:bg-slate-900;
 }
@@ -2674,7 +2782,8 @@ export default {
   display: inline-flex;
   gap: var(--space-normal);
   padding: var(--space-small);
-  min-height: 100%;
+  height: 100%;
+  align-items: stretch;
 }
 
 .filter-modal {
@@ -2928,33 +3037,6 @@ export default {
         color: var(--s-100);
       }
     }
-  }
-}
-
-.loading-more-indicator {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: var(--space-normal);
-  color: var(--s-700);
-
-  .spinner {
-    width: 20px;
-    height: 20px;
-    margin-right: var(--space-small);
-    border: 2px solid var(--s-200);
-    border-top-color: var(--w-500);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
   }
 }
 

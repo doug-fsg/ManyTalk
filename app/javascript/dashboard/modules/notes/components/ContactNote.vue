@@ -54,6 +54,9 @@
 import Thumbnail from 'dashboard/components/widgets/Thumbnail.vue';
 import messageFormatterMixin from 'shared/mixins/messageFormatterMixin';
 import { dynamicTime } from 'shared/helpers/timeHelper';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { fromUnixTime } from 'date-fns';
 
 export default {
   components: {
@@ -87,7 +90,20 @@ export default {
   },
   computed: {
     readableTime() {
-      return dynamicTime(this.createdAt);
+      // Usar locale pt-BR para traduzir corretamente
+      const currentLocale = this.$i18n.locale || 'pt_BR';
+      const locale = currentLocale === 'pt_BR' || currentLocale === 'pt' ? ptBR : undefined;
+      
+      try {
+        const unixTime = fromUnixTime(this.createdAt);
+        return formatDistanceToNow(unixTime, { 
+          addSuffix: true,
+          locale: locale
+        });
+      } catch (e) {
+        // Fallback para dynamicTime se houver erro
+        return dynamicTime(this.createdAt);
+      }
     },
     noteAuthor() {
       return this.user || {};

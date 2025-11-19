@@ -6,4 +6,5 @@ export const LOCAL_STORAGE_KEYS = {
   DISMISSED_LABEL_SUGGESTIONS: 'labelSuggestionsDismissed',
   MESSAGE_REPLY_TO: 'messageReplyTo',
   DISMISSED_ANNOUNCEMENTS: 'dismissedAnnouncements',
+  KANBAN_SELECTED_PIPELINE: 'kanban_selected_pipeline',
 };

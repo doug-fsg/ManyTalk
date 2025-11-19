@@ -10,7 +10,7 @@
     }"
     :data-contact-id="contact.id"
     :data-contact-name="contact.name"
-    @click="toggleExpand"
+    @click="openCardModal"
   >
     <div class="mb-2 flex items-start justify-between relative">
       <span class="font-medium block mb-0.5 flex-grow pr-[60px] text-slate-900 dark:text-white">{{ contact.name }}</span>
@@ -647,6 +647,9 @@ export default {
     },
     toggleExpand() {
       this.isExpanded = !this.isExpanded;
+    },
+    openCardModal() {
+      this.$emit('open-card-modal', this.contact);
     },
     undoWinLostStatus() {
       // Remove the win_lost data from the contact

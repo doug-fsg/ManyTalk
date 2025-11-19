@@ -66,6 +66,7 @@
           @open-win-modal="$emit('open-win-modal', $event)"
           @open-lost-modal="$emit('open-lost-modal', $event)"
           @undo-win-lost="$emit('undo-win-lost', $event)"
+          @open-card-modal="$emit('open-card-modal', $event)"
         />
         <div v-if="!columnItems.length" class="empty-column">
           <p>{{ $t('KANBAN.NO_CONTACTS') }}</p>
@@ -79,8 +80,7 @@
       />
       <!-- Indicador de carregamento -->
       <div v-if="isLoadingMore" class="loading-more-indicator">
-        <span class="spinner" />
-        <span>{{ $t('KANBAN.LOADING_MORE') }}</span>
+        <spinner size="small" />
       </div>
     </div>
   </div>
@@ -90,6 +90,7 @@
 import draggable from 'vuedraggable';
 import KanbanCard from './KanbanCard.vue';
 import IntersectionObserver from 'dashboard/components/IntersectionObserver.vue';
+import Spinner from 'shared/components/Spinner.vue';
 
 export default {
   name: 'KanbanColumn',
@@ -97,6 +98,7 @@ export default {
     draggable,
     KanbanCard,
     IntersectionObserver,
+    Spinner,
   },
   props: {
     column: {
@@ -308,6 +310,7 @@ export default {
   flex: 0 0 320px;
   display: flex;
   flex-direction: column;
+  height: 100%;
   border-radius: var(--border-radius-large);
   box-shadow: var(--shadow-small);
   border: 1px solid var(--s-100);
@@ -399,6 +402,7 @@ export default {
 
 .column-content {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: var(--space-small);
   transition: background-color 0.2s ease;
@@ -493,35 +497,5 @@ export default {
   align-items: center;
   justify-content: center;
   padding: var(--space-small);
-  color: var(--s-500);
-  font-size: var(--font-size-small);
-  gap: var(--space-smaller);
-  
-  .dark-mode & {
-    color: var(--s-400);
-  }
-  
-  .spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--s-200);
-    border-top-color: var(--w-500);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    
-    .dark-mode & {
-      border-color: var(--b-500);
-      border-top-color: var(--w-400);
-    }
-  }
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
 }
 </style> 
