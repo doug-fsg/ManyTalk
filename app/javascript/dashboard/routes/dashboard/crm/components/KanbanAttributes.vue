@@ -33,59 +33,14 @@
       </div>
     </div>
 
-    <div
-      v-if="
-        !selectedAttribute && attributes.length && listTypeAttributes.length
-      "
-      class="kanban-select-attribute"
-    >
-      <div class="select-attribute-content">
-        <h2>{{ $t('KANBAN.SELECT_ATTRIBUTE') }}</h2>
-        <p>{{ $t('KANBAN.SELECT_ATTRIBUTE_DESCRIPTION') }}</p>
-
-        <div class="attribute-list">
-          <woot-button
-            v-for="attribute in listTypeAttributes"
-            :key="attribute.id"
-            variant="smooth"
-            size="large"
-            class="attribute-button"
-            @click="selectAttribute(attribute)"
-          >
-            {{ attribute.attribute_display_name }}
-          </woot-button>
-        </div>
-      </div>
-    </div>
-
-    <div
-      v-if="
-        !selectedAttribute && attributes.length && !listTypeAttributes.length
-      "
-      class="kanban-select-attribute"
-    >
-      <div class="select-attribute-content">
-        <div class="empty-state-icon">
-          <fluent-icon icon="kanban" size="64" />
-        </div>
-        <h2>{{ $t('KANBAN.NO_KANBAN_ATTRIBUTES') }}</h2>
-        <p>{{ $t('KANBAN.CREATE_KANBAN_ATTRIBUTE_DESCRIPTION') }}</p>
-        
-        <div class="action-buttons">
-          <woot-button
-            size="large"
-            variant="primary"
-            icon="add"
-            @click="openCreateAttributeModal"
-          >
-            {{ $t('KANBAN.CREATE_NEW_ATTRIBUTE') }}
-          </woot-button>
-        </div>
-      </div>
-    </div>
+    <!-- Empty state quando não há pipelines kanban -->
+    <kanban-empty-state
+      v-if="!listTypeAttributes.length && !isLoadingInitialData"
+      @create-pipeline="openCreateAttributeModal"
+    />
 
     <!-- Loading state para o carregamento de contatos -->
-    <woot-loading-state v-if="isLoadingContacts" :message="loadingMessage" />
+    <woot-loading-state v-else-if="isLoadingContacts && selectedAttribute" :message="loadingMessage" />
 
     <!-- Dashboard View -->
     <kanban-dashboard
@@ -210,6 +165,7 @@
             :column="column"
             :pipeline-id="selectedAttribute.id"
             :operation-manager="operationManager"
+            :column-stats="columnStats[column.title]"
             @item-moved="onItemMoved"
             @view-contact="openContact"
             @remove-card="removeCardFromKanban"
@@ -348,6 +304,7 @@ import CreateAttributeModal from './CreateAttributeModal.vue';
 import WinLostModal from './WinLostModal.vue';
 import AddContactToStageModal from './AddContactToStageModal.vue';
 import KanbanCardModal from './KanbanCardModal.vue';
+import KanbanEmptyState from './KanbanEmptyState.vue';
 import { KanbanOperationManager } from '../utils/KanbanOperationManager';
 import { KanbanAttributeService } from '../utils/KanbanAttributeService';
 import { PipelineCacheManager } from '../services/PipelineCacheManager';
@@ -383,6 +340,7 @@ export default {
     WinLostModal,
     AddContactToStageModal,
     KanbanCardModal,
+    KanbanEmptyState,
   },
   data() {
     return {
@@ -432,6 +390,8 @@ export default {
       maxContactsToLoad: 500, // Limite máximo de contatos (evita sobrecarga)
       contactsLoadedCount: 0,
       hasMoreContacts: false,
+      // Estatísticas agregadas por coluna (totais reais do backend)
+      columnStats: {}, // Formato: { [stageId]: { count: number, total_value: number } }
       showWinLostModal: false,
       winLostModalContact: {},
       winLostModalStatus: 'won',
@@ -475,11 +435,7 @@ export default {
 
     this.$nextTick(() => {
       this.updateTranslations();
-      this.migrateContactsStageTracking();
     });
-
-    // Migrar dados para nova estrutura
-    this.migrateToGroupedStructure();
   },
   beforeDestroy() {
     clearTimeout(this.updateDebounceTimeout);
@@ -728,6 +684,7 @@ export default {
           await this.fetchContacts();
           this.setupColumns();
         }
+        // Se não há pipelines kanban, a tela vazia será mostrada automaticamente
       } catch (error) {
         this.safeShowNotification(
           'error',
@@ -1169,6 +1126,9 @@ export default {
         // Carregar todos os contatos
         await this.loadAllContacts();
 
+        // Carregar estatísticas agregadas (totais reais) do backend
+        await this.fetchColumnStats();
+
         // Configurar as colunas apenas depois que todos os contatos forem carregados
         this.setupColumns();
       } catch (error) {
@@ -1346,6 +1306,40 @@ export default {
     selectAttribute(attribute) {
       this.selectedAttribute = attribute;
       this.saveSelectedPipeline(attribute.id);
+    },
+    async fetchColumnStats() {
+      if (!this.selectedAttribute) return;
+
+      try {
+        const response = await ContactAPI.getPipelineStats(this.selectedAttribute.id);
+        
+        if (response.data && response.data.stages) {
+          // Converter array de stages em objeto indexado por stage_id
+          const statsMap = {};
+          response.data.stages.forEach(stage => {
+            statsMap[stage.stage_id] = {
+              count: stage.count,
+              total_value: stage.total_value || 0
+            };
+          });
+          
+          this.columnStats = statsMap;
+          
+          this.logger.log('info', 'Estatísticas de colunas carregadas', {
+            pipelineId: this.selectedAttribute.id,
+            stats: statsMap
+          });
+        }
+      } catch (error) {
+        // Não mostrar erro ao usuário, apenas logar
+        // Fallback para cálculo local se a API falhar
+        this.logger.log('warn', 'Erro ao carregar estatísticas de colunas, usando cálculo local', {
+          error: error.message,
+          pipelineId: this.selectedAttribute.id
+        });
+        // Limpar stats para forçar uso do fallback
+        this.columnStats = {};
+      }
     },
     setupColumns() {
       if (!this.selectedAttribute || !this.selectedAttribute.attribute_values) {
@@ -1547,6 +1541,8 @@ export default {
             clearTimeout(this.setupColumnsTimeout);
             this.setupColumnsTimeout = setTimeout(() => {
               this.setupColumns();
+              // Atualizar stats após mover contato para refletir totais corretos
+              this.fetchColumnStats();
             }, 100);
           });
         })
@@ -2450,137 +2446,6 @@ export default {
       const days = Math.floor(timeDiff / 86400000);
       
       return `${days}d`;
-    },
-    migrateToGroupedStructure() {
-      // Verificar se há contatos que precisam de migração
-      if (!this.contacts || !this.contacts.length) return;
-
-      const contactsToMigrate = this.contacts.filter(contact => {
-        const additionalAttributes = contact.additional_attributes || {};
-        // Verificar se existe a estrutura antiga deal_values
-        return additionalAttributes.deal_values && !additionalAttributes.kanban;
-      });
-
-      if (contactsToMigrate.length === 0) return;
-
-      this.logger.log('info', 'Iniciando migração de estrutura', {
-        contactCount: contactsToMigrate.length,
-      });
-
-      // Migrar cada contato
-      contactsToMigrate.forEach(async contact => {
-        try {
-          const additionalAttributes = contact.additional_attributes || {};
-          const dealValues = additionalAttributes.deal_values || {};
-
-          // Criar nova estrutura
-          const kanban = {};
-
-          // Para cada pipeline id em deal_values
-          Object.keys(dealValues).forEach(pipelineId => {
-            const value = dealValues[pipelineId];
-
-            kanban[pipelineId] = {
-              deal: {
-                value,
-              },
-              stage_tracking: {
-                current: {
-                  stage_id:
-                    contact.custom_attributes?.[
-                      this.getAttributeKeyById(pipelineId)
-                    ],
-                  entered_at: new Date().toISOString(),
-                },
-              },
-            };
-          });
-
-          // Atualizar contato com nova estrutura
-          const updatedAdditionalAttributes = {
-            ...additionalAttributes,
-            kanban,
-          };
-
-          // Remover estrutura antiga
-          delete updatedAdditionalAttributes.deal_values;
-
-          await this.$store.dispatch('contacts/update', {
-            id: contact.id,
-            additional_attributes: updatedAdditionalAttributes,
-          });
-
-          this.logger.log('info', 'Contato migrado com sucesso', {
-            contactId: contact.id,
-          });
-        } catch (error) {
-          this.logger.log('error', 'Erro ao migrar contato', {
-            contactId: contact.id,
-            error,
-          });
-        }
-      });
-    },
-
-    getAttributeKeyById(attributeId) {
-      if (!this.attributes || !this.attributes.length) return null;
-
-      const attribute = this.attributes.find(
-        attr => attr.id === parseInt(attributeId, 10)
-      );
-      return attribute ? attribute.attribute_key : null;
-    },
-    async migrateContactsStageTracking() {
-      if (!this.selectedAttribute || !this.contacts) return;
-
-      const contactsToMigrate = this.contacts.filter(contact => {
-        const additionalAttributes = contact.additional_attributes || {};
-        const kanban = additionalAttributes.kanban || {};
-        const pipelineData = kanban[this.selectedAttribute.id];
-
-        return !pipelineData?.stage_tracking?.current;
-      });
-
-      // Migrar contatos em paralelo
-      const migrateContact = async contact => {
-        try {
-          const now = new Date().toISOString();
-          const currentStage =
-            contact.custom_attributes[this.selectedAttribute.attribute_key];
-
-          let additionalAttributes = contact.additional_attributes || {};
-          additionalAttributes = JSON.parse(
-            JSON.stringify(additionalAttributes)
-          );
-
-          if (!additionalAttributes.kanban) {
-            additionalAttributes.kanban = {};
-          }
-
-          if (!additionalAttributes.kanban[this.selectedAttribute.id]) {
-            additionalAttributes.kanban[this.selectedAttribute.id] = {};
-          }
-
-          additionalAttributes.kanban[
-            this.selectedAttribute.id
-          ].stage_tracking = {
-            current: {
-              stage_id: currentStage || this.columns[0]?.title,
-              entered_at: now,
-            },
-          };
-
-          await this.$store.dispatch('contacts/update', {
-            id: contact.id,
-            additional_attributes: additionalAttributes,
-          });
-        } catch (error) {
-          // Tratar erro silenciosamente para não interromper o processo
-        }
-      };
-
-      // Executar migrações em paralelo
-      await Promise.all(contactsToMigrate.map(migrateContact));
     },
     handleKanbanOperation(contact, newColumnValue, operation) {
       const operationId = `${operation}-${contact.id}-${Date.now()}`;

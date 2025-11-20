@@ -12,7 +12,7 @@
       @show-add-label-popup="showAddLabelPopup"
       @open-announcements-modal="openAnnouncementsModal"
     />
-    <section class="flex flex-1 h-full min-h-0 px-0 overflow-hidden">
+    <section class="flex flex-1 h-full min-h-0 px-0 overflow-hidden main-content-section">
       <router-view />
       <command-bar />
       <account-selector
@@ -186,3 +186,16 @@ export default {
   },
 };
 </script>
+
+<style lang="scss" scoped>
+.main-content-section {
+  background-color: var(--s-25);
+}
+</style>
+
+<style lang="scss">
+// Aplicar background escuro quando o body estiver em dark mode
+body.dark .main-content-section {
+  background-color: var(--b-800);
+}
+</style>

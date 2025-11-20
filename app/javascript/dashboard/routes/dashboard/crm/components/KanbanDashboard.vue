@@ -350,19 +350,24 @@ export default {
       const cards = [];
 
       this.contacts.forEach(contact => {
-        const additionalAttributes = contact.additional_attributes || {};
-        const kanban = additionalAttributes.kanban || {};
-        const pipelineData = kanban[this.pipelineId] || {};
-        const stageTracking = pipelineData.stage_tracking?.current;
-        const winLostStatus = pipelineData.win_lost?.status;
+        // Usar pipeline_positions em vez de additional_attributes.kanban
+        const position = contact.pipeline_positions?.find(
+          p => p.pipeline_id === this.pipelineId
+        );
+        
+        if (!position) return;
+
+        const winLostData = position.metadata?.win_lost || {};
+        const winLostStatus = winLostData.status;
 
         // Apenas cards abertos
         if (winLostStatus) return;
 
-        if (stageTracking?.entered_at) {
-          const enteredAt = new Date(stageTracking.entered_at).getTime();
+        const enteredAt = position.entered_at;
+        if (enteredAt) {
+          const enteredAtTime = new Date(enteredAt).getTime();
           const now = Date.now();
-          const timeDiff = now - enteredAt;
+          const timeDiff = now - enteredAtTime;
           const days = Math.floor(timeDiff / 86400000);
 
           cards.push({
@@ -371,7 +376,7 @@ export default {
             stage: this.getContactStage(contact),
             timeInStage: `${days}d`,
             timeDiffMs: timeDiff,
-            value: parseFloat(pipelineData.deal?.value || 0),
+            value: parseFloat(position.deal_value || 0),
           });
         }
       });

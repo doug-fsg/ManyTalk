@@ -156,6 +156,8 @@ Rails.application.routes.draw do
           end
           # Reorder pipeline positions (collection route - não precisa de contact_id)
           post 'contacts/pipeline_positions/reorder', to: 'contacts/pipeline_positions#reorder'
+          # Stats de pipeline positions (collection route - retorna totais agregados por stage)
+          get 'contacts/pipeline_positions/:pipeline_id/stats', to: 'contacts/pipeline_positions#stats'
           resources :csat_survey_responses, only: [:index] do
             collection do
               get :metrics

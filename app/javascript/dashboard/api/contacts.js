@@ -116,6 +116,11 @@ class ContactAPI extends ApiClient {
       positions: positions,
     });
   }
+
+  // Obter estatísticas agregadas por stage (totais reais)
+  getPipelineStats(pipelineId) {
+    return axios.get(`${this.url}/pipeline_positions/${pipelineId}/stats`);
+  }
 }
 
 export default new ContactAPI();

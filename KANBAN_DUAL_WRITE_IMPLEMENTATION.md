@@ -53,12 +53,15 @@ A migração completa do Kanban para usar **exclusivamente** a tabela `contact_p
 - `app/javascript/dashboard/routes/dashboard/crm/components/KanbanCardModal.vue` - Modal de detalhes
 - `app/javascript/dashboard/routes/dashboard/crm/components/AddContactToStageModal.vue` - Modal de adição
 - `app/javascript/dashboard/routes/dashboard/crm/components/KanbanDashboard.vue` - Dashboard de estatísticas
+- `app/javascript/dashboard/routes/dashboard/crm/components/KanbanColumn.vue` - Colunas do kanban
 - `app/javascript/dashboard/components/widgets/conversation/KanbanStageIndicator.vue` - Indicador de stage
 
 - ✅ Todos os componentes leem dados via `pipelinePositionsHelper.js`
 - ✅ Todas as atualizações usam `ContactAPI.updatePipelinePosition`
 - ✅ Remoção de código usa `ContactAPI.deletePipelinePosition`
 - ✅ Sem manipulação de `custom_attributes` ou `additional_attributes` para dados kanban
+- ✅ Cálculo de totais de colunas usa `pipeline_positions`
+- ✅ Estatísticas do dashboard usam `pipeline_positions`
 
 ## Como Usar
 
@@ -302,6 +305,28 @@ bundle exec rake chatwoot:kanban:migrate_data[sync]
 - ✅ Remover fallback para JSON
 - ✅ Migrar todos os componentes frontend
 
+### Fase 4: Correções de Compatibilidade (CONCLUÍDA ✅)
+Após a migração completa, foram identificados e corrigidos alguns locais que ainda usavam a estrutura antiga `additional_attributes.kanban`:
+
+**Correções Realizadas:**
+
+1. **KanbanColumn.vue - `columnTotal` computed**
+   - **Problema:** Estava lendo `deal_value` de `additional_attributes.kanban[pipelineId].deal.value`
+   - **Solução:** Atualizado para usar `getDealValue()` do `pipelinePositionsHelper.js`
+   - **Arquivo:** `app/javascript/dashboard/routes/dashboard/crm/components/KanbanColumn.vue`
+
+2. **KanbanDashboard.vue - `longestInStage` computed**
+   - **Problema:** Estava usando `additional_attributes.kanban` para calcular tempo na etapa e valores
+   - **Solução:** Atualizado para usar `pipeline_positions` diretamente
+   - **Arquivo:** `app/javascript/dashboard/routes/dashboard/crm/components/KanbanDashboard.vue`
+
+3. **KanbanAttributes.vue - Métodos de migração legados**
+   - **Problema:** Métodos `migrateContactsStageTracking()` e `migrateToGroupedStructure()` ainda escreviam na estrutura antiga
+   - **Solução:** Desabilitadas as chamadas, pois a migração já foi concluída
+   - **Arquivo:** `app/javascript/dashboard/routes/dashboard/crm/components/KanbanAttributes.vue`
+
+**Status:** ✅ Todos os locais que ainda usavam a estrutura antiga foram corrigidos ou desabilitados
+
 ## Limpeza Opcional (Futuro)
 
 Após validar que tudo está funcionando corretamente com `contact_pipeline_positions`, você pode opcionalmente limpar os dados kanban dos campos JSON:
@@ -317,6 +342,45 @@ end
 ```
 
 **⚠️ Aviso:** Faça backup do banco de dados antes de executar qualquer limpeza de dados!
+
+## Problemas Conhecidos e Correções
+
+### Problema: Total da Coluna Não Aparecia Corretamente
+
+**Sintoma:** O total monetário no cabeçalho da coluna não mostrava o valor correto, mesmo com cards tendo `deal_value`.
+
+**Causa:** O computed `columnTotal` em `KanbanColumn.vue` estava lendo `deal_value` da estrutura antiga `additional_attributes.kanban[pipelineId].deal.value` em vez de usar `pipeline_positions`.
+
+**Solução:** 
+- Importado `getDealValue` do `pipelinePositionsHelper.js`
+- Atualizado o computed para usar `getDealValue(contact, pipelineId)` que lê de `pipeline_positions`
+
+**Arquivo Corrigido:** `app/javascript/dashboard/routes/dashboard/crm/components/KanbanColumn.vue`
+
+### Problema: Dashboard Mostrava Dados Incorretos
+
+**Sintoma:** A seção "Mais Tempo na Etapa" do dashboard não mostrava os cards corretos ou mostrava valores zerados.
+
+**Causa:** O computed `longestInStage` em `KanbanDashboard.vue` estava usando `additional_attributes.kanban` para obter `entered_at` e `deal_value`.
+
+**Solução:**
+- Atualizado para usar `contact.pipeline_positions` diretamente
+- Lê `entered_at` e `deal_value` de `pipeline_positions`
+- Lê `win_lost` status de `metadata.win_lost` em `pipeline_positions`
+
+**Arquivo Corrigido:** `app/javascript/dashboard/routes/dashboard/crm/components/KanbanDashboard.vue`
+
+### Problema: Métodos de Migração Ainda Executando
+
+**Sintoma:** Métodos legados de migração ainda tentavam escrever na estrutura antiga durante o carregamento.
+
+**Causa:** Métodos `migrateContactsStageTracking()` e `migrateToGroupedStructure()` ainda estavam sendo chamados no `mounted()` do componente.
+
+**Solução:**
+- Desabilitadas as chamadas desses métodos, pois a migração já foi concluída
+- Métodos mantidos no código para referência histórica, mas não executam mais
+
+**Arquivo Corrigido:** `app/javascript/dashboard/routes/dashboard/crm/components/KanbanAttributes.vue`
 
 ## Troubleshooting
 
@@ -494,4 +558,6 @@ const position = getPipelinePosition(contact, pipelineId);
 
 **Data da Migração Completa:** 2025-01-15
 
-**Versão:** 3.0
+**Data das Correções de Compatibilidade:** 2025-01-20
+
+**Versão:** 3.1

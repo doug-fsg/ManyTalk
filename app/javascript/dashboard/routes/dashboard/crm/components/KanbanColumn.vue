@@ -13,7 +13,7 @@
       <div class="column-header-content">
         <div class="column-header-left">
           <span class="column-title dark:text-white">{{ column.title }}</span>
-          <span class="column-count dark:text-white">{{ column.items.length }}</span>
+          <span class="column-count dark:text-white">{{ columnCount }}</span>
         </div>
         <div class="column-header-right">
           <div v-if="columnTotal > 0" class="column-total dark:text-white">
@@ -91,6 +91,7 @@ import draggable from 'vuedraggable';
 import KanbanCard from './KanbanCard.vue';
 import IntersectionObserver from 'dashboard/components/IntersectionObserver.vue';
 import Spinner from 'shared/components/Spinner.vue';
+import { getDealValue } from '../utils/pipelinePositionsHelper';
 
 export default {
   name: 'KanbanColumn',
@@ -112,6 +113,10 @@ export default {
     pipelineId: {
       type: [Number, String],
       required: true
+    },
+    columnStats: {
+      type: Object,
+      default: null
     }
   },
   data() {
@@ -135,15 +140,22 @@ export default {
         });
       }
     },
-    // IMPORTANTE: columnTotal sempre calcula baseado em TODOS os itens, não apenas visíveis
+    // Contador de cards: usa stats do backend se disponível, senão usa items.length
+    columnCount() {
+      if (this.columnStats && this.columnStats.count !== undefined) {
+        return this.columnStats.count;
+      }
+      return this.columnItems.length;
+    },
+    // Total monetário da coluna: usa stats do backend se disponível, senão calcula localmente
     columnTotal() {
+      if (this.columnStats && this.columnStats.total_value !== undefined) {
+        return parseFloat(this.columnStats.total_value) || 0;
+      }
+      // Fallback: calcular localmente baseado nos itens carregados
       return this.columnItems.reduce((total, contact) => {
-        const additionalAttributes = contact.additional_attributes || {};
-        const kanban = additionalAttributes.kanban || {};
-        const pipelineData = kanban[this.pipelineId] || {};
-        const deal = pipelineData.deal || {};
-        const value = deal.value || 0;
-        return total + parseFloat(value);
+        const dealValue = getDealValue(contact, this.pipelineId) || 0;
+        return total + parseFloat(dealValue);
       }, 0);
     },
     // Itens visíveis baseados na paginação virtual

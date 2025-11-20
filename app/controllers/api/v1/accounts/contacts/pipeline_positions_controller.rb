@@ -173,6 +173,57 @@ module Api
             render json: { error: e.message }, status: :unprocessable_entity
           end
 
+          # Retornar estatísticas agregadas por stage (totais reais)
+          # GET /api/v1/accounts/:account_id/contacts/pipeline_positions/:pipeline_id/stats
+          def stats
+            return if performed?
+            
+            begin
+              # Garantir que o pipeline existe e pertence à conta
+              pipeline = Current.account.custom_attribute_definitions.find_by(
+                id: params[:pipeline_id],
+                is_kanban: true
+              )
+              
+              unless pipeline
+                render json: { error: 'Pipeline not found or not a kanban pipeline' }, 
+                       status: :not_found
+                return
+              end
+
+              # Agregar por stage_id usando SQL GROUP BY
+              # Garantir que só conta contatos da conta atual através do JOIN
+              stats = ContactPipelinePosition
+                .joins(:contact)
+                .where(
+                  pipeline_id: params[:pipeline_id],
+                  contacts: { account_id: Current.account.id }
+                )
+                .group(:stage_id)
+                .select(
+                  'stage_id',
+                  'COUNT(*) as count',
+                  'COALESCE(SUM(deal_value), 0) as total_value'
+                )
+                .order(:stage_id)
+
+              # Formatar resposta
+              stages = stats.map do |stat|
+                {
+                  stage_id: stat.stage_id,
+                  count: stat.count,
+                  total_value: stat.total_value.to_f
+                }
+              end
+
+              render json: { stages: stages }, status: :ok
+            rescue => e
+              Rails.logger.error "Error fetching pipeline stats: #{e.class.name} - #{e.message}"
+              Rails.logger.error e.backtrace.join("\n")
+              render json: { error: e.message }, status: :internal_server_error
+            end
+          end
+
           private
 
           def ensure_contact
