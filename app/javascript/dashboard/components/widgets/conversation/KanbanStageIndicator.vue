@@ -115,39 +115,32 @@ export default {
         record => record.attribute_model === 'contact_attribute' && record.is_kanban === true
       );
     },
-    // Buscar dados do Kanban para detalhes
-    kanbanData() {
-      const additionalAttributes = this.contact.additional_attributes || {};
-      return additionalAttributes.kanban || {};
-    },
-    // Processar todos os pipelines e suas etapas
+    // Processar todos os pipelines e suas etapas usando pipeline_positions
     kanbanStages() {
-      if (!this.contact.custom_attributes) return [];
-
-
+      if (!this.contact.pipeline_positions || !Array.isArray(this.contact.pipeline_positions)) {
+        return [];
+      }
 
       return this.kanbanAttributes.map(attribute => {
-        const stageValue = this.contact.custom_attributes[attribute.attribute_key];
-        if (!stageValue) return null;
+        // Buscar posição do pipeline usando pipeline_positions
+        const position = this.contact.pipeline_positions.find(
+          p => p.pipeline_id === attribute.id
+        );
+        
+        if (!position || !position.stage_id) return null;
+
+        const stageValue = position.stage_id;
 
         // Encontrar o nome legível da etapa
         const stages = attribute.attribute_values || [];
         const stage = stages.find(s => s.key === stageValue);
         const stageName = stage ? stage.value : stageValue;
 
-        // Buscar dados do pipeline
-        const pipelineData = this.kanbanData[attribute.id] || {};
-        const deal = pipelineData.deal || {};
-        const stageTracking = pipelineData.stage_tracking || {};
-        const currentStageData = stageTracking.current || {};
-
-        // Verificar se está ganho ou perdido
-        const additionalAttrs = this.contact.additional_attributes || {};
-        const kanbanData = additionalAttrs.kanban || {};
-        
-        // Buscar o status específico deste pipeline
-        const pipelineKanbanData = kanbanData[attribute.id] || {};
-        const winLostData = pipelineKanbanData.win_lost || {};
+        // Buscar dados do pipeline_positions
+        const dealValue = position.deal_value || 0;
+        const enteredAt = position.entered_at;
+        const metadata = position.metadata || {};
+        const winLostData = metadata.win_lost || {};
         
         const isWon = winLostData.status === 'won';
         const isLost = winLostData.status === 'lost';
@@ -174,10 +167,10 @@ export default {
 
         // Calcular tempo na etapa (só para etapas ativas)
         let timeInStage = null;
-        if (statusType === 'active' && currentStageData.entered_at) {
-          const enteredAt = new Date(currentStageData.entered_at).getTime();
+        if (statusType === 'active' && enteredAt) {
+          const enteredAtTime = new Date(enteredAt).getTime();
           const now = Date.now();
-          const timeDiff = now - enteredAt;
+          const timeDiff = now - enteredAtTime;
           
           if (timeDiff < 3600000) {
             timeInStage = `${Math.floor(timeDiff / 60000)}m`;
@@ -195,7 +188,7 @@ export default {
           displayText,
           statusType,
           statusDate,
-          dealValue: deal.value,
+          dealValue: dealValue || 0,
           timeInStage,
         };
       }).filter(Boolean); // Remove nulls

@@ -86,7 +86,7 @@ class ContactAPI extends ApiClient {
   }
 
   // Atualizar posição do contato no pipeline (apenas contact_pipeline_positions)
-  updatePipelinePosition(contactId, pipelineId, stageId, position, enteredAt = null) {
+  updatePipelinePosition(contactId, pipelineId, stageId, position, enteredAt = null, dealValue = null, metadata = null) {
     const params = {
       stage_id: stageId,
       position: position,
@@ -94,7 +94,18 @@ class ContactAPI extends ApiClient {
     if (enteredAt) {
       params.entered_at = enteredAt;
     }
+    if (dealValue !== null && dealValue !== undefined) {
+      params.deal_value = dealValue;
+    }
+    if (metadata !== null && metadata !== undefined) {
+      params.metadata = metadata;
+    }
     return axios.patch(`${this.url}/${contactId}/pipeline_positions/${pipelineId}`, params);
+  }
+
+  // Remover contato do pipeline
+  deletePipelinePosition(contactId, pipelineId) {
+    return axios.delete(`${this.url}/${contactId}/pipeline_positions/${pipelineId}`);
   }
 
   // Reordenar múltiplas posições de uma vez

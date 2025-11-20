@@ -246,12 +246,15 @@ export default {
       let cardsWithValue = 0;
 
       this.contacts.forEach(contact => {
-        const additionalAttributes = contact.additional_attributes || {};
-        const kanban = additionalAttributes.kanban || {};
-        const pipelineData = kanban[this.pipelineId] || {};
-        const winLostStatus = pipelineData.win_lost?.status;
-        const dealValue = parseFloat(pipelineData.deal?.value || 0);
-        const stageTracking = pipelineData.stage_tracking?.current;
+        // Usar pipeline_positions em vez de additional_attributes
+        const position = contact.pipeline_positions?.find(
+          p => p.pipeline_id === this.pipelineId
+        );
+        
+        const winLostData = position?.metadata?.win_lost || {};
+        const winLostStatus = winLostData.status;
+        const dealValue = parseFloat(position?.deal_value || 0);
+        const enteredAt = position?.entered_at;
 
         stats.totalCards++;
         stats.totalValue += dealValue;
@@ -272,11 +275,11 @@ export default {
           stats.openValue += dealValue;
         }
 
-        // Calcular tempo médio na etapa
-        if (stageTracking?.entered_at) {
-          const enteredAt = new Date(stageTracking.entered_at).getTime();
+        // Calcular tempo médio na etapa usando pipeline_positions
+        if (enteredAt) {
+          const enteredAtTime = new Date(enteredAt).getTime();
           const now = Date.now();
-          const timeDiff = now - enteredAt;
+          const timeDiff = now - enteredAtTime;
           totalTimeInStage += timeDiff;
           cardsWithTime++;
         }
@@ -317,11 +320,11 @@ export default {
 
         const count = column.items.length;
         const value = column.items.reduce((sum, contact) => {
-          const additionalAttributes = contact.additional_attributes || {};
-          const kanban = additionalAttributes.kanban || {};
-          const pipelineIdStr = String(this.pipelineId);
-          const pipelineData = kanban[pipelineIdStr] || {};
-          const dealValue = parseFloat(pipelineData.deal?.value || 0);
+          // Usar pipeline_positions em vez de additional_attributes
+          const position = contact.pipeline_positions?.find(
+            p => p.pipeline_id === this.pipelineId
+          );
+          const dealValue = parseFloat(position?.deal_value || 0);
           return sum + dealValue;
         }, 0);
 

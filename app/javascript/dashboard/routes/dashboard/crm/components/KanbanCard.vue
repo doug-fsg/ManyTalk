@@ -323,6 +323,14 @@ import { getRandomColor } from 'dashboard/helper/labelColor';
 import { frontendURL } from 'dashboard/helper/URLHelper';
 import FluentIcon from 'shared/components/FluentIcon/DashboardIcon.vue';
 import WootLabel from 'dashboard/components/ui/Label.vue';
+import ContactAPI from 'dashboard/api/contacts';
+import {
+  getDealValue,
+  getEnteredAt,
+  getWinLostStatus,
+  getPipelinePosition,
+  getStage
+} from '../utils/pipelinePositionsHelper';
 
 export default {
   name: 'KanbanCard',
@@ -432,29 +440,22 @@ export default {
         return colors[status] || { bg: '#F3F3F3', text: '#4A4A4A' };
       };
     },
-    kanbanData() {
-      const additionalAttributes = this.contact.additional_attributes || {};
-      return additionalAttributes.kanban || {};
-    },
-    pipelineData() {
-      return this.kanbanData[this.pipelineId] || {};
-    },
     dealValue() {
-      const deal = this.pipelineData.deal || {};
-      return deal.value;
+      return getDealValue(this.contact, this.pipelineId) || null;
     },
-    stageTracking() {
-      return this.pipelineData.stage_tracking || {};
+    enteredAt() {
+      return getEnteredAt(this.contact, this.pipelineId);
     },
-    currentStage() {
-      return this.stageTracking.current || {};
+    winLostStatus() {
+      const winLostData = getWinLostStatus(this.contact, this.pipelineId);
+      return winLostData?.status || null;
     },
     stageTimeDisplay() {
-      if (!this.currentStage.entered_at) return null;
+      if (!this.enteredAt) return null;
       
-      const enteredAt = new Date(this.currentStage.entered_at).getTime();
+      const enteredAtTime = new Date(this.enteredAt).getTime();
       const now = Date.now();
-      const timeDiff = now - enteredAt;
+      const timeDiff = now - enteredAtTime;
       
       // Menos de 1 hora
       if (timeDiff < 3600000) {
@@ -473,13 +474,13 @@ export default {
       return `${days}d`;
     },
     stageTimeClass() {
-      if (!this.currentStage.entered_at) {
+      if (!this.enteredAt) {
         return '';
       }
       
-      const enteredAt = new Date(this.currentStage.entered_at).getTime();
+      const enteredAtTime = new Date(this.enteredAt).getTime();
       const now = Date.now();
-      const timeDiff = now - enteredAt;
+      const timeDiff = now - enteredAtTime;
       
       // Mais de 3 dias (72 horas)
       if (timeDiff > 259200000) {
@@ -494,19 +495,16 @@ export default {
       return 'time-normal';
     },
     stageTimeTooltip() {
-      if (!this.currentStage.entered_at) return '';
+      if (!this.enteredAt) return '';
       
-      const enteredAt = new Date(this.currentStage.entered_at);
+      const enteredAt = new Date(this.enteredAt);
       const formattedDate = enteredAt.toLocaleDateString();
       const formattedTime = enteredAt.toLocaleTimeString();
       
       return `Nesta etapa desde ${formattedDate} ${formattedTime}`;
     },
     winLostData() {
-      return this.pipelineData.win_lost || {};
-    },
-    winLostStatus() {
-      return this.winLostData.status || null;
+      return getWinLostStatus(this.contact, this.pipelineId) || {};
     },
     winLostLabel() {
       if (this.winLostStatus === 'won') return 'Won';
@@ -616,30 +614,38 @@ export default {
         });
       }
     },
-    saveValue() {
+    async saveValue() {
       const value = parseFloat(this.editingValue) || 0;
       
-      // Criar estrutura agrupada simplificada
-      const additionalAttributes = {
-        ...this.contact.additional_attributes,
-        kanban: {
-          ...(this.contact.additional_attributes?.kanban || {}),
-          [this.pipelineId]: {
-            ...(this.contact.additional_attributes?.kanban?.[this.pipelineId] || {}),
-            deal: {
-              value
-            }
-          }
-        }
-      };
-      
-      this.$emit('value-updated', {
-        contactId: this.contact.id,
-        value,
-        additionalAttributes
-      });
-      
-      this.showValueInput = false;
+      // Obter dados atuais do pipeline_positions
+      const currentPosition = getPipelinePosition(this.contact, this.pipelineId);
+      const stageId = currentPosition?.stage_id || getStage(this.contact, this.pipelineId);
+      const position = currentPosition?.position || 0;
+      const enteredAt = currentPosition?.entered_at || new Date().toISOString();
+      const metadata = currentPosition?.metadata || {};
+
+      try {
+        // Atualizar via pipeline_positions
+        await ContactAPI.updatePipelinePosition(
+          this.contact.id,
+          this.pipelineId,
+          stageId,
+          position,
+          enteredAt,
+          value,
+          metadata
+        );
+
+        // Emitir evento para atualizar o componente pai
+        this.$emit('value-updated', {
+          contactId: this.contact.id,
+          value,
+        });
+        
+        this.showValueInput = false;
+      } catch (error) {
+        console.error('[KanbanCard] Error updating deal value:', error);
+      }
     },
     cancelValueEdit() {
       this.showValueInput = false;
@@ -651,23 +657,36 @@ export default {
     openCardModal() {
       this.$emit('open-card-modal', this.contact);
     },
-    undoWinLostStatus() {
-      // Remove the win_lost data from the contact
-      const additionalAttributes = {
-        ...this.contact.additional_attributes,
-        kanban: {
-          ...(this.contact.additional_attributes?.kanban || {}),
-          [this.pipelineId]: {
-            ...(this.contact.additional_attributes?.kanban?.[this.pipelineId] || {}),
-            win_lost: null // Remove the win_lost data
-          }
-        }
-      };
+    async undoWinLostStatus() {
+      // Obter dados atuais do pipeline_positions
+      const currentPosition = getPipelinePosition(this.contact, this.pipelineId);
+      const stageId = currentPosition?.stage_id || getStage(this.contact, this.pipelineId);
+      const position = currentPosition?.position || 0;
+      const enteredAt = currentPosition?.entered_at || new Date().toISOString();
+      const dealValue = currentPosition?.deal_value;
+      
+      // Remover win_lost do metadata
+      const metadata = { ...(currentPosition?.metadata || {}) };
+      delete metadata.win_lost;
 
-      this.$emit('undo-win-lost', {
-        contactId: this.contact.id,
-        additionalAttributes
-      });
+      try {
+        // Atualizar via pipeline_positions removendo win_lost
+        await ContactAPI.updatePipelinePosition(
+          this.contact.id,
+          this.pipelineId,
+          stageId,
+          position,
+          enteredAt,
+          dealValue,
+          metadata
+        );
+
+        this.$emit('undo-win-lost', {
+          contactId: this.contact.id,
+        });
+      } catch (error) {
+        console.error('[KanbanCard] Error undoing win/lost status:', error);
+      }
     },
     toggleActionsMenu() {
       this.showActionsMenu = !this.showActionsMenu;

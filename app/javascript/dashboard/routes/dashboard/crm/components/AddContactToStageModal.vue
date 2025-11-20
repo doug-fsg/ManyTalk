@@ -239,8 +239,13 @@ export default {
       }
     },
     isContactInKanban(contact) {
-      const customAttributes = contact.custom_attributes || {};
-      return customAttributes[this.attributeKey] === this.selectedStage;
+      if (!contact.pipeline_positions || !Array.isArray(contact.pipeline_positions)) {
+        return false;
+      }
+      const position = contact.pipeline_positions.find(
+        p => p.pipeline_id === this.pipelineId
+      );
+      return position?.stage_id === this.selectedStage;
     },
     async selectContact(contact) {
       // Se já está no kanban nesta etapa, não fazer nada
@@ -249,33 +254,16 @@ export default {
       }
 
       try {
-        // Criar estrutura do kanban para o contato
+        // Adicionar contato ao pipeline usando pipeline_positions
         const now = new Date().toISOString();
         
-        const kanbanData = {
-          [this.pipelineId]: {
-            stage_tracking: {
-              current: {
-                stage_id: this.selectedStage,
-                entered_at: now,
-              },
-            },
-          },
-        };
-
-        const contactParams = {
-          id: contact.id,
-          custom_attributes: {
-            ...contact.custom_attributes,
-            [this.attributeKey]: this.selectedStage,
-          },
-          additional_attributes: {
-            ...contact.additional_attributes,
-            kanban: kanbanData,
-          },
-        };
-
-        await this.$store.dispatch('contacts/update', contactParams);
+        await ContactAPI.updatePipelinePosition(
+          contact.id,
+          this.pipelineId,
+          this.selectedStage,
+          0,
+          now
+        );
         
         this.$emit('contact-added', {
           contact,

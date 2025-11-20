@@ -182,6 +182,13 @@ import CustomAttributes from 'dashboard/routes/dashboard/conversation/customAttr
 import ContactConversations from 'dashboard/routes/dashboard/conversation/ContactConversations.vue';
 import ContactNotes from 'dashboard/modules/notes/NotesOnContactPage.vue';
 import { useAlert } from 'dashboard/composables';
+import ContactAPI from 'dashboard/api/contacts';
+import {
+  getDealValue,
+  getEnteredAt,
+  getStage,
+  getPipelinePosition
+} from '../utils/pipelinePositionsHelper';
 
 export default {
   name: 'KanbanCardModal',
@@ -234,31 +241,21 @@ export default {
     };
   },
   computed: {
-    additionalAttributes() {
-      return this.contact.additional_attributes || {};
-    },
-    kanbanData() {
-      return this.additionalAttributes.kanban || {};
-    },
-    pipelineData() {
-      return this.kanbanData[this.pipelineId] || {};
-    },
     dealValue() {
-      const deal = this.pipelineData.deal || {};
-      return deal.value;
+      return getDealValue(this.contact, this.pipelineId) || null;
     },
-    stageTracking() {
-      return this.pipelineData.stage_tracking || {};
+    enteredAt() {
+      return getEnteredAt(this.contact, this.pipelineId);
     },
-    currentStageData() {
-      return this.stageTracking.current || {};
+    currentStage() {
+      return getStage(this.contact, this.pipelineId);
     },
     stageTimeDisplay() {
-      if (!this.currentStageData.entered_at) return null;
+      if (!this.enteredAt) return null;
       
-      const enteredAt = new Date(this.currentStageData.entered_at).getTime();
+      const enteredAtTime = new Date(this.enteredAt).getTime();
       const now = Date.now();
-      const timeDiff = now - enteredAt;
+      const timeDiff = now - enteredAtTime;
       
       if (timeDiff < 3600000) {
         const minutes = Math.floor(timeDiff / 60000);
@@ -274,11 +271,11 @@ export default {
       return `${days}d`;
     },
     stageTimeClass() {
-      if (!this.currentStageData.entered_at) return '';
+      if (!this.enteredAt) return '';
       
-      const enteredAt = new Date(this.currentStageData.entered_at).getTime();
+      const enteredAtTime = new Date(this.enteredAt).getTime();
       const now = Date.now();
-      const timeDiff = now - enteredAt;
+      const timeDiff = now - enteredAtTime;
       
       if (timeDiff > 259200000) return 'time-overdue';
       if (timeDiff > 172800000) return 'time-warning';
@@ -345,29 +342,37 @@ export default {
         });
       }
     },
-    saveValue() {
+    async saveValue() {
       const value = parseFloat(this.editingValue) || 0;
       
-      const additionalAttributes = {
-        ...this.contact.additional_attributes,
-        kanban: {
-          ...(this.contact.additional_attributes?.kanban || {}),
-          [this.pipelineId]: {
-            ...(this.contact.additional_attributes?.kanban?.[this.pipelineId] || {}),
-            deal: {
-              value,
-            },
-          },
-        },
-      };
-      
-      this.$emit('value-updated', {
-        contactId: this.contact.id,
-        value,
-        additionalAttributes,
-      });
-      
-      this.isEditingValue = false;
+      // Obter dados atuais do pipeline_positions
+      const currentPosition = getPipelinePosition(this.contact, this.pipelineId);
+      const stageId = currentPosition?.stage_id || getStage(this.contact, this.pipelineId);
+      const position = currentPosition?.position || 0;
+      const enteredAt = currentPosition?.entered_at || new Date().toISOString();
+      const metadata = currentPosition?.metadata || {};
+
+      try {
+        // Atualizar via pipeline_positions
+        await ContactAPI.updatePipelinePosition(
+          this.contact.id,
+          this.pipelineId,
+          stageId,
+          position,
+          enteredAt,
+          value,
+          metadata
+        );
+
+        this.$emit('value-updated', {
+          contactId: this.contact.id,
+          value,
+        });
+        
+        this.isEditingValue = false;
+      } catch (error) {
+        console.error('[KanbanCardModal] Error updating deal value:', error);
+      }
     },
     cancelEditingValue() {
       this.isEditingValue = false;

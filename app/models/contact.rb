@@ -147,7 +147,17 @@ class Contact < ApplicationRecord
       name: name,
       phone_number: phone_number,
       thumbnail: avatar_url,
-      type: 'contact'
+      type: 'contact',
+      pipeline_positions: contact_pipeline_positions.map do |position|
+        {
+          pipeline_id: position.pipeline_id,
+          stage_id: position.stage_id,
+          position: position.position,
+          entered_at: position.entered_at&.iso8601,
+          deal_value: position.deal_value&.to_f, # Converter BigDecimal para Float (JSON nativo)
+          metadata: position.metadata || {}
+        }
+      end
     }
   end
 

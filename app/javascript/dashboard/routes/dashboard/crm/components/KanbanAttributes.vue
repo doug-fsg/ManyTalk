@@ -357,9 +357,19 @@ import { frontendURL } from 'dashboard/helper/URLHelper';
 import { getRandomColor } from 'dashboard/helper/labelColor';
 import ContactAPI from 'dashboard/api/contacts';
 import { LOCAL_STORAGE_KEYS } from 'dashboard/constants/localStorage';
+import {
+  getStage,
+  getDealValue,
+  getMetadata,
+  getEnteredAt,
+  getWinLostStatus
+} from '../utils/pipelinePositionsHelper';
 
-// Criar um barramento de eventos local se não existir um global
-const bus = new Vue();
+// Criar um barramento de eventos global compartilhado
+if (!window.bus) {
+  window.bus = new Vue();
+}
+const bus = window.bus;
 
 export default {
   name: 'KanbanAttributes',
@@ -552,19 +562,19 @@ export default {
           );
         }
 
-        // Win/Lost filter
-        const additionalAttributes = contact.additional_attributes || {};
-        const kanban = additionalAttributes.kanban || {};
-        const pipelineData = kanban[this.selectedAttribute?.id] || {};
-        const winLostStatus = pipelineData.win_lost?.status;
-
+        // Win/Lost filter usando pipeline_positions
         let matchesWinLost = true;
-        if (this.winLostFilter === 'won') {
-          matchesWinLost = winLostStatus === 'won';
-        } else if (this.winLostFilter === 'lost') {
-          matchesWinLost = winLostStatus === 'lost';
-        } else if (this.winLostFilter === 'open') {
-          matchesWinLost = !winLostStatus || winLostStatus === null || winLostStatus === undefined;
+        if (this.winLostFilter && this.winLostFilter !== 'all' && this.selectedAttribute) {
+          const winLostData = getWinLostStatus(contact, this.selectedAttribute.id);
+          const winLostStatus = winLostData?.status;
+          
+          if (this.winLostFilter === 'won') {
+            matchesWinLost = winLostStatus === 'won';
+          } else if (this.winLostFilter === 'lost') {
+            matchesWinLost = winLostStatus === 'lost';
+          } else if (this.winLostFilter === 'open') {
+            matchesWinLost = !winLostStatus || winLostStatus === null || winLostStatus === undefined;
+          }
         }
 
         // Labels filter
@@ -576,35 +586,44 @@ export default {
           );
         }
 
-        // Deal Value filter
+        // Deal Value filter usando pipeline_positions
         let matchesDealValue = true;
-        const dealValue = parseFloat(pipelineData.deal?.value || 0);
-        if (this.kanbanFilters.dealValueMin !== null && this.kanbanFilters.dealValueMin !== '') {
-          matchesDealValue = matchesDealValue && dealValue >= parseFloat(this.kanbanFilters.dealValueMin);
-        }
-        if (this.kanbanFilters.dealValueMax !== null && this.kanbanFilters.dealValueMax !== '') {
-          matchesDealValue = matchesDealValue && dealValue <= parseFloat(this.kanbanFilters.dealValueMax);
+        if (this.selectedAttribute) {
+          const dealValue = getDealValue(contact, this.selectedAttribute.id) || 0;
+          if (this.kanbanFilters.dealValueMin !== null && this.kanbanFilters.dealValueMin !== '') {
+            matchesDealValue = matchesDealValue && dealValue >= parseFloat(this.kanbanFilters.dealValueMin);
+          }
+          if (this.kanbanFilters.dealValueMax !== null && this.kanbanFilters.dealValueMax !== '') {
+            matchesDealValue = matchesDealValue && dealValue <= parseFloat(this.kanbanFilters.dealValueMax);
+          }
         }
 
-        // Date Range filter
+        // Date Range filter usando pipeline_positions
         let matchesDateRange = true;
-        const enteredAt = pipelineData.stage_tracking?.current?.entered_at;
-        if (enteredAt) {
-          const enteredDate = new Date(enteredAt);
-          enteredDate.setHours(0, 0, 0, 0);
-          
-          if (this.kanbanFilters.dateFrom) {
-            const fromDate = new Date(this.kanbanFilters.dateFrom);
-            fromDate.setHours(0, 0, 0, 0);
-            matchesDateRange = matchesDateRange && enteredDate >= fromDate;
+        if (this.selectedAttribute) {
+          const enteredAt = getEnteredAt(contact, this.selectedAttribute.id);
+          let normalizedEnteredDate = null;
+          if (enteredAt) {
+            // Normalizar a data de entrada para comparar apenas a parte da data
+            const enteredDate = new Date(enteredAt);
+            enteredDate.setHours(0, 0, 0, 0);
+            normalizedEnteredDate = enteredDate;
+            
+            if (this.kanbanFilters.dateFrom) {
+              const fromDate = new Date(this.kanbanFilters.dateFrom);
+              fromDate.setHours(0, 0, 0, 0);
+              matchesDateRange = matchesDateRange && enteredDate >= fromDate;
+            }
+            if (this.kanbanFilters.dateTo) {
+              const toDate = new Date(this.kanbanFilters.dateTo);
+              toDate.setHours(0, 0, 0, 0);
+              // Para dateTo, queremos incluir o dia inteiro, então comparamos com <=
+              matchesDateRange = matchesDateRange && enteredDate <= toDate;
+            }
+          } else if (this.kanbanFilters.dateFrom || this.kanbanFilters.dateTo) {
+            // Se há filtro de data mas o contato não tem data de entrada, não mostrar
+            matchesDateRange = false;
           }
-          if (this.kanbanFilters.dateTo) {
-            const toDate = new Date(this.kanbanFilters.dateTo);
-            toDate.setHours(0, 0, 0, 0);
-            matchesDateRange = matchesDateRange && enteredDate <= toDate;
-          }
-        } else if (this.kanbanFilters.dateFrom || this.kanbanFilters.dateTo) {
-          matchesDateRange = false;
         }
 
         return matchesSearch && matchesWinLost && matchesLabels && matchesDealValue && matchesDateRange;
@@ -617,24 +636,28 @@ export default {
       return this.currentUser && this.currentUser.role === 'administrator';
     },
     // Otimização: Criar índice de contatos por coluna uma vez, evitando refazer filtros
+    // Agora usa pipeline_positions em vez de custom_attributes
     contactsByColumn() {
       if (!this.selectedAttribute || !this.contacts || this.contacts.length === 0) {
         return {};
       }
 
       const index = {};
-      const attrKey = this.selectedAttribute.attribute_key;
+      const pipelineId = this.selectedAttribute.id;
 
       // Criar índice uma vez: mapear cada valor de etapa para array de contatos
+      // Usa pipeline_positions em vez de custom_attributes
       this.contacts.forEach(contact => {
-        if (!contact.custom_attributes) return;
+        if (!contact.pipeline_positions || !Array.isArray(contact.pipeline_positions)) {
+          return;
+        }
 
-        const attributeValue = contact.custom_attributes[attrKey];
-        if (attributeValue) {
-          if (!index[attributeValue]) {
-            index[attributeValue] = [];
+        const stageId = getStage(contact, pipelineId);
+        if (stageId) {
+          if (!index[stageId]) {
+            index[stageId] = [];
           }
-          index[attributeValue].push(contact);
+          index[stageId].push(contact);
         }
       });
 
@@ -829,55 +852,50 @@ export default {
       this.updateColumnsLocally(contact, newColumn);
 
       try {
-        // Atualizar no servidor usando o Vuex store
+        // Atualizar no servidor usando pipeline_positions
         if (this.selectedAttribute) {
-          // Preparar dados de tracking de tempo
+          // Obter dados atuais do pipeline_positions
+          const currentPosition = contact.pipeline_positions?.find(
+            p => p.pipeline_id === this.selectedAttribute.id
+          );
+          
           const now = new Date().toISOString();
+          const dealValue = currentPosition?.deal_value;
+          const metadata = currentPosition?.metadata || {};
+          const position = currentPosition?.position || 0;
 
-          // Garantir que additional_attributes existe
-          let additionalAttributes = contact.additional_attributes || {};
-
-          // Criar uma cópia profunda para evitar referências
-          additionalAttributes = JSON.parse(
-            JSON.stringify(additionalAttributes)
+          // Atualizar via pipeline_positions
+          const response = await ContactAPI.updatePipelinePosition(
+            contact.id,
+            this.selectedAttribute.id,
+            newColumn,
+            position,
+            now,
+            dealValue,
+            metadata
           );
 
-          // Garantir que a estrutura base existe
-          if (!additionalAttributes.kanban) {
-            additionalAttributes.kanban = {};
+          // Atualizar pipeline_positions localmente
+          if (contact.pipeline_positions) {
+            const positionIndex = contact.pipeline_positions.findIndex(
+              p => p.pipeline_id === this.selectedAttribute.id
+            );
+            
+            const updatedPosition = {
+              pipeline_id: response.data.pipeline_id,
+              stage_id: response.data.stage_id,
+              position: response.data.position,
+              entered_at: response.data.entered_at,
+              deal_value: response.data.deal_value,
+              metadata: response.data.metadata || {},
+            };
+            
+            if (positionIndex >= 0) {
+              this.$set(contact.pipeline_positions, positionIndex, updatedPosition);
+            } else {
+              contact.pipeline_positions.push(updatedPosition);
+            }
           }
-
-          const pipelineId = this.selectedAttribute.id;
-
-          // Garantir que a estrutura do pipeline existe
-          if (!additionalAttributes.kanban[pipelineId]) {
-            additionalAttributes.kanban[pipelineId] = {};
-          }
-
-          // Garantir que stage_tracking existe
-          if (!additionalAttributes.kanban[pipelineId].stage_tracking) {
-            additionalAttributes.kanban[pipelineId].stage_tracking = {};
-          }
-
-          // Atualizar o estágio atual
-          const newStage = {
-            stage_id: newColumn,
-            entered_at: now,
-          };
-
-          // Atualizar stage_tracking
-          additionalAttributes.kanban[pipelineId].stage_tracking.current =
-            newStage;
-
-          const contactParams = {
-            id: contact.id,
-            custom_attributes: {
-              [this.selectedAttribute.attribute_key]: newColumn,
-            },
-            additional_attributes: additionalAttributes,
-          };
-
-          await this.$store.dispatch('contacts/update', contactParams);
 
           this.operationManager.completeOperation(operationId, true);
 
@@ -989,19 +1007,19 @@ export default {
               );
             }
 
-            // Win/Lost filter
-            const additionalAttributes = contact.additional_attributes || {};
-            const kanban = additionalAttributes.kanban || {};
-            const pipelineData = kanban[this.selectedAttribute?.id] || {};
-            const winLostStatus = pipelineData.win_lost?.status;
-
+            // Win/Lost filter usando pipeline_positions
             let matchesWinLost = true;
-            if (this.winLostFilter === 'won') {
-              matchesWinLost = winLostStatus === 'won';
-            } else if (this.winLostFilter === 'lost') {
-              matchesWinLost = winLostStatus === 'lost';
-            } else if (this.winLostFilter === 'open') {
-              matchesWinLost = !winLostStatus || winLostStatus === null || winLostStatus === undefined;
+            if (this.winLostFilter && this.winLostFilter !== 'all' && this.selectedAttribute) {
+              const winLostData = getWinLostStatus(contact, this.selectedAttribute.id);
+              const winLostStatus = winLostData?.status;
+              
+              if (this.winLostFilter === 'won') {
+                matchesWinLost = winLostStatus === 'won';
+              } else if (this.winLostFilter === 'lost') {
+                matchesWinLost = winLostStatus === 'lost';
+              } else if (this.winLostFilter === 'open') {
+                matchesWinLost = !winLostStatus || winLostStatus === null || winLostStatus === undefined;
+              }
             }
             // 'all' shows everything
 
@@ -1014,40 +1032,44 @@ export default {
               );
             }
 
-            // Deal Value filter
+            // Deal Value filter usando pipeline_positions
             let matchesDealValue = true;
-            const dealValue = parseFloat(pipelineData.deal?.value || 0);
-            if (this.kanbanFilters.dealValueMin !== null && this.kanbanFilters.dealValueMin !== '') {
-              matchesDealValue = matchesDealValue && dealValue >= parseFloat(this.kanbanFilters.dealValueMin);
-            }
-            if (this.kanbanFilters.dealValueMax !== null && this.kanbanFilters.dealValueMax !== '') {
-              matchesDealValue = matchesDealValue && dealValue <= parseFloat(this.kanbanFilters.dealValueMax);
+            if (this.selectedAttribute) {
+              const dealValue = getDealValue(contact, this.selectedAttribute.id) || 0;
+              if (this.kanbanFilters.dealValueMin !== null && this.kanbanFilters.dealValueMin !== '') {
+                matchesDealValue = matchesDealValue && dealValue >= parseFloat(this.kanbanFilters.dealValueMin);
+              }
+              if (this.kanbanFilters.dealValueMax !== null && this.kanbanFilters.dealValueMax !== '') {
+                matchesDealValue = matchesDealValue && dealValue <= parseFloat(this.kanbanFilters.dealValueMax);
+              }
             }
 
-            // Date Range filter
+            // Date Range filter usando pipeline_positions
             let matchesDateRange = true;
-            const enteredAt = pipelineData.stage_tracking?.current?.entered_at;
-            let normalizedEnteredDate = null;
-            if (enteredAt) {
-              // Normalizar a data de entrada para comparar apenas a parte da data
-              const enteredDate = new Date(enteredAt);
-              enteredDate.setHours(0, 0, 0, 0);
-              normalizedEnteredDate = enteredDate;
-              
-              if (this.kanbanFilters.dateFrom) {
-                const fromDate = new Date(this.kanbanFilters.dateFrom);
-                fromDate.setHours(0, 0, 0, 0);
-                matchesDateRange = matchesDateRange && enteredDate >= fromDate;
+            if (this.selectedAttribute) {
+              const enteredAt = getEnteredAt(contact, this.selectedAttribute.id);
+              let normalizedEnteredDate = null;
+              if (enteredAt) {
+                // Normalizar a data de entrada para comparar apenas a parte da data
+                const enteredDate = new Date(enteredAt);
+                enteredDate.setHours(0, 0, 0, 0);
+                normalizedEnteredDate = enteredDate;
+                
+                if (this.kanbanFilters.dateFrom) {
+                  const fromDate = new Date(this.kanbanFilters.dateFrom);
+                  fromDate.setHours(0, 0, 0, 0);
+                  matchesDateRange = matchesDateRange && enteredDate >= fromDate;
+                }
+                if (this.kanbanFilters.dateTo) {
+                  const toDate = new Date(this.kanbanFilters.dateTo);
+                  toDate.setHours(0, 0, 0, 0);
+                  // Para dateTo, queremos incluir o dia inteiro, então comparamos com <=
+                  matchesDateRange = matchesDateRange && enteredDate <= toDate;
+                }
+              } else if (this.kanbanFilters.dateFrom || this.kanbanFilters.dateTo) {
+                // Se há filtro de data mas o contato não tem data de entrada, não mostrar
+                matchesDateRange = false;
               }
-              if (this.kanbanFilters.dateTo) {
-                const toDate = new Date(this.kanbanFilters.dateTo);
-                toDate.setHours(0, 0, 0, 0);
-                // Para dateTo, queremos incluir o dia inteiro, então comparamos com <=
-                matchesDateRange = matchesDateRange && enteredDate <= toDate;
-              }
-            } else if (this.kanbanFilters.dateFrom || this.kanbanFilters.dateTo) {
-              // Se há filtro de data mas o contato não tem data de entrada, não mostrar
-              matchesDateRange = false;
             }
 
             return matchesSearch && matchesWinLost && matchesLabels && matchesDealValue && matchesDateRange;
@@ -1433,27 +1455,17 @@ export default {
     getContactsForColumn(columnValue) {
       if (!this.selectedAttribute) return [];
 
-      const attrKey = this.selectedAttribute.attribute_key;
+      const pipelineId = this.selectedAttribute.id;
 
       return this.contacts.filter(contact => {
-        if (!contact.custom_attributes) {
-          return false;
-        }
-
         // Garantir que cada contato tenha propriedades básicas
         if (!contact.labels) {
           contact.labels = [];
         }
 
-        if (!contact.additional_attributes) {
-          contact.additional_attributes = {};
-        }
-
-        // Procura pelo valor exato no atributo personalizado
-        const attributeValue = contact.custom_attributes[attrKey];
-        const matches = attributeValue === columnValue;
-
-        return matches;
+        // Usar pipeline_positions em vez de custom_attributes
+        const stageId = getStage(contact, pipelineId);
+        return stageId === columnValue;
       });
     },
     async onItemMoved({ contactId, sourceColumnTitle, targetColumnTitle, oldIndex, newIndex }) {
@@ -1470,15 +1482,12 @@ export default {
       // Atualizar a UI PRIMEIRO - move o card visualmente na posição exata
       this.updateColumnsLocally(contact, targetColumnTitle, newIndex);
 
-      // Atualizar store localmente (apenas para UI - não persiste)
-      const minimalUpdate = {
-        ...contact,
-        custom_attributes: {
-          ...contact.custom_attributes,
-          [this.selectedAttribute.attribute_key]: targetColumnTitle,
-        },
-      };
-      this.$store.commit('contacts/EDIT_CONTACT', minimalUpdate);
+      // Obter deal_value e metadata existentes do pipeline_positions
+      const currentPosition = contact.pipeline_positions?.find(
+        p => p.pipeline_id === this.selectedAttribute.id
+      );
+      const currentDealValue = currentPosition?.deal_value;
+      const currentMetadata = currentPosition?.metadata || {};
 
       // ============================================
       // FASE 2: ATUALIZAR APENAS contact_pipeline_positions
@@ -1490,7 +1499,9 @@ export default {
         this.selectedAttribute.id,
         targetColumnTitle,
         newIndex,
-        new Date().toISOString()
+        new Date().toISOString(),
+        currentDealValue,
+        currentMetadata
       )
         .then((response) => {
           // Atualizar o contato no store com os dados de pipeline_positions retornados
@@ -1503,7 +1514,7 @@ export default {
             
             // Encontrar ou criar a entrada de pipeline_position
             const positionIndex = updatedContact.pipeline_positions.findIndex(
-              p => p.pipeline_id === this.selectedAttribute.id && p.stage_id === targetColumnTitle
+              p => p.pipeline_id === this.selectedAttribute.id
             );
             
             const positionData = {
@@ -1511,6 +1522,8 @@ export default {
               stage_id: response.data.stage_id,
               position: response.data.position,
               entered_at: response.data.entered_at,
+              deal_value: response.data.deal_value,
+              metadata: response.data.metadata || {},
             };
             
             if (positionIndex >= 0) {
@@ -1678,13 +1691,22 @@ export default {
           return;
         }
 
-        // Update the contact
-        await this.$store.dispatch('contacts/update', {
-          id: contact.id,
-          custom_attributes: {
-            [this.selectedAttribute.attribute_key]: null,
-          },
-        });
+        // Remover do pipeline usando API de pipeline_positions
+        await ContactAPI.deletePipelinePosition(contact.id, this.selectedAttribute.id);
+        
+        // Atualizar localmente removendo da lista de pipeline_positions
+        if (contact.pipeline_positions) {
+          const positionIndex = contact.pipeline_positions.findIndex(
+            p => p.pipeline_id === this.selectedAttribute.id
+          );
+          if (positionIndex >= 0) {
+            contact.pipeline_positions.splice(positionIndex, 1);
+            this.$set(contact, 'pipeline_positions', contact.pipeline_positions);
+          }
+        }
+        
+        // Reconstruir colunas após remoção
+        this.setupColumns();
 
         // Update local state
         this.setupColumns();
@@ -1713,77 +1735,17 @@ export default {
     },
     // Método adicional para tratar eventos de atualização completa de contato
     handleContactUpdate(payload) {
-      // Ignorar atualizações que vieram do Kanban para evitar loops
-
-      if (payload.fromKanban || payload.kanbanOperation) {
-        this.logger.log('info', 'Ignorando atualização iniciada pelo Kanban', {
-          contactId: payload.id,
-          operation: payload.kanbanOperation,
-        });
-        return;
-      }
-
+      // Ignorar atualizações que vieram do Kanban
+      if (payload?.fromKanban || payload?.kanbanOperation) return;
+      
       // Se não há atributo selecionado, não há o que atualizar
-      if (!this.selectedAttribute) {
-        return;
-      }
+      if (!this.selectedAttribute) return;
 
-      // Extrair o atributo relevante
-      const { attribute_key: attributeKey } = this.selectedAttribute;
-      const attributeValue = this.getAttributeValue(
-        payload.custom_attributes,
-        attributeKey
-      );
-
-      if (!attributeValue) {
-        return;
-      }
-
-      // Buscar o contato atualizado do store (pode ter sido atualizado pelo ActionCable)
-      const updatedContact = this.contacts.find(c => c.id === payload.id);
-      if (!updatedContact) {
-        // Se o contato não existe no store ainda, pode ser novo - reconstruir colunas
-        clearTimeout(this.setupColumnsTimeout);
-        this.setupColumnsTimeout = setTimeout(() => {
-          this.setupColumns();
-        }, 200);
-        return;
-      }
-
-      // Encontrar a coluna atual do contato nas colunas existentes
-      const currentColumn = this.getCurrentColumn(payload.id);
-
-      // Se o card já está na coluna correta, ainda assim reconstruir para garantir sincronização
-      // (pode haver mudanças em additional_attributes, deal_value, etc)
-      if (currentColumn === attributeValue) {
-        // Mesmo na coluna correta, reconstruir para sincronizar dados adicionais
-        clearTimeout(this.setupColumnsTimeout);
-        this.setupColumnsTimeout = setTimeout(() => {
-          this.setupColumns();
-        }, 200);
-        return;
-      }
-
-      // Atualizar localmente sem disparar novos eventos
-      this.logger.log(
-        'info',
-        'Atualizando posição do card localmente após alteração externa',
-        {
-          contactId: payload.id,
-          from: currentColumn,
-          to: attributeValue,
-        }
-      );
-
-      // Atualizar localmente e reconstruir colunas para refletir mudanças do ActionCable
-      // Usar debounce para evitar múltiplas reconstruções
+      // SOLUÇÃO SIMPLES - forçar atualização imediata ignorando throttle
+      // Resetar throttle para permitir atualização imediata
+      this.lastColumnUpdateTime = 0;
       clearTimeout(this.setupColumnsTimeout);
-      this.setupColumnsTimeout = setTimeout(() => {
-        this.updateColumnsLocally(updatedContact, attributeValue);
-        // Reconstruir colunas para garantir sincronização completa
-        // Isso é necessário quando a atualização vem do ActionCable (outro usuário ou confirmação do servidor)
-        this.setupColumns();
-      }, 100);
+      this.setupColumns();
     },
     // Helper para lidar com valores de atributos potencialmente ausentes
     getAttributeValue(customAttributes, attributeKey) {
@@ -2098,8 +2060,7 @@ export default {
       if (!targetColumn) return;
 
       const operationId = `move-${contact.id}-${Date.now()}`;
-      const oldValue =
-        contact.custom_attributes[this.selectedAttribute.attribute_key];
+      const oldValue = getStage(contact, this.selectedAttribute.id);
       const newValue = targetColumn.value;
 
       try {
@@ -2137,15 +2098,50 @@ export default {
       }
     },
     async updateContactAttribute(contact, newValue) {
-      const customAttributes = {
-        ...contact.custom_attributes,
-        [this.selectedAttribute.attribute_key]: newValue,
-      };
+      if (!this.selectedAttribute) return;
 
-      await this.$store.dispatch('contacts/update', {
-        id: contact.id,
-        custom_attributes: customAttributes,
-      });
+      // Obter dados atuais do pipeline_positions
+      const currentPosition = contact.pipeline_positions?.find(
+        p => p.pipeline_id === this.selectedAttribute.id
+      );
+      
+      const dealValue = currentPosition?.deal_value;
+      const metadata = currentPosition?.metadata || {};
+      const position = currentPosition?.position || 0;
+      const enteredAt = currentPosition?.entered_at || new Date().toISOString();
+
+      // Atualizar via pipeline_positions
+      const response = await ContactAPI.updatePipelinePosition(
+        contact.id,
+        this.selectedAttribute.id,
+        newValue,
+        position,
+        enteredAt,
+        dealValue,
+        metadata
+      );
+
+      // Atualizar pipeline_positions localmente
+      if (contact.pipeline_positions) {
+        const positionIndex = contact.pipeline_positions.findIndex(
+          p => p.pipeline_id === this.selectedAttribute.id
+        );
+        
+        const updatedPosition = {
+          pipeline_id: response.data.pipeline_id,
+          stage_id: response.data.stage_id,
+          position: response.data.position,
+          entered_at: response.data.entered_at,
+          deal_value: response.data.deal_value,
+          metadata: response.data.metadata || {},
+        };
+        
+        if (positionIndex >= 0) {
+          this.$set(contact.pipeline_positions, positionIndex, updatedPosition);
+        } else {
+          contact.pipeline_positions.push(updatedPosition);
+        }
+      }
     },
     updatePipelineCache(pipelineId) {
       if (!pipelineId || !this.pagination) return;
@@ -2165,13 +2161,33 @@ export default {
       const contactIndex = contacts.findIndex(c => c.id === contactId);
 
       if (contactIndex !== -1) {
-        contacts[contactIndex] = {
-          ...contacts[contactIndex],
-          custom_attributes: {
-            ...contacts[contactIndex].custom_attributes,
-            [this.selectedAttribute.attribute_key]: newColumnValue,
-          },
+        const contact = contacts[contactIndex];
+        
+        // Atualizar pipeline_positions em vez de custom_attributes
+        if (!contact.pipeline_positions) {
+          contact.pipeline_positions = [];
+        }
+        
+        const positionIndex = contact.pipeline_positions.findIndex(
+          p => p.pipeline_id === pipelineId
+        );
+        
+        const updatedPosition = {
+          pipeline_id: pipelineId,
+          stage_id: newColumnValue,
+          position: 0,
+          entered_at: new Date().toISOString(),
+          deal_value: null,
+          metadata: {},
         };
+        
+        if (positionIndex >= 0) {
+          contact.pipeline_positions[positionIndex] = updatedPosition;
+        } else {
+          contact.pipeline_positions.push(updatedPosition);
+        }
+
+        contacts[contactIndex] = contact;
 
         this.pipelineCache[pipelineId] = {
           ...cachedData,
@@ -2186,38 +2202,83 @@ export default {
     async handleDealValueUpdate({ contactId, additionalAttributes, value }) {
       // Encontrar o contato atual
       const contact = this.contacts.find(c => c.id === contactId);
-      if (!contact) {
-        console.warn('[Kanban] Contact not found for deal value update:', contactId);
+      if (!contact || !this.selectedAttribute) {
+        console.warn('[Kanban] Contact or selectedAttribute not found for deal value update:', contactId);
         return;
       }
 
       try {
-        // Atualização otimista: atualizar o contato localmente antes da API
-        const updatedContactLocal = {
-          ...contact,
-          additional_attributes: additionalAttributes,
-        };
+        // Obter dados atuais do pipeline_positions
+        const currentPosition = contact.pipeline_positions?.find(
+          p => p.pipeline_id === this.selectedAttribute.id
+        );
         
-        // Atualizar no store local imediatamente
-        this.$store.commit('contacts/EDIT_CONTACT', updatedContactLocal);
+        if (!currentPosition) {
+          console.warn('[Kanban] Pipeline position not found for contact:', contactId);
+          return;
+        }
+
+        const stageId = currentPosition.stage_id;
+        const position = currentPosition.position || 0;
+        const enteredAt = currentPosition.entered_at || new Date().toISOString();
+        const metadata = currentPosition.metadata || {};
+
+        // Atualizar deal_value via pipeline_positions
+        const response = await ContactAPI.updatePipelinePosition(
+          contactId,
+          this.selectedAttribute.id,
+          stageId,
+          position,
+          enteredAt,
+          value,
+          metadata
+        );
+
+        // Atualizar pipeline_positions localmente
+        if (contact.pipeline_positions) {
+          const positionIndex = contact.pipeline_positions.findIndex(
+            p => p.pipeline_id === this.selectedAttribute.id
+          );
+          
+          const updatedPosition = {
+            pipeline_id: response.data.pipeline_id,
+            stage_id: response.data.stage_id,
+            position: response.data.position,
+            entered_at: response.data.entered_at,
+            deal_value: response.data.deal_value,
+            metadata: response.data.metadata || {},
+          };
+          
+          if (positionIndex >= 0) {
+            this.$set(contact.pipeline_positions, positionIndex, updatedPosition);
+          } else {
+            contact.pipeline_positions.push(updatedPosition);
+          }
+        }
         
         // Se o modal estiver aberto para este contato, atualizar o selectedCardContact também
         if (this.showCardModal && this.selectedCardContact.id === contactId) {
-          this.selectedCardContact = {
-            ...this.selectedCardContact,
-            additional_attributes: additionalAttributes,
-          };
+          if (!this.selectedCardContact.pipeline_positions) {
+            this.$set(this.selectedCardContact, 'pipeline_positions', []);
+          }
+          const modalPositionIndex = this.selectedCardContact.pipeline_positions.findIndex(
+            p => p.pipeline_id === this.selectedAttribute.id
+          );
+          if (modalPositionIndex >= 0) {
+            this.$set(this.selectedCardContact.pipeline_positions, modalPositionIndex, {
+              pipeline_id: response.data.pipeline_id,
+              stage_id: response.data.stage_id,
+              position: response.data.position,
+              entered_at: response.data.entered_at,
+              deal_value: response.data.deal_value,
+              metadata: response.data.metadata || {},
+            });
+          }
         }
         
         // Reconstruir colunas para refletir a mudança (caso afete a ordenação)
         this.$nextTick(() => {
           this.setupColumns();
-        });
-
-        // Atualizar no servidor
-        await this.$store.dispatch('contacts/update', {
-          id: contactId,
-          additional_attributes: additionalAttributes,
         });
 
         // Emitir evento de sucesso se necessário
@@ -2227,9 +2288,6 @@ export default {
         );
       } catch (error) {
         console.error('[Kanban] Error updating deal value:', error);
-        
-        // Reverter a atualização local em caso de erro
-        this.$store.commit('contacts/EDIT_CONTACT', contact);
         
         // Reverter também o selectedCardContact se o modal estiver aberto
         if (this.showCardModal && this.selectedCardContact.id === contactId) {
@@ -2242,24 +2300,61 @@ export default {
         );
       }
     },
-    async handleWinLostUpdate({ contactId, additionalAttributes, winLostData }) {
+    async handleWinLostUpdate({ contactId, winLostData, dealValue }) {
+      if (!this.selectedAttribute) return;
+
       try {
         // Register operation for loading state
         const operationId = this.operationManager?.registerOperation(contactId, 'win_lost_update');
 
-        // Update the cache optimistically
-        this.pipelineCacheManager.updateContactInCache(
-          this.selectedAttribute.id,
+        // Obter dados atuais do pipeline_positions
+        const contact = this.contacts.find(c => c.id === contactId);
+        if (!contact) return;
+
+        const currentPosition = contact.pipeline_positions?.find(
+          p => p.pipeline_id === this.selectedAttribute.id
+        );
+        
+        const stageId = currentPosition?.stage_id || getStage(contact, this.selectedAttribute.id);
+        const position = currentPosition?.position || 0;
+        const enteredAt = currentPosition?.entered_at || new Date().toISOString();
+        
+        // Atualizar metadata com win_lost
+        const metadata = { ...(currentPosition?.metadata || {}) };
+        metadata.win_lost = winLostData;
+
+        // Atualizar via pipeline_positions
+        const response = await ContactAPI.updatePipelinePosition(
           contactId,
-          'additional_attributes',
-          additionalAttributes
+          this.selectedAttribute.id,
+          stageId,
+          position,
+          enteredAt,
+          dealValue || currentPosition?.deal_value,
+          metadata
         );
 
-        // Update on the server
-        await this.$store.dispatch('contacts/update', {
-          id: contactId,
-          additional_attributes: additionalAttributes,
-        });
+        // Atualizar pipeline_positions localmente
+        if (contact.pipeline_positions) {
+          const positionIndex = contact.pipeline_positions.findIndex(
+            p => p.pipeline_id === this.selectedAttribute.id
+          );
+          
+          const updatedPosition = {
+            pipeline_id: response.data.pipeline_id,
+            stage_id: response.data.stage_id,
+            position: response.data.position,
+            entered_at: response.data.entered_at,
+            deal_value: response.data.deal_value,
+            metadata: response.data.metadata || {},
+          };
+          
+          if (positionIndex >= 0) {
+            this.$set(contact.pipeline_positions, positionIndex, updatedPosition);
+          } else {
+            contact.pipeline_positions.push(updatedPosition);
+          }
+        }
 
         // Mark operation as completed
         if (operationId) {
@@ -2309,56 +2404,49 @@ export default {
         col.items.some(item => item.id === contact.id)
       );
       
-      // Se não encontrou na coluna, buscar pelo custom_attributes
+      // Se não encontrou na coluna, buscar pelo pipeline_positions
       if (!column && this.selectedAttribute) {
-        const attrKey = this.selectedAttribute.attribute_key;
-        const stageValue = contact.custom_attributes?.[attrKey];
+        const stageValue = getStage(contact, this.selectedAttribute.id);
         return stageValue || '';
       }
       
       return column ? column.title : '';
     },
     formatContactValue(contact) {
-      const additionalAttributes = contact.additional_attributes || {};
-      const kanban = additionalAttributes.kanban || {};
-      const pipelineData = kanban[this.selectedAttribute?.id] || {};
-      const dealValue = parseFloat(pipelineData.deal?.value || 0);
+      if (!this.selectedAttribute) return '';
+      const dealValue = getDealValue(contact, this.selectedAttribute.id) || 0;
       return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
         currency: 'BRL',
       }).format(dealValue);
     },
     getContactStatus(contact) {
-      const additionalAttributes = contact.additional_attributes || {};
-      const kanban = additionalAttributes.kanban || {};
-      const pipelineData = kanban[this.selectedAttribute?.id] || {};
-      const winLostStatus = pipelineData.win_lost?.status;
+      if (!this.selectedAttribute) return this.$t('KANBAN.LIST_VIEW.OPEN');
+      const winLostData = getWinLostStatus(contact, this.selectedAttribute.id);
+      const winLostStatus = winLostData?.status;
       
       if (winLostStatus === 'won') return this.$t('KANBAN.LIST_VIEW.WON');
       if (winLostStatus === 'lost') return this.$t('KANBAN.LIST_VIEW.LOST');
       return this.$t('KANBAN.LIST_VIEW.OPEN');
     },
     getContactStatusClass(contact) {
-      const additionalAttributes = contact.additional_attributes || {};
-      const kanban = additionalAttributes.kanban || {};
-      const pipelineData = kanban[this.selectedAttribute?.id] || {};
-      const winLostStatus = pipelineData.win_lost?.status;
+      if (!this.selectedAttribute) return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300';
+      const winLostData = getWinLostStatus(contact, this.selectedAttribute.id);
+      const winLostStatus = winLostData?.status;
       
       if (winLostStatus === 'won') return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
       if (winLostStatus === 'lost') return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
       return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300';
     },
     getContactTimeInStage(contact) {
-      const additionalAttributes = contact.additional_attributes || {};
-      const kanban = additionalAttributes.kanban || {};
-      const pipelineData = kanban[this.selectedAttribute?.id] || {};
-      const stageTracking = pipelineData.stage_tracking?.current;
+      if (!this.selectedAttribute) return '-';
+      const enteredAt = getEnteredAt(contact, this.selectedAttribute.id);
       
-      if (!stageTracking?.entered_at) return '-';
+      if (!enteredAt) return '-';
       
-      const enteredAt = new Date(stageTracking.entered_at).getTime();
+      const enteredAtTime = new Date(enteredAt).getTime();
       const now = Date.now();
-      const timeDiff = now - enteredAt;
+      const timeDiff = now - enteredAtTime;
       const days = Math.floor(timeDiff / 86400000);
       
       return `${days}d`;
@@ -2496,8 +2584,7 @@ export default {
     },
     handleKanbanOperation(contact, newColumnValue, operation) {
       const operationId = `${operation}-${contact.id}-${Date.now()}`;
-      const oldValue =
-        contact.custom_attributes[this.selectedAttribute.attribute_key];
+      const oldValue = getStage(contact, this.selectedAttribute.id);
 
       // Registrar a operação
       this.operationManager.registerOperation({
@@ -2549,30 +2636,11 @@ export default {
     },
     async handleWinLostModalSave(data) {
       try {
-        // Usar winLostModalContact que já está disponível
-        const contact = this.winLostModalContact;
-        
-        // Criar estrutura de additional_attributes atualizada
-        const additionalAttributes = {
-          ...contact.additional_attributes,
-          kanban: {
-            ...(contact.additional_attributes?.kanban || {}),
-            [data.pipelineId]: {
-              ...(contact.additional_attributes?.kanban?.[data.pipelineId] || {}),
-              win_lost: data.winLostData,
-              deal: {
-                ...(contact.additional_attributes?.kanban?.[data.pipelineId]?.deal || {}),
-                value: data.dealValue
-              }
-            }
-          }
-        };
-
-        // Chamar o método existente de atualização
+        // Chamar o método existente de atualização usando pipeline_positions
         await this.handleWinLostUpdate({
           contactId: data.contactId,
-          additionalAttributes,
-          winLostData: data.winLostData
+          winLostData: data.winLostData,
+          dealValue: data.dealValue
         });
 
         // Fechar o modal
@@ -2594,12 +2662,61 @@ export default {
     },
     getContactCurrentStage(contact) {
       if (!contact || !this.selectedAttribute) return '';
-      const attrKey = this.selectedAttribute.attribute_key;
-      return contact.custom_attributes?.[attrKey] || '';
+      return getStage(contact, this.selectedAttribute.id) || '';
     },
     async handleStageChangeFromModal({ contactId, newStage, oldStage }) {
       const contact = this.contacts.find(c => c.id === contactId);
       if (!contact || !this.selectedAttribute) return;
+
+      // Obter dados atuais do pipeline_positions
+      const currentPosition = contact.pipeline_positions?.find(
+        p => p.pipeline_id === this.selectedAttribute.id
+      );
+      
+      const dealValue = currentPosition?.deal_value;
+      const metadata = currentPosition?.metadata || {};
+      const position = currentPosition?.position || 0;
+      const enteredAt = new Date().toISOString();
+
+      try {
+        // Atualizar via pipeline_positions
+        const response = await ContactAPI.updatePipelinePosition(
+          contactId,
+          this.selectedAttribute.id,
+          newStage,
+          position,
+          enteredAt,
+          dealValue,
+          metadata
+        );
+
+        // Atualizar pipeline_positions localmente
+        if (contact.pipeline_positions) {
+          const positionIndex = contact.pipeline_positions.findIndex(
+            p => p.pipeline_id === this.selectedAttribute.id
+          );
+          
+          const updatedPosition = {
+            pipeline_id: response.data.pipeline_id,
+            stage_id: response.data.stage_id,
+            position: response.data.position,
+            entered_at: response.data.entered_at,
+            deal_value: response.data.deal_value,
+            metadata: response.data.metadata || {},
+          };
+          
+          if (positionIndex >= 0) {
+            this.$set(contact.pipeline_positions, positionIndex, updatedPosition);
+          } else {
+            contact.pipeline_positions.push(updatedPosition);
+          }
+        }
+
+        // Reconstruir colunas
+        this.setupColumns();
+      } catch (error) {
+        console.error('[Kanban] Error updating stage from modal:', error);
+      }
 
       // Criar operationId para tracking
       const operationId = this.operationManager?.registerOperation(contactId, newStage) || `stage-change-${Date.now()}`;
@@ -2607,24 +2724,62 @@ export default {
       // Usar o método existente updateCardPosition
       await this.updateCardPosition(contact, newStage, operationId);
     },
-    async handleUndoWinLost({ contactId, additionalAttributes }) {
+    async handleUndoWinLost({ contactId }) {
+      if (!this.selectedAttribute) return;
+
       try {
         // Register operation for loading state
         const operationId = this.operationManager?.registerOperation(contactId, 'undo_win_lost');
 
-        // Update the cache optimistically
-        this.pipelineCacheManager.updateContactInCache(
-          this.selectedAttribute.id,
+        // Obter dados atuais do pipeline_positions
+        const contact = this.contacts.find(c => c.id === contactId);
+        if (!contact) return;
+
+        const currentPosition = contact.pipeline_positions?.find(
+          p => p.pipeline_id === this.selectedAttribute.id
+        );
+        
+        const stageId = currentPosition?.stage_id || getStage(contact, this.selectedAttribute.id);
+        const position = currentPosition?.position || 0;
+        const enteredAt = currentPosition?.entered_at || new Date().toISOString();
+        const dealValue = currentPosition?.deal_value;
+        
+        // Remover win_lost do metadata
+        const metadata = { ...(currentPosition?.metadata || {}) };
+        delete metadata.win_lost;
+
+        // Atualizar via pipeline_positions
+        const response = await ContactAPI.updatePipelinePosition(
           contactId,
-          'additional_attributes',
-          additionalAttributes
+          this.selectedAttribute.id,
+          stageId,
+          position,
+          enteredAt,
+          dealValue,
+          metadata
         );
 
-        // Update on the server
-        await this.$store.dispatch('contacts/update', {
-          id: contactId,
-          additional_attributes: additionalAttributes,
-        });
+        // Atualizar pipeline_positions localmente
+        if (contact.pipeline_positions) {
+          const positionIndex = contact.pipeline_positions.findIndex(
+            p => p.pipeline_id === this.selectedAttribute.id
+          );
+          
+          const updatedPosition = {
+            pipeline_id: response.data.pipeline_id,
+            stage_id: response.data.stage_id,
+            position: response.data.position,
+            entered_at: response.data.entered_at,
+            deal_value: response.data.deal_value,
+            metadata: response.data.metadata || {},
+          };
+          
+          if (positionIndex >= 0) {
+            this.$set(contact.pipeline_positions, positionIndex, updatedPosition);
+          } else {
+            contact.pipeline_positions.push(updatedPosition);
+          }
+        }
 
         // Mark operation as completed
         if (operationId) {

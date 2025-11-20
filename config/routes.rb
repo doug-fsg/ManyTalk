@@ -151,6 +151,7 @@ Rails.application.routes.draw do
               delete 'contact_attribute_files', to: 'contact_attribute_files#destroy'
               # Pipeline positions - atualizar apenas contact_pipeline_positions sem tocar em contacts
               patch 'pipeline_positions/:pipeline_id', to: 'pipeline_positions#update'
+              delete 'pipeline_positions/:pipeline_id', to: 'pipeline_positions#destroy'
             end
           end
           # Reorder pipeline positions (collection route - não precisa de contact_id)

@@ -43,7 +43,18 @@ export const mutations = {
   },
 
   [types.EDIT_CONTACT]: ($state, data) => {
-    Vue.set($state.records, data.id, data);
+    // SOLUÇÃO SIMPLES - atualizar contato preservando dados existentes
+    const existingContact = $state.records[data.id] || {};
+    
+    // Se pipeline_positions vier no data, usar ele (vem atualizado do backend)
+    const pipelinePositions = data.pipeline_positions || existingContact.pipeline_positions;
+    
+    // Fazer merge simples preservando pipeline_positions
+    Vue.set($state.records, data.id, {
+      ...existingContact,
+      ...data,
+      pipeline_positions: pipelinePositions,
+    });
   },
 
   [types.DELETE_CONTACT]: ($state, id) => {

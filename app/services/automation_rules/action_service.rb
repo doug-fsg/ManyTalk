@@ -68,20 +68,28 @@ class AutomationRules::ActionService < ActionService
       .find_by(id: pipeline_id, is_kanban: true)
     
     return unless kanban_attribute.present?
-    return unless kanban_attribute.attribute_values.include?(selected_stage)
     
-    # Atualizar custom_attributes do contato
-    old_attributes = contact.custom_attributes.dup
-    new_attributes = contact.custom_attributes.merge({
-      kanban_attribute.attribute_key => selected_stage
-    })
+    # Obter stage anterior para mensagem de atividade
+    old_position = ContactPipelinePosition.find_by(
+      contact_id: contact.id,
+      pipeline_id: pipeline_id
+    )
+    old_stage = old_position&.stage_id
     
-    contact.update!(custom_attributes: new_attributes)
+    # Atualizar usando contact_pipeline_positions exclusivamente
+    position = ContactPipelinePosition.update_stage(
+      contact,
+      pipeline_id,
+      selected_stage,
+      entered_at: Time.current
+    )
+    
+    return unless position.present?
     
     # Criar mensagem de atividade
-    create_kanban_activity_message(contact, kanban_attribute, selected_stage, old_attributes[kanban_attribute.attribute_key])
+    create_kanban_activity_message(contact, kanban_attribute, selected_stage, old_stage)
   rescue StandardError => e
-    Rails.logger.error "[AUTOMATION] Erro ao mover contato no kanban - contact_id: #{contact&.id}, pipeline_id: #{pipeline_id}, selected_stage: #{selected_stage}, error: #{e.message}"
+    ChatwootExceptionTracker.new(e, account: @account).capture_exception
   end
 
   private

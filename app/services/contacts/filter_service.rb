@@ -109,25 +109,22 @@ class Contacts::FilterService < FilterService
     join_index = kanban_pipeline_ids.index(pipeline_id)
     alias_name = "cpp_#{join_index}"
 
-    # Otimização: usar a tabela contact_pipeline_positions com fallback para JSON
+    # Usar apenas a tabela contact_pipeline_positions - sem fallback para JSON
     if query_hash[:filter_operator] == 'is_present'
       operator_suffix = query_operator.present? ? " #{query_operator} " : ' '
-      # Contato está no pipeline se existe registro na tabela OU se existe no JSON
-      escaped_key = ActiveRecord::Base.connection.quote_string(@attribute_key)
-      return "(#{alias_name}.id IS NOT NULL OR (jsonb_exists(contacts.custom_attributes, '#{escaped_key}') AND contacts.custom_attributes->>'#{escaped_key}' != ''))#{operator_suffix}"
+      # Contato está no pipeline apenas se existe registro na tabela
+      return "(#{alias_name}.id IS NOT NULL)#{operator_suffix}"
     elsif query_hash[:filter_operator] == 'is_not_present'
       operator_suffix = query_operator.present? ? " #{query_operator} " : ' '
-      # Contato NÃO está no pipeline se não existe na tabela E não existe no JSON
-      escaped_key = ActiveRecord::Base.connection.quote_string(@attribute_key)
-      return "(#{alias_name}.id IS NULL AND (NOT jsonb_exists(contacts.custom_attributes, '#{escaped_key}') OR contacts.custom_attributes->>'#{escaped_key}' = '' OR contacts.custom_attributes->>'#{escaped_key}' IS NULL))#{operator_suffix}"
+      # Contato NÃO está no pipeline apenas se não existe na tabela
+      return "(#{alias_name}.id IS NULL)#{operator_suffix}"
     end
 
-    # Para outros operadores (equal_to, not_equal_to, etc), usar stage_id da tabela com fallback para JSON
+    # Para outros operadores (equal_to, not_equal_to, etc), usar stage_id da tabela
     filter_operator_value = filter_operation(query_hash, current_index)
     
-    # Usar COALESCE para pegar da tabela primeiro, JSON como fallback
-    escaped_key = ActiveRecord::Base.connection.quote_string(@attribute_key)
-    "COALESCE(#{alias_name}.stage_id, contacts.custom_attributes->>'#{escaped_key}') #{filter_operator_value} #{query_operator} "
+    # Usar apenas dados da tabela - sem fallback
+    "#{alias_name}.stage_id #{filter_operator_value} #{query_operator} "
   end
 
   # Retorna os IDs dos pipelines kanban que estão nos filtros

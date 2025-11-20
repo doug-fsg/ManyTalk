@@ -46,6 +46,8 @@ import { useUISettings } from 'dashboard/composables/useUISettings';
 import { copyTextToClipboard } from 'shared/helpers/clipboard';
 import CustomAttribute from 'dashboard/components/CustomAttribute.vue';
 import { mapGetters } from 'vuex';
+import ContactAPI from 'dashboard/api/contacts';
+import { getPipelinePosition, getPosition } from 'dashboard/routes/dashboard/crm/utils/pipelinePositionsHelper';
 
 export default {
   components: {
@@ -113,21 +115,40 @@ export default {
     },
     filteredAttributes() {
       return this.kanbanAttributes.map(attribute => {
-        // Check if the attribute key exists in customAttributes
-        const hasValue = Object.hasOwnProperty.call(
-          this.customAttributes,
-          attribute.attribute_key
-        );
+        // Para atributos kanban, verificar em pipeline_positions
+        // Para outros atributos, verificar em custom_attributes
+        let hasValue = false;
+        if (attribute.is_kanban && this.contact.pipeline_positions) {
+          const position = this.contact.pipeline_positions.find(
+            p => p.pipeline_id === attribute.id
+          );
+          hasValue = !!position?.stage_id;
+        } else {
+          hasValue = Object.hasOwnProperty.call(
+            this.customAttributes,
+            attribute.attribute_key
+          );
+        }
 
         const isCheckbox = attribute.attribute_display_type === 'checkbox';
         const defaultValue = isCheckbox ? false : '';
 
+        // Obter valor correto baseado no tipo de atributo
+        let value = defaultValue;
+        if (hasValue) {
+          if (attribute.is_kanban && this.contact.pipeline_positions) {
+            const position = this.contact.pipeline_positions.find(
+              p => p.pipeline_id === attribute.id
+            );
+            value = position?.stage_id || defaultValue;
+          } else {
+            value = this.customAttributes[attribute.attribute_key];
+          }
+        }
+
         return {
           ...attribute,
-          // Set value from customAttributes if it exists, otherwise use default value
-          value: hasValue
-            ? this.customAttributes[attribute.attribute_key]
-            : defaultValue,
+          value: value,
         };
       });
     },
@@ -144,6 +165,16 @@ export default {
   },
   mounted() {
     this.initializeSettings();
+    // Escutar atualizações de contato via ActionCable para sincronização em tempo real
+    if (window.bus) {
+      window.bus.$on('contact_updated', this.handleContactUpdate);
+    }
+  },
+  beforeDestroy() {
+    // Remover listener ao destruir componente
+    if (window.bus) {
+      window.bus.$off('contact_updated', this.handleContactUpdate);
+    }
   },
   methods: {
     initializeSettings() {
@@ -157,38 +188,102 @@ export default {
       });
     },
     async onUpdate(key, value) {
-      const updatedAttributes = { ...this.customAttributes, [key]: value };
-      try {
-        this.$store.dispatch('contacts/update', {
-          id: this.contactId,
-          custom_attributes: updatedAttributes,
-        });
-        useAlert(this.$t('CUSTOM_ATTRIBUTES.FORM.UPDATE.SUCCESS'));
-      } catch (error) {
-        const errorMessage =
-          error?.response?.message ||
-          this.$t('CUSTOM_ATTRIBUTES.FORM.UPDATE.ERROR');
-        useAlert(errorMessage);
+      // Verificar se é um atributo kanban
+      const attribute = this.kanbanAttributes.find(attr => attr.attribute_key === key);
+      
+      if (attribute && attribute.is_kanban) {
+        // Para atributos kanban, usar contact_pipeline_positions exclusivamente
+        try {
+          const currentPosition = getPipelinePosition(this.contact, attribute.id);
+          const position = getPosition(this.contact, attribute.id) || 0;
+          const dealValue = currentPosition?.deal_value || null;
+          const metadata = currentPosition?.metadata || {};
+          const enteredAt = currentPosition?.entered_at || new Date().toISOString();
+
+          const response = await ContactAPI.updatePipelinePosition(
+            this.contactId,
+            attribute.id,
+            value,
+            position,
+            enteredAt,
+            dealValue,
+            metadata
+          );
+
+          // SOLUÇÃO SIMPLES - apenas forçar re-render
+          this.$forceUpdate();
+          
+          useAlert(this.$t('CUSTOM_ATTRIBUTES.FORM.UPDATE.SUCCESS'));
+        } catch (error) {
+          const errorMessage =
+            error?.response?.data?.error ||
+            error?.response?.message ||
+            this.$t('CUSTOM_ATTRIBUTES.FORM.UPDATE.ERROR');
+          useAlert(errorMessage);
+        }
+      } else {
+        // Para atributos não-kanban, manter atualização de custom_attributes
+        const updatedAttributes = { ...this.customAttributes, [key]: value };
+        try {
+          await this.$store.dispatch('contacts/update', {
+            id: this.contactId,
+            custom_attributes: updatedAttributes,
+          });
+          useAlert(this.$t('CUSTOM_ATTRIBUTES.FORM.UPDATE.SUCCESS'));
+        } catch (error) {
+          const errorMessage =
+            error?.response?.message ||
+            this.$t('CUSTOM_ATTRIBUTES.FORM.UPDATE.ERROR');
+          useAlert(errorMessage);
+        }
       }
     },
     async onDelete(key) {
-      try {
-        this.$store.dispatch('contacts/deleteCustomAttributes', {
-          id: this.contactId,
-          customAttributes: [key],
-        });
+      // Verificar se é um atributo kanban
+      const attribute = this.kanbanAttributes.find(attr => attr.attribute_key === key);
+      
+      if (attribute && attribute.is_kanban) {
+        // Para atributos kanban, remover de contact_pipeline_positions
+        try {
+          await ContactAPI.deletePipelinePosition(this.contactId, attribute.id);
+          
+          // SOLUÇÃO SIMPLES - apenas forçar re-render
+          this.$forceUpdate();
+          
+          useAlert(this.$t('CUSTOM_ATTRIBUTES.FORM.DELETE.SUCCESS'));
+        } catch (error) {
+          const errorMessage =
+            error?.response?.data?.error ||
+            error?.response?.message ||
+            this.$t('CUSTOM_ATTRIBUTES.FORM.DELETE.ERROR');
+          useAlert(errorMessage);
+        }
+      } else {
+        // Para atributos não-kanban, manter remoção de custom_attributes
+        try {
+          await this.$store.dispatch('contacts/deleteCustomAttributes', {
+            id: this.contactId,
+            customAttributes: [key],
+          });
 
-        useAlert(this.$t('CUSTOM_ATTRIBUTES.FORM.DELETE.SUCCESS'));
-      } catch (error) {
-        const errorMessage =
-          error?.response?.message ||
-          this.$t('CUSTOM_ATTRIBUTES.FORM.DELETE.ERROR');
-        useAlert(errorMessage);
+          useAlert(this.$t('CUSTOM_ATTRIBUTES.FORM.DELETE.SUCCESS'));
+        } catch (error) {
+          const errorMessage =
+            error?.response?.message ||
+            this.$t('CUSTOM_ATTRIBUTES.FORM.DELETE.ERROR');
+          useAlert(errorMessage);
+        }
       }
     },
     async onCopy(attributeValue) {
       await copyTextToClipboard(attributeValue);
       useAlert(this.$t('CUSTOM_ATTRIBUTES.COPY_SUCCESSFUL'));
+    },
+    handleContactUpdate(contactData) {
+      // SOLUÇÃO SIMPLES - apenas forçar re-render se for o contato atual
+      if (contactData && contactData.id === this.contactId) {
+        this.$forceUpdate();
+      }
     },
   },
 };

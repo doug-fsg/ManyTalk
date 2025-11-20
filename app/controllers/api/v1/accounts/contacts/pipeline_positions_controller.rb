@@ -3,8 +3,10 @@ module Api
     module Accounts
       module Contacts
         class PipelinePositionsController < Api::V1::Accounts::BaseController
+          include Events::Types
+          
           before_action :set_pipeline, except: [:reorder]
-          before_action :ensure_contact, only: [:update]
+          before_action :ensure_contact, only: [:update, :destroy]
 
           # Atualizar ou criar posição do contato no pipeline
           # PATCH /api/v1/accounts/:account_id/contacts/:contact_id/pipeline_positions/:pipeline_id
@@ -25,10 +27,30 @@ module Api
               new_stage_id = params[:stage_id]
 
               # Validar que stage_id existe no pipeline
+              # attribute_values pode ser array simples de strings ou array de objetos {key: ..., value: ...}
               attribute_values = Array(@pipeline.attribute_values)
               
-              unless attribute_values.include?(new_stage_id)
-                render json: { error: "Stage '#{new_stage_id}' not found in pipeline. Available stages: #{attribute_values.join(', ')}" }, 
+              # Verificar se stage_id existe diretamente no array ou como 'key'/'value' em objetos
+              stage_exists = attribute_values.any? do |value|
+                if value.is_a?(Hash)
+                  # Verificar tanto 'key' quanto 'value' para compatibilidade
+                  value['key'] == new_stage_id || value[:key] == new_stage_id || 
+                  value['value'] == new_stage_id || value[:value] == new_stage_id
+                else
+                  value == new_stage_id
+                end
+              end
+              
+              unless stage_exists
+                available_stages = attribute_values.map do |value|
+                  if value.is_a?(Hash)
+                    value['key'] || value[:key] || value['value'] || value[:value]
+                  else
+                    value
+                  end
+                end.join(', ')
+                
+                render json: { error: "Stage '#{new_stage_id}' not found in pipeline. Available stages: #{available_stages}" }, 
                        status: :unprocessable_entity
                 return
               end
@@ -38,15 +60,37 @@ module Api
                 reorder_old_positions if @position.stage_id != new_stage_id && @position.position.present?
               end
 
-              @position.assign_attributes(
+              # Preparar atributos para atualização
+              update_attrs = {
                 stage_id: new_stage_id,
                 position: new_position,
                 entered_at: params[:entered_at] || (@position.entered_at || Time.current)
-              )
+              }
+
+              # Adicionar deal_value se fornecido
+              if params.key?(:deal_value)
+                update_attrs[:deal_value] = params[:deal_value].present? ? params[:deal_value].to_d : nil
+              end
+
+              # Adicionar metadata se fornecido
+              if params.key?(:metadata)
+                update_attrs[:metadata] = params[:metadata] || {}
+              end
+
+              @position.assign_attributes(update_attrs)
 
               if @position.save
                 # Reordenar outras posições na nova stage se necessário
                 reorder_new_positions(new_stage_id, new_position) if new_position.present?
+
+                # Disparar evento para sincronização em tempo real
+                # Recarregar contato com pipeline_positions para garantir dados atualizados
+                @contact.reload
+                Rails.configuration.dispatcher.dispatch(
+                  CONTACT_UPDATED,
+                  Time.zone.now,
+                  contact: @contact
+                )
 
                 render json: {
                   id: @position.id,
@@ -54,7 +98,9 @@ module Api
                   pipeline_id: @position.pipeline_id,
                   stage_id: @position.stage_id,
                   position: @position.position,
-                  entered_at: @position.entered_at
+                  entered_at: @position.entered_at&.iso8601,
+                  deal_value: @position.deal_value,
+                  metadata: @position.metadata || {}
                 }, status: :ok
               else
                 Rails.logger.error "Failed to save pipeline position: #{@position.errors.full_messages.join(', ')}"
@@ -63,6 +109,39 @@ module Api
             rescue => e
               Rails.logger.error "Error updating pipeline position: #{e.class.name} - #{e.message}"
               Rails.logger.error e.backtrace.join("\n")
+              render json: { error: e.message }, status: :internal_server_error
+            end
+          end
+
+          # Remover contato do pipeline
+          # DELETE /api/v1/accounts/:account_id/contacts/:contact_id/pipeline_positions/:pipeline_id
+          def destroy
+            return if performed?
+            
+            begin
+              position = ContactPipelinePosition.find_by(
+                contact_id: params[:contact_id],
+                pipeline_id: params[:pipeline_id]
+              )
+              
+              if position
+                contact = position.contact
+                position.destroy
+                
+                # Disparar evento para sincronização em tempo real
+                contact.reload
+                Rails.configuration.dispatcher.dispatch(
+                  CONTACT_UPDATED,
+                  Time.zone.now,
+                  contact: contact
+                )
+                
+                render json: { success: true }, status: :ok
+              else
+                render json: { error: 'Pipeline position not found' }, status: :not_found
+              end
+            rescue => e
+              Rails.logger.error "Error deleting pipeline position: #{e.class.name} - #{e.message}"
               render json: { error: e.message }, status: :internal_server_error
             end
           end
