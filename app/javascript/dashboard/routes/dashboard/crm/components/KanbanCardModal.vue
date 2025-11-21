@@ -107,7 +107,6 @@
                   variant="clear"
                   size="tiny"
                   @click="toggleEditingValue"
-                  v-tooltip="isEditingValue ? $t('COMMON.SAVE') : $t('COMMON.EDIT')"
                 />
               </div>
             </div>
@@ -213,10 +212,6 @@ export default {
     pipelineId: {
       type: [Number, String],
       required: true,
-    },
-    currentStage: {
-      type: String,
-      default: '',
     },
     stageColor: {
       type: String,

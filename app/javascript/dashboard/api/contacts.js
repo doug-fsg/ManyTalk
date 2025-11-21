@@ -121,6 +121,11 @@ class ContactAPI extends ApiClient {
   getPipelineStats(pipelineId) {
     return axios.get(`${this.url}/pipeline_positions/${pipelineId}/stats`);
   }
+
+  // Obter estatísticas completas do dashboard (calculadas no banco)
+  getDashboardStats(pipelineId) {
+    return axios.get(`${this.url}/pipeline_positions/${pipelineId}/dashboard_stats`);
+  }
 }
 
 export default new ContactAPI();

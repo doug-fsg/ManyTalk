@@ -43,6 +43,7 @@ class ContactPipelinePosition < ApplicationRecord
   scope :for_pipeline, ->(pipeline_id) { where(pipeline_id: pipeline_id) }
   scope :for_stage, ->(stage_id) { where(stage_id: stage_id) }
   scope :for_contact, ->(contact_id) { where(contact_id: contact_id) }
+  scope :for_account, ->(account_id) { joins(:contact).where(contacts: { account_id: account_id }) }
   scope :ordered, -> { order(:position, :created_at) }
 
   # Método helper para atualizar ou criar posição do contato no pipeline

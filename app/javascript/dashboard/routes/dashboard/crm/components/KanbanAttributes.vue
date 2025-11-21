@@ -71,27 +71,25 @@
                   {{ $t('KANBAN.LIST_VIEW.NAME') }}
                 </th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                  {{ $t('CONTACT_FORM.FORM.PHONE_NUMBER.LABEL') }}
+                </th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                   {{ $t('KANBAN.LIST_VIEW.STAGE') }}
                 </th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                   {{ $t('KANBAN.LIST_VIEW.VALUE') }}
                 </th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                  {{ $t('KANBAN.LIST_VIEW.STATUS') }}
-                </th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                   {{ $t('KANBAN.LIST_VIEW.TIME_IN_STAGE') }}
-                </th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                  {{ $t('KANBAN.LIST_VIEW.ACTIONS') }}
                 </th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
               <tr
-                v-for="contact in filteredContacts"
+                v-for="contact in paginatedContacts"
                 :key="contact.id"
-                class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                @click="handleOpenCardModal(contact)"
+                class="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
               >
                 <td class="px-4 py-3 whitespace-nowrap">
                   <div class="text-sm font-medium text-slate-900 dark:text-white">
@@ -100,6 +98,14 @@
                   <div v-if="contact.email" class="text-sm text-slate-500 dark:text-slate-400">
                     {{ contact.email }}
                   </div>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                  <span v-if="contact.phone_number" class="text-sm text-slate-900 dark:text-white">
+                    {{ contact.phone_number }}
+                  </span>
+                  <span v-else class="text-sm text-slate-400 dark:text-slate-500">
+                    -
+                  </span>
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap">
                   <span class="text-sm text-slate-900 dark:text-white">
@@ -111,35 +117,43 @@
                     {{ formatContactValue(contact) }}
                   </span>
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap">
-                  <span
-                    :class="[
-                      'inline-flex px-2 py-1 text-xs font-semibold rounded-full',
-                      getContactStatusClass(contact)
-                    ]"
-                  >
-                    {{ getContactStatus(contact) }}
-                  </span>
-                </td>
                 <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
                   {{ getContactTimeInStage(contact) }}
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                  <button
-                    @click="openContact(contact.id)"
-                    class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                  >
-                    {{ $t('KANBAN.LIST_VIEW.VIEW') }}
-                  </button>
-                </td>
               </tr>
               <tr v-if="!filteredContacts.length">
-                <td colspan="6" class="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
+                <td colspan="5" class="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
                   {{ $t('KANBAN.LIST_VIEW.NO_CONTACTS') }}
                 </td>
               </tr>
             </tbody>
           </table>
+        </div>
+        
+        <!-- Paginação -->
+        <div v-if="filteredContacts.length > 0 && totalListPages > 1" class="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+          <div class="text-sm text-slate-600 dark:text-slate-400">
+            Mostrando {{ (listCurrentPage - 1) * listItemsPerPage + 1 }} - {{ Math.min(listCurrentPage * listItemsPerPage, filteredContacts.length) }} de {{ filteredContacts.length }}
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              @click="listCurrentPage = Math.max(1, listCurrentPage - 1)"
+              :disabled="listCurrentPage === 1"
+              class="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Anterior
+            </button>
+            <span class="text-sm text-slate-600 dark:text-slate-400">
+              Página {{ listCurrentPage }} de {{ totalListPages }}
+            </span>
+            <button
+              @click="listCurrentPage = Math.min(totalListPages, listCurrentPage + 1)"
+              :disabled="listCurrentPage === totalListPages"
+              class="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Próxima
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -280,7 +294,6 @@
       :show="showCardModal"
       :contact="selectedCardContact"
       :pipeline-id="selectedAttribute ? selectedAttribute.id : null"
-      :current-stage="getContactCurrentStage(selectedCardContact)"
       :stage-color="getStageColor(getContactCurrentStage(selectedCardContact))"
       :available-stages="selectedAttribute ? selectedAttribute.attribute_values || [] : []"
       @close="handleCloseCardModal"
@@ -386,8 +399,8 @@ export default {
       pagination: null,
       pipelineCacheManager: null,
       // Configuração de paginação para melhor performance
-      initialLoadLimit: 100, // Limite inicial de contatos a carregar
-      maxContactsToLoad: 500, // Limite máximo de contatos (evita sobrecarga)
+      initialLoadLimit: 100, // Limite inicial de contatos a carregar (usado apenas para carregamento incremental no Kanban)
+      maxContactsToLoad: 5000, // Limite máximo de contatos (aumentado para suportar modo lista/dashboard com muitos contatos)
       contactsLoadedCount: 0,
       hasMoreContacts: false,
       // Estatísticas agregadas por coluna (totais reais do backend)
@@ -410,6 +423,9 @@ export default {
       // Modal de detalhes do card
       showCardModal: false,
       selectedCardContact: {},
+      // Paginação do modo lista
+      listCurrentPage: 1,
+      listItemsPerPage: 25,
     };
   },
   created() {
@@ -498,6 +514,23 @@ export default {
     },
     displayColumns() {
       return this.filteredColumns.length ? this.filteredColumns : this.columns;
+    },
+    // Contatos paginados para o modo lista
+    paginatedContacts() {
+      if (this.currentView !== 'list') {
+        return this.filteredContacts;
+      }
+      
+      const start = (this.listCurrentPage - 1) * this.listItemsPerPage;
+      const end = start + this.listItemsPerPage;
+      return this.filteredContacts.slice(start, end);
+    },
+    // Total de páginas para o modo lista
+    totalListPages() {
+      if (this.currentView !== 'list') {
+        return 1;
+      }
+      return Math.ceil(this.filteredContacts.length / this.listItemsPerPage);
     },
     // Contatos filtrados para usar no Dashboard e List View
     filteredContacts() {
@@ -622,6 +655,21 @@ export default {
 
   },
   watch: {
+    // Resetar página ao mudar de view
+    currentView(newView) {
+      if (newView !== 'list') {
+        this.listCurrentPage = 1;
+      }
+    },
+    // Resetar página quando filtros mudarem
+    filteredContacts() {
+      if (this.currentView === 'list' && this.totalListPages > 0) {
+        // Se a página atual não existe mais, voltar para a primeira
+        if (this.listCurrentPage > this.totalListPages) {
+          this.listCurrentPage = 1;
+        }
+      }
+    },
     // Otimização: Remover watcher genérico de contacts que causa loops
     // Em vez disso, usar watchers específicos ou atualizações manuais quando necessário
     // O watcher genérico causava setupColumns() toda vez que getContacts retornava novo array
@@ -1229,13 +1277,14 @@ export default {
               !existingContacts.some(existing => existing.id === contact.id)
           );
 
-          // Adicionar novos contatos respeitando o limite inicial
+          // Adicionar todos os novos contatos (sem limite inicial para modo lista/dashboard)
+          // Apenas respeitar o limite máximo de segurança
           if (newContacts.length > 0) {
-            // Se ainda não atingimos o limite inicial, carregar tudo
-            // Caso contrário, parar após o limite inicial
-            const contactsToAdd = totalContactsLoaded < this.initialLoadLimit
-              ? newContacts
-              : newContacts.slice(0, Math.max(0, this.initialLoadLimit - totalContactsLoaded));
+            // Verificar se ainda há espaço dentro do limite máximo
+            const remainingSlots = this.maxContactsToLoad - totalContactsLoaded;
+            const contactsToAdd = remainingSlots > 0
+              ? newContacts.slice(0, remainingSlots)
+              : [];
 
             if (contactsToAdd.length > 0) {
               existingContacts.push(...contactsToAdd);
@@ -1247,10 +1296,8 @@ export default {
               if (contactsToAdd.length < newContacts.length) {
                 this.hasMoreContacts = true;
               }
-            }
-
-            // Se atingimos o limite inicial e ainda há mais contatos, marcar como tendo mais
-            if (totalContactsLoaded >= this.initialLoadLimit && contacts.length >= 15) {
+            } else {
+              // Limite máximo atingido
               this.hasMoreContacts = true;
             }
           }
@@ -1263,8 +1310,8 @@ export default {
             };
           }
 
-          // Se atingimos o limite inicial, parar aqui (carregamento incremental)
-          if (totalContactsLoaded >= this.initialLoadLimit) {
+          // Se atingimos o limite máximo, parar aqui
+          if (totalContactsLoaded >= this.maxContactsToLoad) {
             return {
               lastPage: page,
               hasMore: true,
@@ -1290,7 +1337,7 @@ export default {
         if (this.hasMoreContacts) {
           this.logger.log('info', 'Carregamento limitado para melhor performance', {
             loaded: totalContactsLoaded,
-            limit: this.initialLoadLimit,
+            limit: this.maxContactsToLoad,
             hasMore: true,
           });
         }
@@ -2415,24 +2462,6 @@ export default {
         style: 'currency',
         currency: 'BRL',
       }).format(dealValue);
-    },
-    getContactStatus(contact) {
-      if (!this.selectedAttribute) return this.$t('KANBAN.LIST_VIEW.OPEN');
-      const winLostData = getWinLostStatus(contact, this.selectedAttribute.id);
-      const winLostStatus = winLostData?.status;
-      
-      if (winLostStatus === 'won') return this.$t('KANBAN.LIST_VIEW.WON');
-      if (winLostStatus === 'lost') return this.$t('KANBAN.LIST_VIEW.LOST');
-      return this.$t('KANBAN.LIST_VIEW.OPEN');
-    },
-    getContactStatusClass(contact) {
-      if (!this.selectedAttribute) return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300';
-      const winLostData = getWinLostStatus(contact, this.selectedAttribute.id);
-      const winLostStatus = winLostData?.status;
-      
-      if (winLostStatus === 'won') return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
-      if (winLostStatus === 'lost') return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
-      return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300';
     },
     getContactTimeInStage(contact) {
       if (!this.selectedAttribute) return '-';

@@ -158,6 +158,8 @@ Rails.application.routes.draw do
           post 'contacts/pipeline_positions/reorder', to: 'contacts/pipeline_positions#reorder'
           # Stats de pipeline positions (collection route - retorna totais agregados por stage)
           get 'contacts/pipeline_positions/:pipeline_id/stats', to: 'contacts/pipeline_positions#stats'
+          # Dashboard stats (estatísticas completas calculadas no banco)
+          get 'contacts/pipeline_positions/:pipeline_id/dashboard_stats', to: 'contacts/pipeline_positions#dashboard_stats'
           resources :csat_survey_responses, only: [:index] do
             collection do
               get :metrics

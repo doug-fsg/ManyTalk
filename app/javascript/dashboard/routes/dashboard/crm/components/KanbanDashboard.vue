@@ -204,6 +204,8 @@
 </template>
 
 <script>
+import ContactAPI from 'dashboard/api/contacts';
+
 export default {
   name: 'KanbanDashboard',
   props: {
@@ -224,9 +226,43 @@ export default {
       default: '',
     },
   },
+  data() {
+    return {
+      backendStats: null, // Estatísticas do backend
+      isLoading: false,
+    };
+  },
+  watch: {
+    pipelineId: {
+      immediate: true,
+      handler(newVal) {
+        if (newVal) {
+          this.fetchDashboardStats();
+        }
+      },
+    },
+  },
   computed: {
     stats() {
-      const stats = {
+      // Se temos estatísticas do backend, usar elas (sempre corretas, mesmo com +5000 contatos)
+      if (this.backendStats) {
+        return {
+          totalCards: this.backendStats.total_cards || 0,
+          totalValue: this.backendStats.total_value || 0,
+          openCards: this.backendStats.open_cards || 0,
+          openValue: this.backendStats.open_value || 0,
+          wonCards: this.backendStats.won_cards || 0,
+          wonValue: this.backendStats.won_value || 0,
+          lostCards: this.backendStats.lost_cards || 0,
+          lostValue: this.backendStats.lost_value || 0,
+          winRate: this.backendStats.win_rate || 0,
+          averageTime: `${this.backendStats.average_time_days || 0}d`,
+          averageDealValue: this.backendStats.average_deal_value || 0,
+        };
+      }
+
+      // Sem fallback - retornar dados vazios se backendStats não estiver disponível
+      return {
         totalCards: 0,
         totalValue: 0,
         openCards: 0,
@@ -239,150 +275,55 @@ export default {
         averageTime: '0d',
         averageDealValue: 0,
       };
-
-      let totalTimeInStage = 0;
-      let cardsWithTime = 0;
-      let totalDealValue = 0;
-      let cardsWithValue = 0;
-
-      this.contacts.forEach(contact => {
-        // Usar pipeline_positions em vez de additional_attributes
-        const position = contact.pipeline_positions?.find(
-          p => p.pipeline_id === this.pipelineId
-        );
-        
-        const winLostData = position?.metadata?.win_lost || {};
-        const winLostStatus = winLostData.status;
-        const dealValue = parseFloat(position?.deal_value || 0);
-        const enteredAt = position?.entered_at;
-
-        stats.totalCards++;
-        stats.totalValue += dealValue;
-
-        if (dealValue > 0) {
-          totalDealValue += dealValue;
-          cardsWithValue++;
-        }
-
-        if (winLostStatus === 'won') {
-          stats.wonCards++;
-          stats.wonValue += dealValue;
-        } else if (winLostStatus === 'lost') {
-          stats.lostCards++;
-          stats.lostValue += dealValue;
-        } else {
-          stats.openCards++;
-          stats.openValue += dealValue;
-        }
-
-        // Calcular tempo médio na etapa usando pipeline_positions
-        if (enteredAt) {
-          const enteredAtTime = new Date(enteredAt).getTime();
-          const now = Date.now();
-          const timeDiff = now - enteredAtTime;
-          totalTimeInStage += timeDiff;
-          cardsWithTime++;
-        }
-      });
-
-      // Taxa de conversão
-      const totalFinalized = stats.wonCards + stats.lostCards;
-      if (totalFinalized > 0) {
-        stats.winRate = Math.round((stats.wonCards / totalFinalized) * 100);
-      }
-
-      // Tempo médio
-      if (cardsWithTime > 0) {
-        const avgTime = totalTimeInStage / cardsWithTime;
-        const days = Math.floor(avgTime / 86400000);
-        stats.averageTime = `${days}d`;
-      }
-
-      // Valor médio
-      if (cardsWithValue > 0) {
-        stats.averageDealValue = totalDealValue / cardsWithValue;
-      }
-
-      return stats;
     },
     stageStats() {
-      if (!this.columns || this.columns.length === 0) {
-        return [];
+      // Se temos estatísticas do backend, usar elas (sempre corretas)
+      if (this.backendStats && this.backendStats.stage_stats) {
+        const totalCount = this.backendStats.total_cards || 0;
+        
+        // Mapear stage_stats do backend para o formato esperado pelo template
+        return this.backendStats.stage_stats.map(stat => {
+          const percentage = totalCount > 0 ? (stat.count / totalCount) * 100 : 0;
+          const minPercentage = stat.count > 0 && percentage < 1 ? 1 : percentage;
+          
+          // Encontrar o nome do stage a partir das colunas
+          const column = this.columns.find(col => col.title === stat.stage_id);
+          const stageName = column ? column.title : stat.stage_id;
+          
+          return {
+            name: stageName,
+            count: stat.count,
+            value: stat.total_value,
+            percentage: minPercentage,
+          };
+        });
       }
 
-      const stageMap = {};
-      let totalCount = 0;
-
-      this.columns.forEach(column => {
-        if (!column.items || !Array.isArray(column.items)) {
-          return;
-        }
-
-        const count = column.items.length;
-        const value = column.items.reduce((sum, contact) => {
-          // Usar pipeline_positions em vez de additional_attributes
-          const position = contact.pipeline_positions?.find(
-            p => p.pipeline_id === this.pipelineId
-          );
-          const dealValue = parseFloat(position?.deal_value || 0);
-          return sum + dealValue;
-        }, 0);
-
-        stageMap[column.title] = { count, value };
-        totalCount += count;
-      });
-
-      return this.columns.map(column => {
-        const stage = stageMap[column.title] || { count: 0, value: 0 };
-        const percentage = totalCount > 0 ? (stage.count / totalCount) * 100 : 0;
-        
-        const minPercentage = stage.count > 0 && percentage < 1 ? 1 : percentage;
-        
-        return {
-          name: column.title,
-          count: stage.count,
-          value: stage.value,
-          percentage: minPercentage,
-        };
-      });
+      // Sem fallback - retornar array vazio se backendStats não estiver disponível
+      return [];
     },
     longestInStage() {
-      const cards = [];
+      // Se temos estatísticas do backend, usar elas (sempre corretas)
+      if (this.backendStats && this.backendStats.longest_in_stage) {
+        // Mapear os dados do backend para o formato esperado pelo template
+        return this.backendStats.longest_in_stage.map(item => {
+          // Encontrar o nome do stage
+          const column = this.columns.find(col => col.title === item.stage_id);
+          const stageName = column ? column.title : item.stage_id;
+          
+          return {
+            id: item.contact_id,
+            name: item.name,
+            stage: stageName,
+            timeInStage: `${item.time_in_stage_days}d`,
+            timeDiffMs: item.time_in_stage_days * 86400000, // Para ordenação
+            value: item.deal_value,
+          };
+        });
+      }
 
-      this.contacts.forEach(contact => {
-        // Usar pipeline_positions em vez de additional_attributes.kanban
-        const position = contact.pipeline_positions?.find(
-          p => p.pipeline_id === this.pipelineId
-        );
-        
-        if (!position) return;
-
-        const winLostData = position.metadata?.win_lost || {};
-        const winLostStatus = winLostData.status;
-
-        // Apenas cards abertos
-        if (winLostStatus) return;
-
-        const enteredAt = position.entered_at;
-        if (enteredAt) {
-          const enteredAtTime = new Date(enteredAt).getTime();
-          const now = Date.now();
-          const timeDiff = now - enteredAtTime;
-          const days = Math.floor(timeDiff / 86400000);
-
-          cards.push({
-            id: contact.id,
-            name: contact.name,
-            stage: this.getContactStage(contact),
-            timeInStage: `${days}d`,
-            timeDiffMs: timeDiff,
-            value: parseFloat(position.deal_value || 0),
-          });
-        }
-      });
-
-      // Ordenar por tempo decrescente e pegar top 5
-      return cards.sort((a, b) => b.timeDiffMs - a.timeDiffMs).slice(0, 5);
+      // Sem fallback - retornar array vazio se backendStats não estiver disponível
+      return [];
     },
     topAssignees() {
       // Placeholder - implementar quando houver dados de responsável
@@ -390,6 +331,34 @@ export default {
     },
   },
   methods: {
+    async fetchDashboardStats() {
+      if (!this.pipelineId) return;
+      
+      try {
+        this.isLoading = true;
+        const response = await ContactAPI.getDashboardStats(this.pipelineId);
+        this.backendStats = response.data;
+      } catch (error) {
+        console.error('Erro ao carregar estatísticas do dashboard:', error);
+        // Não usar fallback - mostrar erro ou dados vazios
+        this.backendStats = {
+          total_cards: 0,
+          total_value: 0,
+          open_cards: 0,
+          open_value: 0,
+          won_cards: 0,
+          won_value: 0,
+          lost_cards: 0,
+          lost_value: 0,
+          win_rate: 0,
+          average_time_days: 0,
+          average_deal_value: 0,
+          stage_stats: []
+        };
+      } finally {
+        this.isLoading = false;
+      }
+    },
     formatCurrency(value) {
       return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
