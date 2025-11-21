@@ -133,11 +133,11 @@
         <!-- Paginação -->
         <div v-if="filteredContacts.length > 0 && totalListPages > 1" class="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
           <div class="text-sm text-slate-600 dark:text-slate-400">
-            Mostrando {{ (listCurrentPage - 1) * listItemsPerPage + 1 }} - {{ Math.min(listCurrentPage * listItemsPerPage, filteredContacts.length) }} de {{ filteredContacts.length }}
+            Mostrando {{ (listCurrentPage - 1) * listItemsPerPage + 1 }} - {{ Math.min(listCurrentPage * listItemsPerPage, filteredContacts.length) }} de {{ totalListContacts }}
           </div>
           <div class="flex items-center gap-2">
             <button
-              @click="listCurrentPage = Math.max(1, listCurrentPage - 1)"
+              @click="loadListPage(listCurrentPage - 1)"
               :disabled="listCurrentPage === 1"
               class="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
@@ -147,7 +147,7 @@
               Página {{ listCurrentPage }} de {{ totalListPages }}
             </span>
             <button
-              @click="listCurrentPage = Math.min(totalListPages, listCurrentPage + 1)"
+              @click="loadListPage(listCurrentPage + 1)"
               :disabled="listCurrentPage === totalListPages"
               class="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
@@ -515,22 +515,37 @@ export default {
     displayColumns() {
       return this.filteredColumns.length ? this.filteredColumns : this.columns;
     },
-    // Contatos paginados para o modo lista
+    // Contatos paginados para o modo lista (já vem paginado do backend)
     paginatedContacts() {
       if (this.currentView !== 'list') {
         return this.filteredContacts;
       }
-      
-      const start = (this.listCurrentPage - 1) * this.listItemsPerPage;
-      const end = start + this.listItemsPerPage;
-      return this.filteredContacts.slice(start, end);
+      // No modo lista, filteredContacts já contém apenas os contatos da página atual
+      return this.filteredContacts;
     },
-    // Total de páginas para o modo lista
+    // Total de páginas para o modo lista (calculado pelo backend)
     totalListPages() {
       if (this.currentView !== 'list') {
         return 1;
       }
+      // Usar meta do store se disponível, senão calcular baseado nos contatos carregados
+      const meta = this.$store.getters['contacts/getMeta'];
+      if (meta && meta.total_pages) {
+        return meta.total_pages;
+      }
+      // Fallback: calcular baseado nos contatos carregados
       return Math.ceil(this.filteredContacts.length / this.listItemsPerPage);
+    },
+    // Total de contatos no modo lista (do backend)
+    totalListContacts() {
+      if (this.currentView !== 'list') {
+        return this.filteredContacts.length;
+      }
+      const meta = this.$store.getters['contacts/getMeta'];
+      if (meta && meta.count) {
+        return meta.count;
+      }
+      return this.filteredContacts.length;
     },
     // Contatos filtrados para usar no Dashboard e List View
     filteredContacts() {
@@ -661,15 +676,6 @@ export default {
         this.listCurrentPage = 1;
       }
     },
-    // Resetar página quando filtros mudarem
-    filteredContacts() {
-      if (this.currentView === 'list' && this.totalListPages > 0) {
-        // Se a página atual não existe mais, voltar para a primeira
-        if (this.listCurrentPage > this.totalListPages) {
-          this.listCurrentPage = 1;
-        }
-      }
-    },
     // Otimização: Remover watcher genérico de contacts que causa loops
     // Em vez disso, usar watchers específicos ou atualizações manuais quando necessário
     // O watcher genérico causava setupColumns() toda vez que getContacts retornava novo array
@@ -677,10 +683,17 @@ export default {
     // Observar mudanças na query de busca
     searchQuery: {
       handler(newVal) {
-        if (!newVal || newVal.trim() === '') {
-          this.filteredColumns = [...this.columns];
+        if (this.currentView === 'list' && this.selectedAttribute) {
+          // No modo lista, recarregar contatos da API
+          this.listCurrentPage = 1;
+          this.loadContactsPage(1);
         } else {
-          this.handleSearch();
+          // No modo kanban, usar filtro local
+          if (!newVal || newVal.trim() === '') {
+            this.filteredColumns = [...this.columns];
+          } else {
+            this.handleSearch();
+          }
         }
       },
     },
@@ -1085,15 +1098,6 @@ export default {
             items: filteredItems,
           };
         });
-
-        this.logger.log('info', 'Filtros aplicados', {
-          query: this.searchQuery,
-          winLostFilter: this.winLostFilter,
-          resultCount: this.filteredColumns.reduce(
-            (sum, col) => sum + col.items.length,
-            0
-          ),
-        });
       }, 300);
     },
 
@@ -1171,14 +1175,23 @@ export default {
         // Limpar contatos existentes ao carregar do início
         this.$store.commit('contacts/CLEAR_CONTACTS');
 
-        // Carregar todos os contatos
-        await this.loadAllContacts();
-
-        // Carregar estatísticas agregadas (totais reais) do backend
+        // PRIMEIRO: Carregar estatísticas agregadas (totais reais) do backend
+        // Isso permite que os totais apareçam imediatamente no cabeçalho das colunas
         await this.fetchColumnStats();
 
-        // Configurar as colunas apenas depois que todos os contatos forem carregados
+        // Configurar colunas vazias com os totais já disponíveis
         this.setupColumns();
+
+        // SEGUNDO: Carregar contatos
+        // No modo lista: carregar apenas uma página (performance)
+        // No modo kanban: carregar todos os contatos
+        if (this.currentView === 'list') {
+          await this.loadContactsPage(1);
+        } else {
+          await this.loadAllContacts();
+          // Atualizar colunas com os contatos carregados
+          this.setupColumns();
+        }
       } catch (error) {
         this.$store.dispatch('notifications/show', {
           type: 'error',
@@ -1245,16 +1258,55 @@ export default {
             return [];
           }
         };
+        
+        // Expor método para carregar uma página (usado no modo lista)
+        this.loadContactsPage = async (page = 1) => {
+          const queryPayload = {
+            payload: [
+              {
+                attribute_key: this.selectedAttribute.attribute_key,
+                filter_operator: 'is_present',
+                values: [],
+                query_operator: 'AND',
+              },
+            ],
+          };
+          
+          if (this.searchQuery) {
+            queryPayload.payload.push({
+              attribute_key: 'name',
+              filter_operator: 'contains',
+              values: [this.searchQuery],
+              query_operator: 'OR',
+            });
+            queryPayload.payload.push({
+              attribute_key: 'email',
+              filter_operator: 'contains',
+              values: [this.searchQuery],
+              query_operator: 'OR',
+            });
+            queryPayload.payload.push({
+              attribute_key: 'phone_number',
+              filter_operator: 'contains',
+              values: [this.searchQuery],
+              query_operator: 'OR',
+            });
+          }
+          
+          const contacts = await this.$store.dispatch('contacts/filter', {
+            page,
+            queryPayload,
+            resetState: page === 1,
+          });
+          
+          return contacts || [];
+        };
 
         // Função recursiva para carregar páginas com limite de performance
         const loadNextPage = async page => {
           // Limite de segurança: não carregar mais que maxContactsToLoad
           if (totalContactsLoaded >= this.maxContactsToLoad) {
             this.hasMoreContacts = true;
-            this.logger.log('info', 'Limite de contatos atingido para melhor performance', {
-              loaded: totalContactsLoaded,
-              limit: this.maxContactsToLoad,
-            });
             return {
               lastPage: page - 1,
               hasMore: true,
@@ -1333,14 +1385,6 @@ export default {
           isLoadingMore: false,
         });
 
-        // Mostrar notificação se há mais contatos disponíveis
-        if (this.hasMoreContacts) {
-          this.logger.log('info', 'Carregamento limitado para melhor performance', {
-            loaded: totalContactsLoaded,
-            limit: this.maxContactsToLoad,
-            hasMore: true,
-          });
-        }
       } catch (error) {
         this.$store.dispatch('notifications/show', {
           type: 'error',
@@ -1360,10 +1404,10 @@ export default {
       try {
         const response = await ContactAPI.getPipelineStats(this.selectedAttribute.id);
         
-        if (response.data && response.data.stages) {
-          // Converter array de stages em objeto indexado por stage_id
+        if (response.data && response.data.stage_stats) {
+          // Converter array de stage_stats em objeto indexado por stage_id
           const statsMap = {};
-          response.data.stages.forEach(stage => {
+          response.data.stage_stats.forEach(stage => {
             statsMap[stage.stage_id] = {
               count: stage.count,
               total_value: stage.total_value || 0
@@ -1371,20 +1415,9 @@ export default {
           });
           
           this.columnStats = statsMap;
-          
-          this.logger.log('info', 'Estatísticas de colunas carregadas', {
-            pipelineId: this.selectedAttribute.id,
-            stats: statsMap
-          });
         }
       } catch (error) {
-        // Não mostrar erro ao usuário, apenas logar
         // Fallback para cálculo local se a API falhar
-        this.logger.log('warn', 'Erro ao carregar estatísticas de colunas, usando cálculo local', {
-          error: error.message,
-          pipelineId: this.selectedAttribute.id
-        });
-        // Limpar stats para forçar uso do fallback
         this.columnStats = {};
       }
     },
@@ -1423,12 +1456,6 @@ export default {
         return;
       }
       this.lastColumnUpdateTime = now;
-
-      // Logging para monitoramento
-      this.logger.log('info', 'Reconstruindo colunas', {
-        attribute: this.selectedAttribute.attribute_display_name,
-        timestamp: now,
-      });
 
       this.columns = [];
       const values = this.selectedAttribute.attribute_values;
@@ -1513,7 +1540,6 @@ export default {
       // Verificar se o contato existe
       const contact = this.contacts.find(c => c.id === contactId);
       if (!contact) {
-        console.warn('[Kanban] Contact not found:', contactId);
         return;
       }
 
@@ -1595,7 +1621,6 @@ export default {
         })
         .catch(error => {
           // Se a API falhar, reverter a mudança local
-          console.error('[Kanban] Error updating pipeline position:', error);
           this.revertLocalUpdate(contact, sourceColumnTitle);
           this.safeShowNotification('error', this.$t('KANBAN.ERRORS.UPDATE_FAILED'));
         });
@@ -2020,14 +2045,11 @@ export default {
     async confirmDeletePipeline() {
       try {
         const contactsUsingPipeline = this.contacts.filter(contact => {
-          const customAttributes = contact.custom_attributes || {};
-          const attributeValue =
-            customAttributes[this.selectedAttribute.attribute_key];
-          return (
-            attributeValue !== undefined &&
-            attributeValue !== null &&
-            attributeValue !== ''
+          // Usar pipeline_positions em vez de custom_attributes
+          const position = contact.pipeline_positions?.find(
+            p => p.pipeline_id === this.selectedAttribute.id
           );
+          return position && position.stage_id;
         });
 
         if (contactsUsingPipeline.length > 0) {
@@ -2463,6 +2485,58 @@ export default {
         currency: 'BRL',
       }).format(dealValue);
     },
+    // Carregar uma página de contatos (modo lista)
+    async loadContactsPage(page = 1) {
+      if (!this.selectedAttribute) return;
+      
+      const queryPayload = {
+        payload: [
+          {
+            attribute_key: this.selectedAttribute.attribute_key,
+            filter_operator: 'is_present',
+            values: [],
+            query_operator: 'AND',
+          },
+        ],
+      };
+      
+      if (this.searchQuery) {
+        queryPayload.payload.push({
+          attribute_key: 'name',
+          filter_operator: 'contains',
+          values: [this.searchQuery],
+          query_operator: 'OR',
+        });
+        queryPayload.payload.push({
+          attribute_key: 'email',
+          filter_operator: 'contains',
+          values: [this.searchQuery],
+          query_operator: 'OR',
+        });
+        queryPayload.payload.push({
+          attribute_key: 'phone_number',
+          filter_operator: 'contains',
+          values: [this.searchQuery],
+          query_operator: 'OR',
+        });
+      }
+      
+      try {
+        await this.$store.dispatch('contacts/filter', {
+          page,
+          queryPayload,
+          resetState: page === 1,
+        });
+      } catch (error) {
+        console.error('[Kanban] Error loading contacts page:', error);
+      }
+    },
+    // Carregar página específica no modo lista
+    async loadListPage(page) {
+      if (page < 1 || page > this.totalListPages) return;
+      this.listCurrentPage = page;
+      await this.loadContactsPage(page);
+    },
     getContactTimeInStage(contact) {
       if (!this.selectedAttribute) return '-';
       const enteredAt = getEnteredAt(contact, this.selectedAttribute.id);
@@ -2553,6 +2627,58 @@ export default {
     handleCloseCardModal() {
       this.showCardModal = false;
       this.selectedCardContact = {};
+    },
+    // Carregar uma página de contatos (modo lista)
+    async loadContactsPage(page = 1) {
+      if (!this.selectedAttribute) return;
+      
+      const queryPayload = {
+        payload: [
+          {
+            attribute_key: this.selectedAttribute.attribute_key,
+            filter_operator: 'is_present',
+            values: [],
+            query_operator: 'AND',
+          },
+        ],
+      };
+      
+      if (this.searchQuery) {
+        queryPayload.payload.push({
+          attribute_key: 'name',
+          filter_operator: 'contains',
+          values: [this.searchQuery],
+          query_operator: 'OR',
+        });
+        queryPayload.payload.push({
+          attribute_key: 'email',
+          filter_operator: 'contains',
+          values: [this.searchQuery],
+          query_operator: 'OR',
+        });
+        queryPayload.payload.push({
+          attribute_key: 'phone_number',
+          filter_operator: 'contains',
+          values: [this.searchQuery],
+          query_operator: 'OR',
+        });
+      }
+      
+      try {
+        await this.$store.dispatch('contacts/filter', {
+          page,
+          queryPayload,
+          resetState: page === 1,
+        });
+      } catch (error) {
+        console.error('[Kanban] Error loading contacts page:', error);
+      }
+    },
+    // Carregar página específica no modo lista
+    async loadListPage(page) {
+      if (page < 1 || page > this.totalListPages) return;
+      this.listCurrentPage = page;
+      await this.loadContactsPage(page);
     },
     getContactCurrentStage(contact) {
       if (!contact || !this.selectedAttribute) return '';
