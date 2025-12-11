@@ -45,7 +45,9 @@
       "PIPELINE_IN_USE": "This pipeline is being used by contacts and cannot be deleted",
       "DELETE_FAILED": "Failed to delete pipeline",
       "NO_PIPELINE_SELECTED": "No pipeline selected",
-      "TOO_MANY_UPDATES": "We detected too many updates in Kanban. Component was reset to prevent performance issues."
+      "TOO_MANY_UPDATES": "We detected too many updates in Kanban. Component was reset to prevent performance issues.",
+      "CANNOT_MOVE_CARD": "You can only move cards that belong to you or that have no owner assigned",
+      "CANNOT_EDIT_CARD": "You can only edit cards that belong to you or that have no owner assigned"
     },
     "SUCCESS": {
       "PIPELINE_DELETED": "Pipeline deleted successfully",

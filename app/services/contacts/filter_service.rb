@@ -10,6 +10,11 @@ class Contacts::FilterService < FilterService
 
   def perform
     @contacts = query_builder(@filters['contacts'])
+    
+    # Filtrar por assignee se não for admin e houver pipeline kanban nos filtros
+    unless @user.administrator?
+      @contacts = filter_by_assignee(@contacts)
+    end
 
     {
       contacts: @contacts,
@@ -145,6 +150,26 @@ class Contacts::FilterService < FilterService
     end
 
     pipeline_ids.uniq
+  end
+
+  def filter_by_assignee(contacts)
+    # Verificar se há pipeline kanban nos filtros
+    kanban_pipeline_ids = get_kanban_pipeline_ids_from_filters
+    
+    return contacts if kanban_pipeline_ids.empty?
+    
+    # Filtrar contatos: apenas os que são do usuário ou sem dono
+    # Usar EXISTS para garantir que o contato está no pipeline E é do usuário ou sem dono
+    contacts.where(
+      "EXISTS (
+        SELECT 1 FROM contact_pipeline_positions 
+        WHERE contact_pipeline_positions.contact_id = contacts.id 
+        AND contact_pipeline_positions.pipeline_id IN (?) 
+        AND (contact_pipeline_positions.assignee_id = ? OR contact_pipeline_positions.assignee_id IS NULL)
+      )",
+      kanban_pipeline_ids,
+      @user.id
+    )
   end
 
   def equals_to_filter_string(filter_operator, current_index)

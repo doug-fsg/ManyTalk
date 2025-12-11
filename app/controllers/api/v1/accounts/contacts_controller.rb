@@ -142,7 +142,7 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
                            .includes([{ avatar_attachment: [:blob] }])
                            .page(@current_page).per(RESULTS_PER_PAGE)
 
-    contacts_with_avatar = contacts_with_avatar.includes(:contact_pipeline_positions)
+    contacts_with_avatar = contacts_with_avatar.includes(contact_pipeline_positions: :assignee)
     return contacts_with_avatar.includes([{ contact_inboxes: [:inbox] }]) if @include_contact_inboxes
 
     contacts_with_avatar

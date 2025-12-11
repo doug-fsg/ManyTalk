@@ -30,6 +30,7 @@ class ContactPipelinePosition < ApplicationRecord
 
   belongs_to :contact
   belongs_to :pipeline, class_name: 'CustomAttributeDefinition', foreign_key: 'pipeline_id'
+  belongs_to :assignee, class_name: 'User', optional: true
 
   validates :contact_id, presence: true
   validates :pipeline_id, presence: true
@@ -39,6 +40,9 @@ class ContactPipelinePosition < ApplicationRecord
   # Disparar evento CONTACT_UPDATED quando pipeline position é criado, atualizado ou destruído
   # Isso garante sincronização em tempo real entre chat, Kanban, macros e automações
   after_commit :dispatch_contact_updated_event, on: [:create, :update, :destroy]
+  
+  # Auto-atribuir dono ao criar card
+  before_create :auto_assign_owner_if_new
 
   scope :for_pipeline, ->(pipeline_id) { where(pipeline_id: pipeline_id) }
   scope :for_stage, ->(stage_id) { where(stage_id: stage_id) }
@@ -105,6 +109,21 @@ class ContactPipelinePosition < ApplicationRecord
   end
 
   private
+
+  def auto_assign_owner_if_new
+    return if assignee_id.present? # Já tem dono
+    return unless new_record? # Só na criação
+    
+    # Se foi adicionado por usuário manualmente
+    if Current.user.present? && Current.user.is_a?(User)
+      self.assignee = Current.user
+    # Se foi por macro/automação, tentar herdar da conversa
+    elsif contact.conversations.any?
+      last_conv = contact.conversations.order(updated_at: :desc).first
+      self.assignee = last_conv.assignee if last_conv&.assignee.present?
+    end
+    # Se não conseguir atribuir, fica nil (sem dono)
+  end
 
   def dispatch_contact_updated_event
     return unless contact.present?

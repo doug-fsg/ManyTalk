@@ -48,6 +48,7 @@
         ghost-class="ghost-card"
         chosen-class="chosen-card"
         drag-class="dragging-card"
+        :disabled="isViewerMode"
         @start="onDragStart"
         @end="onItemMoved"
       >
@@ -58,6 +59,7 @@
           :pipeline-id="pipelineId"
           :is-updating="isCardUpdating(contact.id)"
           :has-error="hasCardError(contact.id)"
+          :is-viewer-mode="isViewerMode"
           @view="$emit('view-contact', contact.id)"
           @remove="$emit('remove-card', contact.id)"
           @open-conversation="$emit('open-conversation', $event)"
@@ -117,6 +119,10 @@ export default {
     columnStats: {
       type: Object,
       default: null
+    },
+    isViewerMode: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -197,8 +203,8 @@ export default {
       const g = parseInt(hex.substring(2, 4), 16);
       const b = parseInt(hex.substring(4, 6), 16);
       
-      // Retorna uma versão clara com baixa opacidade
-      return `rgba(${r}, ${g}, ${b}, 0.08)`;
+      // Retorna uma versão clara com opacidade mais próxima da cor original
+      return `rgba(${r}, ${g}, ${b}, 0.18)`;
     },
     getHeaderColor(hexColor) {
       // Função para criar uma versão mais forte da cor para o cabeçalho
@@ -214,15 +220,15 @@ export default {
       const g = parseInt(hex.substring(2, 4), 16);
       const b = parseInt(hex.substring(4, 6), 16);
       
-      // Retorna uma versão mais forte com opacidade maior
-      return `rgba(${r}, ${g}, ${b}, 0.15)`;
+      // Retorna uma versão mais forte com opacidade maior, mais próxima da cor original
+      return `rgba(${r}, ${g}, ${b}, 0.25)`;
     },
     onDragStart() {
       // Ativar flag de drag imediatamente para renderizar todos os itens
       // Isso permite posicionamento preciso durante o drag
       this.isDragging = true;
     },
-    onItemMoved(event) {
+    async onItemMoved(event) {
       // Resetar flag de drag
       this.isDragging = false;
       
@@ -238,6 +244,22 @@ export default {
       const oldIndex = event.oldIndex !== undefined ? event.oldIndex : null;
       const newIndex = event.newIndex !== undefined ? event.newIndex : null;
       
+      // Verificar se card não tem dono
+      const contact = this.columnItems.find(c => c.id === contactId);
+      if (contact) {
+        const position = contact.pipeline_positions?.find(
+          p => p.pipeline_id === this.pipelineId || p.pipeline_id === parseInt(this.pipelineId, 10)
+        );
+        
+        // Se não tem dono e não é modo viewer, perguntar se quer virar dono
+        if (!position?.assignee && !this.isViewerMode) {
+          const wantsToBeOwner = await this.showAssignOwnerTooltip(contact);
+          if (wantsToBeOwner) {
+            this.$emit('assign-self-as-owner', { contactId });
+          }
+        }
+      }
+      
       // Emitir evento para o componente pai processar com índices
       this.$emit('item-moved', {
         contactId,
@@ -248,6 +270,16 @@ export default {
         oldIndex, // Índice na coluna origem
         newIndex, // Índice na coluna destino (posição exata)
         timestamp: Date.now()
+      });
+    },
+    async showAssignOwnerTooltip(contact) {
+      return new Promise((resolve) => {
+        // Emitir evento para componente pai mostrar modal de confirmação
+        this.$emit('show-assign-owner-confirmation', {
+          contact,
+          onConfirm: () => resolve(true),
+          onCancel: () => resolve(false),
+        });
       });
     },
     isCardUpdating(contactId) {

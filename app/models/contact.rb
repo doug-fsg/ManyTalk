@@ -148,8 +148,8 @@ class Contact < ApplicationRecord
       phone_number: phone_number,
       thumbnail: avatar_url,
       type: 'contact',
-      pipeline_positions: contact_pipeline_positions.map do |position|
-        {
+      pipeline_positions: contact_pipeline_positions.includes(:assignee).map do |position|
+        position_data = {
           pipeline_id: position.pipeline_id,
           stage_id: position.stage_id,
           position: position.position,
@@ -157,6 +157,18 @@ class Contact < ApplicationRecord
           deal_value: position.deal_value&.to_f, # Converter BigDecimal para Float (JSON nativo)
           metadata: position.metadata || {}
         }
+        
+        # Incluir assignee apenas quando presente (otimização de payload)
+        if position.assignee.present?
+          position_data[:assignee] = {
+            id: position.assignee.id,
+            name: position.assignee.name,
+            available_name: position.assignee.available_name,
+            avatar_url: position.assignee.avatar_url
+          }
+        end
+        
+        position_data
       end
     }
   end

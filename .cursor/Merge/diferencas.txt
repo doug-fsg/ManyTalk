@@ -1,0 +1,1399 @@
+Only in chatwoot-3.12.0/: .circleci
+Only in .: .cursor
+Files ./.dependabot/config.yml and chatwoot-3.12.0/.dependabot/config.yml differ
+Only in .: .env
+Files ./.env.example and chatwoot-3.12.0/.env.example differ
+Only in .: .eslintrc.js.backup
+Only in .: .git_sha
+Only in chatwoot-3.12.0/.github: CODEOWNERS
+Files ./.github/FUNDING.yml and chatwoot-3.12.0/.github/FUNDING.yml differ
+Only in chatwoot-3.12.0/.github: PULL_REQUEST_TEMPLATE.md
+Only in chatwoot-3.12.0/.github: dashboard-screen.png
+Only in chatwoot-3.12.0/.github/workflows: deploy_check.yml
+Only in chatwoot-3.12.0/.github/workflows: lint_pr.yml
+Only in chatwoot-3.12.0/.github/workflows: lock.yml
+Only in chatwoot-3.12.0/.github/workflows: logging_percentage_check.yml
+Files ./.github/workflows/nightly_installer.yml and chatwoot-3.12.0/.github/workflows/nightly_installer.yml differ
+Only in chatwoot-3.12.0/.github/workflows: publish_codespace_image.yml
+Files ./.github/workflows/publish_foss_docker.yml and chatwoot-3.12.0/.github/workflows/publish_foss_docker.yml differ
+Only in ./.github/workflows: publish_foss_docker_arm.yml
+Only in chatwoot-3.12.0/.github/workflows: run_foss_spec.yml
+Only in chatwoot-3.12.0/.github/workflows: run_response_bot_spec.yml
+Files ./.github/workflows/size-limit.yml and chatwoot-3.12.0/.github/workflows/size-limit.yml differ
+Only in chatwoot-3.12.0/.github/workflows: stale.yml
+Files ./.gitignore and chatwoot-3.12.0/.gitignore differ
+Only in ./.husky: _
+Only in .: .husky_temp
+Only in .: .overmind.sock
+Files ./.storybook/preview.js and chatwoot-3.12.0/.storybook/preview.js differ
+Only in chatwoot-3.12.0/: .vscode
+Only in .: COMPARISON_REPORT_3.11.0_vs_DEVELOP.md
+Only in .: COMPARISON_REPORT_3.11.1_vs_DEVELOP.md
+Only in .: COMPARISON_REPORT_3.12.0_vs_DEVELOP.md
+Only in .: ESTRATEGIA_MERGE_3.12.0.md
+Files ./Gemfile and chatwoot-3.12.0/Gemfile differ
+Only in .: Gemfile.backup
+Files ./Gemfile.lock and chatwoot-3.12.0/Gemfile.lock differ
+Only in .: KANBAN_DUAL_WRITE_IMPLEMENTATION.md
+Files ./app/assets/javascripts/dashboardChart.js and chatwoot-3.12.0/app/assets/javascripts/dashboardChart.js differ
+Files ./app/assets/stylesheets/administrate/library/_variables.scss and chatwoot-3.12.0/app/assets/stylesheets/administrate/library/_variables.scss differ
+Files ./app/assets/stylesheets/administrate/utilities/_variables.scss and chatwoot-3.12.0/app/assets/stylesheets/administrate/utilities/_variables.scss differ
+Files ./app/builders/campaigns/campaign_conversation_builder.rb and chatwoot-3.12.0/app/builders/campaigns/campaign_conversation_builder.rb differ
+Files ./app/builders/contact_inbox_builder.rb and chatwoot-3.12.0/app/builders/contact_inbox_builder.rb differ
+Files ./app/builders/contact_inbox_with_contact_builder.rb and chatwoot-3.12.0/app/builders/contact_inbox_with_contact_builder.rb differ
+Files ./app/builders/messages/message_builder.rb and chatwoot-3.12.0/app/builders/messages/message_builder.rb differ
+Only in ./app/controllers/api/v1/accounts: announcements_controller.rb
+Files ./app/controllers/api/v1/accounts/campaigns_controller.rb and chatwoot-3.12.0/app/controllers/api/v1/accounts/campaigns_controller.rb differ
+Only in ./app/controllers/api/v1/accounts/channels: notifica_me_channels_controller.rb
+Only in ./app/controllers/api/v1/accounts/contacts: contact_attribute_files_controller.rb
+Only in ./app/controllers/api/v1/accounts/contacts: pipeline_positions_controller.rb
+Files ./app/controllers/api/v1/accounts/contacts_controller.rb and chatwoot-3.12.0/app/controllers/api/v1/accounts/contacts_controller.rb differ
+Files ./app/controllers/api/v1/accounts/conversations/messages_controller.rb and chatwoot-3.12.0/app/controllers/api/v1/accounts/conversations/messages_controller.rb differ
+Files ./app/controllers/api/v1/accounts/custom_attribute_definitions_controller.rb and chatwoot-3.12.0/app/controllers/api/v1/accounts/custom_attribute_definitions_controller.rb differ
+Files ./app/controllers/api/v1/accounts/inboxes_controller.rb and chatwoot-3.12.0/app/controllers/api/v1/accounts/inboxes_controller.rb differ
+Only in chatwoot-3.12.0/app/controllers/api/v1/accounts/integrations: captain_controller.rb
+Files ./app/controllers/dashboard_controller.rb and chatwoot-3.12.0/app/controllers/dashboard_controller.rb differ
+Only in ./app/controllers/super_admin: announcements_controller.rb
+Only in ./app/controllers/webhooks: notifica_me_controller.rb
+Files ./app/javascript/dashboard/App.vue and chatwoot-3.12.0/app/javascript/dashboard/App.vue differ
+Only in ./app/javascript/dashboard/api: announcements.js
+Only in ./app/javascript/dashboard/api/channel: notificaMeChannel.js
+Only in ./app/javascript/dashboard/api: contactAttributeFiles.js
+Files ./app/javascript/dashboard/api/contacts.js and chatwoot-3.12.0/app/javascript/dashboard/api/contacts.js differ
+Files ./app/javascript/dashboard/api/inbox/message.js and chatwoot-3.12.0/app/javascript/dashboard/api/inbox/message.js differ
+Files ./app/javascript/dashboard/api/integrations.js and chatwoot-3.12.0/app/javascript/dashboard/api/integrations.js differ
+Files ./app/javascript/dashboard/assets/images/lock.svg and chatwoot-3.12.0/app/javascript/dashboard/assets/images/lock.svg differ
+Files ./app/javascript/dashboard/assets/scss/_variables.scss and chatwoot-3.12.0/app/javascript/dashboard/assets/scss/_variables.scss differ
+Files ./app/javascript/dashboard/components/Accordion/AccordionItem.vue and chatwoot-3.12.0/app/javascript/dashboard/components/Accordion/AccordionItem.vue differ
+Files ./app/javascript/dashboard/components/ChannelSelector.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ChannelSelector.vue differ
+Files ./app/javascript/dashboard/components/ChatList.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ChatList.vue differ
+Files ./app/javascript/dashboard/components/ChatListHeader.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ChatListHeader.vue differ
+Files ./app/javascript/dashboard/components/Code.vue and chatwoot-3.12.0/app/javascript/dashboard/components/Code.vue differ
+Files ./app/javascript/dashboard/components/ConversationItem.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ConversationItem.vue differ
+Files ./app/javascript/dashboard/components/CustomAttribute.vue and chatwoot-3.12.0/app/javascript/dashboard/components/CustomAttribute.vue differ
+Only in ./app/javascript/dashboard/components: CustomAttributeFileUpload.vue
+Files ./app/javascript/dashboard/components/CustomSnoozeModal.vue and chatwoot-3.12.0/app/javascript/dashboard/components/CustomSnoozeModal.vue differ
+Files ./app/javascript/dashboard/components/FormSection.vue and chatwoot-3.12.0/app/javascript/dashboard/components/FormSection.vue differ
+Files ./app/javascript/dashboard/components/IntersectionObserver.vue and chatwoot-3.12.0/app/javascript/dashboard/components/IntersectionObserver.vue differ
+Files ./app/javascript/dashboard/components/MaskedText.vue and chatwoot-3.12.0/app/javascript/dashboard/components/MaskedText.vue differ
+Files ./app/javascript/dashboard/components/Modal.vue and chatwoot-3.12.0/app/javascript/dashboard/components/Modal.vue differ
+Files ./app/javascript/dashboard/components/ModalHeader.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ModalHeader.vue differ
+Files ./app/javascript/dashboard/components/SettingsSection.vue and chatwoot-3.12.0/app/javascript/dashboard/components/SettingsSection.vue differ
+Files ./app/javascript/dashboard/components/SidemenuIcon.vue and chatwoot-3.12.0/app/javascript/dashboard/components/SidemenuIcon.vue differ
+Files ./app/javascript/dashboard/components/Snackbar.vue and chatwoot-3.12.0/app/javascript/dashboard/components/Snackbar.vue differ
+Files ./app/javascript/dashboard/components/SnackbarContainer.vue and chatwoot-3.12.0/app/javascript/dashboard/components/SnackbarContainer.vue differ
+Files ./app/javascript/dashboard/components/app/PaymentPendingBanner.vue and chatwoot-3.12.0/app/javascript/dashboard/components/app/PaymentPendingBanner.vue differ
+Files ./app/javascript/dashboard/components/app/PendingEmailVerificationBanner.vue and chatwoot-3.12.0/app/javascript/dashboard/components/app/PendingEmailVerificationBanner.vue differ
+Files ./app/javascript/dashboard/components/app/UpdateBanner.vue and chatwoot-3.12.0/app/javascript/dashboard/components/app/UpdateBanner.vue differ
+Files ./app/javascript/dashboard/components/app/UpgradeBanner.vue and chatwoot-3.12.0/app/javascript/dashboard/components/app/UpgradeBanner.vue differ
+Files ./app/javascript/dashboard/components/base/Hotkey.vue and chatwoot-3.12.0/app/javascript/dashboard/components/base/Hotkey.vue differ
+Files ./app/javascript/dashboard/components/buttons/Button.vue and chatwoot-3.12.0/app/javascript/dashboard/components/buttons/Button.vue differ
+Files ./app/javascript/dashboard/components/buttons/FormSubmitButton.vue and chatwoot-3.12.0/app/javascript/dashboard/components/buttons/FormSubmitButton.vue differ
+Files ./app/javascript/dashboard/components/buttons/ResolveAction.vue and chatwoot-3.12.0/app/javascript/dashboard/components/buttons/ResolveAction.vue differ
+Files ./app/javascript/dashboard/components/layout/AvailabilityStatus.vue and chatwoot-3.12.0/app/javascript/dashboard/components/layout/AvailabilityStatus.vue differ
+Files ./app/javascript/dashboard/components/layout/Sidebar.vue and chatwoot-3.12.0/app/javascript/dashboard/components/layout/Sidebar.vue differ
+Files ./app/javascript/dashboard/components/layout/config/sidebarItems/primaryMenu.js and chatwoot-3.12.0/app/javascript/dashboard/components/layout/config/sidebarItems/primaryMenu.js differ
+Files ./app/javascript/dashboard/components/layout/config/sidebarItems/settings.js and chatwoot-3.12.0/app/javascript/dashboard/components/layout/config/sidebarItems/settings.js differ
+Files ./app/javascript/dashboard/components/layout/sidebarComponents/AccountContext.vue and chatwoot-3.12.0/app/javascript/dashboard/components/layout/sidebarComponents/AccountContext.vue differ
+Files ./app/javascript/dashboard/components/layout/sidebarComponents/AccountSelector.vue and chatwoot-3.12.0/app/javascript/dashboard/components/layout/sidebarComponents/AccountSelector.vue differ
+Files ./app/javascript/dashboard/components/layout/sidebarComponents/AddAccountModal.vue and chatwoot-3.12.0/app/javascript/dashboard/components/layout/sidebarComponents/AddAccountModal.vue differ
+Files ./app/javascript/dashboard/components/layout/sidebarComponents/AgentDetails.vue and chatwoot-3.12.0/app/javascript/dashboard/components/layout/sidebarComponents/AgentDetails.vue differ
+Files ./app/javascript/dashboard/components/layout/sidebarComponents/Logo.vue and chatwoot-3.12.0/app/javascript/dashboard/components/layout/sidebarComponents/Logo.vue differ
+Files ./app/javascript/dashboard/components/layout/sidebarComponents/NotificationBell.vue and chatwoot-3.12.0/app/javascript/dashboard/components/layout/sidebarComponents/NotificationBell.vue differ
+Files ./app/javascript/dashboard/components/layout/sidebarComponents/OptionsMenu.vue and chatwoot-3.12.0/app/javascript/dashboard/components/layout/sidebarComponents/OptionsMenu.vue differ
+Files ./app/javascript/dashboard/components/layout/sidebarComponents/Primary.vue and chatwoot-3.12.0/app/javascript/dashboard/components/layout/sidebarComponents/Primary.vue differ
+Files ./app/javascript/dashboard/components/layout/sidebarComponents/PrimaryNavItem.vue and chatwoot-3.12.0/app/javascript/dashboard/components/layout/sidebarComponents/PrimaryNavItem.vue differ
+Files ./app/javascript/dashboard/components/layout/sidebarComponents/Secondary.vue and chatwoot-3.12.0/app/javascript/dashboard/components/layout/sidebarComponents/Secondary.vue differ
+Files ./app/javascript/dashboard/components/layout/sidebarComponents/SecondaryChildNavItem.vue and chatwoot-3.12.0/app/javascript/dashboard/components/layout/sidebarComponents/SecondaryChildNavItem.vue differ
+Files ./app/javascript/dashboard/components/layout/sidebarComponents/SecondaryNavItem.vue and chatwoot-3.12.0/app/javascript/dashboard/components/layout/sidebarComponents/SecondaryNavItem.vue differ
+Files ./app/javascript/dashboard/components/ui/AnnouncementPopup.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/AnnouncementPopup.vue differ
+Files ./app/javascript/dashboard/components/ui/Banner.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/Banner.vue differ
+Files ./app/javascript/dashboard/components/ui/ContextMenu.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/ContextMenu.vue differ
+Files ./app/javascript/dashboard/components/ui/DatePicker/DatePicker.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/DatePicker/DatePicker.vue differ
+Files ./app/javascript/dashboard/components/ui/DatePicker/components/CalendarAction.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/DatePicker/components/CalendarAction.vue differ
+Files ./app/javascript/dashboard/components/ui/DatePicker/components/CalendarDateRange.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/DatePicker/components/CalendarDateRange.vue differ
+Files ./app/javascript/dashboard/components/ui/DatePicker/components/CalendarFooter.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/DatePicker/components/CalendarFooter.vue differ
+Files ./app/javascript/dashboard/components/ui/DatePicker/components/CalendarMonth.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/DatePicker/components/CalendarMonth.vue differ
+Files ./app/javascript/dashboard/components/ui/DatePicker/components/CalendarWeek.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/DatePicker/components/CalendarWeek.vue differ
+Files ./app/javascript/dashboard/components/ui/DatePicker/components/CalendarYear.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/DatePicker/components/CalendarYear.vue differ
+Files ./app/javascript/dashboard/components/ui/DatePicker/components/DatePickerButton.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/DatePicker/components/DatePickerButton.vue differ
+Files ./app/javascript/dashboard/components/ui/DateRangePicker.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/DateRangePicker.vue differ
+Files ./app/javascript/dashboard/components/ui/DateTimePicker.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/DateTimePicker.vue differ
+Files ./app/javascript/dashboard/components/ui/Dropdown/DropdownButton.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/Dropdown/DropdownButton.vue differ
+Files ./app/javascript/dashboard/components/ui/Dropdown/DropdownEmptyState.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/Dropdown/DropdownEmptyState.vue differ
+Files ./app/javascript/dashboard/components/ui/Dropdown/DropdownList.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/Dropdown/DropdownList.vue differ
+Files ./app/javascript/dashboard/components/ui/Dropdown/DropdownListItemButton.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/Dropdown/DropdownListItemButton.vue differ
+Files ./app/javascript/dashboard/components/ui/Dropdown/DropdownLoadingState.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/Dropdown/DropdownLoadingState.vue differ
+Files ./app/javascript/dashboard/components/ui/Dropdown/DropdownSearch.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/Dropdown/DropdownSearch.vue differ
+Files ./app/javascript/dashboard/components/ui/HelperTextPopup.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/HelperTextPopup.vue differ
+Files ./app/javascript/dashboard/components/ui/Label.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/Label.vue differ
+Files ./app/javascript/dashboard/components/ui/PreviewCard.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/PreviewCard.vue differ
+Files ./app/javascript/dashboard/components/ui/Switch.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/Switch.vue differ
+Files ./app/javascript/dashboard/components/ui/Tabs/TabsItem.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/Tabs/TabsItem.vue differ
+Files ./app/javascript/dashboard/components/ui/TimeAgo.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/TimeAgo.vue differ
+Files ./app/javascript/dashboard/components/ui/Wizard.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/Wizard.vue differ
+Files ./app/javascript/dashboard/components/ui/WootButton.vue and chatwoot-3.12.0/app/javascript/dashboard/components/ui/WootButton.vue differ
+Files ./app/javascript/dashboard/components/widgets/AIAssistanceButton.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/AIAssistanceButton.vue differ
+Files ./app/javascript/dashboard/components/widgets/AIAssistanceCTAButton.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/AIAssistanceCTAButton.vue differ
+Files ./app/javascript/dashboard/components/widgets/AIAssistanceModal.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/AIAssistanceModal.vue differ
+Files ./app/javascript/dashboard/components/widgets/AICTAModal.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/AICTAModal.vue differ
+Files ./app/javascript/dashboard/components/widgets/AILoader.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/AILoader.vue differ
+Files ./app/javascript/dashboard/components/widgets/AttachmentsPreview.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/AttachmentsPreview.vue differ
+Files ./app/javascript/dashboard/components/widgets/AutomationActionInput.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/AutomationActionInput.vue differ
+Files ./app/javascript/dashboard/components/widgets/AutomationActionTeamMessageInput.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/AutomationActionTeamMessageInput.vue differ
+Files ./app/javascript/dashboard/components/widgets/AutomationFileInput.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/AutomationFileInput.vue differ
+Files ./app/javascript/dashboard/components/widgets/Avatar.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/Avatar.vue differ
+Files ./app/javascript/dashboard/components/widgets/BackButton.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/BackButton.vue differ
+Files ./app/javascript/dashboard/components/widgets/ChannelItem.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/ChannelItem.vue differ
+Files ./app/javascript/dashboard/components/widgets/ChatTypeTabs.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/ChatTypeTabs.vue differ
+Files ./app/javascript/dashboard/components/widgets/ColorPicker.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/ColorPicker.vue differ
+Files ./app/javascript/dashboard/components/widgets/DashboardApp/Frame.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/DashboardApp/Frame.vue differ
+Files ./app/javascript/dashboard/components/widgets/EmptyState.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/EmptyState.vue differ
+Files ./app/javascript/dashboard/components/widgets/FeatureToggle.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/FeatureToggle.vue differ
+Files ./app/javascript/dashboard/components/widgets/FilterInput/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/FilterInput/Index.vue differ
+Files ./app/javascript/dashboard/components/widgets/InboxDropdownItem.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/InboxDropdownItem.vue differ
+Files ./app/javascript/dashboard/components/widgets/InboxName.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/InboxName.vue differ
+Files ./app/javascript/dashboard/components/widgets/LabelSelector.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/LabelSelector.vue differ
+Files ./app/javascript/dashboard/components/widgets/LoadingState.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/LoadingState.vue differ
+Files ./app/javascript/dashboard/components/widgets/SettingIntroBanner.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/SettingIntroBanner.vue differ
+Files ./app/javascript/dashboard/components/widgets/ShowMore.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/ShowMore.vue differ
+Files ./app/javascript/dashboard/components/widgets/TableFooter.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/TableFooter.vue differ
+Files ./app/javascript/dashboard/components/widgets/TableFooterPagination.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/TableFooterPagination.vue differ
+Files ./app/javascript/dashboard/components/widgets/TableFooterResults.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/TableFooterResults.vue differ
+Files ./app/javascript/dashboard/components/widgets/TableHeaderCell.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/TableHeaderCell.vue differ
+Files ./app/javascript/dashboard/components/widgets/Thumbnail.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/Thumbnail.vue differ
+Files ./app/javascript/dashboard/components/widgets/ThumbnailGroup.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/ThumbnailGroup.vue differ
+Files ./app/javascript/dashboard/components/widgets/UserAvatarWithName.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/UserAvatarWithName.vue differ
+Files ./app/javascript/dashboard/components/widgets/VideoCallButton.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/VideoCallButton.vue differ
+Files ./app/javascript/dashboard/components/widgets/WootWriter/AudioRecorder.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/WootWriter/AudioRecorder.vue differ
+Files ./app/javascript/dashboard/components/widgets/WootWriter/Editor.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/WootWriter/Editor.vue differ
+Files ./app/javascript/dashboard/components/widgets/WootWriter/FullEditor.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/WootWriter/FullEditor.vue differ
+Files ./app/javascript/dashboard/components/widgets/WootWriter/ReplyBottomPanel.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/WootWriter/ReplyBottomPanel.vue differ
+Files ./app/javascript/dashboard/components/widgets/WootWriter/ReplyTopPanel.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/WootWriter/ReplyTopPanel.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/AvailabilityStatusBadge.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/AvailabilityStatusBadge.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/CannedResponse.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/CannedResponse.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/ConversationAdvancedFilter.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/ConversationAdvancedFilter.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/ConversationBasicFilter.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/ConversationBasicFilter.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/ConversationBox.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/ConversationBox.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/ConversationCard.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/ConversationCard.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/ConversationHeader.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/ConversationHeader.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/EmailTranscriptModal.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/EmailTranscriptModal.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/EmptyState/EmptyState.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/EmptyState/EmptyState.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/EmptyState/EmptyStateMessage.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/EmptyState/EmptyStateMessage.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/EmptyState/FeaturePlaceholder.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/EmptyState/FeaturePlaceholder.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/FilterItem.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/FilterItem.vue differ
+Only in ./app/javascript/dashboard/components/widgets/conversation: KanbanStageIndicator.vue
+Files ./app/javascript/dashboard/components/widgets/conversation/Message.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/Message.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/MessagePreview.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/MessagePreview.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/MessageSignatureMissingAlert.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/MessageSignatureMissingAlert.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/MessagesView.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/MessagesView.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/MoreActions.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/MoreActions.vue differ
+Only in chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation: OnboardingFeatureCard.vue
+Files ./app/javascript/dashboard/components/widgets/conversation/OnboardingView.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/OnboardingView.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/PriorityMark.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/PriorityMark.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/ReplyBox.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/ReplyBox.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/ReplyEmailHead.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/ReplyEmailHead.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/ReplyToMessage.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/ReplyToMessage.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/TagAgents.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/TagAgents.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/VariableList.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/VariableList.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/WhatsappTemplates/Modal.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/WhatsappTemplates/Modal.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/WhatsappTemplates/TemplateParser.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/WhatsappTemplates/TemplateParser.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/WhatsappTemplates/TemplatesPicker.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/WhatsappTemplates/TemplatesPicker.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/bubble/Actions.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/bubble/Actions.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/bubble/Contact.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/bubble/Contact.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/bubble/File.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/bubble/File.vue differ
+Only in ./app/javascript/dashboard/components/widgets/conversation/bubble: ForwardModal.vue
+Files ./app/javascript/dashboard/components/widgets/conversation/bubble/Image.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/bubble/Image.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/bubble/ImageAudioVideo.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/bubble/ImageAudioVideo.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/bubble/InstagramStory.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/bubble/InstagramStory.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/bubble/InstagramStoryErrorPlaceHolder.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/bubble/InstagramStoryErrorPlaceHolder.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/bubble/InstagramStoryReply.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/bubble/InstagramStoryReply.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/bubble/Integration.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/bubble/Integration.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/bubble/MailHead.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/bubble/MailHead.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/bubble/ReplyTo.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/bubble/ReplyTo.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/bubble/Text.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/bubble/Text.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/bubble/TranslateModal.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/bubble/TranslateModal.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/bubble/Video.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/bubble/Video.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/bubble/integrations/Dyte.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/bubble/integrations/Dyte.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/components/GalleryView.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/components/GalleryView.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/components/SLACardLabel.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/components/SLACardLabel.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/components/SLAEventItem.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/components/SLAEventItem.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/components/SLAPopoverCard.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/components/SLAPopoverCard.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/contextMenu/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/contextMenu/Index.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/contextMenu/agentLoadingPlaceholder.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/contextMenu/agentLoadingPlaceholder.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/contextMenu/menuItem.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/contextMenu/menuItem.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/contextMenu/menuItemWithSubmenu.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/contextMenu/menuItemWithSubmenu.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/conversation/LabelSuggestion.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/conversation/LabelSuggestion.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/conversationBulkActions/AgentSelector.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/conversationBulkActions/AgentSelector.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/conversationBulkActions/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/conversationBulkActions/Index.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/conversationBulkActions/LabelActions.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/conversationBulkActions/LabelActions.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/conversationBulkActions/TeamActions.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/conversationBulkActions/TeamActions.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/conversationBulkActions/UpdateActions.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/conversationBulkActions/UpdateActions.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/conversationCardComponents/CardLabels.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/conversationCardComponents/CardLabels.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/helpers/emailHeadHelper.js and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/helpers/emailHeadHelper.js differ
+Files ./app/javascript/dashboard/components/widgets/conversation/linear/CreateIssue.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/linear/CreateIssue.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/linear/CreateOrLinkIssue.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/linear/CreateOrLinkIssue.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/linear/Issue.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/linear/Issue.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/linear/IssueHeader.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/linear/IssueHeader.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/linear/LinkIssue.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/linear/LinkIssue.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/linear/SearchableDropdown.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/linear/SearchableDropdown.vue differ
+Files ./app/javascript/dashboard/components/widgets/conversation/linear/index.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/conversation/linear/index.vue differ
+Files ./app/javascript/dashboard/components/widgets/forms/AvatarUploader.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/forms/AvatarUploader.vue differ
+Files ./app/javascript/dashboard/components/widgets/forms/Input.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/forms/Input.vue differ
+Files ./app/javascript/dashboard/components/widgets/forms/PhoneInput.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/forms/PhoneInput.vue differ
+Files ./app/javascript/dashboard/components/widgets/mentions/MentionBox.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/mentions/MentionBox.vue differ
+Only in ./app/javascript/dashboard/components/widgets/mentions: mentionSelectionKeyboardMixin.js
+Only in ./app/javascript/dashboard/components/widgets/mentions: specs
+Files ./app/javascript/dashboard/components/widgets/modal/ConfirmDeleteModal.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/modal/ConfirmDeleteModal.vue differ
+Files ./app/javascript/dashboard/components/widgets/modal/ConfirmationModal.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/modal/ConfirmationModal.vue differ
+Files ./app/javascript/dashboard/components/widgets/modal/DeleteModal.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/modal/DeleteModal.vue differ
+Files ./app/javascript/dashboard/components/widgets/modal/WootKeyShortcutModal.vue and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/modal/WootKeyShortcutModal.vue differ
+Files ./app/javascript/dashboard/components/widgets/modal/constants.js and chatwoot-3.12.0/app/javascript/dashboard/components/widgets/modal/constants.js differ
+Only in chatwoot-3.12.0/app/javascript/dashboard/composables/spec: useAccount.spec.js
+Only in chatwoot-3.12.0/app/javascript/dashboard/composables/spec: useConfig.spec.js
+Only in chatwoot-3.12.0/app/javascript/dashboard/composables/spec: useConversationLabels.spec.js
+Only in chatwoot-3.12.0/app/javascript/dashboard/composables/spec: useDetectKeyboardLayout.spec.js
+Only in chatwoot-3.12.0/app/javascript/dashboard/composables/spec: useKeyboardEvents.spec.js
+Only in chatwoot-3.12.0/app/javascript/dashboard/composables/spec: useKeyboardNavigableList.spec.js
+Only in chatwoot-3.12.0/app/javascript/dashboard/composables/spec: useMacros.spec.js
+Files ./app/javascript/dashboard/composables/store.js and chatwoot-3.12.0/app/javascript/dashboard/composables/store.js differ
+Only in chatwoot-3.12.0/app/javascript/dashboard/composables: useAccount.js
+Only in chatwoot-3.12.0/app/javascript/dashboard/composables: useConfig.js
+Only in chatwoot-3.12.0/app/javascript/dashboard/composables: useConversationLabels.js
+Only in chatwoot-3.12.0/app/javascript/dashboard/composables: useDetectKeyboardLayout.js
+Only in chatwoot-3.12.0/app/javascript/dashboard/composables: useKeyboardEvents.js
+Only in chatwoot-3.12.0/app/javascript/dashboard/composables: useKeyboardNavigableList.js
+Only in chatwoot-3.12.0/app/javascript/dashboard/composables: useMacros.js
+Files ./app/javascript/dashboard/composables/useUISettings.js and chatwoot-3.12.0/app/javascript/dashboard/composables/useUISettings.js differ
+Files ./app/javascript/dashboard/constants/globals.js and chatwoot-3.12.0/app/javascript/dashboard/constants/globals.js differ
+Files ./app/javascript/dashboard/constants/localStorage.js and chatwoot-3.12.0/app/javascript/dashboard/constants/localStorage.js differ
+Files ./app/javascript/dashboard/featureFlags.js and chatwoot-3.12.0/app/javascript/dashboard/featureFlags.js differ
+Files ./app/javascript/dashboard/helper/URLHelper.js and chatwoot-3.12.0/app/javascript/dashboard/helper/URLHelper.js differ
+Files ./app/javascript/dashboard/helper/actionCable.js and chatwoot-3.12.0/app/javascript/dashboard/helper/actionCable.js differ
+Files ./app/javascript/dashboard/helper/actionQueryGenerator.js and chatwoot-3.12.0/app/javascript/dashboard/helper/actionQueryGenerator.js differ
+Files ./app/javascript/dashboard/helper/auditlogHelper.js and chatwoot-3.12.0/app/javascript/dashboard/helper/auditlogHelper.js differ
+Files ./app/javascript/dashboard/helper/automationHelper.js and chatwoot-3.12.0/app/javascript/dashboard/helper/automationHelper.js differ
+Only in chatwoot-3.12.0/app/javascript/dashboard/helper: conversationHelper.js
+Files ./app/javascript/dashboard/helper/featureHelper.js and chatwoot-3.12.0/app/javascript/dashboard/helper/featureHelper.js differ
+Files ./app/javascript/dashboard/helper/inbox.js and chatwoot-3.12.0/app/javascript/dashboard/helper/inbox.js differ
+Files ./app/javascript/dashboard/helper/specs/URLHelper.spec.js and chatwoot-3.12.0/app/javascript/dashboard/helper/specs/URLHelper.spec.js differ
+Files ./app/javascript/dashboard/helper/specs/auditlogHelper.spec.js and chatwoot-3.12.0/app/javascript/dashboard/helper/specs/auditlogHelper.spec.js differ
+Only in chatwoot-3.12.0/app/javascript/dashboard/helper/specs: conversationHelper.spec.js
+Only in chatwoot-3.12.0/app/javascript/dashboard/helper/specs: fixtures
+Only in chatwoot-3.12.0/app/javascript/dashboard/helper/specs: validations.spec.js
+Only in chatwoot-3.12.0/app/javascript/dashboard/helper: validations.js
+Files ./app/javascript/dashboard/i18n/index.js and chatwoot-3.12.0/app/javascript/dashboard/i18n/index.js differ
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: am
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: ar
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: bg
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: ca
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: cs
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: da
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: de
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: el
+Files ./app/javascript/dashboard/i18n/locale/en/advancedFilters.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/advancedFilters.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/agentMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/agentMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/attributesMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/attributesMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/auditLogs.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/auditLogs.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/automation.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/automation.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/bulkActions.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/bulkActions.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/campaign.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/campaign.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/cannedMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/cannedMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/contact.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/contact.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/conversation.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/conversation.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/general.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/general.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/generalSettings.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/generalSettings.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/helpCenter.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/helpCenter.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/inboxMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/inboxMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/index.js and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/index.js differ
+Files ./app/javascript/dashboard/i18n/locale/en/integrations.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/integrations.json differ
+Only in ./app/javascript/dashboard/i18n/locale/en: kanban.json
+Files ./app/javascript/dashboard/i18n/locale/en/labelsMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/labelsMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/macros.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/macros.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/report.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/report.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/resetPassword.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/resetPassword.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/search.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/search.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/settings.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/settings.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/sla.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/sla.json differ
+Files ./app/javascript/dashboard/i18n/locale/en/teamsSettings.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/en/teamsSettings.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/advancedFilters.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/advancedFilters.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/agentMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/agentMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/attributesMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/attributesMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/auditLogs.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/auditLogs.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/automation.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/automation.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/bulkActions.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/bulkActions.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/cannedMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/cannedMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/contact.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/contact.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/conversation.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/conversation.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/datePicker.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/datePicker.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/general.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/general.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/helpCenter.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/helpCenter.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/inbox.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/inbox.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/inboxMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/inboxMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/index.js and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/index.js differ
+Files ./app/javascript/dashboard/i18n/locale/es/integrations.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/integrations.json differ
+Only in ./app/javascript/dashboard/i18n/locale/es: kanban.json
+Files ./app/javascript/dashboard/i18n/locale/es/labelsMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/labelsMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/macros.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/macros.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/report.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/report.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/resetPassword.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/resetPassword.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/search.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/search.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/settings.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/settings.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/sla.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/sla.json differ
+Files ./app/javascript/dashboard/i18n/locale/es/teamsSettings.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/es/teamsSettings.json differ
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: fa
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: fi
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: fr
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: he
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: hi
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: hr
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: hu
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: hy
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: id
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: is
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: it
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: ja
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: ka
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: ko
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: lt
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: lv
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: ml
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: ms
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: ne
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: nl
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: no
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: pl
+Files ./app/javascript/dashboard/i18n/locale/pt/advancedFilters.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/advancedFilters.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/agentBots.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/agentBots.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/agentMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/agentMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/attributesMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/attributesMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/auditLogs.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/auditLogs.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/automation.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/automation.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/bulkActions.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/bulkActions.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/campaign.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/campaign.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/cannedMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/cannedMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/chatlist.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/chatlist.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/contact.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/contact.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/contactFilters.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/contactFilters.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/conversation.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/conversation.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/datePicker.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/datePicker.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/general.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/general.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/helpCenter.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/helpCenter.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/inboxMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/inboxMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/index.js and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/index.js differ
+Files ./app/javascript/dashboard/i18n/locale/pt/integrations.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/integrations.json differ
+Only in ./app/javascript/dashboard/i18n/locale/pt: kanban.json
+Files ./app/javascript/dashboard/i18n/locale/pt/labelsMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/labelsMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/macros.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/macros.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/report.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/report.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/resetPassword.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/resetPassword.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/search.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/search.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/settings.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/settings.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/teamsSettings.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/teamsSettings.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt/whatsappTemplates.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt/whatsappTemplates.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/advancedFilters.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/advancedFilters.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/agentBots.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/agentBots.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/agentMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/agentMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/attributesMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/attributesMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/auditLogs.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/auditLogs.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/automation.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/automation.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/bulkActions.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/bulkActions.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/campaign.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/campaign.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/cannedMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/cannedMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/chatlist.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/chatlist.json differ
+Only in ./app/javascript/dashboard/i18n/locale/pt_BR: common.json
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/contact.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/contact.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/contactFilters.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/contactFilters.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/conversation.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/conversation.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/datePicker.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/datePicker.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/general.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/general.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/generalSettings.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/generalSettings.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/helpCenter.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/helpCenter.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/inbox.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/inbox.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/inboxMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/inboxMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/index.js and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/index.js differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/integrationApps.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/integrationApps.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/integrations.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/integrations.json differ
+Only in ./app/javascript/dashboard/i18n/locale/pt_BR: kanban.json
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/labelsMgmt.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/labelsMgmt.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/login.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/login.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/macros.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/macros.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/report.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/report.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/resetPassword.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/resetPassword.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/search.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/search.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/settings.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/settings.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/sla.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/sla.json differ
+Files ./app/javascript/dashboard/i18n/locale/pt_BR/teamsSettings.json and chatwoot-3.12.0/app/javascript/dashboard/i18n/locale/pt_BR/teamsSettings.json differ
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: ro
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: ru
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: sh
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: sk
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: sl
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: sq
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: sr
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: sv
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: ta
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: th
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: tl
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: tr
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: uk
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: ur
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: ur_IN
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: vi
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: zh
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: zh_CN
+Only in chatwoot-3.12.0/app/javascript/dashboard/i18n/locale: zh_TW
+Only in ./app/javascript/dashboard/mixins: account.js
+Only in ./app/javascript/dashboard/mixins: attributeMixin.js
+Files ./app/javascript/dashboard/mixins/automations/methodsMixin.js and chatwoot-3.12.0/app/javascript/dashboard/mixins/automations/methodsMixin.js differ
+Only in ./app/javascript/dashboard/mixins/automations: validationsMixin.js
+Only in ./app/javascript/dashboard/mixins: conversation
+Only in ./app/javascript/dashboard/mixins: conversations.js
+Only in ./app/javascript/dashboard/mixins: customAttributeMixin.js
+Files ./app/javascript/dashboard/mixins/fileUploadMixin.js and chatwoot-3.12.0/app/javascript/dashboard/mixins/fileUploadMixin.js differ
+Only in ./app/javascript/dashboard/mixins: macrosMixin.js
+Only in ./app/javascript/dashboard/mixins/specs: account.spec.js
+Only in ./app/javascript/dashboard/mixins/specs: attributeMixin.spec.js
+Only in ./app/javascript/dashboard/mixins/specs: conversation.spec.js
+Only in ./app/javascript/dashboard/mixins/specs: conversationFixtures.js
+Only in ./app/javascript/dashboard/mixins/specs: macros.spec.js
+Files ./app/javascript/dashboard/modules/contact/ContactMergeModal.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/contact/ContactMergeModal.vue differ
+Files ./app/javascript/dashboard/modules/contact/components/AddCustomAttribute.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/contact/components/AddCustomAttribute.vue differ
+Files ./app/javascript/dashboard/modules/contact/components/ContactAttribute.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/contact/components/ContactAttribute.vue differ
+Files ./app/javascript/dashboard/modules/contact/components/ContactDropdownItem.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/contact/components/ContactDropdownItem.vue differ
+Files ./app/javascript/dashboard/modules/contact/components/ContactFields.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/contact/components/ContactFields.vue differ
+Files ./app/javascript/dashboard/modules/contact/components/ContactIntro.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/contact/components/ContactIntro.vue differ
+Files ./app/javascript/dashboard/modules/contact/components/ContactPanel.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/contact/components/ContactPanel.vue differ
+Files ./app/javascript/dashboard/modules/contact/components/MergeContact.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/contact/components/MergeContact.vue differ
+Files ./app/javascript/dashboard/modules/contact/components/MergeContactSummary.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/contact/components/MergeContactSummary.vue differ
+Files ./app/javascript/dashboard/modules/conversations/components/MessageContextMenu.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/conversations/components/MessageContextMenu.vue differ
+Files ./app/javascript/dashboard/modules/notes/NotesOnContactPage.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/notes/NotesOnContactPage.vue differ
+Files ./app/javascript/dashboard/modules/notes/components/AddNote.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/notes/components/AddNote.vue differ
+Files ./app/javascript/dashboard/modules/notes/components/ContactNote.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/notes/components/ContactNote.vue differ
+Files ./app/javascript/dashboard/modules/notes/components/NoteList.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/notes/components/NoteList.vue differ
+Files ./app/javascript/dashboard/modules/search/components/MessageContent.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/search/components/MessageContent.vue differ
+Files ./app/javascript/dashboard/modules/search/components/ReadMore.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/search/components/ReadMore.vue differ
+Files ./app/javascript/dashboard/modules/search/components/SearchHeader.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/search/components/SearchHeader.vue differ
+Files ./app/javascript/dashboard/modules/search/components/SearchInput.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/search/components/SearchInput.vue differ
+Files ./app/javascript/dashboard/modules/search/components/SearchResultContactItem.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/search/components/SearchResultContactItem.vue differ
+Files ./app/javascript/dashboard/modules/search/components/SearchResultContactsList.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/search/components/SearchResultContactsList.vue differ
+Files ./app/javascript/dashboard/modules/search/components/SearchResultConversationItem.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/search/components/SearchResultConversationItem.vue differ
+Files ./app/javascript/dashboard/modules/search/components/SearchResultConversationsList.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/search/components/SearchResultConversationsList.vue differ
+Files ./app/javascript/dashboard/modules/search/components/SearchResultMessagesList.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/search/components/SearchResultMessagesList.vue differ
+Files ./app/javascript/dashboard/modules/search/components/SearchResultSection.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/search/components/SearchResultSection.vue differ
+Files ./app/javascript/dashboard/modules/search/components/SearchTabs.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/search/components/SearchTabs.vue differ
+Files ./app/javascript/dashboard/modules/search/components/SearchView.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/search/components/SearchView.vue differ
+Files ./app/javascript/dashboard/modules/widget-preview/components/Widget.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/widget-preview/components/Widget.vue differ
+Files ./app/javascript/dashboard/modules/widget-preview/components/WidgetBody.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/widget-preview/components/WidgetBody.vue differ
+Files ./app/javascript/dashboard/modules/widget-preview/components/WidgetFooter.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/widget-preview/components/WidgetFooter.vue differ
+Files ./app/javascript/dashboard/modules/widget-preview/components/WidgetHead.vue and chatwoot-3.12.0/app/javascript/dashboard/modules/widget-preview/components/WidgetHead.vue differ
+Only in chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard: Captain.vue
+Files ./app/javascript/dashboard/routes/dashboard/Dashboard.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/Dashboard.vue differ
+Only in chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/commands: CmdBarConversationSnooze.vue
+Files ./app/javascript/dashboard/routes/dashboard/commands/commandbar.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/commands/commandbar.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/commands/conversationHotKeys.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/commands/conversationHotKeys.js differ
+Files ./app/javascript/dashboard/routes/dashboard/commands/inboxHotKeys.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/commands/inboxHotKeys.js differ
+Files ./app/javascript/dashboard/routes/dashboard/contacts/components/AddReminder.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/contacts/components/AddReminder.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/contacts/components/ContactInfoPanel.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/contacts/components/ContactInfoPanel.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/contacts/components/ContactLabels.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/contacts/components/ContactLabels.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/contacts/components/ContactsAdvancedFilters.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/contacts/components/ContactsAdvancedFilters.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/contacts/components/ContactsTable.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/contacts/components/ContactsTable.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/contacts/components/ContactsView.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/contacts/components/ContactsView.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/contacts/components/Header.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/contacts/components/Header.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/contacts/components/ImportContacts.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/contacts/components/ImportContacts.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/contacts/components/ReminderItem.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/contacts/components/ReminderItem.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/contacts/components/SectionHeader.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/contacts/components/SectionHeader.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/contacts/components/TimelineCard.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/contacts/components/TimelineCard.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/contacts/pages/ContactManageView.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/contacts/pages/ContactManageView.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/ContactConversations.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/ContactConversations.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/ContactCustomAttributes.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/ContactCustomAttributes.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/ContactDetailsItem.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/ContactDetailsItem.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/ContactPanel.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/ContactPanel.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/ConversationAction.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/ConversationAction.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/ConversationInfo.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/ConversationInfo.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/ConversationParticipant.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/ConversationParticipant.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/ConversationView.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/ConversationView.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/Macros/List.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/Macros/List.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/Macros/MacroItem.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/Macros/MacroItem.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/Macros/MacroPreview.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/Macros/MacroPreview.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/contact/ContactForm.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/contact/ContactForm.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/contact/ContactInfo.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/contact/ContactInfo.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/contact/ContactInfoRow.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/contact/ContactInfoRow.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/contact/ConversationForm.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/contact/ConversationForm.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/contact/CreateContact.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/contact/CreateContact.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/contact/EditContact.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/contact/EditContact.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/contact/NewConversation.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/contact/NewConversation.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/contact/SocialIcons.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/contact/SocialIcons.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/contact/WhatsappTemplates.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/contact/WhatsappTemplates.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/customAttributes/CustomAttributes.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/customAttributes/CustomAttributes.vue differ
+Only in ./app/javascript/dashboard/routes/dashboard/conversation/customAttributes: KanbanAttributes.vue
+Files ./app/javascript/dashboard/routes/dashboard/conversation/labels/LabelBox.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/labels/LabelBox.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/search/PopOverSearch.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/search/PopOverSearch.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/conversation/search/SwitchLayout.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/conversation/search/SwitchLayout.vue differ
+Only in ./app/javascript/dashboard/routes/dashboard: crm
+Files ./app/javascript/dashboard/routes/dashboard/customviews/AddCustomViews.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/customviews/AddCustomViews.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/customviews/DeleteCustomViews.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/customviews/DeleteCustomViews.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/dashboard.routes.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/dashboard.routes.js differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/AddLocale.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/AddLocale.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/ArticleEditor.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/ArticleEditor.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/ArticleItem.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/ArticleItem.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/ArticleSearch/ArticleSearchResultItem.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/ArticleSearch/ArticleSearchResultItem.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/ArticleSearch/ArticleView.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/ArticleSearch/ArticleView.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/ArticleSearch/Header.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/ArticleSearch/Header.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/ArticleSearch/SearchPopover.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/ArticleSearch/SearchPopover.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/ArticleSearch/SearchResults.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/ArticleSearch/SearchResults.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/ArticleTable.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/ArticleTable.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/Header/ArticleHeader.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/Header/ArticleHeader.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/Header/EditArticleHeader.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/Header/EditArticleHeader.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/HelpCenterLayout.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/HelpCenterLayout.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/PortalListItem.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/PortalListItem.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/PortalListItemTable.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/PortalListItemTable.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/PortalPopover.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/PortalPopover.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/PortalSettingsBasicForm.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/PortalSettingsBasicForm.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/PortalSettingsCustomizationForm.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/PortalSettingsCustomizationForm.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/PortalSwitch.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/PortalSwitch.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/Sidebar/Sidebar.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/Sidebar/Sidebar.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/Sidebar/SidebarHeader.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/Sidebar/SidebarHeader.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/Sidebar/SidebarSearch.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/Sidebar/SidebarSearch.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/components/UpgradePage.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/components/UpgradePage.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/articles/ArticleSettings.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/articles/ArticleSettings.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/articles/DefaultPortalArticles.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/articles/DefaultPortalArticles.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/articles/EditArticle.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/articles/EditArticle.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/articles/ListAllArticles.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/articles/ListAllArticles.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/articles/ListCategoryArticles.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/articles/ListCategoryArticles.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/articles/NewArticle.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/articles/NewArticle.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/categories/AddCategory.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/categories/AddCategory.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/categories/CategoryListItem.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/categories/CategoryListItem.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/categories/EditCategory.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/categories/EditCategory.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/categories/ListAllCategories.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/categories/ListAllCategories.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/categories/NameEmojiInput.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/categories/NameEmojiInput.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/categories/NewCategory.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/categories/NewCategory.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/categories/ShowCategory.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/categories/ShowCategory.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/EditPortal.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/EditPortal.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/EditPortalBasic.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/EditPortalBasic.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/EditPortalCustomization.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/EditPortalCustomization.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/EditPortalLocales.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/EditPortalLocales.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/ListAllPortals.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/ListAllPortals.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/NewPortal.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/NewPortal.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/PortalCustomization.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/PortalCustomization.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/PortalDetails.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/PortalDetails.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/PortalSettingsFinish.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/PortalSettingsFinish.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/ShowPortal.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/helpcenter/pages/portals/ShowPortal.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/inbox/InboxEmptyState.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/inbox/InboxEmptyState.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/inbox/InboxList.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/inbox/InboxList.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/inbox/InboxView.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/inbox/InboxView.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/inbox/components/InboxCard.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/inbox/components/InboxCard.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/inbox/components/InboxContextMenu.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/inbox/components/InboxContextMenu.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/inbox/components/InboxDisplayMenu.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/inbox/components/InboxDisplayMenu.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/inbox/components/InboxItemHeader.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/inbox/components/InboxItemHeader.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/inbox/components/InboxListHeader.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/inbox/components/InboxListHeader.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/inbox/components/InboxNameAndId.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/inbox/components/InboxNameAndId.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/inbox/components/InboxOptionMenu.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/inbox/components/InboxOptionMenu.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/inbox/components/MenuItem.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/inbox/components/MenuItem.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/inbox/components/PaginationButton.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/inbox/components/PaginationButton.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/inbox/components/StatusIcon.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/inbox/components/StatusIcon.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/notifications/components/NotificationPanel.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/notifications/components/NotificationPanel.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/notifications/components/NotificationPanelItem.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/notifications/components/NotificationPanelItem.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/notifications/components/NotificationPanelList.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/notifications/components/NotificationPanelList.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/notifications/components/NotificationTable.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/notifications/components/NotificationTable.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/notifications/components/NotificationsView.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/notifications/components/NotificationsView.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/SettingsHeader.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/SettingsHeader.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/SettingsLayout.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/SettingsLayout.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/SettingsSubPageHeader.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/SettingsSubPageHeader.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/Wrapper.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/Wrapper.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/account/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/account/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/agentBots/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/agentBots/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/agentBots/components/AgentBotRow.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/agentBots/components/AgentBotRow.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/agentBots/components/AgentBotType.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/agentBots/components/AgentBotType.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/agentBots/components/CSMLBotEditor.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/agentBots/components/CSMLBotEditor.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/agentBots/components/CSMLMonacoEditor.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/agentBots/components/CSMLMonacoEditor.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/agentBots/csml/Edit.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/agentBots/csml/Edit.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/agentBots/csml/New.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/agentBots/csml/New.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/agents/AddAgent.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/agents/AddAgent.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/agents/EditAgent.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/agents/EditAgent.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/agents/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/agents/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/agents/agent.routes.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/agents/agent.routes.js differ
+Only in ./app/javascript/dashboard/routes/dashboard/settings: announcements
+Files ./app/javascript/dashboard/routes/dashboard/settings/attributes/AddAttribute.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/attributes/AddAttribute.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/attributes/CustomAttribute.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/attributes/CustomAttribute.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/attributes/EditAttribute.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/attributes/EditAttribute.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/attributes/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/attributes/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/attributes/constants.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/attributes/constants.js differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/auditlogs/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/auditlogs/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/auditlogs/audit.routes.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/auditlogs/audit.routes.js differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/automation/AddAutomationRule.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/automation/AddAutomationRule.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/automation/EditAutomationRule.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/automation/EditAutomationRule.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/automation/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/automation/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/automation/constants.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/automation/constants.js differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/billing/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/billing/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/billing/components/BillingItem.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/billing/components/BillingItem.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/campaigns/AddCampaign.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/campaigns/AddCampaign.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/campaigns/Campaign.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/campaigns/Campaign.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/campaigns/CampaignCard.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/campaigns/CampaignCard.vue differ
+Only in ./app/javascript/dashboard/routes/dashboard/settings/campaigns: CampaignHistoryModal.vue
+Files ./app/javascript/dashboard/routes/dashboard/settings/campaigns/CampaignsTable.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/campaigns/CampaignsTable.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/campaigns/EditCampaign.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/campaigns/EditCampaign.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/campaigns/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/campaigns/Index.vue differ
+Only in ./app/javascript/dashboard/routes/dashboard/settings/campaigns: OneOffCampaign.vue
+Files ./app/javascript/dashboard/routes/dashboard/settings/campaigns/campaigns.routes.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/campaigns/campaigns.routes.js differ
+Only in ./app/javascript/dashboard/routes/dashboard/settings/campaigns: utils
+Files ./app/javascript/dashboard/routes/dashboard/settings/canned/AddCanned.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/canned/AddCanned.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/canned/EditCanned.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/canned/EditCanned.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/canned/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/canned/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/canned/canned.routes.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/canned/canned.routes.js differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/components/BaseSettingsListItem.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/components/BaseSettingsListItem.vue differ
+Only in ./app/javascript/dashboard/routes/dashboard/settings: config_ia
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/AddAgents.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/AddAgents.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/ChannelList.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/ChannelList.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/FinishSetup.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/FinishSetup.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/ImapSettings.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/ImapSettings.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/InboxChannels.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/InboxChannels.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/PreChatForm/PreChatFields.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/PreChatForm/PreChatFields.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/PreChatForm/Settings.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/PreChatForm/Settings.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/Settings.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/Settings.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/SmtpSettings.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/SmtpSettings.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/WidgetBuilder.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/WidgetBuilder.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/channel-factory.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/channel-factory.js differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/channels/360DialogWhatsapp.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/channels/360DialogWhatsapp.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Api.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Api.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/channels/BandwidthSms.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/channels/BandwidthSms.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/channels/CloudWhatsapp.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/channels/CloudWhatsapp.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Email.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Email.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Facebook.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Facebook.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Line.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Line.vue differ
+Only in ./app/javascript/dashboard/routes/dashboard/settings/inbox/channels: NotificaMe.vue
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Sms.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Sms.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Telegram.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Telegram.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Twilio.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Twilio.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Twitter.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Twitter.vue differ
+Only in ./app/javascript/dashboard/routes/dashboard/settings/inbox/channels: Unoapi.vue
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Website.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Website.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Whatsapp.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/channels/Whatsapp.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/channels/emailChannels/ForwardToOption.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/channels/emailChannels/ForwardToOption.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/channels/emailChannels/Google.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/channels/emailChannels/Google.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/channels/emailChannels/OAuthChannel.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/channels/emailChannels/OAuthChannel.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/channels/microsoft/Reauthorize.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/channels/microsoft/Reauthorize.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/components/BotConfiguration.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/components/BotConfiguration.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/components/BusinessDay.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/components/BusinessDay.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/components/InboxReconnectionRequired.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/components/InboxReconnectionRequired.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/components/InputRadioGroup.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/components/InputRadioGroup.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/components/SenderNameExamplePreview.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/components/SenderNameExamplePreview.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/components/SingleSelectDropdown.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/components/SingleSelectDropdown.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/components/WeeklyAvailability.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/components/WeeklyAvailability.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/facebook/Reauthorize.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/facebook/Reauthorize.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/settingsPage/CollaboratorsPage.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/settingsPage/CollaboratorsPage.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/inbox/settingsPage/ConfigurationPage.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/inbox/settingsPage/ConfigurationPage.vue differ
+Only in ./app/javascript/dashboard/routes/dashboard/settings/inbox/settingsPage: UnoapiConfiguration.vue
+Only in ./app/javascript/dashboard/routes/dashboard/settings/inbox/settingsPage: quepasa.vue
+Files ./app/javascript/dashboard/routes/dashboard/settings/integrations/DashboardApps/DashboardAppModal.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/integrations/DashboardApps/DashboardAppModal.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/integrations/DashboardApps/DashboardAppsRow.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/integrations/DashboardApps/DashboardAppsRow.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/integrations/DashboardApps/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/integrations/DashboardApps/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/integrations/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/integrations/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/integrations/Integration.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/integrations/Integration.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/integrations/IntegrationHooks.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/integrations/IntegrationHooks.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/integrations/IntegrationItem.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/integrations/IntegrationItem.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/integrations/MultipleIntegrationHooks.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/integrations/MultipleIntegrationHooks.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/integrations/NewHook.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/integrations/NewHook.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/integrations/ShowIntegration.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/integrations/ShowIntegration.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/integrations/SingleIntegrationHooks.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/integrations/SingleIntegrationHooks.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/integrations/Slack/SelectChannelWarning.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/integrations/Slack/SelectChannelWarning.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/integrations/Slack/SlackIntegrationHelpText.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/integrations/Slack/SlackIntegrationHelpText.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/integrations/Slack.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/integrations/Slack.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/integrations/Webhooks/EditWebHook.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/integrations/Webhooks/EditWebHook.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/integrations/Webhooks/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/integrations/Webhooks/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/integrations/Webhooks/NewWebHook.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/integrations/Webhooks/NewWebHook.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/integrations/Webhooks/WebhookForm.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/integrations/Webhooks/WebhookForm.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/integrations/Webhooks/WebhookRow.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/integrations/Webhooks/WebhookRow.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/labels/AddLabel.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/labels/AddLabel.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/labels/EditLabel.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/labels/EditLabel.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/labels/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/labels/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/labels/labels.routes.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/labels/labels.routes.js differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/labels/validations.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/labels/validations.js differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/macros/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/macros/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/macros/MacroEditor.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/macros/MacroEditor.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/macros/MacroForm.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/macros/MacroForm.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/macros/MacroNode.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/macros/MacroNode.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/macros/MacroNodes.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/macros/MacroNodes.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/macros/MacroProperties.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/macros/MacroProperties.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/macros/MacrosTableRow.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/macros/MacrosTableRow.vue differ
+Only in ./app/javascript/dashboard/routes/dashboard/settings/macros: components
+Files ./app/javascript/dashboard/routes/dashboard/settings/macros/constants.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/macros/constants.js differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/profile/AccessToken.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/profile/AccessToken.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/profile/AudioAlertCondition.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/profile/AudioAlertCondition.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/profile/AudioAlertEvent.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/profile/AudioAlertEvent.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/profile/AudioAlertTone.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/profile/AudioAlertTone.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/profile/AudioNotifications.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/profile/AudioNotifications.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/profile/ChangePassword.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/profile/ChangePassword.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/profile/HotKeyCard.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/profile/HotKeyCard.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/profile/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/profile/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/profile/MessageSignature.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/profile/MessageSignature.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/profile/NotificationCheckBox.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/profile/NotificationCheckBox.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/profile/NotificationPreferences.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/profile/NotificationPreferences.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/profile/UserBasicDetails.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/profile/UserBasicDetails.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/profile/UserProfilePicture.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/profile/UserProfilePicture.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/profile/Wrapper.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/profile/Wrapper.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/AgentReports.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/AgentReports.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/BotReports.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/BotReports.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/CsatResponses.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/CsatResponses.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/InboxReports.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/InboxReports.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/LabelReports.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/LabelReports.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/LiveReports.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/LiveReports.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/ReportContainer.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/ReportContainer.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/SLAReports.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/SLAReports.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/TeamReports.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/TeamReports.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/BotMetrics.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/BotMetrics.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/ChartElements/ChartStats.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/ChartElements/ChartStats.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/CsatMetrics.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/CsatMetrics.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/CsatTable.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/CsatTable.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/FilterSelector.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/FilterSelector.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/Filters/Agents.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/Filters/Agents.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/Filters/DateGroupBy.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/Filters/DateGroupBy.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/Filters/DateRange.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/Filters/DateRange.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/Filters/Inboxes.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/Filters/Inboxes.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/Filters/Labels.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/Filters/Labels.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/Filters/Ratings.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/Filters/Ratings.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/Filters/Teams.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/Filters/Teams.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/Filters/v3/ActiveFilterChip.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/Filters/v3/ActiveFilterChip.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/Filters/v3/AddFilterChip.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/Filters/v3/AddFilterChip.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/Heatmap.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/Heatmap.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/ReportFilters.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/ReportFilters.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/ReportMetricCard.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/ReportMetricCard.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/SLA/SLAFilter.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/SLA/SLAFilter.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/SLA/SLAMetricCard.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/SLA/SLAMetricCard.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/SLA/SLAMetrics.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/SLA/SLAMetrics.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/SLA/SLAReportFilters.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/SLA/SLAReportFilters.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/SLA/SLAReportItem.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/SLA/SLAReportItem.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/SLA/SLATable.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/SLA/SLATable.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/SLA/SLAViewDetails.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/SLA/SLAViewDetails.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/WootReports.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/WootReports.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/overview/AgentTable.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/overview/AgentTable.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/overview/MetricCard.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/overview/MetricCard.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/specs/Filters/FiltersAgents.spec.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/specs/Filters/FiltersAgents.spec.js differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/specs/Filters/FiltersDateGroupBy.spec.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/specs/Filters/FiltersDateGroupBy.spec.js differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/specs/Filters/FiltersInboxes.spec.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/specs/Filters/FiltersInboxes.spec.js differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/specs/Filters/FiltersLabels.spec.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/specs/Filters/FiltersLabels.spec.js differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/specs/Filters/FiltersRatings.spec.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/specs/Filters/FiltersRatings.spec.js differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/specs/Filters/FiltersTeams.spec.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/specs/Filters/FiltersTeams.spec.js differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/reports/components/specs/__snapshots__/CSATMetrics.spec.js.snap and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/reports/components/specs/__snapshots__/CSATMetrics.spec.js.snap differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/settings.routes.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/settings.routes.js differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/sla/AddSLA.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/sla/AddSLA.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/sla/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/sla/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/sla/SlaForm.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/sla/SlaForm.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/sla/SlaTimeInput.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/sla/SlaTimeInput.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/sla/components/BaseEmptyState.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/sla/components/BaseEmptyState.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/sla/components/SLABusinessHoursLabel.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/sla/components/SLABusinessHoursLabel.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/sla/components/SLAEmptyState.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/sla/components/SLAEmptyState.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/sla/components/SLAHeader.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/sla/components/SLAHeader.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/sla/components/SLAListItem.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/sla/components/SLAListItem.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/sla/components/SLAListItemLoading.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/sla/components/SLAListItemLoading.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/sla/components/SLAPaywallEnterprise.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/sla/components/SLAPaywallEnterprise.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/sla/components/SLAResponseTime.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/sla/components/SLAResponseTime.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/sla/validations.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/sla/validations.js differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/teams/AgentSelector.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/teams/AgentSelector.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/teams/Create/AddAgents.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/teams/Create/AddAgents.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/teams/Create/CreateTeam.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/teams/Create/CreateTeam.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/teams/Create/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/teams/Create/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/teams/Edit/EditAgents.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/teams/Edit/EditAgents.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/teams/Edit/EditTeam.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/teams/Edit/EditTeam.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/teams/Edit/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/teams/Edit/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/teams/FinishSetup.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/teams/FinishSetup.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/teams/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/teams/Index.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/teams/TeamForm.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/teams/TeamForm.vue differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/teams/helpers/validations.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/teams/helpers/validations.js differ
+Files ./app/javascript/dashboard/routes/dashboard/settings/teams/teams.routes.js and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/settings/teams/teams.routes.js differ
+Files ./app/javascript/dashboard/routes/dashboard/suspended/Index.vue and chatwoot-3.12.0/app/javascript/dashboard/routes/dashboard/suspended/Index.vue differ
+Files ./app/javascript/dashboard/store/modules/accounts.js and chatwoot-3.12.0/app/javascript/dashboard/store/modules/accounts.js differ
+Files ./app/javascript/dashboard/store/modules/attributes.js and chatwoot-3.12.0/app/javascript/dashboard/store/modules/attributes.js differ
+Files ./app/javascript/dashboard/store/modules/campaigns.js and chatwoot-3.12.0/app/javascript/dashboard/store/modules/campaigns.js differ
+Files ./app/javascript/dashboard/store/modules/cannedResponse.js and chatwoot-3.12.0/app/javascript/dashboard/store/modules/cannedResponse.js differ
+Files ./app/javascript/dashboard/store/modules/contacts/actions.js and chatwoot-3.12.0/app/javascript/dashboard/store/modules/contacts/actions.js differ
+Files ./app/javascript/dashboard/store/modules/contacts/mutations.js and chatwoot-3.12.0/app/javascript/dashboard/store/modules/contacts/mutations.js differ
+Only in ./app/javascript/dashboard/store/modules/conversations/actions: messageForwardActions.js
+Files ./app/javascript/dashboard/store/modules/conversations/actions.js and chatwoot-3.12.0/app/javascript/dashboard/store/modules/conversations/actions.js differ
+Files ./app/javascript/dashboard/store/modules/conversations/getters.js and chatwoot-3.12.0/app/javascript/dashboard/store/modules/conversations/getters.js differ
+Files ./app/javascript/dashboard/store/modules/conversations/index.js and chatwoot-3.12.0/app/javascript/dashboard/store/modules/conversations/index.js differ
+Files ./app/javascript/dashboard/store/modules/inboxes.js and chatwoot-3.12.0/app/javascript/dashboard/store/modules/inboxes.js differ
+Files ./app/javascript/dashboard/store/modules/integrations.js and chatwoot-3.12.0/app/javascript/dashboard/store/modules/integrations.js differ
+Files ./app/javascript/dashboard/store/modules/specs/account/getters.spec.js and chatwoot-3.12.0/app/javascript/dashboard/store/modules/specs/account/getters.spec.js differ
+Only in chatwoot-3.12.0/app/javascript/dashboard/store/modules/specs: cannedResponses
+Files ./app/javascript/dashboard/store/modules/specs/conversations/getters.spec.js and chatwoot-3.12.0/app/javascript/dashboard/store/modules/specs/conversations/getters.spec.js differ
+Files ./app/javascript/dashboard/store/modules/specs/conversations/mutations.spec.js and chatwoot-3.12.0/app/javascript/dashboard/store/modules/specs/conversations/mutations.spec.js differ
+Files ./app/javascript/packs/application.js and chatwoot-3.12.0/app/javascript/packs/application.js differ
+Files ./app/javascript/packs/survey.js and chatwoot-3.12.0/app/javascript/packs/survey.js differ
+Files ./app/javascript/packs/v3app.js and chatwoot-3.12.0/app/javascript/packs/v3app.js differ
+Files ./app/javascript/packs/widget.js and chatwoot-3.12.0/app/javascript/packs/widget.js differ
+Files ./app/javascript/portal/components/PublicArticleSearch.vue and chatwoot-3.12.0/app/javascript/portal/components/PublicArticleSearch.vue differ
+Files ./app/javascript/portal/components/PublicSearchInput.vue and chatwoot-3.12.0/app/javascript/portal/components/PublicSearchInput.vue differ
+Files ./app/javascript/portal/components/SearchSuggestions.vue and chatwoot-3.12.0/app/javascript/portal/components/SearchSuggestions.vue differ
+Files ./app/javascript/portal/components/TableOfContents.vue and chatwoot-3.12.0/app/javascript/portal/components/TableOfContents.vue differ
+Files ./app/javascript/portal/portalHelpers.js and chatwoot-3.12.0/app/javascript/portal/portalHelpers.js differ
+Files ./app/javascript/sdk/sdk.js and chatwoot-3.12.0/app/javascript/sdk/sdk.js differ
+Files ./app/javascript/shared/assets/stylesheets/colors.scss and chatwoot-3.12.0/app/javascript/shared/assets/stylesheets/colors.scss differ
+Files ./app/javascript/shared/components/Branding.vue and chatwoot-3.12.0/app/javascript/shared/components/Branding.vue differ
+Files ./app/javascript/shared/components/Button.vue and chatwoot-3.12.0/app/javascript/shared/components/Button.vue differ
+Files ./app/javascript/shared/components/CardButton.vue and chatwoot-3.12.0/app/javascript/shared/components/CardButton.vue differ
+Files ./app/javascript/shared/components/ChatCard.vue and chatwoot-3.12.0/app/javascript/shared/components/ChatCard.vue differ
+Files ./app/javascript/shared/components/ChatForm.vue and chatwoot-3.12.0/app/javascript/shared/components/ChatForm.vue differ
+Files ./app/javascript/shared/components/ChatOption.vue and chatwoot-3.12.0/app/javascript/shared/components/ChatOption.vue differ
+Files ./app/javascript/shared/components/ChatOptions.vue and chatwoot-3.12.0/app/javascript/shared/components/ChatOptions.vue differ
+Files ./app/javascript/shared/components/CustomerSatisfaction.vue and chatwoot-3.12.0/app/javascript/shared/components/CustomerSatisfaction.vue differ
+Files ./app/javascript/shared/components/DateSeparator.vue and chatwoot-3.12.0/app/javascript/shared/components/DateSeparator.vue differ
+Files ./app/javascript/shared/components/EmojiOrIcon.vue and chatwoot-3.12.0/app/javascript/shared/components/EmojiOrIcon.vue differ
+Files ./app/javascript/shared/components/FluentIcon/DashboardIcon.vue and chatwoot-3.12.0/app/javascript/shared/components/FluentIcon/DashboardIcon.vue differ
+Files ./app/javascript/shared/components/FluentIcon/Icon.vue and chatwoot-3.12.0/app/javascript/shared/components/FluentIcon/Icon.vue differ
+Files ./app/javascript/shared/components/FluentIcon/Index.vue and chatwoot-3.12.0/app/javascript/shared/components/FluentIcon/Index.vue differ
+Files ./app/javascript/shared/components/FluentIcon/dashboard-icons.json and chatwoot-3.12.0/app/javascript/shared/components/FluentIcon/dashboard-icons.json differ
+Files ./app/javascript/shared/components/FluentIcon/icons.json and chatwoot-3.12.0/app/javascript/shared/components/FluentIcon/icons.json differ
+Files ./app/javascript/shared/components/GreetingsEditor.vue and chatwoot-3.12.0/app/javascript/shared/components/GreetingsEditor.vue differ
+Files ./app/javascript/shared/components/IframeLoader.vue and chatwoot-3.12.0/app/javascript/shared/components/IframeLoader.vue differ
+Files ./app/javascript/shared/components/ResizableTextArea.vue and chatwoot-3.12.0/app/javascript/shared/components/ResizableTextArea.vue differ
+Files ./app/javascript/shared/components/Spinner.vue and chatwoot-3.12.0/app/javascript/shared/components/Spinner.vue differ
+Files ./app/javascript/shared/components/TextArea.vue and chatwoot-3.12.0/app/javascript/shared/components/TextArea.vue differ
+Files ./app/javascript/shared/components/emoji/EmojiInput.vue and chatwoot-3.12.0/app/javascript/shared/components/emoji/EmojiInput.vue differ
+Files ./app/javascript/shared/components/ui/MultiselectDropdown.vue and chatwoot-3.12.0/app/javascript/shared/components/ui/MultiselectDropdown.vue differ
+Files ./app/javascript/shared/components/ui/MultiselectDropdownItems.vue and chatwoot-3.12.0/app/javascript/shared/components/ui/MultiselectDropdownItems.vue differ
+Only in ./app/javascript/shared/components/ui: TagsInput.vue
+Files ./app/javascript/shared/components/ui/dropdown/AddLabel.vue and chatwoot-3.12.0/app/javascript/shared/components/ui/dropdown/AddLabel.vue differ
+Files ./app/javascript/shared/components/ui/dropdown/DropdownDivider.vue and chatwoot-3.12.0/app/javascript/shared/components/ui/dropdown/DropdownDivider.vue differ
+Files ./app/javascript/shared/components/ui/dropdown/DropdownHeader.vue and chatwoot-3.12.0/app/javascript/shared/components/ui/dropdown/DropdownHeader.vue differ
+Files ./app/javascript/shared/components/ui/dropdown/DropdownItem.vue and chatwoot-3.12.0/app/javascript/shared/components/ui/dropdown/DropdownItem.vue differ
+Files ./app/javascript/shared/components/ui/dropdown/DropdownMenu.vue and chatwoot-3.12.0/app/javascript/shared/components/ui/dropdown/DropdownMenu.vue differ
+Files ./app/javascript/shared/components/ui/dropdown/DropdownSubMenu.vue and chatwoot-3.12.0/app/javascript/shared/components/ui/dropdown/DropdownSubMenu.vue differ
+Files ./app/javascript/shared/components/ui/label/LabelDropdown.vue and chatwoot-3.12.0/app/javascript/shared/components/ui/label/LabelDropdown.vue differ
+Files ./app/javascript/shared/components/ui/label/LabelDropdownItem.vue and chatwoot-3.12.0/app/javascript/shared/components/ui/label/LabelDropdownItem.vue differ
+Files ./app/javascript/shared/helpers/IntegrationHelper.js and chatwoot-3.12.0/app/javascript/shared/helpers/IntegrationHelper.js differ
+Files ./app/javascript/shared/helpers/KeyboardHelpers.js and chatwoot-3.12.0/app/javascript/shared/helpers/KeyboardHelpers.js differ
+Files ./app/javascript/shared/helpers/Validators.js and chatwoot-3.12.0/app/javascript/shared/helpers/Validators.js differ
+Files ./app/javascript/shared/helpers/specs/ValidatorsHelper.spec.js and chatwoot-3.12.0/app/javascript/shared/helpers/specs/ValidatorsHelper.spec.js differ
+Only in ./app/javascript/shared/mixins: configMixin.js
+Files ./app/javascript/shared/mixins/inboxMixin.js and chatwoot-3.12.0/app/javascript/shared/mixins/inboxMixin.js differ
+Only in ./app/javascript/shared/mixins: rtlMixin.js
+Files ./app/javascript/shared/mixins/specs/MockComponent.vue and chatwoot-3.12.0/app/javascript/shared/mixins/specs/MockComponent.vue differ
+Files ./app/javascript/shared/mixins/specs/automationFixtures.js and chatwoot-3.12.0/app/javascript/shared/mixins/specs/automationFixtures.js differ
+Files ./app/javascript/shared/mixins/specs/automationMixin.spec.js and chatwoot-3.12.0/app/javascript/shared/mixins/specs/automationMixin.spec.js differ
+Only in ./app/javascript/shared/mixins/specs: rtlMixin.spec.js
+Files ./app/javascript/shared/mixins/specs/whatsappTemplates/whatsappTemplates.spec.js and chatwoot-3.12.0/app/javascript/shared/mixins/specs/whatsappTemplates/whatsappTemplates.spec.js differ
+Files ./app/javascript/shared/store/globalConfig.js and chatwoot-3.12.0/app/javascript/shared/store/globalConfig.js differ
+Files ./app/javascript/superadmin_pages/components/playground/Header.vue and chatwoot-3.12.0/app/javascript/superadmin_pages/components/playground/Header.vue differ
+Files ./app/javascript/superadmin_pages/views/playground/Index.vue and chatwoot-3.12.0/app/javascript/superadmin_pages/views/playground/Index.vue differ
+Files ./app/javascript/survey/App.vue and chatwoot-3.12.0/app/javascript/survey/App.vue differ
+Files ./app/javascript/survey/components/Banner.vue and chatwoot-3.12.0/app/javascript/survey/components/Banner.vue differ
+Files ./app/javascript/survey/components/Feedback.vue and chatwoot-3.12.0/app/javascript/survey/components/Feedback.vue differ
+Files ./app/javascript/survey/components/Rating.vue and chatwoot-3.12.0/app/javascript/survey/components/Rating.vue differ
+Files ./app/javascript/survey/i18n/index.js and chatwoot-3.12.0/app/javascript/survey/i18n/index.js differ
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: am.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: ar.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: bg.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: ca.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: cs.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: da.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: de.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: el.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: fa.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: fi.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: fr.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: he.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: hi.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: hr.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: hu.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: hy.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: id.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: is.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: it.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: ja.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: ka.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: ko.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: lt.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: lv.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: ml.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: ms.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: ne.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: nl.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: no.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: pl.json
+Files ./app/javascript/survey/i18n/locale/pt.json and chatwoot-3.12.0/app/javascript/survey/i18n/locale/pt.json differ
+Files ./app/javascript/survey/i18n/locale/pt_BR.json and chatwoot-3.12.0/app/javascript/survey/i18n/locale/pt_BR.json differ
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: ro.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: ru.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: sh.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: sk.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: sl.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: sq.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: sr.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: sv.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: ta.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: th.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: tl.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: tr.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: uk.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: ur.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: ur_IN.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: vi.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: zh_CN.json
+Only in chatwoot-3.12.0/app/javascript/survey/i18n/locale: zh_TW.json
+Files ./app/javascript/survey/views/Response.vue and chatwoot-3.12.0/app/javascript/survey/views/Response.vue differ
+Files ./app/javascript/v3/App.vue and chatwoot-3.12.0/app/javascript/v3/App.vue differ
+Files ./app/javascript/v3/components/Button/SubmitButton.vue and chatwoot-3.12.0/app/javascript/v3/components/Button/SubmitButton.vue differ
+Files ./app/javascript/v3/components/Divider/SimpleDivider.vue and chatwoot-3.12.0/app/javascript/v3/components/Divider/SimpleDivider.vue differ
+Files ./app/javascript/v3/components/Form/Button.vue and chatwoot-3.12.0/app/javascript/v3/components/Form/Button.vue differ
+Files ./app/javascript/v3/components/Form/CheckBox.vue and chatwoot-3.12.0/app/javascript/v3/components/Form/CheckBox.vue differ
+Files ./app/javascript/v3/components/Form/InitialsAvatar.vue and chatwoot-3.12.0/app/javascript/v3/components/Form/InitialsAvatar.vue differ
+Files ./app/javascript/v3/components/Form/Input.vue and chatwoot-3.12.0/app/javascript/v3/components/Form/Input.vue differ
+Files ./app/javascript/v3/components/Form/ProfileAvatar.vue and chatwoot-3.12.0/app/javascript/v3/components/Form/ProfileAvatar.vue differ
+Files ./app/javascript/v3/components/Form/RadioTags.vue and chatwoot-3.12.0/app/javascript/v3/components/Form/RadioTags.vue differ
+Files ./app/javascript/v3/components/Form/Select.vue and chatwoot-3.12.0/app/javascript/v3/components/Form/Select.vue differ
+Files ./app/javascript/v3/components/Form/Switch.vue and chatwoot-3.12.0/app/javascript/v3/components/Form/Switch.vue differ
+Files ./app/javascript/v3/components/Form/Textarea.vue and chatwoot-3.12.0/app/javascript/v3/components/Form/Textarea.vue differ
+Files ./app/javascript/v3/components/Form/WithLabel.vue and chatwoot-3.12.0/app/javascript/v3/components/Form/WithLabel.vue differ
+Files ./app/javascript/v3/components/GoogleOauth/Button.vue and chatwoot-3.12.0/app/javascript/v3/components/GoogleOauth/Button.vue differ
+Files ./app/javascript/v3/components/SnackBar/Container.vue and chatwoot-3.12.0/app/javascript/v3/components/SnackBar/Container.vue differ
+Files ./app/javascript/v3/components/SnackBar/Item.vue and chatwoot-3.12.0/app/javascript/v3/components/SnackBar/Item.vue differ
+Files ./app/javascript/v3/views/auth/confirmation/Index.vue and chatwoot-3.12.0/app/javascript/v3/views/auth/confirmation/Index.vue differ
+Files ./app/javascript/v3/views/auth/password/Edit.vue and chatwoot-3.12.0/app/javascript/v3/views/auth/password/Edit.vue differ
+Files ./app/javascript/v3/views/auth/reset/password/Index.vue and chatwoot-3.12.0/app/javascript/v3/views/auth/reset/password/Index.vue differ
+Files ./app/javascript/v3/views/auth/signup/Index.vue and chatwoot-3.12.0/app/javascript/v3/views/auth/signup/Index.vue differ
+Files ./app/javascript/v3/views/auth/signup/components/Signup/Form.vue and chatwoot-3.12.0/app/javascript/v3/views/auth/signup/components/Signup/Form.vue differ
+Files ./app/javascript/v3/views/auth/signup/components/Testimonials/Index.vue and chatwoot-3.12.0/app/javascript/v3/views/auth/signup/components/Testimonials/Index.vue differ
+Files ./app/javascript/v3/views/auth/signup/components/Testimonials/TestimonialCard.vue and chatwoot-3.12.0/app/javascript/v3/views/auth/signup/components/Testimonials/TestimonialCard.vue differ
+Files ./app/javascript/v3/views/login/Index.vue and chatwoot-3.12.0/app/javascript/v3/views/login/Index.vue differ
+Files ./app/javascript/v3/views/onboarding/OnboardingStep.vue and chatwoot-3.12.0/app/javascript/v3/views/onboarding/OnboardingStep.vue differ
+Files ./app/javascript/widget/App.vue and chatwoot-3.12.0/app/javascript/widget/App.vue differ
+Files ./app/javascript/widget/assets/scss/_variables.scss and chatwoot-3.12.0/app/javascript/widget/assets/scss/_variables.scss differ
+Files ./app/javascript/widget/components/AgentMessage.vue and chatwoot-3.12.0/app/javascript/widget/components/AgentMessage.vue differ
+Files ./app/javascript/widget/components/AgentMessageBubble.vue and chatwoot-3.12.0/app/javascript/widget/components/AgentMessageBubble.vue differ
+Files ./app/javascript/widget/components/AgentTypingBubble.vue and chatwoot-3.12.0/app/javascript/widget/components/AgentTypingBubble.vue differ
+Files ./app/javascript/widget/components/ArticleCategoryCard.vue and chatwoot-3.12.0/app/javascript/widget/components/ArticleCategoryCard.vue differ
+Files ./app/javascript/widget/components/ArticleHero.vue and chatwoot-3.12.0/app/javascript/widget/components/ArticleHero.vue differ
+Files ./app/javascript/widget/components/ArticleList.vue and chatwoot-3.12.0/app/javascript/widget/components/ArticleList.vue differ
+Files ./app/javascript/widget/components/ArticleListItem.vue and chatwoot-3.12.0/app/javascript/widget/components/ArticleListItem.vue differ
+Files ./app/javascript/widget/components/ArticleSearch.vue and chatwoot-3.12.0/app/javascript/widget/components/ArticleSearch.vue differ
+Files ./app/javascript/widget/components/AvailableAgents.vue and chatwoot-3.12.0/app/javascript/widget/components/AvailableAgents.vue differ
+Files ./app/javascript/widget/components/Banner.vue and chatwoot-3.12.0/app/javascript/widget/components/Banner.vue differ
+Files ./app/javascript/widget/components/ChatAttachment.vue and chatwoot-3.12.0/app/javascript/widget/components/ChatAttachment.vue differ
+Files ./app/javascript/widget/components/ChatFooter.vue and chatwoot-3.12.0/app/javascript/widget/components/ChatFooter.vue differ
+Files ./app/javascript/widget/components/ChatHeader.vue and chatwoot-3.12.0/app/javascript/widget/components/ChatHeader.vue differ
+Files ./app/javascript/widget/components/ChatHeaderExpanded.vue and chatwoot-3.12.0/app/javascript/widget/components/ChatHeaderExpanded.vue differ
+Files ./app/javascript/widget/components/ChatInputWrap.vue and chatwoot-3.12.0/app/javascript/widget/components/ChatInputWrap.vue differ
+Files ./app/javascript/widget/components/ChatMessage.vue and chatwoot-3.12.0/app/javascript/widget/components/ChatMessage.vue differ
+Files ./app/javascript/widget/components/ChatSendButton.vue and chatwoot-3.12.0/app/javascript/widget/components/ChatSendButton.vue differ
+Files ./app/javascript/widget/components/ContinueChatButton.vue and chatwoot-3.12.0/app/javascript/widget/components/ContinueChatButton.vue differ
+Files ./app/javascript/widget/components/ConversationWrap.vue and chatwoot-3.12.0/app/javascript/widget/components/ConversationWrap.vue differ
+Files ./app/javascript/widget/components/DragWrapper.vue and chatwoot-3.12.0/app/javascript/widget/components/DragWrapper.vue differ
+Files ./app/javascript/widget/components/FileBubble.vue and chatwoot-3.12.0/app/javascript/widget/components/FileBubble.vue differ
+Files ./app/javascript/widget/components/FooterReplyTo.vue and chatwoot-3.12.0/app/javascript/widget/components/FooterReplyTo.vue differ
+Files ./app/javascript/widget/components/Form/Input.vue and chatwoot-3.12.0/app/javascript/widget/components/Form/Input.vue differ
+Files ./app/javascript/widget/components/Form/PhoneInput.vue and chatwoot-3.12.0/app/javascript/widget/components/Form/PhoneInput.vue differ
+Files ./app/javascript/widget/components/Form/TextArea.vue and chatwoot-3.12.0/app/javascript/widget/components/Form/TextArea.vue differ
+Files ./app/javascript/widget/components/GroupedAvatars.vue and chatwoot-3.12.0/app/javascript/widget/components/GroupedAvatars.vue differ
+Files ./app/javascript/widget/components/HeaderActions.vue and chatwoot-3.12.0/app/javascript/widget/components/HeaderActions.vue differ
+Files ./app/javascript/widget/components/ImageBubble.vue and chatwoot-3.12.0/app/javascript/widget/components/ImageBubble.vue differ
+Files ./app/javascript/widget/components/MessageReplyButton.vue and chatwoot-3.12.0/app/javascript/widget/components/MessageReplyButton.vue differ
+Files ./app/javascript/widget/components/PreChat/Form.vue and chatwoot-3.12.0/app/javascript/widget/components/PreChat/Form.vue differ
+Files ./app/javascript/widget/components/ReplyToChip.vue and chatwoot-3.12.0/app/javascript/widget/components/ReplyToChip.vue differ
+Files ./app/javascript/widget/components/SearchArticle.vue and chatwoot-3.12.0/app/javascript/widget/components/SearchArticle.vue differ
+Files ./app/javascript/widget/components/TeamAvailability.vue and chatwoot-3.12.0/app/javascript/widget/components/TeamAvailability.vue differ
+Files ./app/javascript/widget/components/UnreadMessage.vue and chatwoot-3.12.0/app/javascript/widget/components/UnreadMessage.vue differ
+Files ./app/javascript/widget/components/UnreadMessageList.vue and chatwoot-3.12.0/app/javascript/widget/components/UnreadMessageList.vue differ
+Files ./app/javascript/widget/components/UserAvatar.vue and chatwoot-3.12.0/app/javascript/widget/components/UserAvatar.vue differ
+Files ./app/javascript/widget/components/UserMessage.vue and chatwoot-3.12.0/app/javascript/widget/components/UserMessage.vue differ
+Files ./app/javascript/widget/components/UserMessageBubble.vue and chatwoot-3.12.0/app/javascript/widget/components/UserMessageBubble.vue differ
+Files ./app/javascript/widget/components/VideoBubble.vue and chatwoot-3.12.0/app/javascript/widget/components/VideoBubble.vue differ
+Files ./app/javascript/widget/components/dropdown/DropdownMenu.vue and chatwoot-3.12.0/app/javascript/widget/components/dropdown/DropdownMenu.vue differ
+Files ./app/javascript/widget/components/dropdown/DropdownMenuItem.vue and chatwoot-3.12.0/app/javascript/widget/components/dropdown/DropdownMenuItem.vue differ
+Files ./app/javascript/widget/components/layouts/ViewWithHeader.vue and chatwoot-3.12.0/app/javascript/widget/components/layouts/ViewWithHeader.vue differ
+Files ./app/javascript/widget/components/template/Article.vue and chatwoot-3.12.0/app/javascript/widget/components/template/Article.vue differ
+Files ./app/javascript/widget/components/template/EmailInput.vue and chatwoot-3.12.0/app/javascript/widget/components/template/EmailInput.vue differ
+Files ./app/javascript/widget/components/template/IntegrationCard.vue and chatwoot-3.12.0/app/javascript/widget/components/template/IntegrationCard.vue differ
+Only in chatwoot-3.12.0/app/javascript/widget: composables
+Files ./app/javascript/widget/i18n/index.js and chatwoot-3.12.0/app/javascript/widget/i18n/index.js differ
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: am.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: ar.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: bg.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: ca.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: cs.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: da.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: de.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: el.json
+Files ./app/javascript/widget/i18n/locale/en.json and chatwoot-3.12.0/app/javascript/widget/i18n/locale/en.json differ
+Files ./app/javascript/widget/i18n/locale/es.json and chatwoot-3.12.0/app/javascript/widget/i18n/locale/es.json differ
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: fa.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: fi.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: fr.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: he.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: hi.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: hr.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: hu.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: hy.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: id.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: is.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: it.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: ja.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: ka.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: ko.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: lt.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: lv.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: ml.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: ms.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: ne.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: nl.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: no.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: pl.json
+Files ./app/javascript/widget/i18n/locale/pt.json and chatwoot-3.12.0/app/javascript/widget/i18n/locale/pt.json differ
+Files ./app/javascript/widget/i18n/locale/pt_BR.json and chatwoot-3.12.0/app/javascript/widget/i18n/locale/pt_BR.json differ
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: ro.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: ru.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: sh.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: sk.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: sl.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: sq.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: sr.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: sv.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: ta.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: th.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: tl.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: tr.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: uk.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: ur.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: ur_IN.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: vi.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: zh.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: zh_CN.json
+Only in chatwoot-3.12.0/app/javascript/widget/i18n/locale: zh_TW.json
+Only in ./app/javascript/widget/mixins: messageMixin.js
+Only in ./app/javascript/widget/mixins/specs: messageMixin.spec.js
+Files ./app/javascript/widget/views/ArticleViewer.vue and chatwoot-3.12.0/app/javascript/widget/views/ArticleViewer.vue differ
+Files ./app/javascript/widget/views/Campaigns.vue and chatwoot-3.12.0/app/javascript/widget/views/Campaigns.vue differ
+Files ./app/javascript/widget/views/Home.vue and chatwoot-3.12.0/app/javascript/widget/views/Home.vue differ
+Files ./app/javascript/widget/views/Messages.vue and chatwoot-3.12.0/app/javascript/widget/views/Messages.vue differ
+Files ./app/javascript/widget/views/PreChatForm.vue and chatwoot-3.12.0/app/javascript/widget/views/PreChatForm.vue differ
+Files ./app/javascript/widget/views/UnreadMessages.vue and chatwoot-3.12.0/app/javascript/widget/views/UnreadMessages.vue differ
+Only in ./app/jobs: contacts
+Only in ./app/jobs/conversations: forward_message_job.rb
+Files ./app/jobs/data_import_job.rb and chatwoot-3.12.0/app/jobs/data_import_job.rb differ
+Files ./app/jobs/send_reply_job.rb and chatwoot-3.12.0/app/jobs/send_reply_job.rb differ
+Only in ./app/jobs: update_last_seen_job.rb
+Files ./app/jobs/webhook_job.rb and chatwoot-3.12.0/app/jobs/webhook_job.rb differ
+Only in ./app/jobs/webhooks: notifica_me_events_job.rb
+Files ./app/jobs/webhooks/whatsapp_events_job.rb and chatwoot-3.12.0/app/jobs/webhooks/whatsapp_events_job.rb differ
+Files ./app/listeners/automation_rule_listener.rb and chatwoot-3.12.0/app/listeners/automation_rule_listener.rb differ
+Files ./app/listeners/webhook_listener.rb and chatwoot-3.12.0/app/listeners/webhook_listener.rb differ
+Files ./app/mailers/conversation_reply_mailer.rb and chatwoot-3.12.0/app/mailers/conversation_reply_mailer.rb differ
+Files ./app/models/account.rb and chatwoot-3.12.0/app/models/account.rb differ
+Files ./app/models/account_user.rb and chatwoot-3.12.0/app/models/account_user.rb differ
+Files ./app/models/article.rb and chatwoot-3.12.0/app/models/article.rb differ
+Files ./app/models/attachment.rb and chatwoot-3.12.0/app/models/attachment.rb differ
+Files ./app/models/automation_rule.rb and chatwoot-3.12.0/app/models/automation_rule.rb differ
+Files ./app/models/campaign.rb and chatwoot-3.12.0/app/models/campaign.rb differ
+Files ./app/models/channel/api.rb and chatwoot-3.12.0/app/models/channel/api.rb differ
+Only in ./app/models/channel: notifica_me.rb
+Files ./app/models/channel/web_widget.rb and chatwoot-3.12.0/app/models/channel/web_widget.rb differ
+Files ./app/models/channel/whatsapp.rb and chatwoot-3.12.0/app/models/channel/whatsapp.rb differ
+Only in ./app/models/concerns: brazilian_number_validator.rb
+Only in ./app/models/concerns: contact_kanban_data.rb
+Files ./app/models/concerns/content_attribute_validator.rb and chatwoot-3.12.0/app/models/concerns/content_attribute_validator.rb differ
+Files ./app/models/concerns/json_schema_validator.rb and chatwoot-3.12.0/app/models/concerns/json_schema_validator.rb differ
+Files ./app/models/concerns/message_filter_helpers.rb and chatwoot-3.12.0/app/models/concerns/message_filter_helpers.rb differ
+Files ./app/models/contact.rb and chatwoot-3.12.0/app/models/contact.rb differ
+Files ./app/models/contact_inbox.rb and chatwoot-3.12.0/app/models/contact_inbox.rb differ
+Only in ./app/models: contact_pipeline_position.rb
+Files ./app/models/conversation.rb and chatwoot-3.12.0/app/models/conversation.rb differ
+Files ./app/models/custom_attribute_definition.rb and chatwoot-3.12.0/app/models/custom_attribute_definition.rb differ
+Files ./app/models/inbox.rb and chatwoot-3.12.0/app/models/inbox.rb differ
+Files ./app/models/integrations/hook.rb and chatwoot-3.12.0/app/models/integrations/hook.rb differ
+Files ./app/models/label.rb and chatwoot-3.12.0/app/models/label.rb differ
+Files ./app/models/macro.rb and chatwoot-3.12.0/app/models/macro.rb differ
+Files ./app/models/message.rb and chatwoot-3.12.0/app/models/message.rb differ
+Files ./app/models/super_admin.rb and chatwoot-3.12.0/app/models/super_admin.rb differ
+Files ./app/models/user.rb and chatwoot-3.12.0/app/models/user.rb differ
+Files ./app/policies/campaign_policy.rb and chatwoot-3.12.0/app/policies/campaign_policy.rb differ
+Files ./app/policies/conversation_policy.rb and chatwoot-3.12.0/app/policies/conversation_policy.rb differ
+Files ./app/presenters/conversations/event_data_presenter.rb and chatwoot-3.12.0/app/presenters/conversations/event_data_presenter.rb differ
+Only in ./app/services: api
+Files ./app/services/automation_rules/action_service.rb and chatwoot-3.12.0/app/services/automation_rules/action_service.rb differ
+Only in ./app/services: contact_attribute_file_upload_service.rb
+Files ./app/services/contacts/contactable_inboxes_service.rb and chatwoot-3.12.0/app/services/contacts/contactable_inboxes_service.rb differ
+Files ./app/services/contacts/filter_service.rb and chatwoot-3.12.0/app/services/contacts/filter_service.rb differ
+Only in ./app/services/contacts: kanban_sync_service.rb
+Files ./app/services/filter_service.rb and chatwoot-3.12.0/app/services/filter_service.rb differ
+Files ./app/services/macros/execution_service.rb and chatwoot-3.12.0/app/services/macros/execution_service.rb differ
+Files ./app/services/messages/in_reply_to_message_builder.rb and chatwoot-3.12.0/app/services/messages/in_reply_to_message_builder.rb differ
+Only in ./app/services: notifica_me
+Files ./app/services/twitter/webhooks_base_service.rb and chatwoot-3.12.0/app/services/twitter/webhooks_base_service.rb differ
+Files ./app/services/whatsapp/incoming_message_base_service.rb and chatwoot-3.12.0/app/services/whatsapp/incoming_message_base_service.rb differ
+Files ./app/services/whatsapp/incoming_message_service_helpers.rb and chatwoot-3.12.0/app/services/whatsapp/incoming_message_service_helpers.rb differ
+Only in ./app/services/whatsapp: incoming_message_unoapi_service.rb
+Files ./app/services/whatsapp/incoming_message_whatsapp_cloud_service.rb and chatwoot-3.12.0/app/services/whatsapp/incoming_message_whatsapp_cloud_service.rb differ
+Files ./app/services/whatsapp/providers/base_service.rb and chatwoot-3.12.0/app/services/whatsapp/providers/base_service.rb differ
+Only in ./app/services/whatsapp/providers: unoapi_service.rb
+Files ./app/services/whatsapp/providers/whatsapp_360_dialog_service.rb and chatwoot-3.12.0/app/services/whatsapp/providers/whatsapp_360_dialog_service.rb differ
+Files ./app/services/whatsapp/providers/whatsapp_cloud_service.rb and chatwoot-3.12.0/app/services/whatsapp/providers/whatsapp_cloud_service.rb differ
+Files ./app/services/whatsapp/send_on_whatsapp_service.rb and chatwoot-3.12.0/app/services/whatsapp/send_on_whatsapp_service.rb differ
+Only in ./app/services/whatsapp: unoapi_webhook_setup_service.rb
+Files ./app/views/api/v1/models/_contact.json.jbuilder and chatwoot-3.12.0/app/views/api/v1/models/_contact.json.jbuilder differ
+Files ./app/views/api/v1/models/_custom_attribute_definition.json.jbuilder and chatwoot-3.12.0/app/views/api/v1/models/_custom_attribute_definition.json.jbuilder differ
+Files ./app/views/api/v1/models/_inbox.json.jbuilder and chatwoot-3.12.0/app/views/api/v1/models/_inbox.json.jbuilder differ
+Files ./app/views/api/v1/models/_message.json.jbuilder and chatwoot-3.12.0/app/views/api/v1/models/_message.json.jbuilder differ
+Files ./app/views/devise/mailer/confirmation_instructions.html.erb and chatwoot-3.12.0/app/views/devise/mailer/confirmation_instructions.html.erb differ
+Files ./app/views/devise/mailer/password_change.html.erb and chatwoot-3.12.0/app/views/devise/mailer/password_change.html.erb differ
+Files ./app/views/devise/mailer/reset_password_instructions.html.erb and chatwoot-3.12.0/app/views/devise/mailer/reset_password_instructions.html.erb differ
+Files ./app/views/devise/mailer/unlock_instructions.html.erb and chatwoot-3.12.0/app/views/devise/mailer/unlock_instructions.html.erb differ
+Files ./app/views/installation/onboarding/index.html.erb and chatwoot-3.12.0/app/views/installation/onboarding/index.html.erb differ
+Files ./app/views/layouts/vueapp.html.erb and chatwoot-3.12.0/app/views/layouts/vueapp.html.erb differ
+Files ./app/views/mailers/administrator_notifications/channel_notifications_mailer/automation_rule_disabled.liquid and chatwoot-3.12.0/app/views/mailers/administrator_notifications/channel_notifications_mailer/automation_rule_disabled.liquid differ
+Files ./app/views/mailers/administrator_notifications/channel_notifications_mailer/contact_export_complete.liquid and chatwoot-3.12.0/app/views/mailers/administrator_notifications/channel_notifications_mailer/contact_export_complete.liquid differ
+Files ./app/views/mailers/administrator_notifications/channel_notifications_mailer/contact_import_complete.liquid and chatwoot-3.12.0/app/views/mailers/administrator_notifications/channel_notifications_mailer/contact_import_complete.liquid differ
+Files ./app/views/mailers/administrator_notifications/channel_notifications_mailer/contact_import_failed.liquid and chatwoot-3.12.0/app/views/mailers/administrator_notifications/channel_notifications_mailer/contact_import_failed.liquid differ
+Files ./app/views/mailers/administrator_notifications/channel_notifications_mailer/dialogflow_disconnect.liquid and chatwoot-3.12.0/app/views/mailers/administrator_notifications/channel_notifications_mailer/dialogflow_disconnect.liquid differ
+Files ./app/views/mailers/administrator_notifications/channel_notifications_mailer/email_disconnect.liquid and chatwoot-3.12.0/app/views/mailers/administrator_notifications/channel_notifications_mailer/email_disconnect.liquid differ
+Files ./app/views/mailers/administrator_notifications/channel_notifications_mailer/facebook_disconnect.liquid and chatwoot-3.12.0/app/views/mailers/administrator_notifications/channel_notifications_mailer/facebook_disconnect.liquid differ
+Files ./app/views/mailers/administrator_notifications/channel_notifications_mailer/slack_disconnect.liquid and chatwoot-3.12.0/app/views/mailers/administrator_notifications/channel_notifications_mailer/slack_disconnect.liquid differ
+Files ./app/views/mailers/administrator_notifications/channel_notifications_mailer/whatsapp_disconnect.liquid and chatwoot-3.12.0/app/views/mailers/administrator_notifications/channel_notifications_mailer/whatsapp_disconnect.liquid differ
+Files ./app/views/mailers/agent_notifications/conversation_notifications_mailer/assigned_conversation_new_message.liquid and chatwoot-3.12.0/app/views/mailers/agent_notifications/conversation_notifications_mailer/assigned_conversation_new_message.liquid differ
+Files ./app/views/mailers/agent_notifications/conversation_notifications_mailer/conversation_assignment.liquid and chatwoot-3.12.0/app/views/mailers/agent_notifications/conversation_notifications_mailer/conversation_assignment.liquid differ
+Files ./app/views/mailers/agent_notifications/conversation_notifications_mailer/conversation_creation.liquid and chatwoot-3.12.0/app/views/mailers/agent_notifications/conversation_notifications_mailer/conversation_creation.liquid differ
+Files ./app/views/mailers/agent_notifications/conversation_notifications_mailer/conversation_mention.liquid and chatwoot-3.12.0/app/views/mailers/agent_notifications/conversation_notifications_mailer/conversation_mention.liquid differ
+Files ./app/views/mailers/agent_notifications/conversation_notifications_mailer/participating_conversation_new_message.liquid and chatwoot-3.12.0/app/views/mailers/agent_notifications/conversation_notifications_mailer/participating_conversation_new_message.liquid differ
+Files ./app/views/mailers/agent_notifications/conversation_notifications_mailer/sla_missed_first_response.liquid and chatwoot-3.12.0/app/views/mailers/agent_notifications/conversation_notifications_mailer/sla_missed_first_response.liquid differ
+Files ./app/views/mailers/agent_notifications/conversation_notifications_mailer/sla_missed_next_response.liquid and chatwoot-3.12.0/app/views/mailers/agent_notifications/conversation_notifications_mailer/sla_missed_next_response.liquid differ
+Files ./app/views/mailers/agent_notifications/conversation_notifications_mailer/sla_missed_resolution.liquid and chatwoot-3.12.0/app/views/mailers/agent_notifications/conversation_notifications_mailer/sla_missed_resolution.liquid differ
+Files ./app/views/mailers/conversation_reply_mailer/email_reply.html.erb and chatwoot-3.12.0/app/views/mailers/conversation_reply_mailer/email_reply.html.erb differ
+Files ./app/views/mailers/team_notifications/automation_notification_mailer/conversation_creation.liquid and chatwoot-3.12.0/app/views/mailers/team_notifications/automation_notification_mailer/conversation_creation.liquid differ
+Files ./app/views/mailers/team_notifications/automation_notification_mailer/conversation_updated.liquid and chatwoot-3.12.0/app/views/mailers/team_notifications/automation_notification_mailer/conversation_updated.liquid differ
+Files ./app/views/mailers/team_notifications/automation_notification_mailer/message_created.liquid and chatwoot-3.12.0/app/views/mailers/team_notifications/automation_notification_mailer/message_created.liquid differ
+Only in ./app/views/super_admin: announcements
+Files ./app/views/super_admin/application/_icons.html.erb and chatwoot-3.12.0/app/views/super_admin/application/_icons.html.erb differ
+Files ./app/views/super_admin/application/_navigation.html.erb and chatwoot-3.12.0/app/views/super_admin/application/_navigation.html.erb differ
+Files ./app/views/super_admin/devise/sessions/new.html.erb and chatwoot-3.12.0/app/views/super_admin/devise/sessions/new.html.erb differ
+Files ./app/views/super_admin/settings/show.html.erb and chatwoot-3.12.0/app/views/super_admin/settings/show.html.erb differ
+Files ./app.json and chatwoot-3.12.0/app.json differ
+Only in .: chatwoot-3.11.1
+Only in .: chatwoot-3.12.0
+Only in .: cloudflared.deb
+Files ./config/app.yml and chatwoot-3.12.0/config/app.yml differ
+Files ./config/application.rb and chatwoot-3.12.0/config/application.rb differ
+Files ./config/features.yml and chatwoot-3.12.0/config/features.yml differ
+Files ./config/initializers/languages.rb and chatwoot-3.12.0/config/initializers/languages.rb differ
+Files ./config/installation_config.yml and chatwoot-3.12.0/config/installation_config.yml differ
+Only in chatwoot-3.12.0/config/locales: am.yml
+Only in chatwoot-3.12.0/config/locales: ar.yml
+Only in chatwoot-3.12.0/config/locales: bg.yml
+Only in chatwoot-3.12.0/config/locales: ca.yml
+Only in chatwoot-3.12.0/config/locales: cs.yml
+Only in chatwoot-3.12.0/config/locales: da.yml
+Only in chatwoot-3.12.0/config/locales: de.yml
+Only in chatwoot-3.12.0/config/locales: devise.am.yml
+Only in chatwoot-3.12.0/config/locales: devise.ar.yml
+Only in chatwoot-3.12.0/config/locales: devise.bg.yml
+Only in chatwoot-3.12.0/config/locales: devise.ca.yml
+Only in chatwoot-3.12.0/config/locales: devise.cs.yml
+Only in chatwoot-3.12.0/config/locales: devise.da.yml
+Only in chatwoot-3.12.0/config/locales: devise.de.yml
+Only in chatwoot-3.12.0/config/locales: devise.el.yml
+Files ./config/locales/devise.es.yml and chatwoot-3.12.0/config/locales/devise.es.yml differ
+Only in chatwoot-3.12.0/config/locales: devise.fa.yml
+Only in chatwoot-3.12.0/config/locales: devise.fi.yml
+Only in chatwoot-3.12.0/config/locales: devise.fr.yml
+Only in chatwoot-3.12.0/config/locales: devise.he.yml
+Only in chatwoot-3.12.0/config/locales: devise.hi.yml
+Only in chatwoot-3.12.0/config/locales: devise.hr.yml
+Only in chatwoot-3.12.0/config/locales: devise.hu.yml
+Only in chatwoot-3.12.0/config/locales: devise.hy.yml
+Only in chatwoot-3.12.0/config/locales: devise.id.yml
+Only in chatwoot-3.12.0/config/locales: devise.is.yml
+Only in chatwoot-3.12.0/config/locales: devise.it.yml
+Only in chatwoot-3.12.0/config/locales: devise.ja.yml
+Only in chatwoot-3.12.0/config/locales: devise.ka.yml
+Only in chatwoot-3.12.0/config/locales: devise.ko.yml
+Only in chatwoot-3.12.0/config/locales: devise.lt.yml
+Only in chatwoot-3.12.0/config/locales: devise.lv.yml
+Only in chatwoot-3.12.0/config/locales: devise.ml.yml
+Only in chatwoot-3.12.0/config/locales: devise.ms.yml
+Only in chatwoot-3.12.0/config/locales: devise.ne.yml
+Only in chatwoot-3.12.0/config/locales: devise.nl.yml
+Only in chatwoot-3.12.0/config/locales: devise.no.yml
+Only in chatwoot-3.12.0/config/locales: devise.pl.yml
+Files ./config/locales/devise.pt.yml and chatwoot-3.12.0/config/locales/devise.pt.yml differ
+Only in chatwoot-3.12.0/config/locales: devise.ro.yml
+Only in chatwoot-3.12.0/config/locales: devise.ru.yml
+Only in chatwoot-3.12.0/config/locales: devise.sh.yml
+Only in chatwoot-3.12.0/config/locales: devise.sk.yml
+Only in chatwoot-3.12.0/config/locales: devise.sl.yml
+Only in chatwoot-3.12.0/config/locales: devise.sq.yml
+Only in chatwoot-3.12.0/config/locales: devise.sr.yml
+Only in chatwoot-3.12.0/config/locales: devise.sv.yml
+Only in chatwoot-3.12.0/config/locales: devise.ta.yml
+Only in chatwoot-3.12.0/config/locales: devise.th.yml
+Only in chatwoot-3.12.0/config/locales: devise.tl.yml
+Only in chatwoot-3.12.0/config/locales: devise.tr.yml
+Only in chatwoot-3.12.0/config/locales: devise.uk.yml
+Only in chatwoot-3.12.0/config/locales: devise.ur.yml
+Only in chatwoot-3.12.0/config/locales: devise.ur_IN.yml
+Only in chatwoot-3.12.0/config/locales: devise.vi.yml
+Only in chatwoot-3.12.0/config/locales: devise.zh.yml
+Only in chatwoot-3.12.0/config/locales: devise.zh_CN.yml
+Only in chatwoot-3.12.0/config/locales: devise.zh_TW.yml
+Only in chatwoot-3.12.0/config/locales: el.yml
+Files ./config/locales/en.yml and chatwoot-3.12.0/config/locales/en.yml differ
+Files ./config/locales/es.yml and chatwoot-3.12.0/config/locales/es.yml differ
+Only in chatwoot-3.12.0/config/locales: fa.yml
+Only in chatwoot-3.12.0/config/locales: fi.yml
+Only in chatwoot-3.12.0/config/locales: fr.yml
+Only in chatwoot-3.12.0/config/locales: he.yml
+Only in chatwoot-3.12.0/config/locales: hi.yml
+Only in chatwoot-3.12.0/config/locales: hr.yml
+Only in chatwoot-3.12.0/config/locales: hu.yml
+Only in chatwoot-3.12.0/config/locales: hy.yml
+Only in chatwoot-3.12.0/config/locales: id.yml
+Only in chatwoot-3.12.0/config/locales: is.yml
+Only in chatwoot-3.12.0/config/locales: it.yml
+Only in chatwoot-3.12.0/config/locales: ja.yml
+Only in chatwoot-3.12.0/config/locales: ka.yml
+Only in chatwoot-3.12.0/config/locales: ko.yml
+Only in chatwoot-3.12.0/config/locales: lt.yml
+Only in chatwoot-3.12.0/config/locales: lv.yml
+Only in chatwoot-3.12.0/config/locales: ml.yml
+Only in chatwoot-3.12.0/config/locales: ms.yml
+Only in chatwoot-3.12.0/config/locales: ne.yml
+Only in chatwoot-3.12.0/config/locales: nl.yml
+Only in chatwoot-3.12.0/config/locales: no.yml
+Only in chatwoot-3.12.0/config/locales: pl.yml
+Files ./config/locales/pt.yml and chatwoot-3.12.0/config/locales/pt.yml differ
+Files ./config/locales/pt_BR.yml and chatwoot-3.12.0/config/locales/pt_BR.yml differ
+Only in chatwoot-3.12.0/config/locales: ro.yml
+Only in chatwoot-3.12.0/config/locales: ru.yml
+Only in ./config/locales: secure_password.es.yml
+Only in ./config/locales: secure_password.pt_BR.yml
+Only in chatwoot-3.12.0/config/locales: sh.yml
+Only in chatwoot-3.12.0/config/locales: sk.yml
+Only in chatwoot-3.12.0/config/locales: sl.yml
+Only in chatwoot-3.12.0/config/locales: sq.yml
+Only in chatwoot-3.12.0/config/locales: sr.yml
+Only in chatwoot-3.12.0/config/locales: sv.yml
+Only in chatwoot-3.12.0/config/locales: ta.yml
+Only in chatwoot-3.12.0/config/locales: th.yml
+Only in chatwoot-3.12.0/config/locales: tl.yml
+Only in chatwoot-3.12.0/config/locales: tr.yml
+Only in chatwoot-3.12.0/config/locales: uk.yml
+Only in chatwoot-3.12.0/config/locales: ur.yml
+Only in chatwoot-3.12.0/config/locales: ur_IN.yml
+Only in chatwoot-3.12.0/config/locales: vi.yml
+Only in chatwoot-3.12.0/config/locales: zh.yml
+Only in chatwoot-3.12.0/config/locales: zh_CN.yml
+Only in chatwoot-3.12.0/config/locales: zh_TW.yml
+Files ./config/routes.rb and chatwoot-3.12.0/config/routes.rb differ
+Files ./db/migrate/20230426130150_init_schema.rb and chatwoot-3.12.0/db/migrate/20230426130150_init_schema.rb differ
+Only in ./db/migrate: 20230726203159_add_allow_agent_to_delete_message_to_inboxes.rb
+Only in ./db/migrate: 20240118132749_enable_send_agent_name_in_whatsapp_message.rb
+Only in ./db/migrate: 20240129143157_enable_read_message.rb
+Only in ./db/migrate: 20240131075225_disable_whatsapp_messaging_window.rb
+Only in ./db/migrate: 20240325215901_create_channel_notifica_me.rb
+Files ./db/migrate/20240515201632_index_improvements_conversations_contacts.rb and chatwoot-3.12.0/db/migrate/20240515201632_index_improvements_conversations_contacts.rb differ
+Files ./db/migrate/20240516003531_add_index_for_message_type_account_date.rb and chatwoot-3.12.0/db/migrate/20240516003531_add_index_for_message_type_account_date.rb differ
+Only in ./db/migrate: 20240528173755_alter_message_source_id_length.rb
+Only in ./db/migrate: 20240530120000_add_is_kanban_to_custom_attribute_definitions.rb
+Only in ./db/migrate: 20250115120000_add_kanban_indexes.rb
+Only in ./db/migrate: 20250115130000_create_contact_pipeline_positions.rb
+Only in ./db/migrate: 20250118000000_add_position_to_contact_pipeline_positions.rb
+Files ./db/schema.rb and chatwoot-3.12.0/db/schema.rb differ
+Files ./db/seeds.rb and chatwoot-3.12.0/db/seeds.rb differ
+Only in ./deployment: install.sh
+Files ./deployment/setup_20.04.sh and chatwoot-3.12.0/deployment/setup_20.04.sh differ
+Only in .: diferencas.txt
+Files ./docker/Dockerfile and chatwoot-3.12.0/docker/Dockerfile differ
+Files ./enterprise/app/controllers/enterprise/super_admin/app_configs_controller.rb and chatwoot-3.12.0/enterprise/app/controllers/enterprise/super_admin/app_configs_controller.rb differ
+Files ./enterprise/app/helpers/super_admin/features.yml and chatwoot-3.12.0/enterprise/app/helpers/super_admin/features.yml differ
+Only in chatwoot-3.12.0/enterprise/app/jobs: captain
+Files ./enterprise/app/jobs/enterprise/account/conversations_resolution_scheduler_job.rb and chatwoot-3.12.0/enterprise/app/jobs/enterprise/account/conversations_resolution_scheduler_job.rb differ
+Only in ./enterprise/app/jobs/response_bot: inbox_pending_conversations_resolution_job.rb
+Files ./enterprise/app/services/internal/reconcile_plan_config_service.rb and chatwoot-3.12.0/enterprise/app/services/internal/reconcile_plan_config_service.rb differ
+Only in .: eslint-report.txt
+Files ./lib/chatwoot_hub.rb and chatwoot-3.12.0/lib/chatwoot_hub.rb differ
+Files ./lib/dyte.rb and chatwoot-3.12.0/lib/dyte.rb differ
+Files ./lib/filters/filter_keys.yml and chatwoot-3.12.0/lib/filters/filter_keys.yml differ
+Files ./lib/integrations/captain/processor_service.rb and chatwoot-3.12.0/lib/integrations/captain/processor_service.rb differ
+Files ./lib/integrations/dyte/processor_service.rb and chatwoot-3.12.0/lib/integrations/dyte/processor_service.rb differ
+Files ./lib/linear/queries.rb and chatwoot-3.12.0/lib/linear/queries.rb differ
+Only in ./lib/tasks: kanban_consistency_check.rake
+Only in ./lib/tasks: kanban_diagnostics.rake
+Only in ./lib/tasks: kanban_test_dual_write.rake
+Only in ./lib/tasks: kanban_test_table_read.rake
+Only in ./lib/tasks: migrate_existing_kanban_attributes.rake
+Files ./lib/webhooks/trigger.rb and chatwoot-3.12.0/lib/webhooks/trigger.rb differ
+Files ./package.json and chatwoot-3.12.0/package.json differ
+Files ./public/404.html and chatwoot-3.12.0/public/404.html differ
+Files ./public/422.html and chatwoot-3.12.0/public/422.html differ
+Files ./public/500.html and chatwoot-3.12.0/public/500.html differ
+Files ./public/android-icon-144x144.png and chatwoot-3.12.0/public/android-icon-144x144.png differ
+Files ./public/android-icon-192x192.png and chatwoot-3.12.0/public/android-icon-192x192.png differ
+Files ./public/android-icon-36x36.png and chatwoot-3.12.0/public/android-icon-36x36.png differ
+Files ./public/android-icon-48x48.png and chatwoot-3.12.0/public/android-icon-48x48.png differ
+Files ./public/android-icon-72x72.png and chatwoot-3.12.0/public/android-icon-72x72.png differ
+Files ./public/android-icon-96x96.png and chatwoot-3.12.0/public/android-icon-96x96.png differ
+Only in ./public: announcements
+Files ./public/apple-icon-114x114.png and chatwoot-3.12.0/public/apple-icon-114x114.png differ
+Files ./public/apple-icon-120x120.png and chatwoot-3.12.0/public/apple-icon-120x120.png differ
+Files ./public/apple-icon-144x144.png and chatwoot-3.12.0/public/apple-icon-144x144.png differ
+Files ./public/apple-icon-152x152.png and chatwoot-3.12.0/public/apple-icon-152x152.png differ
+Files ./public/apple-icon-180x180.png and chatwoot-3.12.0/public/apple-icon-180x180.png differ
+Files ./public/apple-icon-57x57.png and chatwoot-3.12.0/public/apple-icon-57x57.png differ
+Files ./public/apple-icon-60x60.png and chatwoot-3.12.0/public/apple-icon-60x60.png differ
+Files ./public/apple-icon-72x72.png and chatwoot-3.12.0/public/apple-icon-72x72.png differ
+Files ./public/apple-icon-76x76.png and chatwoot-3.12.0/public/apple-icon-76x76.png differ
+Files ./public/apple-icon-precomposed.png and chatwoot-3.12.0/public/apple-icon-precomposed.png differ
+Files ./public/apple-icon.png and chatwoot-3.12.0/public/apple-icon.png differ
+Files ./public/assets/images/dashboard/channels/api.png and chatwoot-3.12.0/public/assets/images/dashboard/channels/api.png differ
+Only in ./public/assets/images/dashboard/channels: api_OLD.png
+Only in ./public/assets/images/dashboard/channels: notifica_me.png
+Files ./public/assets/images/dashboard/channels/whatsapp.png and chatwoot-3.12.0/public/assets/images/dashboard/channels/whatsapp.png differ
+Files ./public/brand-assets/logo.svg and chatwoot-3.12.0/public/brand-assets/logo.svg differ
+Files ./public/brand-assets/logo_dark.svg and chatwoot-3.12.0/public/brand-assets/logo_dark.svg differ
+Files ./public/brand-assets/logo_thumbnail.svg and chatwoot-3.12.0/public/brand-assets/logo_thumbnail.svg differ
+Files ./public/dashboard/images/agent-bots/webhook.svg and chatwoot-3.12.0/public/dashboard/images/agent-bots/webhook.svg differ
+Only in ./public/dashboard/images/integrations: cable.svg
+Only in ./public/dashboard/images/integrations: dashboard-apps.svg
+Only in chatwoot-3.12.0/public/dashboard/images: onboarding
+Files ./public/downloads/import-contacts-sample.csv and chatwoot-3.12.0/public/downloads/import-contacts-sample.csv differ
+Files ./public/favicon-16x16.png and chatwoot-3.12.0/public/favicon-16x16.png differ
+Files ./public/favicon-32x32.png and chatwoot-3.12.0/public/favicon-32x32.png differ
+Files ./public/favicon-512x512.png and chatwoot-3.12.0/public/favicon-512x512.png differ
+Files ./public/favicon-96x96.png and chatwoot-3.12.0/public/favicon-96x96.png differ
+Files ./public/favicon-badge-16x16.png and chatwoot-3.12.0/public/favicon-badge-16x16.png differ
+Files ./public/favicon-badge-32x32.png and chatwoot-3.12.0/public/favicon-badge-32x32.png differ
+Files ./public/favicon-badge-96x96.png and chatwoot-3.12.0/public/favicon-badge-96x96.png differ
+Only in ./public/integrations/channels/badges: notifica_me.png
+Files ./public/manifest.json and chatwoot-3.12.0/public/manifest.json differ
+Files ./public/ms-icon-144x144.png and chatwoot-3.12.0/public/ms-icon-144x144.png differ
+Files ./public/ms-icon-150x150.png and chatwoot-3.12.0/public/ms-icon-150x150.png differ
+Files ./public/ms-icon-310x310.png and chatwoot-3.12.0/public/ms-icon-310x310.png differ
+Files ./public/ms-icon-70x70.png and chatwoot-3.12.0/public/ms-icon-70x70.png differ
+Only in ./public: packs
+Files ./spec/assets/sample.pdf and chatwoot-3.12.0/spec/assets/sample.pdf differ
+Files ./spec/controllers/api/v1/accounts/conversations/messages_controller_spec.rb and chatwoot-3.12.0/spec/controllers/api/v1/accounts/conversations/messages_controller_spec.rb differ
+Files ./spec/controllers/api/v1/accounts/custom_attribute_definitions_controller_spec.rb and chatwoot-3.12.0/spec/controllers/api/v1/accounts/custom_attribute_definitions_controller_spec.rb differ
+Only in chatwoot-3.12.0/spec/controllers/api/v1/accounts/integrations: captain_controller_spec.rb
+Only in chatwoot-3.12.0/spec/enterprise/jobs: captain
+Files ./spec/enterprise/jobs/enterprise/account/conversations_resolution_scheduler_job_spec.rb and chatwoot-3.12.0/spec/enterprise/jobs/enterprise/account/conversations_resolution_scheduler_job_spec.rb differ
+Only in ./spec/enterprise/jobs: response_bot
+Files ./spec/enterprise/lib/integrations/openai/processor_service_spec.rb and chatwoot-3.12.0/spec/enterprise/lib/integrations/openai/processor_service_spec.rb differ
+Files ./spec/enterprise/services/internal/reconcile_plan_config_service_spec.rb and chatwoot-3.12.0/spec/enterprise/services/internal/reconcile_plan_config_service_spec.rb differ
+Files ./spec/factories/custom_attribute_definitions.rb and chatwoot-3.12.0/spec/factories/custom_attribute_definitions.rb differ
+Files ./spec/jobs/agent_bots/webhook_job_spec.rb and chatwoot-3.12.0/spec/jobs/agent_bots/webhook_job_spec.rb differ
+Files ./spec/jobs/webhook_job_spec.rb and chatwoot-3.12.0/spec/jobs/webhook_job_spec.rb differ
+Files ./spec/lib/integrations/dyte/processor_service_spec.rb and chatwoot-3.12.0/spec/lib/integrations/dyte/processor_service_spec.rb differ
+Files ./spec/lib/integrations/openai/processor_service_spec.rb and chatwoot-3.12.0/spec/lib/integrations/openai/processor_service_spec.rb differ
+Files ./spec/mailers/conversation_reply_mailer_spec.rb and chatwoot-3.12.0/spec/mailers/conversation_reply_mailer_spec.rb differ
+Files ./spec/models/article_spec.rb and chatwoot-3.12.0/spec/models/article_spec.rb differ
+Files ./spec/models/attachment_spec.rb and chatwoot-3.12.0/spec/models/attachment_spec.rb differ
+Files ./spec/models/conversation_spec.rb and chatwoot-3.12.0/spec/models/conversation_spec.rb differ
+Only in ./spec/models: custom_attribute_definition_kanban_spec.rb
+Files ./spec/models/integrations/hook_spec.rb and chatwoot-3.12.0/spec/models/integrations/hook_spec.rb differ
+Only in .: storage
+Files ./swagger/definitions/request/automation_rule/create_update_payload.yml and chatwoot-3.12.0/swagger/definitions/request/automation_rule/create_update_payload.yml differ
+Files ./swagger/definitions/request/custom_attribute/create_update_payload.yml and chatwoot-3.12.0/swagger/definitions/request/custom_attribute/create_update_payload.yml differ
+Files ./swagger/definitions/resource/automation_rule.yml and chatwoot-3.12.0/swagger/definitions/resource/automation_rule.yml differ
+Files ./swagger/swagger.json and chatwoot-3.12.0/swagger/swagger.json differ
+Only in .: tailwind.config.js.backup
+Files ./theme/colors.js and chatwoot-3.12.0/theme/colors.js differ
+Files ./yarn.lock and chatwoot-3.12.0/yarn.lock differ

@@ -44,7 +44,92 @@ class CustomAttributeDefinition < ApplicationRecord
   after_update :update_widget_pre_chat_custom_fields
   after_destroy :sync_widget_pre_chat_custom_fields
 
+  # Métodos de permissão para Kanban
+  def user_permission(user)
+    return :admin if user_admin?(user)
+    
+    permissions_hash = get_permissions_hash
+    permission = permissions_hash[user.id.to_s]
+    return permission.to_sym if permission.present?
+    
+    # Sem acesso se não estiver na lista
+    :none
+  end
+
+  def can_view?(user)
+    [:admin, :editor, :viewer].include?(user_permission(user))
+  end
+
+  def can_edit?(user)
+    [:admin, :editor].include?(user_permission(user))
+  end
+
+  def set_user_permission(user_id, level)
+    return false unless ['viewer', 'editor'].include?(level.to_s)
+    
+    ensure_attribute_values_is_hash
+    self.attribute_values['permissions'] ||= {}
+    self.attribute_values['permissions'][user_id.to_s] = level.to_s
+    save
+  end
+
+  def remove_user_permission(user_id)
+    ensure_attribute_values_is_hash
+    return false unless self.attribute_values['permissions']
+    
+    self.attribute_values['permissions'].delete(user_id.to_s)
+    save
+  end
+
+  def users_with_permissions
+    return [] unless account.present?
+    
+    account.users.map do |user|
+      account_user = user.account_users.find_by(account_id: account_id)
+      {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: account_user&.role,
+        permission: user_permission(user),
+        is_custom: get_permissions_hash.key?(user.id.to_s)
+      }
+    end
+  end
+
   private
+
+  def user_admin?(user)
+    account_user = user.account_users.find_by(account_id: account_id)
+    account_user&.administrator?
+  end
+
+  def get_permissions_hash
+    ensure_attribute_values_is_hash
+    self.attribute_values['permissions'] || {}
+  end
+
+  def ensure_attribute_values_is_hash
+    # Converter array legado para objeto {stages: [...], permissions: {}}
+    if self.attribute_values.is_a?(Array)
+      self.attribute_values = {
+        'stages' => self.attribute_values,
+        'permissions' => {}
+      }
+    elsif self.attribute_values.nil?
+      self.attribute_values = {
+        'stages' => [],
+        'permissions' => {}
+      }
+    elsif !self.attribute_values.key?('permissions')
+      # Se já é hash mas não tem permissions, adicionar
+      stages = self.attribute_values.is_a?(Hash) ? (self.attribute_values['stages'] || self.attribute_values.values) : []
+      self.attribute_values = {
+        'stages' => stages,
+        'permissions' => {}
+      }
+    end
+  end
 
   def sync_widget_pre_chat_custom_fields
     ::Inboxes::SyncWidgetPreChatCustomFieldsJob.perform_later(account, attribute_key)

@@ -33,6 +33,7 @@
           <fluent-icon icon="contact-card" size="14" />
         </span>
         <span 
+          v-if="!isViewerMode"
           class="cursor-pointer p-1 inline-flex items-center justify-center rounded text-slate-600 dark:text-slate-300 transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-green-500 dark:hover:text-green-400" 
           @click.stop="toggleValueInput"
           v-tooltip="dealValue ? $t('KANBAN.CARD.EDIT_DEAL_VALUE') : $t('KANBAN.CARD.ADD_DEAL_VALUE')"
@@ -41,7 +42,7 @@
         </span>
 
         <!-- Menu dropdown para outras ações -->
-        <div class="relative inline-flex">
+        <div v-if="!isViewerMode" class="relative inline-flex">
           <span 
             class="cursor-pointer p-1 inline-flex items-center justify-center rounded text-slate-600 dark:text-slate-300 transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white" 
             @click.stop="toggleActionsMenu"
@@ -236,22 +237,22 @@
         
         <!-- Badge do agente responsável -->
         <div 
-          v-if="lastConversationAssignee"
+          v-if="cardAssignee"
           class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-full p-0 text-[10px] font-medium text-slate-700 dark:text-slate-200 cursor-pointer transition-all duration-200 w-5 h-5 justify-center hover:bg-slate-200 dark:hover:bg-slate-700 hover:scale-105"
-          v-tooltip="`Responsável: ${lastConversationAssignee.name}`"
+          v-tooltip="`Responsável: ${cardAssignee.name}`"
           @click.stop
         >
           <img 
-            v-if="lastConversationAssignee.thumbnail" 
-            :src="lastConversationAssignee.thumbnail" 
-            :alt="lastConversationAssignee.name"
+            v-if="cardAssignee.thumbnail" 
+            :src="cardAssignee.thumbnail" 
+            :alt="cardAssignee.name"
             class="w-[18px] h-[18px] rounded-full object-cover object-center flex-shrink-0"
           />
           <span 
             v-else 
             class="text-[10px] font-semibold tracking-wider"
           >
-            {{ getAssigneeInitials(lastConversationAssignee) }}
+            {{ getAssigneeInitials(cardAssignee) }}
           </span>
         </div>
       </div>
@@ -354,6 +355,10 @@ export default {
     pipelineId: {
       type: [Number, String],
       required: true
+    },
+    isViewerMode: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -385,8 +390,12 @@ export default {
     lastOpenConversation() {
       return this.conversations.find(conv => conv.status === 'open') || null;
     },
-    lastConversationAssignee() {
-      return this.lastOpenConversation?.meta?.assignee || null;
+    cardAssignee() {
+      // Buscar assignee direto do pipeline_positions
+      const position = this.contact.pipeline_positions?.find(
+        p => p.pipeline_id === this.pipelineId || p.pipeline_id === parseInt(this.pipelineId, 10)
+      );
+      return position?.assignee || null;
     },
     conversationLabels() {
       return this.lastOpenConversation?.labels || [];

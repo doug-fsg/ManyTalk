@@ -19,6 +19,17 @@ if resource.respond_to?(:contact_pipeline_positions)
       json.entered_at position.entered_at&.iso8601
       json.deal_value position.deal_value
       json.metadata position.metadata || {}
+      if position.assignee.present?
+        json.assignee do
+          json.id position.assignee.id
+          json.name position.assignee.name
+          json.available_name position.assignee.available_name
+          json.avatar_url position.assignee.avatar_url
+          json.thumbnail position.assignee.avatar_url
+        end
+      else
+        json.assignee nil
+      end
     end
   end
 end

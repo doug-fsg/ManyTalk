@@ -430,6 +430,8 @@ ActiveRecord::Schema[7.0].define(version: 2025_03_30_030320) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "position", default: 0, null: false
+    t.bigint "assignee_id"
+    t.index ["assignee_id"], name: "index_contact_pipeline_positions_on_assignee_id"
     t.index ["contact_id", "pipeline_id"], name: "idx_contact_pipeline_positions_unique", unique: true
     t.index ["contact_id"], name: "idx_contact_pipeline_positions_contact"
     t.index ["pipeline_id", "stage_id", "position"], name: "idx_contact_pipeline_positions_pipeline_stage_position"
@@ -1047,6 +1049,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_03_30_030320) do
   add_foreign_key "contact_inboxes", "inboxes", on_delete: :cascade
   add_foreign_key "contact_pipeline_positions", "contacts"
   add_foreign_key "contact_pipeline_positions", "custom_attribute_definitions", column: "pipeline_id"
+  add_foreign_key "contact_pipeline_positions", "users", column: "assignee_id"
   add_foreign_key "inboxes", "portals"
   create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).
       on("accounts").

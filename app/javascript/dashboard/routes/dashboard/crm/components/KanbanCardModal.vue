@@ -60,16 +60,16 @@
       <div class="stage-selector-top">
         <div class="stage-selector-buttons">
           <woot-button
-            v-for="stage in availableStages"
-            :key="stage"
-            :variant="selectedStage === stage ? 'smooth' : 'hollow'"
-            :color-scheme="selectedStage === stage ? 'success' : 'secondary'"
+            v-for="stage in normalizedStages"
+            :key="getStageKey(stage)"
+            :variant="selectedStage === getStageName(stage) ? 'smooth' : 'hollow'"
+            :color-scheme="selectedStage === getStageName(stage) ? 'success' : 'secondary'"
             size="small"
             class="stage-button"
-            :class="{ 'stage-button-active': selectedStage === stage }"
-            @click="selectStage(stage)"
+            :class="{ 'stage-button-active': selectedStage === getStageName(stage) }"
+            @click="selectStage(getStageName(stage))"
           >
-            {{ stage }}
+            {{ getStageName(stage) }}
           </woot-button>
         </div>
       </div>
@@ -78,6 +78,58 @@
       <div class="modal-body-two-columns">
         <!-- Coluna Esquerda: Accordions -->
         <div class="left-column">
+          <!-- Seção: Responsável -->
+          <accordion-item
+            title="Responsável"
+            :is-open="accordionSections.assignee"
+            compact
+            @click="accordionSections.assignee = !accordionSections.assignee"
+          >
+            <div v-if="isAdmin" class="multiselect-wrap--small">
+              <contact-details-item compact>
+                <template v-slot:button>
+                  <woot-button
+                    v-if="showSelfAssign"
+                    icon="arrow-right"
+                    variant="link"
+                    size="small"
+                    @click="onSelfAssign"
+                  >
+                    {{ $t('CONVERSATION_SIDEBAR.SELF_ASSIGN') }}
+                  </woot-button>
+                </template>
+              </contact-details-item>
+              <multiselect-dropdown
+                :options="agentsList"
+                :selected-item="assignedAgent"
+                :multiselector-title="$t('AGENT_MGMT.MULTI_SELECTOR.TITLE.AGENT')"
+                :multiselector-placeholder="$t('AGENT_MGMT.MULTI_SELECTOR.PLACEHOLDER')"
+                :no-search-result="
+                  $t('AGENT_MGMT.MULTI_SELECTOR.SEARCH.NO_RESULTS.AGENT')
+                "
+                :input-placeholder="
+                  $t('AGENT_MGMT.MULTI_SELECTOR.SEARCH.PLACEHOLDER.AGENT')
+                "
+                @click="onClickAssignAgent"
+              />
+            </div>
+            <div v-else class="p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+              <div v-if="cardAssignee" class="flex items-center gap-2">
+                <img 
+                  v-if="cardAssignee.thumbnail" 
+                  :src="cardAssignee.thumbnail" 
+                  :alt="cardAssignee.name"
+                  class="w-8 h-8 rounded-full object-cover"
+                />
+                <div v-else class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  {{ getAssigneeInitials(cardAssignee) }}
+                </div>
+                <span class="text-sm font-medium text-slate-900 dark:text-white">{{ cardAssignee.name }}</span>
+              </div>
+              <span v-else class="text-sm text-slate-500 dark:text-slate-400">Sem dono</span>
+            </div>
+          </accordion-item>
+
           <!-- Seção: Valor do Negócio -->
           <accordion-item
             :title="$t('KANBAN.ADD_CONTACT.FORM.DEAL_VALUE.LABEL')"
@@ -180,8 +232,12 @@ import AccordionItem from 'dashboard/components/Accordion/AccordionItem.vue';
 import CustomAttributes from 'dashboard/routes/dashboard/conversation/customAttributes/CustomAttributes.vue';
 import ContactConversations from 'dashboard/routes/dashboard/conversation/ContactConversations.vue';
 import ContactNotes from 'dashboard/modules/notes/NotesOnContactPage.vue';
+import ContactDetailsItem from 'dashboard/routes/dashboard/conversation/ContactDetailsItem.vue';
+import MultiselectDropdown from 'shared/components/ui/MultiselectDropdown.vue';
 import { useAlert } from 'dashboard/composables';
 import ContactAPI from 'dashboard/api/contacts';
+import { mapGetters } from 'vuex';
+import agentMixin from 'dashboard/mixins/agentMixin';
 import {
   getDealValue,
   getEnteredAt,
@@ -199,7 +255,10 @@ export default {
     CustomAttributes,
     ContactConversations,
     ContactNotes,
+    ContactDetailsItem,
+    MultiselectDropdown,
   },
+  mixins: [agentMixin],
   props: {
     show: {
       type: Boolean,
@@ -228,6 +287,7 @@ export default {
       editingValue: 0,
       selectedStage: '',
       accordionSections: {
+        assignee: true,
         dealValue: true,
         labels: true,
         customAttributes: true,
@@ -236,6 +296,68 @@ export default {
     };
   },
   computed: {
+    ...mapGetters({
+      currentUser: 'getCurrentUser',
+      currentAccountId: 'getCurrentAccountId',
+      agents: 'agents/getAgents',
+    }),
+    isAdmin() {
+      return this.currentUser?.role === 'administrator';
+    },
+    // Sobrescrever assignableAgents do agentMixin para usar agents/getAgents ao invés de inboxAssignableAgents
+    assignableAgents() {
+      const allAgents = Array.isArray(this.agents) ? this.agents : [];
+      // Filtrar apenas agents confirmados (igual ao inboxAssignableAgents)
+      return allAgents.filter(agent => agent && agent.confirmed);
+    },
+    // Sobrescrever agentsList do agentMixin para adaptar ao contexto CRM
+    agentsList() {
+      const agents = this.assignableAgents || [];
+      const agentsByUpdatedPresence = this.getAgentsByUpdatedPresence(agents);
+      const none = this.createNoneAgent;
+      const filteredAgentsByAvailability = this.sortedAgentsByAvailability(
+        agentsByUpdatedPresence
+      );
+      const filteredAgents = [
+        ...(this.cardAssignee ? [none] : []),
+        ...filteredAgentsByAvailability,
+      ];
+      return filteredAgents;
+    },
+    // Sobrescrever createNoneAgent para usar id: 0 (padrão do agentMixin)
+    createNoneAgent() {
+      return {
+        confirmed: true,
+        name: 'None',
+        id: 0,
+        role: 'agent',
+        account_id: 0,
+        email: 'None',
+      };
+    },
+    assignedAgent: {
+      get() {
+        return this.cardAssignee;
+      },
+      set(agent) {
+        this.changeAssignee(agent);
+      },
+    },
+    showSelfAssign() {
+      if (!this.isAdmin) {
+        return false;
+      }
+      if (!this.cardAssignee) {
+        return true;
+      }
+      return false;
+    },
+    cardAssignee() {
+      const position = this.contact.pipeline_positions?.find(
+        p => p.pipeline_id === this.pipelineId || p.pipeline_id === parseInt(this.pipelineId, 10)
+      );
+      return position?.assignee || null;
+    },
     dealValue() {
       return getDealValue(this.contact, this.pipelineId) || null;
     },
@@ -276,6 +398,11 @@ export default {
       if (timeDiff > 172800000) return 'time-warning';
       return 'time-normal';
     },
+    // Normalizar stages para lidar com objetos {name, color} ou strings
+    normalizedStages() {
+      if (!Array.isArray(this.availableStages)) return [];
+      return this.availableStages;
+    },
   },
   watch: {
     show(newValue) {
@@ -286,6 +413,8 @@ export default {
         if (!attributes || !attributes.length) {
           this.$store.dispatch('attributes/get', 0);
         }
+        // Carregar agentes sempre quando modal abre (para garantir que está disponível)
+        this.$store.dispatch('agents/get');
       }
     },
     currentStage(newValue) {
@@ -306,8 +435,104 @@ export default {
   },
   mounted() {
     this.selectedStage = this.currentStage;
+    // Carregar agents quando o modal é montado
+    this.$store.dispatch('agents/get');
   },
   methods: {
+    onSelfAssign() {
+      const {
+        account_id,
+        availability_status,
+        available_name,
+        email,
+        id,
+        name,
+        role,
+        avatar_url,
+      } = this.currentUser;
+      const selfAssign = {
+        account_id,
+        availability_status,
+        available_name,
+        email,
+        id,
+        name,
+        role,
+        thumbnail: avatar_url,
+      };
+      this.assignedAgent = selfAssign;
+    },
+    onClickAssignAgent(selectedItem) {
+      if (this.assignedAgent && this.assignedAgent.id === selectedItem.id) {
+        this.assignedAgent = null;
+      } else {
+        this.assignedAgent = selectedItem;
+      }
+    },
+    getAssigneeInitials(assignee) {
+      if (!assignee || !assignee.name) return '';
+      const names = assignee.name.trim().split(' ');
+      if (names.length === 1) {
+        return names[0].charAt(0).toUpperCase();
+      }
+      return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+    },
+    async changeAssignee(assignee) {
+      if (!this.isAdmin) {
+        useAlert('Sem permissão');
+        return;
+      }
+      
+      try {
+        const currentPosition = getPipelinePosition(this.contact, this.pipelineId);
+        const stageId = currentPosition?.stage_id || getStage(this.contact, this.pipelineId);
+        const position = currentPosition?.position || 0;
+        const enteredAt = currentPosition?.entered_at || new Date().toISOString();
+        const dealValue = currentPosition?.deal_value;
+        const metadata = currentPosition?.metadata || {};
+
+        // Tratar "None" (id: 0) como null para remover assignee
+        const assigneeId = (assignee && assignee.id !== 0 && assignee.id !== null && assignee.id !== undefined) ? assignee.id : null;
+        
+        // Log para debug
+        console.log('[KanbanCardModal] changeAssignee:', { assignee, assigneeId, assigneeIdType: typeof assigneeId });
+
+        await ContactAPI.updatePipelinePosition(
+          this.contact.id,
+          this.pipelineId,
+          stageId,
+          position,
+          enteredAt,
+          dealValue,
+          metadata,
+          assigneeId
+        );
+
+        // Atualizar assignee localmente no contato para atualizar o modal imediatamente
+        const pipelinePosition = this.contact.pipeline_positions?.find(
+          p => p.pipeline_id === this.pipelineId || p.pipeline_id === parseInt(this.pipelineId, 10)
+        );
+        if (pipelinePosition) {
+          // Usar Vue.set para garantir reatividade quando definimos como null
+          if (assigneeId) {
+            this.$set(pipelinePosition, 'assignee', assignee);
+          } else {
+            this.$set(pipelinePosition, 'assignee', null);
+          }
+        }
+        
+        // Emitir evento para componente pai atualizar kanban
+        this.$emit('assignee-updated', {
+          contactId: this.contact.id,
+          assignee: assigneeId ? assignee : null,
+        });
+        
+        useAlert('Responsável atualizado');
+      } catch (error) {
+        console.error('[KanbanCardModal] Error updating assignee:', error);
+        useAlert('Erro ao atualizar responsável');
+      }
+    },
     onClose() {
       this.cancelEditingValue();
       this.$emit('close');
@@ -382,6 +607,20 @@ export default {
           oldStage: this.currentStage,
         });
       }
+    },
+    // Extrair o nome do stage (suporta objeto {name, color} ou string)
+    getStageName(stage) {
+      if (typeof stage === 'object' && stage !== null) {
+        return stage.name || stage.value || String(stage);
+      }
+      return String(stage);
+    },
+    // Obter chave única para o stage (para :key no v-for)
+    getStageKey(stage) {
+      if (typeof stage === 'object' && stage !== null) {
+        return stage.name || stage.value || JSON.stringify(stage);
+      }
+      return String(stage);
     },
   },
 };

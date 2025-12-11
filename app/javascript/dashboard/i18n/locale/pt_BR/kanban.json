@@ -49,7 +49,9 @@
       "NO_PIPELINE_SELECTED": "Nenhum pipeline selecionado",
       "TOO_MANY_UPDATES": "Muitas atualizações detectadas. Sistema reiniciado.",
       "FETCH_CONTACTS_FAILED": "Falha ao buscar contatos. Tente novamente.",
-      "ADD_CONTACT_FAILED": "Falha ao adicionar contato à etapa. Tente novamente."
+      "ADD_CONTACT_FAILED": "Falha ao adicionar contato à etapa. Tente novamente.",
+      "CANNOT_MOVE_CARD": "Você só pode mover cards que são seus ou que não têm dono atribuído",
+      "CANNOT_EDIT_CARD": "Você só pode editar cards que são seus ou que não têm dono atribuído"
     },
     "SUCCESS": {
       "PIPELINE_DELETED": "Pipeline excluído com sucesso",

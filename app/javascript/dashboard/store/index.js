@@ -33,6 +33,7 @@ import inboxAssignableAgents from './modules/inboxAssignableAgents';
 import inboxes from './modules/inboxes';
 import inboxMembers from './modules/inboxMembers';
 import integrations from './modules/integrations';
+import kanban from './modules/kanban';
 import labels from './modules/labels';
 import macros from './modules/macros';
 import notifications from './modules/notifications';
@@ -83,6 +84,7 @@ export default new Vuex.Store({
     inboxes,
     inboxMembers,
     integrations,
+    kanban,
     labels,
     macros,
     notifications,

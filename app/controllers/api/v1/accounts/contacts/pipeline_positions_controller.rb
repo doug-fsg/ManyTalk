@@ -1,12 +1,14 @@
 class Api::V1::Accounts::Contacts::PipelinePositionsController < Api::V1::Accounts::BaseController
   before_action :ensure_pipeline, only: [:stats, :dashboard_stats]
   before_action :ensure_contact, only: [:update, :destroy]
+  before_action :check_pipeline_edit_permission, only: [:update, :destroy, :reorder]
+  before_action :check_pipeline_view_permission, only: [:stats, :dashboard_stats]
 
   # Atualizar posição do contato no pipeline
   def update
-    position = @contact.contact_pipeline_positions.find_or_initialize_by(
-      pipeline_id: params[:pipeline_id]
-    )
+    position = @contact.contact_pipeline_positions
+      .includes(:assignee)
+      .find_or_initialize_by(pipeline_id: params[:pipeline_id])
 
     position.assign_attributes(
       stage_id: params[:stage_id],
@@ -16,6 +18,16 @@ class Api::V1::Accounts::Contacts::PipelinePositionsController < Api::V1::Accoun
     position.entered_at = params[:entered_at] if params[:entered_at].present?
     position.deal_value = params[:deal_value] if params[:deal_value].present?
     position.metadata = params[:metadata] if params[:metadata].present?
+    
+    # Permitir trocar dono explicitamente (apenas admin)
+    # Aceitar null para remover assignee (apenas admin)
+    if params.key?(:assignee_id)
+      if can_change_assignee?
+        position.assignee_id = params[:assignee_id]
+      else
+        return render json: { error: 'Sem permissão para trocar dono' }, status: :forbidden
+      end
+    end
 
     if position.save
       render json: {
@@ -24,7 +36,8 @@ class Api::V1::Accounts::Contacts::PipelinePositionsController < Api::V1::Accoun
         position: position.position,
         entered_at: position.entered_at,
         deal_value: position.deal_value,
-        metadata: position.metadata || {}
+        metadata: position.metadata || {},
+        assignee: position.assignee ? assignee_json(position.assignee) : nil
       }
     else
       render json: { error: position.errors.full_messages }, status: :unprocessable_entity
@@ -240,6 +253,71 @@ class Api::V1::Accounts::Contacts::PipelinePositionsController < Api::V1::Accoun
     unless @pipeline
       render json: { error: 'Pipeline not found' }, status: :not_found
     end
+  end
+
+  def check_pipeline_edit_permission
+    pipeline = Current.account.custom_attribute_definitions.find_by(
+      id: params[:pipeline_id],
+      is_kanban: true
+    )
+    
+    return unless pipeline
+    
+    # Admin sempre pode
+    return if Current.user.administrator?
+    
+    # Verificar permissão do pipeline
+    permission = pipeline.user_permission(Current.user)
+    
+    # Viewer não pode editar
+    if permission == :viewer
+      render json: { 
+        error: 'Você não tem permissão para editar este pipeline' 
+      }, status: :forbidden
+      return
+    end
+    
+    # Editor pode editar, mas verificar se o card é dele ou sem dono
+    if permission == :editor
+      position = @contact.contact_pipeline_positions.find_by(
+        pipeline_id: params[:pipeline_id]
+      )
+      
+      # Se card tem dono e não é o editor, bloquear
+      if position&.assignee_id.present? && position.assignee_id != Current.user.id
+        render json: { 
+          error: 'Você só pode editar cards que são seus ou que não têm dono' 
+        }, status: :forbidden
+        return
+      end
+    end
+  end
+
+  def check_pipeline_view_permission
+    pipeline = Current.account.custom_attribute_definitions.find_by(
+      id: params[:pipeline_id],
+      is_kanban: true
+    )
+    
+    unless pipeline&.can_view?(Current.user)
+      render json: { 
+        error: 'Você não tem permissão para visualizar este pipeline' 
+      }, status: :forbidden
+    end
+  end
+  
+  def can_change_assignee?
+    Current.user&.administrator?
+  end
+  
+  def assignee_json(user)
+    {
+      id: user.id,
+      name: user.name,
+      available_name: user.available_name,
+      avatar_url: user.avatar_url,
+      thumbnail: user.avatar_url
+    }
   end
 end
 

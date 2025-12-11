@@ -86,7 +86,7 @@ class ContactAPI extends ApiClient {
   }
 
   // Atualizar posição do contato no pipeline (apenas contact_pipeline_positions)
-  updatePipelinePosition(contactId, pipelineId, stageId, position, enteredAt = null, dealValue = null, metadata = null) {
+  updatePipelinePosition(contactId, pipelineId, stageId, position, enteredAt = null, dealValue = null, metadata = null, assigneeId = null) {
     const params = {
       stage_id: stageId,
       position: position,
@@ -99,6 +99,9 @@ class ContactAPI extends ApiClient {
     }
     if (metadata !== null && metadata !== undefined) {
       params.metadata = metadata;
+    }
+    if (assigneeId !== null && assigneeId !== undefined) {
+      params.assignee_id = assigneeId;
     }
     return axios.patch(`${this.url}/${contactId}/pipeline_positions/${pipelineId}`, params);
   }

@@ -180,6 +180,7 @@
             :pipeline-id="selectedAttribute.id"
             :operation-manager="operationManager"
             :column-stats="columnStats[column.title]"
+            :is-viewer-mode="isViewerMode"
             @item-moved="onItemMoved"
             @view-contact="openContact"
             @remove-card="removeCardFromKanban"
@@ -192,6 +193,8 @@
             @undo-win-lost="handleUndoWinLost"
             @add-contact-to-stage="handleAddContactToStage"
             @open-card-modal="handleOpenCardModal"
+            @assign-self-as-owner="handleAssignSelfAsOwner"
+            @show-assign-owner-confirmation="handleShowAssignOwnerConfirmation"
           />
         </draggable>
       </div>
@@ -234,12 +237,25 @@
       :reject-text="$t('KANBAN.REMOVE_CARD_MODAL.CANCEL')"
     />
 
+    <!-- Modal de confirmação para virar responsável -->
+    <woot-delete-modal
+      :show.sync="showAssignOwnerModal"
+      :on-close="closeAssignOwnerModal"
+      :on-confirm="confirmAssignOwner"
+      title="Virar responsável?"
+      :message="assignOwnerModalMessage"
+      confirm-text="Sim"
+      reject-text="Não"
+    />
+
     <!-- Modal de edição do pipeline -->
     <woot-modal
       :show.sync="showEditPipelineModal"
       :on-close="closeEditPipelineModal"
+      size="medium"
+      :full-width="false"
     >
-      <edit-attribute
+      <edit-kanban-pipeline
         :selected-attribute="selectedAttribute"
         :is-updating="uiFlags.isUpdating"
         @on-close="handleEditPipelineSuccess"
@@ -299,6 +315,7 @@
       @close="handleCloseCardModal"
       @value-updated="handleDealValueUpdate"
       @stage-changed="handleStageChangeFromModal"
+      @assignee-updated="handleAssigneeUpdated"
     />
   </div>
 </template>
@@ -312,7 +329,7 @@ import Vue from 'vue';
 import KanbanColumn from './KanbanColumn.vue';
 import KanbanHeader from './Header.vue';
 import KanbanDashboard from './KanbanDashboard.vue';
-import EditAttribute from 'dashboard/routes/dashboard/settings/attributes/EditAttribute.vue';
+import EditKanbanPipeline from './EditKanbanPipeline.vue';
 import CreateAttributeModal from './CreateAttributeModal.vue';
 import WinLostModal from './WinLostModal.vue';
 import AddContactToStageModal from './AddContactToStageModal.vue';
@@ -348,7 +365,7 @@ export default {
     KanbanColumn,
     KanbanHeader,
     KanbanDashboard,
-    EditAttribute,
+    EditKanbanPipeline,
     CreateAttributeModal,
     WinLostModal,
     AddContactToStageModal,
@@ -426,6 +443,11 @@ export default {
       // Paginação do modo lista
       listCurrentPage: 1,
       listItemsPerPage: 25,
+      // Modal de atribuir dono
+      showAssignOwnerModal: false,
+      assignOwnerModalContact: null,
+      assignOwnerModalCallbacks: null,
+      assignOwnerModalMessage: '',
     };
   },
   created() {
@@ -480,7 +502,19 @@ export default {
       attributes: 'attributes/getAttributes',
       contacts: 'contacts/getContacts',
       uiFlags: 'attributes/getUIFlags',
+      canEditPipeline: 'kanban/canEditPipeline',
+      canViewPipeline: 'kanban/canViewPipeline',
+      getPipelinePermission: 'kanban/getPipelinePermission',
     }),
+    isViewerMode() {
+      if (!this.selectedAttribute) return false;
+      const permission = this.getPipelinePermission(this.selectedAttribute.id);
+      return permission === 'viewer';
+    },
+    canEditCurrentPipeline() {
+      if (!this.selectedAttribute) return true;
+      return this.canEditPipeline(this.selectedAttribute.id);
+    },
     isDarkMode() {
       return this.$store.getters['theme/isDarkMode'];
     },
@@ -635,6 +669,9 @@ export default {
 
       return filtered;
     },
+    currentUser() {
+      return this.$store.getters.getCurrentUser;
+    },
     isAdmin() {
       // Verifica se o usuário atual é administrador
       return this.currentUser && this.currentUser.role === 'administrator';
@@ -648,12 +685,26 @@ export default {
 
       const index = {};
       const pipelineId = this.selectedAttribute.id;
+      const currentUserId = this.currentUser?.id;
 
       // Criar índice uma vez: mapear cada valor de etapa para array de contatos
       // Usa pipeline_positions em vez de custom_attributes
+      // Filtrar por assignee: não-admin vê apenas seus cards ou cards sem dono
       this.contacts.forEach(contact => {
         if (!contact.pipeline_positions || !Array.isArray(contact.pipeline_positions)) {
           return;
+        }
+
+        const position = contact.pipeline_positions.find(
+          p => p.pipeline_id === pipelineId || p.pipeline_id === parseInt(pipelineId, 10)
+        );
+
+        // Filtrar por visibilidade: admin vê tudo, outros veem apenas seus cards ou sem dono
+        if (!this.isAdmin && position) {
+          const assigneeId = position.assignee?.id || null;
+          if (assigneeId !== null && assigneeId !== currentUserId) {
+            return; // Não mostrar card de outro usuário
+          }
         }
 
         const stageId = getStage(contact, pipelineId);
@@ -881,6 +932,7 @@ export default {
           const dealValue = currentPosition?.deal_value;
           const metadata = currentPosition?.metadata || {};
           const position = currentPosition?.position || 0;
+          const assigneeId = currentPosition?.assignee?.id || null;
 
           // Atualizar via pipeline_positions
           const response = await ContactAPI.updatePipelinePosition(
@@ -890,7 +942,8 @@ export default {
             position,
             now,
             dealValue,
-            metadata
+            metadata,
+            assigneeId
           );
 
           // Atualizar pipeline_positions localmente
@@ -906,6 +959,7 @@ export default {
               entered_at: response.data.entered_at,
               deal_value: response.data.deal_value,
               metadata: response.data.metadata || {},
+              assignee: response.data.assignee || null,
             };
             
             if (positionIndex >= 0) {
@@ -959,6 +1013,17 @@ export default {
           column.items.splice(index, 1);
         }
       });
+
+      // ✅ ATUALIZAR pipeline_positions localmente para manter dados sincronizados
+      if (contact.pipeline_positions && this.selectedAttribute) {
+        const position = contact.pipeline_positions.find(
+          p => p.pipeline_id === this.selectedAttribute.id || p.pipeline_id === parseInt(this.selectedAttribute.id, 10)
+        );
+        if (position) {
+          // Preservar assignee ao atualizar stage_id
+          this.$set(position, 'stage_id', newColumn);
+        }
+      }
 
       // Adicionar card na nova coluna NA POSIÇÃO EXATA
       const targetColumn = this.columns.find(col => col.title === newColumn);
@@ -1458,21 +1523,56 @@ export default {
       this.lastColumnUpdateTime = now;
 
       this.columns = [];
-      const values = this.selectedAttribute.attribute_values;
+      const attributeValues = this.selectedAttribute.attribute_values;
+      
+      // Garantir que values seja sempre um array
+      const values = Array.isArray(attributeValues) ? attributeValues : [];
+      
+      // Se não for array válido, retornar sem criar colunas
+      if (values.length === 0) {
+        return;
+      }
 
-      // Criar colunas a partir dos valores de atributos
+      // PRIMEIRO: Carregar todas as cores do backend no colorMap
+      values.forEach((value) => {
+        let stageName;
+        let stageColor = null;
+        
+        if (typeof value === 'object' && value !== null) {
+          stageName = value.name || value.value || String(value);
+          stageColor = value.color || null;
+        } else {
+          stageName = String(value);
+        }
+        
+        // Carregar cor salva no colorMap se disponível
+        if (stageColor) {
+          this.colorMap[stageName] = stageColor;
+        }
+      });
+
+      // SEGUNDO: Criar colunas a partir dos valores de atributos
       // Otimização: usar índice contactsByColumn em vez de filtrar toda vez
       values.forEach((value, index) => {
-        // Usar uma cor consistente para cada valor
-        const color = this.getStageColor(value);
+        // Extrair nome do valor (pode ser string ou objeto)
+        let stageName;
+        
+        if (typeof value === 'object' && value !== null) {
+          stageName = value.name || value.value || String(value);
+        } else {
+          stageName = String(value);
+        }
+        
+        // Usar uma cor consistente para cada valor (já carregada no colorMap acima)
+        const color = this.getStageColor(stageName);
         // Usar índice pré-calculado em vez de filtrar todos os contatos
-        let contacts = this.contactsByColumn[value] || [];
+        let contacts = this.contactsByColumn[stageName] || [];
 
         // Ordenar por position quando disponível (vindo de contact_pipeline_positions)
         // Se não tiver position, manter ordem atual (que já reflete ordem do drag)
         contacts = [...contacts].sort((a, b) => {
-          const posA = this.getContactPosition(a.id, this.selectedAttribute.id, value);
-          const posB = this.getContactPosition(b.id, this.selectedAttribute.id, value);
+          const posA = this.getContactPosition(a.id, this.selectedAttribute.id, stageName);
+          const posB = this.getContactPosition(b.id, this.selectedAttribute.id, stageName);
           
           // Se ambos têm position, ordenar por position
           if (posA !== null && posB !== null && posA !== undefined && posB !== undefined) {
@@ -1492,7 +1592,7 @@ export default {
 
         this.columns.push({
           id: `column-${index}`,
-          title: value,
+          title: stageName,
           color: color,
           items: contacts,
         });
@@ -1537,10 +1637,40 @@ export default {
       });
     },
     async onItemMoved({ contactId, sourceColumnTitle, targetColumnTitle, oldIndex, newIndex }) {
+      // Verificar permissão de edição
+      if (this.isViewerMode) {
+        this.$store.dispatch('notifications/show', {
+          message: 'Você não tem permissão para mover cards neste pipeline',
+          type: 'error',
+        });
+        return;
+      }
+
       // Verificar se o contato existe
       const contact = this.contacts.find(c => c.id === contactId);
       if (!contact) {
         return;
+      }
+
+      // Verificar permissão para mover este card específico
+      if (!this.isAdmin && !this.isViewerMode) {
+        // Editor: só pode mover cards próprios ou sem dono
+        const currentPosition = contact.pipeline_positions?.find(
+          p => p.pipeline_id === this.selectedAttribute.id || p.pipeline_id === parseInt(this.selectedAttribute.id, 10)
+        );
+        const cardAssigneeId = currentPosition?.assignee?.id || null;
+        const currentUserId = this.currentUser?.id;
+
+        if (cardAssigneeId && cardAssigneeId !== currentUserId) {
+          // Card tem dono e não é o usuário atual
+          this.$store.dispatch('notifications/show', {
+            message: this.$t('KANBAN.ERRORS.CANNOT_MOVE_CARD'),
+            type: 'error',
+          });
+          // Reverter movimento visual
+          this.setupColumns();
+          return;
+        }
       }
 
       // ============================================
@@ -1551,7 +1681,7 @@ export default {
 
       // Obter deal_value e metadata existentes do pipeline_positions
       const currentPosition = contact.pipeline_positions?.find(
-        p => p.pipeline_id === this.selectedAttribute.id
+        p => p.pipeline_id === this.selectedAttribute.id || p.pipeline_id === parseInt(this.selectedAttribute.id, 10)
       );
       const currentDealValue = currentPosition?.deal_value;
       const currentMetadata = currentPosition?.metadata || {};
@@ -1561,6 +1691,21 @@ export default {
       // ============================================
       // NÃO atualizar tabela contacts - apenas contact_pipeline_positions
       // Isso é muito mais rápido e não bloqueia a UI
+      
+      // LOG 1: Verificar dados antes de enviar
+      console.log('[Kanban Move] Pre-request check:', {
+        contactId,
+        pipelineId: this.selectedAttribute.id,
+        cardAssigneeId: currentPosition?.assignee?.id || null,
+        currentUserId: this.currentUser?.id,
+        isAdmin: this.isAdmin,
+        isViewerMode: this.isViewerMode,
+        sendingAssigneeId: null // Não enviamos assignee_id ao mover - backend mantém o dono atual
+      });
+      
+      // IMPORTANTE: Não enviar assignee_id ao mover card
+      // O backend só permite trocar dono se for admin
+      // Ao mover, queremos manter o dono atual, então não enviamos assignee_id
       ContactAPI.updatePipelinePosition(
         contactId,
         this.selectedAttribute.id,
@@ -1568,9 +1713,10 @@ export default {
         newIndex,
         new Date().toISOString(),
         currentDealValue,
-        currentMetadata
+        currentMetadata,
+        null // Não enviar assignee_id - backend mantém o dono atual automaticamente
       )
-        .then((response) => {
+        .then(async (response) => {
           // Atualizar o contato no store com os dados de pipeline_positions retornados
           const updatedContact = this.contacts.find(c => c.id === contactId);
           if (updatedContact && response.data) {
@@ -1584,6 +1730,7 @@ export default {
               p => p.pipeline_id === this.selectedAttribute.id
             );
             
+            // Backend sempre envia assignee (null quando não tem), então usar diretamente
             const positionData = {
               pipeline_id: response.data.pipeline_id,
               stage_id: response.data.stage_id,
@@ -1591,6 +1738,7 @@ export default {
               entered_at: response.data.entered_at,
               deal_value: response.data.deal_value,
               metadata: response.data.metadata || {},
+              assignee: response.data.assignee || null, // Backend sempre envia
             };
             
             if (positionIndex >= 0) {
@@ -1609,19 +1757,29 @@ export default {
           this.safeShowNotification('success', this.$t('KANBAN.SUCCESS.CARD_MOVED'));
           
           // Reconstruir colunas após confirmação para garantir sincronização final
-          // Usar nextTick para garantir que o Vue processou as mudanças
-          this.$nextTick(() => {
-            clearTimeout(this.setupColumnsTimeout);
-            this.setupColumnsTimeout = setTimeout(() => {
-              this.setupColumns();
-              // Atualizar stats após mover contato para refletir totais corretos
-              this.fetchColumnStats();
-            }, 100);
-          });
-        })
-        .catch(error => {
-          // Se a API falhar, reverter a mudança local
-          this.revertLocalUpdate(contact, sourceColumnTitle);
+          // Aguardar Vue processar TODAS as atualizações reativas antes de reconstruir
+          // Duplo nextTick garante que computed properties (como contactsByColumn) também foram atualizados
+          await this.$nextTick();
+          await this.$nextTick();
+          
+          clearTimeout(this.setupColumnsTimeout);
+          this.setupColumns();
+          // Atualizar stats após mover contato para refletir totais corretos
+          this.fetchColumnStats();
+          })
+          .catch(error => {
+            // LOG 2: Erro da API
+            console.log('[Kanban Move] API Error:', {
+              status: error?.response?.status,
+              error: error?.response?.data?.error || error?.message,
+              contactId,
+              pipelineId: this.selectedAttribute.id,
+              cardAssigneeId: currentPosition?.assignee?.id || null,
+              currentUserId: this.currentUser?.id
+            });
+            
+            // Se a API falhar, reverter a mudança local
+            this.revertLocalUpdate(contact, sourceColumnTitle);
           this.safeShowNotification('error', this.$t('KANBAN.ERRORS.UPDATE_FAILED'));
         });
     },
@@ -1689,6 +1847,30 @@ export default {
 
     // Método para garantir a mesma cor para o mesmo estágio sempre
     getStageColor(stageName) {
+      // Primeiro, verificar se já existe no colorMap (já carregado)
+      if (this.colorMap[stageName]) {
+        return this.colorMap[stageName];
+      }
+      
+      // Se não está no colorMap, verificar se há cor salva no selectedAttribute
+      if (this.selectedAttribute && this.selectedAttribute.attribute_values) {
+        const attributeValues = this.selectedAttribute.attribute_values;
+        if (Array.isArray(attributeValues)) {
+          const stageWithColor = attributeValues.find(stage => {
+            if (typeof stage === 'object' && stage !== null) {
+              return (stage.name || stage.value) === stageName;
+            }
+            return stage === stageName;
+          });
+          
+          if (stageWithColor && typeof stageWithColor === 'object' && stageWithColor.color) {
+            this.colorMap[stageName] = stageWithColor.color;
+            return stageWithColor.color;
+          }
+        }
+      }
+      
+      // Se não encontrou cor salva, gerar uma nova
       if (!this.colorMap[stageName]) {
         // Cores predefinidas para estágios comuns
         const stageColors = {
@@ -1809,11 +1991,14 @@ export default {
       // Se não há atributo selecionado, não há o que atualizar
       if (!this.selectedAttribute) return;
 
-      // SOLUÇÃO SIMPLES - forçar atualização imediata ignorando throttle
-      // Resetar throttle para permitir atualização imediata
-      this.lastColumnUpdateTime = 0;
-      clearTimeout(this.setupColumnsTimeout);
-      this.setupColumns();
+      // Aguardar próximo tick para garantir que Vue processou a atualização do store
+      // Isso é necessário para que contactsByColumn recalcule com os dados atualizados
+      this.$nextTick(() => {
+        // Resetar throttle para permitir atualização imediata
+        this.lastColumnUpdateTime = 0;
+        clearTimeout(this.setupColumnsTimeout);
+        this.setupColumns();
+      });
     },
     // Helper para lidar com valores de atributos potencialmente ausentes
     getAttributeValue(customAttributes, attributeKey) {
@@ -2028,6 +2213,9 @@ export default {
     async handleEditPipelineSuccess() {
       this.showEditPipelineModal = false;
       
+      // Resetar colorMap para recarregar cores do backend
+      this.colorMap = {};
+      
       // Recarregar dados após edição para refletir mudanças na ordem dos estágios
       await this.fetchAttributes();
       if (this.selectedAttribute) {
@@ -2036,8 +2224,27 @@ export default {
           attr => attr.id === this.selectedAttribute.id
         );
         if (updatedAttribute) {
-          this.selectedAttribute = updatedAttribute;
+          // Atualizar selectedAttribute com dados frescos do backend
+          // Usar Vue.set para garantir reatividade
+          this.$set(this, 'selectedAttribute', { ...updatedAttribute });
+          
+          // Aguardar próximo tick para garantir que selectedAttribute foi atualizado
+          await this.$nextTick();
+          
+          // Forçar recarregamento das cores antes de recriar colunas
+          if (this.selectedAttribute.attribute_values && Array.isArray(this.selectedAttribute.attribute_values)) {
+            this.selectedAttribute.attribute_values.forEach((value) => {
+              if (typeof value === 'object' && value !== null && value.color) {
+                const stageName = value.name || value.value || String(value);
+                this.$set(this.colorMap, stageName, value.color);
+              }
+            });
+          }
+          
           await this.fetchContacts();
+          
+          // Aguardar próximo tick antes de recriar colunas
+          await this.$nextTick();
           this.setupColumns();
         }
       }
@@ -2199,6 +2406,7 @@ export default {
           entered_at: response.data.entered_at,
           deal_value: response.data.deal_value,
           metadata: response.data.metadata || {},
+          assignee: response.data.assignee || null,
         };
         
         if (positionIndex >= 0) {
@@ -2237,13 +2445,16 @@ export default {
           p => p.pipeline_id === pipelineId
         );
         
+        // Preservar dados existentes do pipeline_positions, incluindo assignee
+        const currentPosition = contact.pipeline_positions[positionIndex];
         const updatedPosition = {
           pipeline_id: pipelineId,
           stage_id: newColumnValue,
-          position: 0,
-          entered_at: new Date().toISOString(),
-          deal_value: null,
-          metadata: {},
+          position: currentPosition?.position || 0,
+          entered_at: currentPosition?.entered_at || new Date().toISOString(),
+          deal_value: currentPosition?.deal_value || null,
+          metadata: currentPosition?.metadata || {},
+          assignee: currentPosition?.assignee || null, // ✅ PRESERVAR ASSIGNEE
         };
         
         if (positionIndex >= 0) {
@@ -2265,6 +2476,36 @@ export default {
       }
     },
     async handleDealValueUpdate({ contactId, additionalAttributes, value }) {
+      // Verificar permissão de edição
+      if (this.isViewerMode) {
+        this.$store.dispatch('notifications/show', {
+          message: this.$t('KANBAN.ERRORS.CANNOT_EDIT_CARD'),
+          type: 'error',
+        });
+        return;
+      }
+
+      // Verificar se é editor (não admin) e se pode editar este card específico
+      if (!this.isAdmin) {
+        const contact = this.contacts.find(c => c.id === contactId);
+        if (contact) {
+          const currentPosition = contact.pipeline_positions?.find(
+            p => p.pipeline_id === this.selectedAttribute.id || p.pipeline_id === parseInt(this.selectedAttribute.id, 10)
+          );
+          const cardAssigneeId = currentPosition?.assignee?.id || null;
+          const currentUserId = this.currentUser?.id;
+
+          // Editor só pode editar cards próprios ou sem dono
+          if (cardAssigneeId && cardAssigneeId !== currentUserId) {
+            this.$store.dispatch('notifications/show', {
+              message: this.$t('KANBAN.ERRORS.CANNOT_EDIT_CARD'),
+              type: 'error',
+            });
+            return;
+          }
+        }
+      }
+
       // Encontrar o contato atual
       const contact = this.contacts.find(c => c.id === contactId);
       if (!contact || !this.selectedAttribute) {
@@ -2312,6 +2553,7 @@ export default {
             entered_at: response.data.entered_at,
             deal_value: response.data.deal_value,
             metadata: response.data.metadata || {},
+            assignee: response.data.assignee || null,
           };
           
           if (positionIndex >= 0) {
@@ -2337,6 +2579,7 @@ export default {
               entered_at: response.data.entered_at,
               deal_value: response.data.deal_value,
               metadata: response.data.metadata || {},
+              assignee: response.data.assignee || null, // ✅ INCLUIR ASSIGNEE
             });
           }
         }
@@ -2412,6 +2655,7 @@ export default {
             entered_at: response.data.entered_at,
             deal_value: response.data.deal_value,
             metadata: response.data.metadata || {},
+            assignee: response.data.assignee || null,
           };
           
           if (positionIndex >= 0) {
@@ -2628,6 +2872,79 @@ export default {
       this.showCardModal = false;
       this.selectedCardContact = {};
     },
+    handleShowAssignOwnerConfirmation({ contact, onConfirm, onCancel }) {
+      this.assignOwnerModalContact = contact;
+      this.assignOwnerModalCallbacks = { onConfirm, onCancel };
+      this.assignOwnerModalMessage = `Você quer se tornar responsável pelo card ${contact.name}?`;
+      this.showAssignOwnerModal = true;
+    },
+    closeAssignOwnerModal() {
+      if (this.assignOwnerModalCallbacks?.onCancel) {
+        this.assignOwnerModalCallbacks.onCancel();
+      }
+      this.showAssignOwnerModal = false;
+      this.assignOwnerModalContact = null;
+      this.assignOwnerModalCallbacks = null;
+      this.assignOwnerModalMessage = '';
+    },
+    async confirmAssignOwner() {
+      this.showAssignOwnerModal = false;
+      
+      // Atribuir dono
+      if (this.assignOwnerModalContact) {
+        await this.handleAssignSelfAsOwner({ contactId: this.assignOwnerModalContact.id });
+      }
+      
+      // Resolver promise após atribuir
+      if (this.assignOwnerModalCallbacks?.onConfirm) {
+        this.assignOwnerModalCallbacks.onConfirm();
+      }
+      
+      this.assignOwnerModalContact = null;
+      this.assignOwnerModalCallbacks = null;
+      this.assignOwnerModalMessage = '';
+    },
+    async handleAssignSelfAsOwner({ contactId }) {
+      try {
+        const contact = this.contacts.find(c => c.id === contactId);
+        if (!contact) return;
+        
+        const position = contact.pipeline_positions?.find(
+          p => p.pipeline_id === this.selectedAttribute.id || p.pipeline_id === parseInt(this.selectedAttribute.id, 10)
+        );
+        
+        if (!position) return;
+        
+        const currentUser = this.$store.getters.getCurrentUser;
+        
+        await ContactAPI.updatePipelinePosition(
+          contactId,
+          this.selectedAttribute.id,
+          position.stage_id,
+          position.position || 0,
+          position.entered_at,
+          position.deal_value,
+          position.metadata,
+          currentUser.id
+        );
+        
+        // Atualizar contato localmente
+        if (position) {
+          position.assignee = {
+            id: currentUser.id,
+            name: currentUser.name,
+            available_name: currentUser.available_name,
+            avatar_url: currentUser.avatar_url,
+            thumbnail: currentUser.avatar_url
+          };
+        }
+        
+        useAlert('Você é o responsável');
+      } catch (error) {
+        console.error('[KanbanAttributes] Error assigning self as owner:', error);
+        useAlert('Erro ao atribuir');
+      }
+    },
     // Carregar uma página de contatos (modo lista)
     async loadContactsPage(page = 1) {
       if (!this.selectedAttribute) return;
@@ -2683,6 +3000,22 @@ export default {
     getContactCurrentStage(contact) {
       if (!contact || !this.selectedAttribute) return '';
       return getStage(contact, this.selectedAttribute.id) || '';
+    },
+    async handleAssigneeUpdated({ contactId, assignee }) {
+      // Atualizar contato localmente
+      const contact = this.contacts.find(c => c.id === contactId);
+      if (contact) {
+        const position = contact.pipeline_positions?.find(
+          p => p.pipeline_id === this.selectedAttribute.id || p.pipeline_id === parseInt(this.selectedAttribute.id, 10)
+        );
+        if (position) {
+          // Atualizar assignee: null quando removido, objeto quando atribuído
+          position.assignee = assignee;
+        }
+      }
+      
+      // Reconstruir colunas para aplicar filtro de visibilidade (card pode sumir/aparecer)
+      this.setupColumns();
     },
     async handleStageChangeFromModal({ contactId, newStage, oldStage }) {
       const contact = this.contacts.find(c => c.id === contactId);
@@ -2792,6 +3125,7 @@ export default {
             entered_at: response.data.entered_at,
             deal_value: response.data.deal_value,
             metadata: response.data.metadata || {},
+            assignee: response.data.assignee || null,
           };
           
           if (positionIndex >= 0) {
