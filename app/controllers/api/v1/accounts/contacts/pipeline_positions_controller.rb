@@ -20,9 +20,10 @@ class Api::V1::Accounts::Contacts::PipelinePositionsController < Api::V1::Accoun
     position.metadata = params[:metadata] if params[:metadata].present?
     
     # Permitir trocar dono explicitamente (apenas admin)
+    # EXCEÇÃO: Agentes podem atribuir para si mesmos quando o card não tem dono
     # Aceitar null para remover assignee (apenas admin)
     if params.key?(:assignee_id)
-      if can_change_assignee?
+      if can_change_assignee?(position, params[:assignee_id])
         position.assignee_id = params[:assignee_id]
       else
         return render json: { error: 'Sem permissão para trocar dono' }, status: :forbidden
@@ -269,6 +270,9 @@ class Api::V1::Accounts::Contacts::PipelinePositionsController < Api::V1::Accoun
     # Verificar permissão do pipeline
     permission = pipeline.user_permission(Current.user)
     
+    # Admin e Supervisor podem editar qualquer card (sem restrições)
+    return if permission == :admin
+    
     # Viewer não pode editar
     if permission == :viewer
       render json: { 
@@ -306,8 +310,29 @@ class Api::V1::Accounts::Contacts::PipelinePositionsController < Api::V1::Accoun
     end
   end
   
-  def can_change_assignee?
-    Current.user&.administrator?
+  def can_change_assignee?(position = nil, new_assignee_id = nil)
+    # Administradores sempre podem
+    return true if Current.user&.administrator?
+    
+    # Supervisor tem permissões de admin no pipeline
+    pipeline = Current.account.custom_attribute_definitions.find_by(
+      id: params[:pipeline_id],
+      is_kanban: true
+    )
+    if pipeline
+      permission = pipeline.user_permission(Current.user)
+      return true if permission == :admin # Supervisor retorna :admin via user_permission
+    end
+    
+    # EXCEÇÃO: Agentes podem atribuir para si mesmos quando o card não tem dono
+    if position && new_assignee_id && Current.user
+      # Card não tem dono atual E usuário quer atribuir para si mesmo
+      if position.assignee_id.nil? && new_assignee_id == Current.user.id
+        return true
+      end
+    end
+    
+    false
   end
   
   def assignee_json(user)

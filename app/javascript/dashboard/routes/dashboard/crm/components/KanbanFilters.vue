@@ -1,22 +1,33 @@
 <template>
   <div class="kanban-filters relative" v-on-clickaway="closeFilters">
     <!-- Botão para abrir filtros -->
-    <woot-button
-      variant="clear"
-      color-scheme="secondary"
-      class="flex items-center gap-2 text-slate-700 dark:text-slate-200 relative"
+    <button
       @click.stop="toggleFilters"
+      :class="[
+        'relative inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all duration-200',
+        'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100',
+        'hover:bg-slate-100 dark:hover:bg-slate-700',
+        activeFiltersCount > 0 ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-200' : '',
+        showFilters ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100' : ''
+      ]"
     >
-      <fluent-icon icon="filter" size="16" />
-      <span class="hidden lg:inline text-sm">{{ $t('KANBAN.FILTERS.TITLE') }}</span>
+      <fluent-icon icon="filter" size="14" />
+      <span class="hidden lg:inline">{{ $t('KANBAN.FILTERS.TITLE') }}</span>
+      <fluent-icon 
+        icon="chevron-down" 
+        size="10" 
+        :class="[
+          'transition-transform duration-200',
+          showFilters ? 'rotate-180' : ''
+        ]"
+      />
       <span 
         v-if="activeFiltersCount > 0" 
-        class="absolute -top-1 -right-1 bg-woot-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+        class="absolute -top-1 -right-1 bg-woot-500 text-white text-[10px] font-semibold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center leading-none"
       >
         {{ activeFiltersCount }}
       </span>
-      <fluent-icon icon="chevron-down" size="12" class="text-slate-500 dark:text-slate-400" />
-    </woot-button>
+    </button>
 
     <!-- Dropdown de filtros -->
     <transition
@@ -29,7 +40,7 @@
     >
       <div 
         v-if="showFilters" 
-        class="absolute left-0 mt-2 w-80 rounded-md shadow-lg bg-white dark:bg-slate-800 ring-1 ring-black ring-opacity-5 z-50 p-4"
+        class="absolute left-0 mt-2 w-96 rounded-md shadow-lg bg-white dark:bg-slate-800 ring-1 ring-black ring-opacity-5 z-50 p-4"
       >
         <!-- Labels Filter -->
         <div v-if="availableLabels.length" class="mb-4">
@@ -63,15 +74,15 @@
               v-model.number="dealValueMin"
               type="number"
               :placeholder="$t('KANBAN.FILTERS.MIN_VALUE')"
-              class="flex-1 px-2 py-1 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
+              class="flex-1 px-2 py-1 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
               @input="handleDealValueChange"
             />
-            <span class="text-slate-500 dark:text-slate-400">-</span>
+            <span class="text-slate-500 dark:text-slate-400 text-xs">-</span>
             <input
               v-model.number="dealValueMax"
               type="number"
               :placeholder="$t('KANBAN.FILTERS.MAX_VALUE')"
-              class="flex-1 px-2 py-1 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
+              class="flex-1 px-2 py-1 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
               @input="handleDealValueChange"
             />
           </div>
@@ -82,32 +93,68 @@
           <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
             {{ $t('KANBAN.FILTERS.DATE_RANGE') }}
           </label>
-          <div class="flex flex-col gap-2">
-            <div class="flex flex-col gap-1">
-              <span class="text-xs font-medium text-slate-500 dark:text-slate-300">
-                {{ $t('KANBAN.FILTERS.FROM_DATE') }}
-              </span>
-              <input
-                v-model="dateFrom"
-                type="date"
-                :placeholder="$t('KANBAN.FILTERS.FROM_DATE')"
-                class="w-full px-2 py-1 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
-                @change="handleDateChange"
-              />
-            </div>
-            <div class="flex flex-col gap-1">
-              <span class="text-xs font-medium text-slate-500 dark:text-slate-300">
-                {{ $t('KANBAN.FILTERS.TO_DATE') }}
-              </span>
-              <input
-                v-model="dateTo"
-                type="date"
-                :placeholder="$t('KANBAN.FILTERS.TO_DATE')"
-                class="w-full px-2 py-1 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
-                @change="handleDateChange"
-              />
-            </div>
+          <div class="flex items-center gap-2">
+            <input
+              v-model="dateFrom"
+              type="date"
+              :placeholder="$t('KANBAN.FILTERS.FROM_DATE')"
+              class="flex-1 px-2 py-1 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
+              @change="handleDateChange"
+            />
+            <span class="text-slate-500 dark:text-slate-400 text-xs">-</span>
+            <input
+              v-model="dateTo"
+              type="date"
+              :placeholder="$t('KANBAN.FILTERS.TO_DATE')"
+              class="flex-1 px-2 py-1 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
+              @change="handleDateChange"
+            />
           </div>
+        </div>
+
+        <!-- Win/Lost Filter -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
+            {{ $t('KANBAN.FILTERS.STATUS') }}
+          </label>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="option in statusOptions"
+              :key="option.value"
+              :class="[
+                'px-2 py-1 rounded-md text-xs transition-colors flex items-center gap-1',
+                winLostFilter === option.value
+                  ? 'bg-woot-500 text-white'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600'
+              ]"
+              @click="setWinLostFilter(option.value)"
+            >
+              <fluent-icon :icon="option.icon" size="12" />
+              {{ option.label }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Assignee Filter (apenas para admin/supervisor) -->
+        <div v-if="showAssigneeFilter" class="mb-4">
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
+            {{ $t('KANBAN.FILTERS.ASSIGNEE') }}
+          </label>
+          <multiselect
+            v-model="selectedAssignees"
+            :options="assigneeOptions"
+            track-by="id"
+            label="name"
+            :multiple="true"
+            :close-on-select="false"
+            :clear-on-select="false"
+            :hide-selected="true"
+            :placeholder="$t('KANBAN.FILTERS.ASSIGNEE_PLACEHOLDER')"
+            selected-label
+            :select-label="$t('FORMS.MULTISELECT.ENTER_TO_SELECT')"
+            :deselect-label="$t('FORMS.MULTISELECT.ENTER_TO_REMOVE')"
+            @input="handleAssigneeChange"
+          />
         </div>
 
         <!-- Botões de ação -->
@@ -133,6 +180,7 @@
 
 <script>
 import { directive as onClickaway } from 'vue-clickaway';
+import { mapGetters } from 'vuex';
 
 export default {
   name: 'KanbanFilters',
@@ -156,7 +204,13 @@ export default {
         dealValueMax: null,
         dateFrom: null,
         dateTo: null,
+        assignees: [],
+        winLost: 'all',
       }),
+    },
+    showAssigneeFilter: {
+      type: Boolean,
+      default: false,
     },
   },
   data() {
@@ -167,9 +221,14 @@ export default {
       dealValueMax: null,
       dateFrom: null,
       dateTo: null,
+      selectedAssignees: [],
+      winLostFilter: 'all',
     };
   },
   computed: {
+    ...mapGetters({
+      agents: 'agents/getVerifiedAgents',
+    }),
     // Extrair todas as labels únicas dos contatos
     availableLabels() {
       const labelsMap = new Map();
@@ -183,6 +242,22 @@ export default {
       });
       return Array.from(labelsMap.values());
     },
+    // Obter lista de assignees únicos dos contatos
+    availableAssignees() {
+      const assigneesMap = new Map();
+      this.contacts.forEach(contact => {
+        if (!contact.pipeline_positions) return;
+        const position = contact.pipeline_positions.find(
+          p => p.pipeline_id === this.pipelineId || p.pipeline_id === parseInt(this.pipelineId, 10)
+        );
+        if (position?.assignee) {
+          if (!assigneesMap.has(position.assignee.id)) {
+            assigneesMap.set(position.assignee.id, position.assignee);
+          }
+        }
+      });
+      return Array.from(assigneesMap.values());
+    },
     // Contar filtros ativos
     activeFiltersCount() {
       let count = 0;
@@ -191,7 +266,34 @@ export default {
       if (this.dealValueMax !== null && this.dealValueMax !== '') count++;
       if (this.dateFrom) count++;
       if (this.dateTo) count++;
+      if (this.selectedAssignees.length > 0) count++;
+      if (this.winLostFilter !== 'all') count++;
       return count;
+    },
+    // Opções de assignee incluindo "Sem responsável"
+    assigneeOptions() {
+      const options = [...this.availableAssignees];
+      // Adicionar opção "Sem responsável" se houver cards sem assignee
+      const hasUnassigned = this.contacts.some(contact => {
+        if (!contact.pipeline_positions) return false;
+        const position = contact.pipeline_positions.find(
+          p => p.pipeline_id === this.pipelineId || p.pipeline_id === parseInt(this.pipelineId, 10)
+        );
+        return position && !position.assignee;
+      });
+      if (hasUnassigned) {
+        options.unshift({ id: null, name: this.$t('KANBAN.FILTERS.NO_ASSIGNEE') });
+      }
+      return options;
+    },
+    // Opções de status win/lost
+    statusOptions() {
+      return [
+        { value: 'all', label: this.$t('KANBAN.FILTERS.ALL'), icon: 'list' },
+        { value: 'open', label: this.$t('KANBAN.FILTERS.OPEN'), icon: 'clock' },
+        { value: 'won', label: this.$t('KANBAN.FILTERS.WON'), icon: 'checkmark-circle' },
+        { value: 'lost', label: this.$t('KANBAN.FILTERS.LOST'), icon: 'dismiss-circle' }
+      ];
     },
   },
   watch: {
@@ -202,6 +304,8 @@ export default {
         this.dealValueMax = newFilters.dealValueMax || null;
         this.dateFrom = newFilters.dateFrom || null;
         this.dateTo = newFilters.dateTo || null;
+        this.selectedAssignees = newFilters.assignees || [];
+        this.winLostFilter = newFilters.winLost || 'all';
       },
       immediate: true,
       deep: true,
@@ -246,6 +350,15 @@ export default {
       this.dealValueMax = null;
       this.dateFrom = null;
       this.dateTo = null;
+      this.selectedAssignees = [];
+      this.winLostFilter = 'all';
+      this.emitFilters();
+    },
+    setWinLostFilter(value) {
+      this.winLostFilter = value;
+      this.emitFilters();
+    },
+    handleAssigneeChange() {
       this.emitFilters();
     },
     emitFilters() {
@@ -255,15 +368,18 @@ export default {
         dealValueMax: this.dealValueMax,
         dateFrom: this.dateFrom,
         dateTo: this.dateTo,
+        assignees: this.selectedAssignees,
+        winLost: this.winLostFilter,
       });
+      this.$emit('win-lost-filter', this.winLostFilter);
     },
+  },
+  mounted() {
+    if (this.agents.length === 0) {
+      this.$store.dispatch('agents/get');
+    }
   },
 };
 </script>
 
-<style scoped>
-.kanban-filters {
-  position: relative;
-}
-</style>
 

@@ -16,6 +16,19 @@
         "SNOOZED": "Pausada"
       }
     },
+    "PERMISSIONS": {
+      "TITLE": "Permisos",
+      "VIEWER": "Visualizador",
+      "EDITOR": "Editor",
+      "SUPERVISOR": "Supervisor",
+      "VIEWER_TOOLTIP": "Solo visualización. No puede editar o mover tarjetas.",
+      "EDITOR_TOOLTIP": "Puede editar y mover solo tarjetas propias o sin dueño.",
+      "SUPERVISOR_TOOLTIP": "Permisos de administrador. Puede editar y mover cualquier tarjeta.",
+      "SUPERVISOR_DESCRIPTION": "Los supervisores tienen permisos de administrador en este pipeline",
+      "SELECT_VIEWERS": "Seleccione agentes visualizadores",
+      "SELECT_EDITORS": "Seleccione agentes editores",
+      "SELECT_SUPERVISORS": "Seleccione agentes supervisores"
+    },
     "ERRORS": {
       "LOAD_FAILED": "Error al cargar datos",
       "UPDATE_FAILED": "Error al actualizar",
@@ -23,7 +36,8 @@
       "DELETE_FAILED": "Error al eliminar",
       "PIPELINE_IN_USE": "El pipeline está en uso por contactos",
       "NO_PIPELINE_SELECTED": "Ningún pipeline seleccionado",
-      "TOO_MANY_UPDATES": "Demasiadas actualizaciones detectadas. Sistema reiniciado."
+      "TOO_MANY_UPDATES": "Demasiadas actualizaciones detectadas. Sistema reiniciado.",
+      "VIEWER_CANNOT_MOVE": "No tiene permiso para mover tarjetas en este pipeline. Solo se permite visualización."
     },
     "SUCCESS": {
       "PIPELINE_DELETED": "Pipeline eliminado con éxito",
@@ -72,9 +86,17 @@
       "DEAL_VALUE": "Valor del Negocio",
       "MIN_VALUE": "Mínimo",
       "MAX_VALUE": "Máximo",
-      "DATE_RANGE": "Período de Entrada",
+      "DATE_RANGE": "Fecha de Creación",
       "FROM_DATE": "Fecha inicial",
       "TO_DATE": "Fecha final",
+      "STATUS": "Estado",
+      "ALL": "Todos",
+      "OPEN": "Abierto",
+      "WON": "Ganado",
+      "LOST": "Perdido",
+      "ASSIGNEE": "Responsable",
+      "ASSIGNEE_PLACEHOLDER": "Seleccione responsables",
+      "NO_ASSIGNEE": "Sin responsable",
       "CLEAR_ALL": "Limpiar todo",
       "APPLY": "Aplicar"
     },

@@ -41,13 +41,27 @@
       "CANCEL": "No, keep it",
       "PLACEHOLDER": "Type {name} to confirm"
     },
+    "PERMISSIONS": {
+      "TITLE": "Permissions",
+      "VIEWER": "Viewer",
+      "EDITOR": "Editor",
+      "SUPERVISOR": "Supervisor",
+      "VIEWER_TOOLTIP": "View only. Cannot edit or move cards.",
+      "EDITOR_TOOLTIP": "Can edit and move only own cards or cards without owner.",
+      "SUPERVISOR_TOOLTIP": "Administrator permissions. Can edit and move any card.",
+      "SUPERVISOR_DESCRIPTION": "Supervisors have administrator permissions in this pipeline",
+      "SELECT_VIEWERS": "Select viewer agents",
+      "SELECT_EDITORS": "Select editor agents",
+      "SELECT_SUPERVISORS": "Select supervisor agents"
+    },
     "ERRORS": {
       "PIPELINE_IN_USE": "This pipeline is being used by contacts and cannot be deleted",
       "DELETE_FAILED": "Failed to delete pipeline",
       "NO_PIPELINE_SELECTED": "No pipeline selected",
       "TOO_MANY_UPDATES": "We detected too many updates in Kanban. Component was reset to prevent performance issues.",
       "CANNOT_MOVE_CARD": "You can only move cards that belong to you or that have no owner assigned",
-      "CANNOT_EDIT_CARD": "You can only edit cards that belong to you or that have no owner assigned"
+      "CANNOT_EDIT_CARD": "You can only edit cards that belong to you or that have no owner assigned",
+      "VIEWER_CANNOT_MOVE": "You do not have permission to move cards in this pipeline. View-only access."
     },
     "SUCCESS": {
       "PIPELINE_DELETED": "Pipeline deleted successfully",
@@ -136,9 +150,17 @@
       "DEAL_VALUE": "Deal Value",
       "MIN_VALUE": "Min",
       "MAX_VALUE": "Max",
-      "DATE_RANGE": "Entry Period",
+      "DATE_RANGE": "Creation Date",
       "FROM_DATE": "From date",
       "TO_DATE": "To date",
+      "STATUS": "Status",
+      "ALL": "All",
+      "OPEN": "Open",
+      "WON": "Won",
+      "LOST": "Lost",
+      "ASSIGNEE": "Assignee",
+      "ASSIGNEE_PLACEHOLDER": "Select assignees",
+      "NO_ASSIGNEE": "No assignee",
       "CLEAR_ALL": "Clear all",
       "APPLY": "Apply"
     },

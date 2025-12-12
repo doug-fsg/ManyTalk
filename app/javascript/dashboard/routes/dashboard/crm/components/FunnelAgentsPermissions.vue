@@ -12,7 +12,7 @@
           class="chevron-icon"
         />
         <fluent-icon icon="people" size="16" class="people-icon" />
-        <h3 class="section-title">Permissões</h3>
+        <h3 class="section-title">{{ $t('KANBAN.PERMISSIONS.TITLE') }}</h3>
       </div>
       <fluent-icon 
         icon="chevron-down" 
@@ -26,8 +26,18 @@
     <div v-if="isExpanded" class="section-content">
       <!-- Campo Visualizador -->
       <div class="permission-field">
-        <label class="permission-label">
-          Visualizador
+        <label class="permission-label flex items-center gap-1.5">
+          <span>{{ $t('KANBAN.PERMISSIONS.VIEWER') }}</span>
+          <span
+            v-tooltip.left="$t('KANBAN.PERMISSIONS.VIEWER_TOOLTIP')"
+            class="inline-flex items-center cursor-help shrink-0"
+          >
+            <fluent-icon
+              icon="info"
+              size="14"
+              class="text-slate-500 dark:text-slate-400"
+            />
+          </span>
         </label>
         <multiselect
           v-model="viewerAgents"
@@ -38,7 +48,7 @@
           :close-on-select="false"
           :clear-on-select="false"
           :hide-selected="true"
-          placeholder="Selecione agentes visualizadores"
+          :placeholder="$t('KANBAN.PERMISSIONS.SELECT_VIEWERS')"
           selected-label
           :select-label="$t('FORMS.MULTISELECT.ENTER_TO_SELECT')"
           :deselect-label="$t('FORMS.MULTISELECT.ENTER_TO_REMOVE')"
@@ -47,8 +57,18 @@
 
       <!-- Campo Editor -->
       <div class="permission-field">
-        <label class="permission-label">
-          Editor
+        <label class="permission-label flex items-center gap-1.5">
+          <span>{{ $t('KANBAN.PERMISSIONS.EDITOR') }}</span>
+          <span
+            v-tooltip.left="$t('KANBAN.PERMISSIONS.EDITOR_TOOLTIP')"
+            class="inline-flex items-center cursor-help shrink-0"
+          >
+            <fluent-icon
+              icon="info"
+              size="14"
+              class="text-slate-500 dark:text-slate-400"
+            />
+          </span>
         </label>
         <multiselect
           v-model="editorAgents"
@@ -59,11 +79,45 @@
           :close-on-select="false"
           :clear-on-select="false"
           :hide-selected="true"
-          placeholder="Selecione agentes editores"
+          :placeholder="$t('KANBAN.PERMISSIONS.SELECT_EDITORS')"
           selected-label
           :select-label="$t('FORMS.MULTISELECT.ENTER_TO_SELECT')"
           :deselect-label="$t('FORMS.MULTISELECT.ENTER_TO_REMOVE')"
         />
+      </div>
+
+      <!-- Campo Supervisor -->
+      <div class="permission-field">
+        <label class="permission-label flex items-center gap-1.5">
+          <span>{{ $t('KANBAN.PERMISSIONS.SUPERVISOR') }}</span>
+          <span
+            v-tooltip.left="$t('KANBAN.PERMISSIONS.SUPERVISOR_TOOLTIP')"
+            class="inline-flex items-center cursor-help shrink-0"
+          >
+            <fluent-icon
+              icon="info"
+              size="14"
+              class="text-slate-500 dark:text-slate-400"
+            />
+          </span>
+        </label>
+        <multiselect
+          v-model="supervisorAgents"
+          :options="supervisorAvailableAgents"
+          track-by="id"
+          label="name"
+          :multiple="true"
+          :close-on-select="false"
+          :clear-on-select="false"
+          :hide-selected="true"
+          :placeholder="$t('KANBAN.PERMISSIONS.SELECT_SUPERVISORS')"
+          selected-label
+          :select-label="$t('FORMS.MULTISELECT.ENTER_TO_SELECT')"
+          :deselect-label="$t('FORMS.MULTISELECT.ENTER_TO_REMOVE')"
+        />
+        <p class="permission-help-text">
+          {{ $t('KANBAN.PERMISSIONS.SUPERVISOR_DESCRIPTION') }}
+        </p>
       </div>
     </div>
   </div>
@@ -98,15 +152,24 @@ export default {
       return this.agents.filter(agent => agent.role !== 'administrator');
     },
     viewerAvailableAgents() {
-      // Agentes disponíveis para visualizador (não estão em editor)
+      // Agentes disponíveis para visualizador (não estão em editor ou supervisor)
       return this.availableAgents.filter(agent => 
-        this.permissions[agent.id] !== 'editor'
+        this.permissions[agent.id] !== 'editor' && 
+        this.permissions[agent.id] !== 'supervisor'
       );
     },
     editorAvailableAgents() {
-      // Agentes disponíveis para editor (não estão em viewer)
+      // Agentes disponíveis para editor (não estão em viewer ou supervisor)
       return this.availableAgents.filter(agent => 
-        this.permissions[agent.id] !== 'viewer'
+        this.permissions[agent.id] !== 'viewer' && 
+        this.permissions[agent.id] !== 'supervisor'
+      );
+    },
+    supervisorAvailableAgents() {
+      // Agentes disponíveis para supervisor (não estão em viewer ou editor)
+      return this.availableAgents.filter(agent => 
+        this.permissions[agent.id] !== 'viewer' && 
+        this.permissions[agent.id] !== 'editor'
       );
     },
     viewerAgents: {
@@ -116,7 +179,7 @@ export default {
         );
       },
       set(value) {
-        this.updateAgentsPermission(value, 'viewer', 'editor');
+        this.updateAgentsPermission(value, 'viewer', ['editor', 'supervisor']);
       }
     },
     editorAgents: {
@@ -126,7 +189,17 @@ export default {
         );
       },
       set(value) {
-        this.updateAgentsPermission(value, 'editor', 'viewer');
+        this.updateAgentsPermission(value, 'editor', ['viewer', 'supervisor']);
+      }
+    },
+    supervisorAgents: {
+      get() {
+        return this.availableAgents.filter(agent => 
+          this.permissions[agent.id] === 'supervisor'
+        );
+      },
+      set(value) {
+        this.updateAgentsPermission(value, 'supervisor', ['viewer', 'editor']);
       }
     },
   },
@@ -146,12 +219,15 @@ export default {
     }
   },
   methods: {
-    updateAgentsPermission(selectedAgents, permission, otherPermission) {
+    updateAgentsPermission(selectedAgents, permission, otherPermissions) {
       const updated = { ...this.permissions };
       
-      // Remover todos os agentes desta permissão e da outra permissão
+      // Converter otherPermissions para array se não for
+      const otherPermsArray = Array.isArray(otherPermissions) ? otherPermissions : [otherPermissions];
+      
+      // Remover todos os agentes desta permissão e das outras permissões
       this.availableAgents.forEach(agent => {
-        if (updated[agent.id] === permission || updated[agent.id] === otherPermission) {
+        if (updated[agent.id] === permission || otherPermsArray.includes(updated[agent.id])) {
           delete updated[agent.id];
         }
       });
@@ -203,9 +279,23 @@ export default {
 
 .permission-field {
   @apply space-y-2;
+  position: relative;
 }
 
 .permission-label {
   @apply block text-sm font-medium text-slate-700 dark:text-slate-300;
+}
+
+.permission-help-text {
+  @apply text-xs text-slate-500 dark:text-slate-400 mt-1;
+}
+
+// Garantir que tooltips apareçam corretamente
+::v-deep .tooltip {
+  z-index: 10000 !important;
+}
+
+::v-deep .v-tooltip-container {
+  z-index: 10000 !important;
 }
 </style>

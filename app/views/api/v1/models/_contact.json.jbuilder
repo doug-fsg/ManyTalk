@@ -17,6 +17,7 @@ if resource.respond_to?(:contact_pipeline_positions)
       json.stage_id position.stage_id
       json.position position.position
       json.entered_at position.entered_at&.iso8601
+      json.created_at position.created_at&.iso8601
       json.deal_value position.deal_value
       json.metadata position.metadata || {}
       if position.assignee.present?

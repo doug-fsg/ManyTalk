@@ -86,19 +86,16 @@
             @click="accordionSections.assignee = !accordionSections.assignee"
           >
             <div v-if="isAdmin" class="multiselect-wrap--small">
-              <contact-details-item compact>
-                <template v-slot:button>
-                  <woot-button
-                    v-if="showSelfAssign"
-                    icon="arrow-right"
-                    variant="link"
-                    size="small"
-                    @click="onSelfAssign"
-                  >
-                    {{ $t('CONVERSATION_SIDEBAR.SELF_ASSIGN') }}
-                  </woot-button>
-                </template>
-              </contact-details-item>
+              <div v-if="showSelfAssign" class="mb-2">
+                <woot-button
+                  icon="arrow-right"
+                  variant="link"
+                  size="small"
+                  @click="onSelfAssign"
+                >
+                  {{ $t('CONVERSATION_SIDEBAR.SELF_ASSIGN') }}
+                </woot-button>
+              </div>
               <multiselect-dropdown
                 :options="agentsList"
                 :selected-item="assignedAgent"
@@ -126,7 +123,18 @@
                 </div>
                 <span class="text-sm font-medium text-slate-900 dark:text-white">{{ cardAssignee.name }}</span>
               </div>
-              <span v-else class="text-sm text-slate-500 dark:text-slate-400">Sem dono</span>
+              <div v-else class="flex flex-col gap-2">
+                <span class="text-sm text-slate-500 dark:text-slate-400">Sem dono</span>
+                <!-- EXCEÇÃO: Agentes podem atribuir para si mesmos quando o card não tem dono -->
+                <woot-button
+                  icon="arrow-right"
+                  variant="smooth"
+                  size="small"
+                  @click="onSelfAssign"
+                >
+                  {{ $t('CONVERSATION_SIDEBAR.SELF_ASSIGN') }}
+                </woot-button>
+              </div>
             </div>
           </accordion-item>
 
@@ -232,7 +240,6 @@ import AccordionItem from 'dashboard/components/Accordion/AccordionItem.vue';
 import CustomAttributes from 'dashboard/routes/dashboard/conversation/customAttributes/CustomAttributes.vue';
 import ContactConversations from 'dashboard/routes/dashboard/conversation/ContactConversations.vue';
 import ContactNotes from 'dashboard/modules/notes/NotesOnContactPage.vue';
-import ContactDetailsItem from 'dashboard/routes/dashboard/conversation/ContactDetailsItem.vue';
 import MultiselectDropdown from 'shared/components/ui/MultiselectDropdown.vue';
 import { useAlert } from 'dashboard/composables';
 import ContactAPI from 'dashboard/api/contacts';
@@ -255,7 +262,6 @@ export default {
     CustomAttributes,
     ContactConversations,
     ContactNotes,
-    ContactDetailsItem,
     MultiselectDropdown,
   },
   mixins: [agentMixin],
@@ -460,7 +466,8 @@ export default {
         role,
         thumbnail: avatar_url,
       };
-      this.assignedAgent = selfAssign;
+      // Chamar changeAssignee diretamente para funcionar tanto para admin quanto para agentes
+      this.changeAssignee(selfAssign);
     },
     onClickAssignAgent(selectedItem) {
       if (this.assignedAgent && this.assignedAgent.id === selectedItem.id) {
@@ -478,24 +485,30 @@ export default {
       return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
     },
     async changeAssignee(assignee) {
+      const currentPosition = getPipelinePosition(this.contact, this.pipelineId);
+      const currentAssigneeId = currentPosition?.assignee?.id || null;
+      const assigneeId = (assignee && assignee.id !== 0 && assignee.id !== null && assignee.id !== undefined) ? assignee.id : null;
+      
+      // Verificar permissão: apenas admin pode trocar dono
+      // EXCEÇÃO: Agentes podem atribuir para si mesmos quando o card não tem dono
       if (!this.isAdmin) {
-        useAlert('Sem permissão');
-        return;
+        // Se não é admin, só pode atribuir para si mesmo quando card não tem dono
+        const currentUserId = this.currentUser?.id;
+        const isSelfAssign = assigneeId === currentUserId;
+        const hasNoOwner = currentAssigneeId === null;
+        
+        if (!(isSelfAssign && hasNoOwner)) {
+          useAlert('Sem permissão para trocar dono');
+          return;
+        }
       }
       
       try {
-        const currentPosition = getPipelinePosition(this.contact, this.pipelineId);
         const stageId = currentPosition?.stage_id || getStage(this.contact, this.pipelineId);
         const position = currentPosition?.position || 0;
         const enteredAt = currentPosition?.entered_at || new Date().toISOString();
         const dealValue = currentPosition?.deal_value;
         const metadata = currentPosition?.metadata || {};
-
-        // Tratar "None" (id: 0) como null para remover assignee
-        const assigneeId = (assignee && assignee.id !== 0 && assignee.id !== null && assignee.id !== undefined) ? assignee.id : null;
-        
-        // Log para debug
-        console.log('[KanbanCardModal] changeAssignee:', { assignee, assigneeId, assigneeIdType: typeof assigneeId });
 
         await ContactAPI.updatePipelinePosition(
           this.contact.id,
@@ -505,7 +518,7 @@ export default {
           enteredAt,
           dealValue,
           metadata,
-          assigneeId
+          { updateAssignee: true, assigneeId: assigneeId }
         );
 
         // Atualizar assignee localmente no contato para atualizar o modal imediatamente
@@ -529,7 +542,6 @@ export default {
         
         useAlert('Responsável atualizado');
       } catch (error) {
-        console.error('[KanbanCardModal] Error updating assignee:', error);
         useAlert('Erro ao atualizar responsável');
       }
     },
@@ -591,7 +603,7 @@ export default {
         
         this.isEditingValue = false;
       } catch (error) {
-        console.error('[KanbanCardModal] Error updating deal value:', error);
+        // Erro ao atualizar valor do negócio
       }
     },
     cancelEditingValue() {

@@ -40,6 +40,19 @@
       "CANCEL": "Não, manter",
       "PLACEHOLDER": "Digite {name} para confirmar"
     },
+    "PERMISSIONS": {
+      "TITLE": "Permissões",
+      "VIEWER": "Visualizador",
+      "EDITOR": "Editor",
+      "SUPERVISOR": "Supervisor",
+      "VIEWER_TOOLTIP": "Apenas visualização. Não pode editar ou mover cards.",
+      "EDITOR_TOOLTIP": "Pode editar e mover apenas cards próprios ou sem dono.",
+      "SUPERVISOR_TOOLTIP": "Permissões de administrador. Pode editar e mover qualquer card.",
+      "SUPERVISOR_DESCRIPTION": "Supervisores têm permissões de administrador neste pipeline",
+      "SELECT_VIEWERS": "Selecione agentes visualizadores",
+      "SELECT_EDITORS": "Selecione agentes editores",
+      "SELECT_SUPERVISORS": "Selecione agentes supervisores"
+    },
     "ERRORS": {
       "LOAD_FAILED": "Falha ao carregar dados",
       "UPDATE_FAILED": "Falha ao atualizar",
@@ -51,7 +64,8 @@
       "FETCH_CONTACTS_FAILED": "Falha ao buscar contatos. Tente novamente.",
       "ADD_CONTACT_FAILED": "Falha ao adicionar contato à etapa. Tente novamente.",
       "CANNOT_MOVE_CARD": "Você só pode mover cards que são seus ou que não têm dono atribuído",
-      "CANNOT_EDIT_CARD": "Você só pode editar cards que são seus ou que não têm dono atribuído"
+      "CANNOT_EDIT_CARD": "Você só pode editar cards que são seus ou que não têm dono atribuído",
+      "VIEWER_CANNOT_MOVE": "Você não tem permissão para mover cards neste pipeline. Apenas visualização permitida."
     },
     "SUCCESS": {
       "PIPELINE_DELETED": "Pipeline excluído com sucesso",
@@ -167,9 +181,17 @@
       "DEAL_VALUE": "Valor do Negócio",
       "MIN_VALUE": "Mínimo",
       "MAX_VALUE": "Máximo",
-      "DATE_RANGE": "Período de Entrada",
+      "DATE_RANGE": "Data de Criação",
       "FROM_DATE": "Data inicial",
       "TO_DATE": "Data final",
+      "STATUS": "Status",
+      "ALL": "Todos",
+      "OPEN": "Aberto",
+      "WON": "Ganho",
+      "LOST": "Perdido",
+      "ASSIGNEE": "Responsável",
+      "ASSIGNEE_PLACEHOLDER": "Selecione responsáveis",
+      "NO_ASSIGNEE": "Sem responsável",
       "CLEAR_ALL": "Limpar todos",
       "APPLY": "Aplicar"
     },

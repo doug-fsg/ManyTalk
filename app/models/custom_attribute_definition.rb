@@ -50,6 +50,10 @@ class CustomAttributeDefinition < ApplicationRecord
     
     permissions_hash = get_permissions_hash
     permission = permissions_hash[user.id.to_s]
+    
+    # Supervisor tem permissões de admin no pipeline
+    return :admin if permission == 'supervisor'
+    
     return permission.to_sym if permission.present?
     
     # Sem acesso se não estiver na lista
@@ -57,15 +61,17 @@ class CustomAttributeDefinition < ApplicationRecord
   end
 
   def can_view?(user)
-    [:admin, :editor, :viewer].include?(user_permission(user))
+    permission = user_permission(user)
+    [:admin, :editor, :viewer].include?(permission)
   end
 
   def can_edit?(user)
-    [:admin, :editor].include?(user_permission(user))
+    permission = user_permission(user)
+    [:admin, :editor].include?(permission)
   end
 
   def set_user_permission(user_id, level)
-    return false unless ['viewer', 'editor'].include?(level.to_s)
+    return false unless ['viewer', 'editor', 'supervisor'].include?(level.to_s)
     
     ensure_attribute_values_is_hash
     self.attribute_values['permissions'] ||= {}

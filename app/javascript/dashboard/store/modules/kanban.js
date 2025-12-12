@@ -13,11 +13,12 @@ export const getters = {
   getMyPermissions: $state => $state.myPermissions,
   canEditPipeline: $state => pipelineId => {
     const permission = $state.myPermissions[pipelineId];
-    return permission === 'admin' || permission === 'editor';
+    // Supervisor tem permissões de admin
+    return permission === 'admin' || permission === 'editor' || permission === 'supervisor';
   },
   canViewPipeline: $state => pipelineId => {
     const permission = $state.myPermissions[pipelineId];
-    return ['admin', 'editor', 'viewer'].includes(permission);
+    return ['admin', 'editor', 'viewer', 'supervisor'].includes(permission);
   },
   getPipelinePermission: $state => pipelineId => {
     return $state.myPermissions[pipelineId] || 'editor';

@@ -86,7 +86,10 @@ class ContactAPI extends ApiClient {
   }
 
   // Atualizar posição do contato no pipeline (apenas contact_pipeline_positions)
-  updatePipelinePosition(contactId, pipelineId, stageId, position, enteredAt = null, dealValue = null, metadata = null, assigneeId = null) {
+  // options: { updateAssignee: boolean, assigneeId: number|null }
+  // Se updateAssignee for true, envia assignee_id na requisição (pode ser null para remover)
+  // Se updateAssignee for false ou não fornecido, não altera o assignee
+  updatePipelinePosition(contactId, pipelineId, stageId, position, enteredAt = null, dealValue = null, metadata = null, options = undefined) {
     const params = {
       stage_id: stageId,
       position: position,
@@ -100,9 +103,16 @@ class ContactAPI extends ApiClient {
     if (metadata !== null && metadata !== undefined) {
       params.metadata = metadata;
     }
-    if (assigneeId !== null && assigneeId !== undefined) {
-      params.assignee_id = assigneeId;
+    
+    // Só enviar assignee_id se options foi fornecido E updateAssignee for true
+    // Verificar se options foi realmente fornecido (não apenas undefined por padrão)
+    const wasOptionsProvided = arguments.length >= 8 && options !== undefined;
+    const willUpdateAssignee = wasOptionsProvided && options && options.updateAssignee === true;
+    
+    if (willUpdateAssignee) {
+      params.assignee_id = options.assigneeId;
     }
+    
     return axios.patch(`${this.url}/${contactId}/pipeline_positions/${pipelineId}`, params);
   }
 

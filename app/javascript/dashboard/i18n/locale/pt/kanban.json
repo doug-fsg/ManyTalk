@@ -68,12 +68,26 @@
     "CONTACTS_FOUND": "contatos encontrados",
     "LOADING_MORE": "Carregando mais...",
     "ALREADY_IN_KANBAN": "Já está nesta etapa",
+    "PERMISSIONS": {
+      "TITLE": "Permissões",
+      "VIEWER": "Visualizador",
+      "EDITOR": "Editor",
+      "SUPERVISOR": "Supervisor",
+      "VIEWER_TOOLTIP": "Apenas visualização. Não pode editar ou mover cards.",
+      "EDITOR_TOOLTIP": "Pode editar e mover apenas cards próprios ou sem dono.",
+      "SUPERVISOR_TOOLTIP": "Permissões de administrador. Pode editar e mover qualquer card.",
+      "SUPERVISOR_DESCRIPTION": "Supervisores têm permissões de administrador neste pipeline",
+      "SELECT_VIEWERS": "Selecione agentes visualizadores",
+      "SELECT_EDITORS": "Selecione agentes editores",
+      "SELECT_SUPERVISORS": "Selecione agentes supervisores"
+    },
     "ERRORS": {
       "NO_PIPELINE_SELECTED": "Nenhum pipeline selecionado",
       "PIPELINE_IN_USE": "Este pipeline está sendo usado por contatos. Remova os contatos primeiro.",
       "DELETE_FAILED": "Falha ao excluir pipeline",
       "FETCH_CONTACTS_FAILED": "Falha ao buscar contatos. Tente novamente.",
-      "ADD_CONTACT_FAILED": "Falha ao adicionar contato à etapa. Tente novamente."
+      "ADD_CONTACT_FAILED": "Falha ao adicionar contato à etapa. Tente novamente.",
+      "VIEWER_CANNOT_MOVE": "Você não tem permissão para mover cards neste pipeline. Apenas visualização permitida."
     },
     "CARD": {
       "HIDE_CONVERSATIONS": "Ocultar conversas",
@@ -146,9 +160,17 @@
       "DEAL_VALUE": "Valor do Negócio",
       "MIN_VALUE": "Mínimo",
       "MAX_VALUE": "Máximo",
-      "DATE_RANGE": "Período de Entrada",
+      "DATE_RANGE": "Data de Criação",
       "FROM_DATE": "Data inicial",
       "TO_DATE": "Data final",
+      "STATUS": "Status",
+      "ALL": "Todos",
+      "OPEN": "Aberto",
+      "WON": "Ganho",
+      "LOST": "Perdido",
+      "ASSIGNEE": "Responsável",
+      "ASSIGNEE_PLACEHOLDER": "Selecione responsáveis",
+      "NO_ASSIGNEE": "Sem responsável",
       "CLEAR_ALL": "Limpar todos",
       "APPLY": "Aplicar"
     },

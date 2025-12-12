@@ -39,4 +39,13 @@ json.updated_at resource.updated_at
 # Incluir permissões para pipelines Kanban
 if resource.is_kanban && resource.attribute_values.is_a?(Hash)
   json.permissions resource.attribute_values['permissions'] || {}
+  # Incluir permissão do usuário atual
+  if Current.user.present?
+    json.user_permission resource.user_permission(Current.user).to_s
+    json.can_view resource.can_view?(Current.user)
+  else
+    # Se não há usuário (API pública), não pode ver
+    json.user_permission 'none'
+    json.can_view false
+  end
 end

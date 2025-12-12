@@ -252,11 +252,10 @@ export default {
         );
         
         // Se não tem dono e não é modo viewer, perguntar se quer virar dono
+        // O modal já chama handleAssignSelfAsOwner quando confirmado, não precisa emitir novamente
         if (!position?.assignee && !this.isViewerMode) {
-          const wantsToBeOwner = await this.showAssignOwnerTooltip(contact);
-          if (wantsToBeOwner) {
-            this.$emit('assign-self-as-owner', { contactId });
-          }
+          await this.showAssignOwnerTooltip(contact);
+          // Não emitir assign-self-as-owner aqui porque o modal já faz isso via confirmAssignOwner
         }
       }
       

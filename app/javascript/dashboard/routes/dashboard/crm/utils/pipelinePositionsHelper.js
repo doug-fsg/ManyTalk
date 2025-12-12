@@ -57,13 +57,25 @@ export function getMetadata(contact, pipelineId) {
 
 /**
  * Retorna o entered_at do pipeline para um contato
+ * Usa created_at como fallback caso entered_at não exista
  * @param {Object} contact - Objeto do contato
  * @param {number|string} pipelineId - ID do pipeline
- * @returns {string|null} - entered_at (ISO string) ou null se não encontrado
+ * @returns {string|null} - entered_at ou created_at (ISO string) ou null se não encontrado
  */
 export function getEnteredAt(contact, pipelineId) {
   const position = getPipelinePosition(contact, pipelineId);
-  return position?.entered_at || null;
+  return position?.entered_at || position?.created_at || null;
+}
+
+/**
+ * Retorna o created_at do pipeline para um contato (quando o card foi criado no pipeline)
+ * @param {Object} contact - Objeto do contato
+ * @param {number|string} pipelineId - ID do pipeline
+ * @returns {string|null} - created_at (ISO string) ou null se não encontrado
+ */
+export function getCreatedAt(contact, pipelineId) {
+  const position = getPipelinePosition(contact, pipelineId);
+  return position?.created_at || null;
 }
 
 /**

@@ -11,13 +11,13 @@
       :contacts="contacts"
       :pipeline-id="selectedAttribute ? selectedAttribute.id : null"
       :filters="kanbanFilters"
+      :show-assignee-filter="isAdmin"
       @update:current-view="currentView = $event"
       @select-pipeline="selectPipeline"
       @search="handleSearch"
       @create-new="openCreateAttributeModal"
       @edit-kanban="editKanban"
       @delete-kanban="deleteKanban"
-      :win-lost-filter="winLostFilter"
       @win-lost-filter="handleWinLostFilter"
       @filters-changed="handleFiltersChanged"
     />
@@ -349,6 +349,7 @@ import {
   getDealValue,
   getMetadata,
   getEnteredAt,
+  getCreatedAt,
   getWinLostStatus
 } from '../utils/pipelinePositionsHelper';
 
@@ -409,7 +410,7 @@ export default {
       isCreating: false,
       currentLocale: this.$i18n.locale,
       isLoadingContacts: false,
-      winLostFilter: 'open', // 'all', 'won', 'lost', 'open'
+      winLostFilter: 'all', // 'all', 'won', 'lost', 'open' - será sincronizado com kanbanFilters.winLost
       loadingProgress: null,
       loadingMessage: '',
       isLoadingInitialData: false,
@@ -436,6 +437,8 @@ export default {
         dealValueMax: null,
         dateFrom: null,
         dateTo: null,
+        assignees: [],
+        winLost: 'all',
       },
       // Modal de detalhes do card
       showCardModal: false,
@@ -523,7 +526,28 @@ export default {
       const filteredAttrs = this.attributes.filter(attr => {
         // Se a coluna is_kanban existe, usar apenas ela para filtrar
         if (attr.hasOwnProperty('is_kanban')) {
-          return attr.is_kanban === true && attr.attribute_model === 'contact_attribute';
+          const isKanban = attr.is_kanban === true && attr.attribute_model === 'contact_attribute';
+          
+          // Se for pipeline Kanban, verificar permissão do usuário
+          if (isKanban) {
+            // Se can_view está definido na resposta da API, usar ele (mais confiável)
+            if (attr.hasOwnProperty('can_view')) {
+              return attr.can_view === true;
+            }
+            // Se user_permission está definido, verificar se não é 'none'
+            if (attr.hasOwnProperty('user_permission')) {
+              return attr.user_permission !== 'none';
+            }
+            // Se não tem informação de permissão (versões antigas sem sistema de permissões)
+            // Apenas admins podem ver (comportamento padrão seguro)
+            if (this.currentUser && this.currentUser.role === 'administrator') {
+              return true;
+            }
+            // Para não-admins sem informação de permissão, não mostrar (segurança por padrão)
+            return false;
+          }
+          
+          return false;
         }
         
         // Fallback apenas para dados muito antigos (quando coluna não existe)
@@ -636,35 +660,46 @@ export default {
           }
         }
 
-        // Date Range filter usando pipeline_positions
+        // Date Range filter usando created_at de contact_pipeline_positions
         let matchesDateRange = true;
-        if (this.selectedAttribute) {
-          const enteredAt = getEnteredAt(contact, this.selectedAttribute.id);
-          let normalizedEnteredDate = null;
-          if (enteredAt) {
-            // Normalizar a data de entrada para comparar apenas a parte da data
-            const enteredDate = new Date(enteredAt);
-            enteredDate.setHours(0, 0, 0, 0);
-            normalizedEnteredDate = enteredDate;
-            
-            if (this.kanbanFilters.dateFrom) {
-              const fromDate = new Date(this.kanbanFilters.dateFrom);
-              fromDate.setHours(0, 0, 0, 0);
-              matchesDateRange = matchesDateRange && enteredDate >= fromDate;
-            }
-            if (this.kanbanFilters.dateTo) {
-              const toDate = new Date(this.kanbanFilters.dateTo);
-              toDate.setHours(0, 0, 0, 0);
-              // Para dateTo, queremos incluir o dia inteiro, então comparamos com <=
-              matchesDateRange = matchesDateRange && enteredDate <= toDate;
-            }
-          } else if (this.kanbanFilters.dateFrom || this.kanbanFilters.dateTo) {
-            // Se há filtro de data mas o contato não tem data de entrada, não mostrar
+        if (this.kanbanFilters.dateFrom || this.kanbanFilters.dateTo) {
+          if (!this.selectedAttribute) {
             matchesDateRange = false;
+          } else {
+            // Usar created_at da position do pipeline (quando o card foi criado no pipeline)
+            const createdAt = getCreatedAt(contact, this.selectedAttribute.id);
+            if (!createdAt) {
+              matchesDateRange = false;
+            } else {
+              const createdDate = new Date(createdAt); // created_at vem como ISO string
+              
+              if (this.kanbanFilters.dateFrom) {
+                const fromDate = new Date(this.kanbanFilters.dateFrom);
+                fromDate.setHours(0, 0, 0, 0);
+                matchesDateRange = matchesDateRange && createdDate >= fromDate;
+              }
+              if (this.kanbanFilters.dateTo) {
+                const toDate = new Date(this.kanbanFilters.dateTo);
+                // Para dateTo, queremos incluir o dia inteiro até 23:59:59.999
+                toDate.setHours(23, 59, 59, 999);
+                matchesDateRange = matchesDateRange && createdDate <= toDate;
+              }
+            }
           }
         }
 
-        return matchesSearch && matchesWinLost && matchesLabels && matchesDealValue && matchesDateRange;
+        // Assignee filter usando pipeline_positions
+        let matchesAssignee = true;
+        if (this.kanbanFilters.assignees && this.kanbanFilters.assignees.length > 0 && this.selectedAttribute) {
+          const position = contact.pipeline_positions?.find(
+            p => p.pipeline_id === this.selectedAttribute.id || p.pipeline_id === parseInt(this.selectedAttribute.id, 10)
+          );
+          const assigneeId = position?.assignee?.id || null;
+          const selectedIds = this.kanbanFilters.assignees.map(a => a.id);
+          matchesAssignee = selectedIds.includes(assigneeId) || (selectedIds.includes(null) && assigneeId === null);
+        }
+
+        return matchesSearch && matchesWinLost && matchesLabels && matchesDealValue && matchesDateRange && matchesAssignee;
       });
 
       return filtered;
@@ -673,8 +708,16 @@ export default {
       return this.$store.getters.getCurrentUser;
     },
     isAdmin() {
-      // Verifica se o usuário atual é administrador
-      return this.currentUser && this.currentUser.role === 'administrator';
+      // Verifica se o usuário atual é administrador global
+      if (this.currentUser && this.currentUser.role === 'administrator') {
+        return true;
+      }
+      // Verifica se o usuário tem permissão de supervisor no pipeline atual
+      if (this.selectedAttribute) {
+        const permission = this.getPipelinePermission(this.selectedAttribute.id);
+        return permission === 'supervisor' || permission === 'admin';
+      }
+      return false;
     },
     // Otimização: Criar índice de contatos por coluna uma vez, evitando refazer filtros
     // Agora usa pipeline_positions em vez de custom_attributes
@@ -932,9 +975,8 @@ export default {
           const dealValue = currentPosition?.deal_value;
           const metadata = currentPosition?.metadata || {};
           const position = currentPosition?.position || 0;
-          const assigneeId = currentPosition?.assignee?.id || null;
 
-          // Atualizar via pipeline_positions
+          // Atualizar via pipeline_positions (mantém assignee atual)
           const response = await ContactAPI.updatePipelinePosition(
             contact.id,
             this.selectedAttribute.id,
@@ -942,8 +984,8 @@ export default {
             position,
             now,
             dealValue,
-            metadata,
-            assigneeId
+            metadata
+            // Não passar options - mantém assignee atual
           );
 
           // Atualizar pipeline_positions localmente
@@ -1127,35 +1169,46 @@ export default {
               }
             }
 
-            // Date Range filter usando pipeline_positions
+            // Date Range filter usando created_at de contact_pipeline_positions
             let matchesDateRange = true;
-            if (this.selectedAttribute) {
-              const enteredAt = getEnteredAt(contact, this.selectedAttribute.id);
-              let normalizedEnteredDate = null;
-              if (enteredAt) {
-                // Normalizar a data de entrada para comparar apenas a parte da data
-                const enteredDate = new Date(enteredAt);
-                enteredDate.setHours(0, 0, 0, 0);
-                normalizedEnteredDate = enteredDate;
-                
-                if (this.kanbanFilters.dateFrom) {
-                  const fromDate = new Date(this.kanbanFilters.dateFrom);
-                  fromDate.setHours(0, 0, 0, 0);
-                  matchesDateRange = matchesDateRange && enteredDate >= fromDate;
-                }
-                if (this.kanbanFilters.dateTo) {
-                  const toDate = new Date(this.kanbanFilters.dateTo);
-                  toDate.setHours(0, 0, 0, 0);
-                  // Para dateTo, queremos incluir o dia inteiro, então comparamos com <=
-                  matchesDateRange = matchesDateRange && enteredDate <= toDate;
-                }
-              } else if (this.kanbanFilters.dateFrom || this.kanbanFilters.dateTo) {
-                // Se há filtro de data mas o contato não tem data de entrada, não mostrar
+            if (this.kanbanFilters.dateFrom || this.kanbanFilters.dateTo) {
+              if (!this.selectedAttribute) {
                 matchesDateRange = false;
+              } else {
+                // Usar created_at da position do pipeline (quando o card foi criado no pipeline)
+                const createdAt = getCreatedAt(contact, this.selectedAttribute.id);
+                if (!createdAt) {
+                  matchesDateRange = false;
+                } else {
+                  const createdDate = new Date(createdAt); // created_at vem como ISO string
+                  
+                  if (this.kanbanFilters.dateFrom) {
+                    const fromDate = new Date(this.kanbanFilters.dateFrom);
+                    fromDate.setHours(0, 0, 0, 0);
+                    matchesDateRange = matchesDateRange && createdDate >= fromDate;
+                  }
+                  if (this.kanbanFilters.dateTo) {
+                    const toDate = new Date(this.kanbanFilters.dateTo);
+                    // Para dateTo, queremos incluir o dia inteiro até 23:59:59.999
+                    toDate.setHours(23, 59, 59, 999);
+                    matchesDateRange = matchesDateRange && createdDate <= toDate;
+                  }
+                }
               }
             }
 
-            return matchesSearch && matchesWinLost && matchesLabels && matchesDealValue && matchesDateRange;
+            // Assignee filter usando pipeline_positions
+            let matchesAssignee = true;
+            if (this.kanbanFilters.assignees && this.kanbanFilters.assignees.length > 0 && this.selectedAttribute) {
+              const position = contact.pipeline_positions?.find(
+                p => p.pipeline_id === this.selectedAttribute.id || p.pipeline_id === parseInt(this.selectedAttribute.id, 10)
+              );
+              const assigneeId = position?.assignee?.id || null;
+              const selectedIds = this.kanbanFilters.assignees.map(a => a.id);
+              matchesAssignee = selectedIds.includes(assigneeId) || (selectedIds.includes(null) && assigneeId === null);
+            }
+
+            return matchesSearch && matchesWinLost && matchesLabels && matchesDealValue && matchesDateRange && matchesAssignee;
           });
 
           return {
@@ -1640,7 +1693,7 @@ export default {
       // Verificar permissão de edição
       if (this.isViewerMode) {
         this.$store.dispatch('notifications/show', {
-          message: 'Você não tem permissão para mover cards neste pipeline',
+          message: this.$t('KANBAN.ERRORS.VIEWER_CANNOT_MOVE'),
           type: 'error',
         });
         return;
@@ -1692,17 +1745,6 @@ export default {
       // NÃO atualizar tabela contacts - apenas contact_pipeline_positions
       // Isso é muito mais rápido e não bloqueia a UI
       
-      // LOG 1: Verificar dados antes de enviar
-      console.log('[Kanban Move] Pre-request check:', {
-        contactId,
-        pipelineId: this.selectedAttribute.id,
-        cardAssigneeId: currentPosition?.assignee?.id || null,
-        currentUserId: this.currentUser?.id,
-        isAdmin: this.isAdmin,
-        isViewerMode: this.isViewerMode,
-        sendingAssigneeId: null // Não enviamos assignee_id ao mover - backend mantém o dono atual
-      });
-      
       // IMPORTANTE: Não enviar assignee_id ao mover card
       // O backend só permite trocar dono se for admin
       // Ao mover, queremos manter o dono atual, então não enviamos assignee_id
@@ -1713,8 +1755,8 @@ export default {
         newIndex,
         new Date().toISOString(),
         currentDealValue,
-        currentMetadata,
-        null // Não enviar assignee_id - backend mantém o dono atual automaticamente
+        currentMetadata
+        // Não passar options - mantém assignee atual
       )
         .then(async (response) => {
           // Atualizar o contato no store com os dados de pipeline_positions retornados
@@ -1768,19 +1810,21 @@ export default {
           this.fetchColumnStats();
           })
           .catch(error => {
-            // LOG 2: Erro da API
-            console.log('[Kanban Move] API Error:', {
-              status: error?.response?.status,
-              error: error?.response?.data?.error || error?.message,
-              contactId,
-              pipelineId: this.selectedAttribute.id,
-              cardAssigneeId: currentPosition?.assignee?.id || null,
-              currentUserId: this.currentUser?.id
-            });
-            
             // Se a API falhar, reverter a mudança local
             this.revertLocalUpdate(contact, sourceColumnTitle);
-          this.safeShowNotification('error', this.$t('KANBAN.ERRORS.UPDATE_FAILED'));
+            
+            // Verificar se é erro de permissão (403) e mostrar mensagem específica
+            if (error?.response?.status === 403) {
+              // Verificar se é erro de viewer ou outro tipo de permissão
+              const errorMessage = error?.response?.data?.error || '';
+              if (this.isViewerMode || errorMessage.includes('permissão') || errorMessage.includes('permission')) {
+                useAlert(this.$t('KANBAN.ERRORS.VIEWER_CANNOT_MOVE'));
+              } else {
+                useAlert(errorMessage || this.$t('KANBAN.ERRORS.UPDATE_FAILED'));
+              }
+            } else {
+              useAlert(this.$t('KANBAN.ERRORS.UPDATE_FAILED'));
+            }
         });
     },
     openContact(contactId) {
@@ -2693,6 +2737,7 @@ export default {
     },
     handleWinLostFilter(filter) {
       this.winLostFilter = filter;
+      this.kanbanFilters.winLost = filter;
       // Forçar re-filtragem imediata
       this.$nextTick(() => {
         this.handleSearch(this.searchQuery || '');
@@ -2700,6 +2745,7 @@ export default {
     },
     handleFiltersChanged(filters) {
       this.kanbanFilters = { ...filters };
+      this.winLostFilter = filters.winLost || 'all';
       // Forçar re-filtragem imediata
       this.$nextTick(() => {
         this.handleSearch(this.searchQuery || '');
@@ -2915,7 +2961,12 @@ export default {
         
         if (!position) return;
         
+        // Verificar se já tem dono (evitar chamadas duplicadas)
         const currentUser = this.$store.getters.getCurrentUser;
+        if (position.assignee?.id === currentUser.id) {
+          // Já é o dono, não precisa fazer nada
+          return;
+        }
         
         await ContactAPI.updatePipelinePosition(
           contactId,
@@ -2925,7 +2976,7 @@ export default {
           position.entered_at,
           position.deal_value,
           position.metadata,
-          currentUser.id
+          { updateAssignee: true, assigneeId: currentUser.id }
         );
         
         // Atualizar contato localmente
@@ -3558,3 +3609,4 @@ export default {
   }
 }
 </style>
+

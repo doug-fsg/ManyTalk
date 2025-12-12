@@ -205,6 +205,13 @@
 
 <script>
 import ContactAPI from 'dashboard/api/contacts';
+import {
+  getStage,
+  getDealValue,
+  getMetadata,
+  getWinLostStatus,
+  getEnteredAt,
+} from '../utils/pipelinePositionsHelper';
 
 export default {
   name: 'KanbanDashboard',
@@ -228,7 +235,7 @@ export default {
   },
   data() {
     return {
-      backendStats: null, // Estatísticas do backend
+      backendStats: null, // Estatísticas do backend (usado apenas quando não há filtros)
       isLoading: false,
     };
   },
@@ -237,14 +244,34 @@ export default {
       immediate: true,
       handler(newVal) {
         if (newVal) {
-          this.fetchDashboardStats();
+          // Buscar do backend apenas quando não temos contatos carregados ainda
+          // Quando temos contatos (filtrados ou não), calcular baseado neles
+          if (this.contacts.length === 0) {
+            this.fetchDashboardStats();
+          }
         }
       },
     },
+    contacts: {
+      handler() {
+        // Quando os contatos filtrados mudam, recalcular estatísticas
+        // Se temos contatos, sempre calcular baseado neles (ignorar backend)
+        if (this.contacts.length > 0) {
+          this.backendStats = null; // Forçar recalcular usando contacts filtrados
+        }
+      },
+      deep: true,
+    },
   },
   computed: {
+    // Calcular estatísticas baseadas nos contatos filtrados
     stats() {
-      // Se temos estatísticas do backend, usar elas (sempre corretas, mesmo com +5000 contatos)
+      // Se temos contatos carregados, sempre calcular baseado neles (respeita filtros)
+      if (this.contacts.length > 0) {
+        return this.calculateStatsFromContacts();
+      }
+
+      // Se não temos contatos ainda, usar estatísticas do backend (loading state)
       if (this.backendStats) {
         return {
           totalCards: this.backendStats.total_cards || 0,
@@ -261,7 +288,7 @@ export default {
         };
       }
 
-      // Sem fallback - retornar dados vazios se backendStats não estiver disponível
+      // Sem dados ainda
       return {
         totalCards: 0,
         totalValue: 0,
@@ -277,7 +304,12 @@ export default {
       };
     },
     stageStats() {
-      // Se temos estatísticas do backend, usar elas (sempre corretas)
+      // Se temos contatos carregados, sempre calcular baseado neles (respeita filtros)
+      if (this.contacts.length > 0) {
+        return this.calculateStageStatsFromContacts();
+      }
+
+      // Se não temos contatos ainda, usar estatísticas do backend
       if (this.backendStats && this.backendStats.stage_stats) {
         const totalCount = this.backendStats.total_cards || 0;
         
@@ -299,11 +331,15 @@ export default {
         });
       }
 
-      // Sem fallback - retornar array vazio se backendStats não estiver disponível
       return [];
     },
     longestInStage() {
-      // Se temos estatísticas do backend, usar elas (sempre corretas)
+      // Se temos contatos carregados, sempre calcular baseado neles (respeita filtros)
+      if (this.contacts.length > 0) {
+        return this.calculateLongestInStageFromContacts();
+      }
+
+      // Se não temos contatos ainda, usar estatísticas do backend
       if (this.backendStats && this.backendStats.longest_in_stage) {
         // Mapear os dados do backend para o formato esperado pelo template
         return this.backendStats.longest_in_stage.map(item => {
@@ -322,7 +358,6 @@ export default {
         });
       }
 
-      // Sem fallback - retornar array vazio se backendStats não estiver disponível
       return [];
     },
     topAssignees() {
@@ -331,6 +366,169 @@ export default {
     },
   },
   methods: {
+    // Calcular estatísticas gerais baseadas nos contatos filtrados
+    calculateStatsFromContacts() {
+      if (!this.contacts || this.contacts.length === 0) {
+        return {
+          totalCards: 0,
+          totalValue: 0,
+          openCards: 0,
+          openValue: 0,
+          wonCards: 0,
+          wonValue: 0,
+          lostCards: 0,
+          lostValue: 0,
+          winRate: 0,
+          averageTime: '0d',
+          averageDealValue: 0,
+        };
+      }
+
+      const pipelineId = typeof this.pipelineId === 'string' ? parseInt(this.pipelineId, 10) : this.pipelineId;
+      let totalValue = 0;
+      let wonCards = 0;
+      let lostCards = 0;
+      let wonValue = 0;
+      let lostValue = 0;
+      let totalTimeMs = 0;
+      let cardsWithTime = 0;
+      let cardsWithValue = 0;
+      let totalDealValue = 0;
+
+      this.contacts.forEach(contact => {
+        const dealValue = getDealValue(contact, pipelineId) || 0;
+        totalValue += parseFloat(dealValue);
+
+        const winLostData = getWinLostStatus(contact, pipelineId);
+        const status = winLostData?.status;
+
+        if (status === 'won') {
+          wonCards++;
+          wonValue += parseFloat(dealValue);
+        } else if (status === 'lost') {
+          lostCards++;
+          lostValue += parseFloat(dealValue);
+        }
+
+        // Calcular tempo médio
+        const enteredAt = getEnteredAt(contact, pipelineId);
+        if (enteredAt) {
+          const enteredDate = new Date(enteredAt);
+          const now = new Date();
+          const timeDiff = now - enteredDate;
+          totalTimeMs += timeDiff;
+          cardsWithTime++;
+        }
+
+        // Calcular valor médio
+        if (dealValue > 0) {
+          totalDealValue += parseFloat(dealValue);
+          cardsWithValue++;
+        }
+      });
+
+      const openCards = this.contacts.length - wonCards - lostCards;
+      const openValue = totalValue - wonValue - lostValue;
+      const totalFinalized = wonCards + lostCards;
+      const winRate = totalFinalized > 0 ? Math.round((wonCards / totalFinalized) * 100) : 0;
+      const averageTimeDays = cardsWithTime > 0 ? Math.round(totalTimeMs / cardsWithTime / (1000 * 60 * 60 * 24)) : 0;
+      const averageDealValue = cardsWithValue > 0 ? totalDealValue / cardsWithValue : 0;
+
+      return {
+        totalCards: this.contacts.length,
+        totalValue,
+        openCards,
+        openValue,
+        wonCards,
+        wonValue,
+        lostCards,
+        lostValue,
+        winRate,
+        averageTime: `${averageTimeDays}d`,
+        averageDealValue,
+      };
+    },
+    // Calcular estatísticas por stage baseadas nos contatos filtrados
+    calculateStageStatsFromContacts() {
+      if (!this.contacts || this.contacts.length === 0) {
+        return [];
+      }
+
+      const pipelineId = typeof this.pipelineId === 'string' ? parseInt(this.pipelineId, 10) : this.pipelineId;
+      const stageMap = {};
+
+      this.contacts.forEach(contact => {
+        const stageId = getStage(contact, pipelineId);
+        if (!stageId) return;
+
+        if (!stageMap[stageId]) {
+          stageMap[stageId] = {
+            stage_id: stageId,
+            count: 0,
+            total_value: 0,
+          };
+        }
+
+        stageMap[stageId].count++;
+        const dealValue = getDealValue(contact, pipelineId) || 0;
+        stageMap[stageId].total_value += parseFloat(dealValue);
+      });
+
+      const totalCount = this.contacts.length;
+      return Object.values(stageMap).map(stat => {
+        const percentage = totalCount > 0 ? (stat.count / totalCount) * 100 : 0;
+        const minPercentage = stat.count > 0 && percentage < 1 ? 1 : percentage;
+        
+        const column = this.columns.find(col => col.title === stat.stage_id);
+        const stageName = column ? column.title : stat.stage_id;
+        
+        return {
+          name: stageName,
+          count: stat.count,
+          value: stat.total_value,
+          percentage: minPercentage,
+        };
+      });
+    },
+    // Calcular cards com mais tempo na etapa baseado nos contatos filtrados
+    calculateLongestInStageFromContacts() {
+      if (!this.contacts || this.contacts.length === 0) {
+        return [];
+      }
+
+      const pipelineId = typeof this.pipelineId === 'string' ? parseInt(this.pipelineId, 10) : this.pipelineId;
+      const now = new Date();
+      
+      const cardsWithTime = this.contacts
+        .map(contact => {
+          const stageId = getStage(contact, pipelineId);
+          if (!stageId) return null;
+
+          const enteredAt = getEnteredAt(contact, pipelineId);
+          if (!enteredAt) return null;
+
+          const enteredDate = new Date(enteredAt);
+          const timeDiffMs = now - enteredDate;
+          const timeDiffDays = Math.round(timeDiffMs / (1000 * 60 * 60 * 24));
+
+          const column = this.columns.find(col => col.title === stageId);
+          const stageName = column ? column.title : stageId;
+
+          return {
+            id: contact.id,
+            name: contact.name || '',
+            stage: stageName,
+            timeInStage: `${timeDiffDays}d`,
+            timeDiffMs,
+            value: getDealValue(contact, pipelineId) || 0,
+          };
+        })
+        .filter(card => card !== null)
+        .sort((a, b) => b.timeDiffMs - a.timeDiffMs)
+        .slice(0, 10); // Top 10
+
+      return cardsWithTime;
+    },
     async fetchDashboardStats() {
       if (!this.pipelineId) return;
       
