@@ -1011,5 +1011,25 @@ export default {
   @apply transition-all duration-200 cursor-pointer;
   @apply w-full justify-center;
 }
+
+// Garantir que tooltips apareçam acima do modal
+::v-deep .tooltip {
+  z-index: 10001 !important;
+}
+
+::v-deep .v-tooltip-container {
+  z-index: 10001 !important;
+}
+</style>
+
+<style lang="scss">
+/* Estilos não escoped para afetar elementos fora do componente (tooltips no body) */
+body > .tooltip {
+  z-index: 10001 !important;
+}
+
+body > .v-tooltip-container {
+  z-index: 10001 !important;
+}
 </style>
 

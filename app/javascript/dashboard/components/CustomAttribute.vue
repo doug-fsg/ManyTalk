@@ -194,6 +194,10 @@ export default {
       if (this.isAttributeTypeCheckbox) {
         return this.value === 'false' ? false : this.value;
       }
+      // Para atributos do tipo list, converter stage_id para nome legível se necessário
+      if (this.isAttributeTypeList && this.value && this.values.length > 0) {
+        return this.getDisplayNameFromValue(this.value) || this.value;
+      }
       return this.value;
     },
     formattedValue() {
@@ -202,14 +206,22 @@ export default {
         : this.value;
     },
     listOptions() {
-      return this.values.map((value, index) => ({
-        id: index + 1,
-        name: value,
-      }));
+      return this.values.map((value, index) => {
+        const name = this.getValueName(value);
+        return {
+          id: index + 1,
+          name: name,
+        };
+      });
     },
     selectedItem() {
-      const id = this.values.indexOf(this.editedValue) + 1;
-      return { id, name: this.editedValue };
+      const valueName = this.getDisplayNameFromValue(this.editedValue) || this.editedValue;
+      const index = this.values.findIndex(v => {
+        const vName = this.getValueName(v);
+        return vName === valueName || vName === this.editedValue;
+      });
+      const id = index >= 0 ? index + 1 : 1;
+      return { id, name: valueName };
     },
     isAttributeTypeCheckbox() {
       return this.attributeType === 'checkbox';
@@ -290,6 +302,24 @@ export default {
     this.$emitter.off(BUS_EVENTS.FOCUS_CUSTOM_ATTRIBUTE, this.onFocusAttribute);
   },
   methods: {
+    // Extrair nome de um valor (suporta objeto {name, color} ou string)
+    getValueName(value) {
+      if (typeof value === 'object' && value !== null) {
+        return value.name || value.value || String(value);
+      }
+      return String(value);
+    },
+    // Converter stage_id para nome legível buscando nos values
+    getDisplayNameFromValue(stageId) {
+      if (!stageId || !this.values || this.values.length === 0) {
+        return null;
+      }
+      const stage = this.values.find(v => {
+        const vName = this.getValueName(v);
+        return vName === stageId || v === stageId;
+      });
+      return stage ? this.getValueName(stage) : null;
+    },
     onFocusAttribute(focusAttributeKey) {
       if (this.attributeKey === focusAttributeKey) {
         this.onEdit();

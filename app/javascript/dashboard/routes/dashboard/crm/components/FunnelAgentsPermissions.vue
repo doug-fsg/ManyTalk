@@ -28,16 +28,12 @@
       <div class="permission-field">
         <label class="permission-label flex items-center gap-1.5">
           <span>{{ $t('KANBAN.PERMISSIONS.VIEWER') }}</span>
-          <span
+          <fluent-icon
             v-tooltip.left="$t('KANBAN.PERMISSIONS.VIEWER_TOOLTIP')"
-            class="inline-flex items-center cursor-help shrink-0"
-          >
-            <fluent-icon
-              icon="info"
-              size="14"
-              class="text-slate-500 dark:text-slate-400"
-            />
-          </span>
+            icon="info"
+            size="14"
+            class="text-slate-500 dark:text-slate-400 cursor-help shrink-0"
+          />
         </label>
         <multiselect
           v-model="viewerAgents"
@@ -59,16 +55,12 @@
       <div class="permission-field">
         <label class="permission-label flex items-center gap-1.5">
           <span>{{ $t('KANBAN.PERMISSIONS.EDITOR') }}</span>
-          <span
+          <fluent-icon
             v-tooltip.left="$t('KANBAN.PERMISSIONS.EDITOR_TOOLTIP')"
-            class="inline-flex items-center cursor-help shrink-0"
-          >
-            <fluent-icon
-              icon="info"
-              size="14"
-              class="text-slate-500 dark:text-slate-400"
-            />
-          </span>
+            icon="info"
+            size="14"
+            class="text-slate-500 dark:text-slate-400 cursor-help shrink-0"
+          />
         </label>
         <multiselect
           v-model="editorAgents"
@@ -90,16 +82,12 @@
       <div class="permission-field">
         <label class="permission-label flex items-center gap-1.5">
           <span>{{ $t('KANBAN.PERMISSIONS.SUPERVISOR') }}</span>
-          <span
+          <fluent-icon
             v-tooltip.left="$t('KANBAN.PERMISSIONS.SUPERVISOR_TOOLTIP')"
-            class="inline-flex items-center cursor-help shrink-0"
-          >
-            <fluent-icon
-              icon="info"
-              size="14"
-              class="text-slate-500 dark:text-slate-400"
-            />
-          </span>
+            icon="info"
+            size="14"
+            class="text-slate-500 dark:text-slate-400 cursor-help shrink-0"
+          />
         </label>
         <multiselect
           v-model="supervisorAgents"
@@ -221,13 +209,17 @@ export default {
   methods: {
     updateAgentsPermission(selectedAgents, permission, otherPermissions) {
       const updated = { ...this.permissions };
-      
-      // Converter otherPermissions para array se não for
+      const selectedIds = new Set(selectedAgents.map(a => a.id));
       const otherPermsArray = Array.isArray(otherPermissions) ? otherPermissions : [otherPermissions];
       
-      // Remover todos os agentes desta permissão e das outras permissões
+      // Remover apenas agentes que estavam nesta permissão mas não estão mais selecionados
+      // ou que estavam nas outras permissões mas agora estão sendo movidos para esta
       this.availableAgents.forEach(agent => {
-        if (updated[agent.id] === permission || otherPermsArray.includes(updated[agent.id])) {
+        const currentPerm = updated[agent.id];
+        const isBeingMoved = otherPermsArray.includes(currentPerm) && selectedIds.has(agent.id);
+        const wasRemoved = currentPerm === permission && !selectedIds.has(agent.id);
+        
+        if (isBeingMoved || wasRemoved) {
           delete updated[agent.id];
         }
       });
@@ -283,19 +275,19 @@ export default {
 }
 
 .permission-label {
-  @apply block text-sm font-medium text-slate-700 dark:text-slate-300;
+  @apply text-sm font-medium text-slate-700 dark:text-slate-300;
 }
 
 .permission-help-text {
   @apply text-xs text-slate-500 dark:text-slate-400 mt-1;
 }
 
-// Garantir que tooltips apareçam corretamente
+// Garantir que tooltips apareçam acima do modal
 ::v-deep .tooltip {
-  z-index: 10000 !important;
+  z-index: 10001 !important;
 }
 
 ::v-deep .v-tooltip-container {
-  z-index: 10000 !important;
+  z-index: 10001 !important;
 }
 </style>

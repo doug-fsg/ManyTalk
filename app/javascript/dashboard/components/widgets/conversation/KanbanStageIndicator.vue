@@ -133,8 +133,18 @@ export default {
 
         // Encontrar o nome legível da etapa
         const stages = attribute.attribute_values || [];
-        const stage = stages.find(s => s.key === stageValue);
-        const stageName = stage ? stage.value : stageValue;
+        // Suporta formato novo {name, color} e formato legado {key, value}
+        const stage = stages.find(s => {
+          if (typeof s === 'object' && s !== null) {
+            return (s.name || s.value || s.key) === stageValue;
+          }
+          return s === stageValue;
+        });
+        const stageName = stage 
+          ? (typeof stage === 'object' && stage !== null 
+              ? (stage.name || stage.value || stageValue)
+              : stage)
+          : stageValue;
 
         // Buscar dados do pipeline_positions
         const dealValue = position.deal_value || 0;
