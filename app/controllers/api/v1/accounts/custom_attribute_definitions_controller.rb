@@ -34,6 +34,17 @@ class Api::V1::Accounts::CustomAttributeDefinitionsController < Api::V1::Account
   end
 
   def destroy
+    # Verificar permissões para exclusão de pipelines Kanban
+    if @custom_attribute_definition.is_kanban && !Current.user.administrator?
+      permission = @custom_attribute_definition.user_permission(Current.user)
+      unless permission == :admin
+        render json: { 
+          error: 'Você não tem permissão para excluir este pipeline' 
+        }, status: :forbidden
+        return
+      end
+    end
+    
     @custom_attribute_definition.destroy!
     head :no_content
   end

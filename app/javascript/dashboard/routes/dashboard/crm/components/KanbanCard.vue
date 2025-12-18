@@ -26,13 +26,6 @@
       <div class="hidden group-hover/card:flex gap-2 absolute top-0 right-0 z-10">
         <!-- Botões principais sempre visíveis -->
         <span 
-          class="cursor-pointer p-1 inline-flex items-center justify-center rounded text-slate-600 dark:text-slate-300 transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-500 dark:hover:text-blue-400" 
-          @click.stop="$emit('view')"
-          v-tooltip="$t('KANBAN.VIEW_CONTACT')"
-        >
-          <fluent-icon icon="contact-card" size="14" />
-        </span>
-        <span 
           v-if="!isViewerMode"
           class="cursor-pointer p-1 inline-flex items-center justify-center rounded text-slate-600 dark:text-slate-300 transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-green-500 dark:hover:text-green-400" 
           @click.stop="toggleValueInput"
@@ -52,12 +45,12 @@
           </span>
 
           <!-- Dropdown menu -->
-          <div v-if="showActionsMenu" class="absolute top-full right-0 mt-1 bg-white dark:bg-slate-800 rounded-md shadow-lg dark:shadow-2xl dark:shadow-black/40 border border-slate-200 dark:border-slate-700 z-[9999] min-w-[180px] overflow-hidden" @click.stop>
+          <div v-if="showActionsMenu" class="absolute top-full right-0 mt-1 bg-white dark:bg-slate-800 rounded-md shadow-lg dark:shadow-2xl dark:shadow-black/40 border border-slate-200 dark:border-slate-700 z-[9999] min-w-[180px] overflow-hidden" @click.stop.prevent>
             <!-- Win/Lost Actions -->
             <div
               v-if="!winLostStatus"
               class="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer text-slate-800 dark:text-white text-xs transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-700"
-              @click="handleWinAction"
+              @click.stop.prevent="handleWinAction"
             >
               <fluent-icon icon="checkmark-circle" size="12" />
               <span>Marcar como Ganho</span>
@@ -65,7 +58,7 @@
             <div
               v-if="!winLostStatus"
               class="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer text-slate-800 dark:text-white text-xs transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-700"
-              @click="handleLostAction"
+              @click.stop.prevent="handleLostAction"
             >
               <fluent-icon icon="dismiss-circle" size="12" />
               <span>Marcar como Perdido</span>
@@ -75,7 +68,7 @@
             <div
               v-if="winLostStatus"
               class="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer text-slate-800 dark:text-white text-xs transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-700"
-              @click="handleUndoAction"
+              @click.stop.prevent="handleUndoAction"
             >
               <fluent-icon icon="arrow-undo" size="12" />
               <span>Desfazer {{ winLostStatus === 'won' ? 'Ganho' : 'Perdido' }}</span>
@@ -85,7 +78,7 @@
 
             <div
               class="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer text-red-600 dark:text-red-400 text-xs transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-700 dark:hover:text-red-300"
-              @click="handleRemoveAction"
+              @click.stop.prevent="handleRemoveAction"
             >
               <fluent-icon icon="dismiss" size="12" />
               <span>{{ $t('KANBAN.REMOVE_CARD') }}</span>
@@ -715,9 +708,14 @@ export default {
       this.undoWinLostStatus();
       this.closeActionsMenu();
     },
-    handleRemoveAction() {
-      this.$emit('remove');
+    handleRemoveAction(event) {
+      // Garantir que o evento não propague para o card
+      if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+      }
       this.closeActionsMenu();
+      this.$emit('remove');
     }
   },
   mounted() {

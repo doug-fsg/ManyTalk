@@ -287,11 +287,22 @@ export default {
           message: params[0].message,
         };
       } else if (inputType === 'kanban_stage_select') {
-        // Para kanban_stage_select, os dados salvos são [pipelineId, stageName]
-        // Precisamos converter para [{ id: pipelineId, name: pipelineName }, { id: stageName, name: stageName }]
+        // Para kanban_stage_select, os dados podem estar em dois formatos:
+        // Formato novo: [{ id: pipelineId, name: pipelineName }, { id: stageName, name: stageName }]
+        // Formato legado: [pipelineId, stageName]
         if (params.length >= 2) {
-          const pipelineId = params[0];
-          const stageName = params[1];
+          let pipelineId, stageName;
+          
+          // Verificar se é o formato novo (array de objetos)
+          if (typeof params[0] === 'object' && params[0] !== null && params[0].id) {
+            // Formato novo: [{ id: pipelineId, name: pipelineName }, { id: stageName, name: stageName }]
+            pipelineId = params[0].id;
+            stageName = params[1].id || params[1].name || params[1];
+          } else {
+            // Formato legado: [pipelineId, stageName]
+            pipelineId = params[0];
+            stageName = params[1];
+          }
           
           // Buscar o pipeline pelo ID
           const kanbanAttributes = this.$store.getters['attributes/getAttributes']

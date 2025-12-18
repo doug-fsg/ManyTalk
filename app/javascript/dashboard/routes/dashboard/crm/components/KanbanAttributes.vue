@@ -2295,27 +2295,19 @@ export default {
     },
     async confirmDeletePipeline() {
       try {
+        // Verificar quantos contatos estão usando este pipeline (apenas para informação)
         const contactsUsingPipeline = this.contacts.filter(contact => {
-          // Usar pipeline_positions em vez de custom_attributes
           const position = contact.pipeline_positions?.find(
             p => p.pipeline_id === this.selectedAttribute.id
           );
           return position && position.stage_id;
         });
 
-        if (contactsUsingPipeline.length > 0) {
-          this.showDeletePipelineModal = false;
-          this.safeShowNotification(
-            'error',
-            this.$t('KANBAN.ERRORS.PIPELINE_IN_USE')
-          );
-          return;
-        }
-
         await this.$store.dispatch(
           'attributes/delete',
           this.selectedAttribute.id
         );
+        
         // Limpar pipeline salvo se estiver deletando o pipeline atual
         const deletedPipelineId = this.selectedAttribute.id;
         this.selectedAttribute = null;

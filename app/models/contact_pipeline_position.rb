@@ -64,23 +64,28 @@ class ContactPipelinePosition < ApplicationRecord
     return nil unless pipeline.present?
 
     # Validar que o stage existe no pipeline
-    # attribute_values pode ser array simples de strings ou array de objetos {key: ..., value: ...}
-    attribute_values = Array(pipeline.attribute_values)
+    # attribute_values pode ser:
+    # - Array simples de strings: ["Etapa 1", "Etapa 2"]
+    # - Array de objetos: [{name: "Etapa 1", color: "#ff6900"}, ...]
+    # - Hash com stages e permissions: {"stages" => [...], "permissions" => {...}}
+    stages = extract_stages_from_attribute_values(pipeline.attribute_values)
     
-    # Verificar se stage_id existe diretamente no array ou como 'key' em objetos
-    # Para kanban, stage_id geralmente corresponde ao 'key' do objeto
-    stage_exists = attribute_values.any? do |value|
-      if value.is_a?(Hash)
-        # Verificar tanto 'key' quanto 'value' para compatibilidade
-        value['key'] == stage_id || value[:key] == stage_id || 
-        value['value'] == stage_id || value[:value] == stage_id
+    # Verificar se stage_id existe no array de stages
+    stage_exists = stages.any? do |stage|
+      if stage.is_a?(Hash)
+        # Objeto com name e color: {name: "Etapa 1", color: "#ff6900"}
+        stage['name'] == stage_id || stage[:name] == stage_id ||
+        stage['id'] == stage_id || stage[:id] == stage_id ||
+        stage['key'] == stage_id || stage[:key] == stage_id ||
+        stage['value'] == stage_id || stage[:value] == stage_id
       else
-        value == stage_id
+        # String simples
+        stage.to_s == stage_id.to_s
       end
     end
     
     unless stage_exists
-      Rails.logger.warn "Stage '#{stage_id}' not found in pipeline #{pipeline_id}. Available: #{attribute_values.inspect}"
+      Rails.logger.warn "Stage '#{stage_id}' not found in pipeline #{pipeline_id}. Available stages: #{stages.inspect}"
       return nil
     end
 
@@ -109,6 +114,30 @@ class ContactPipelinePosition < ApplicationRecord
   end
 
   private
+
+  # Extrai o array de stages do attribute_values, lidando com diferentes formatos
+  def self.extract_stages_from_attribute_values(attribute_values)
+    return [] if attribute_values.nil?
+    
+    if attribute_values.is_a?(Hash)
+      # Formato novo: {"stages" => [...], "permissions" => {...}}
+      # Pode ter chave como string ou símbolo
+      stages = attribute_values['stages'] || attribute_values[:stages] || 
+               attribute_values['values'] || attribute_values[:values] || []
+      
+      # Se stages é um hash (formato {"Etapa 1" => {color: "#ff6900"}}), converter para array
+      if stages.is_a?(Hash)
+        stages.map { |name, data| { name: name.to_s, color: data.is_a?(Hash) ? (data['color'] || data[:color]) : nil } }
+      else
+        Array(stages)
+      end
+    elsif attribute_values.is_a?(Array)
+      # Formato legado: array simples ou array de objetos
+      attribute_values
+    else
+      []
+    end
+  end
 
   def auto_assign_owner_if_new
     return if assignee_id.present? # Já tem dono

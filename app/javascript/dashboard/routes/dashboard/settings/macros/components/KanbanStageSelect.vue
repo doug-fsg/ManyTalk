@@ -87,15 +87,18 @@ export default {
     loadExistingValues(pipelineData, stageData) {
       // Converter os dados para o formato esperado
       let pipelineId, stageName;
-      if (typeof pipelineData === 'object' && pipelineData.id) {
+      
+      // Extrair ID do pipeline
+      if (typeof pipelineData === 'object' && pipelineData !== null && pipelineData.id) {
         pipelineId = pipelineData.id;
       } else {
         pipelineId = pipelineData;
       }
       
-      if (typeof stageData === 'object') {
+      // Extrair nome do estágio
+      if (typeof stageData === 'object' && stageData !== null) {
         // Se é objeto, usar o id ou name como nome do estágio
-        stageName = stageData.id || stageData.name;
+        stageName = stageData.id || stageData.name || String(stageData);
       } else {
         stageName = stageData;
       }
@@ -106,7 +109,13 @@ export default {
         // Passar skipUpdate = true para não limpar o selectedStage
         this.onPipelineChange(pipeline, true);
         
-        const stage = this.stageOptions.find(s => s.name === stageName);
+        // Buscar o estágio correspondente pelo nome
+        const stage = this.stageOptions.find(s => {
+          // Comparar por nome (case-insensitive para maior robustez)
+          return s.name && stageName && 
+                 s.name.toString().toLowerCase() === stageName.toString().toLowerCase();
+        });
+        
         if (stage) {
           this.selectedStage = stage;
         }
@@ -120,11 +129,32 @@ export default {
         return;
       }
       
-      this.stageOptions = pipeline.stages.map((stage, index) => ({
-        id: index,
-        name: stage,
-        pipeline_id: pipeline.id
-      }));
+      // Normalizar os stages para lidar com diferentes formatos:
+      // - String simples (formato legado): "Matrícula"
+      // - Objeto com name e color (formato novo): {name: "Matrícula", color: "#ff6900"}
+      this.stageOptions = pipeline.stages.map((stage, index) => {
+        let stageName;
+        let stageColor = null;
+        
+        if (typeof stage === 'string') {
+          // Formato legado: string simples
+          stageName = stage;
+        } else if (typeof stage === 'object' && stage !== null) {
+          // Formato novo: objeto com name e color
+          stageName = stage.name || stage.id || String(stage);
+          stageColor = stage.color || null;
+        } else {
+          // Fallback: converter para string
+          stageName = String(stage);
+        }
+        
+        return {
+          id: index,
+          name: stageName,
+          color: stageColor,
+          pipeline_id: pipeline.id
+        };
+      });
       
       // Limpar seleção de estágio anterior apenas se não estivermos carregando valores existentes
       if (!skipUpdate) {

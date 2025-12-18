@@ -841,6 +841,11 @@ export default {
         await this.$store.dispatch('attributes/update', payload);
         this.alertMessage = this.$t('ATTRIBUTES_MGMT.EDIT.API.SUCCESS_MESSAGE');
         
+        // Emitir evento para atualizar componentes que dependem dos nomes das etapas
+        if (window.bus) {
+          window.bus.$emit('attributes:updated');
+        }
+        
         // Atualizar estados iniciais após salvar com sucesso
         this.initialDisplayName = this.displayName;
         this.initialDescription = this.description;

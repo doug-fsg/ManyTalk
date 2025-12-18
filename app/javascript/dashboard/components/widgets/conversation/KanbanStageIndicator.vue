@@ -7,11 +7,11 @@
     <div
       class="flex items-end flex-shrink min-w-0 gap-1"
       :class="{ 'h-auto overflow-visible flex-row flex-wrap': showAllStages }"
-    >
-            <!-- Pílulas dos pipelines -->
+      >
+      <!-- Pílulas dos pipelines -->
       <div
         v-for="(stage, index) in kanbanStages"
-        :key="stage.id"
+        :key="`pipeline-${stage.id}-${stage.stageName}`"
         class="relative inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full tooltip-container"
         :class="[
           { hidden: !showAllStages && index > stagePosition },
@@ -157,8 +157,6 @@ export default {
         const wonDate = winLostData.date;
         const lostDate = winLostData.date;
 
-
-
         // Determinar o status e texto a mostrar
         let displayText, statusType, statusDate;
         if (isWon) {
@@ -207,8 +205,6 @@ export default {
     hasKanbanStages() {
       return this.kanbanStages.length > 0;
     },
-
-
   },
   watch: {
     kanbanStages() {
@@ -217,6 +213,17 @@ export default {
   },
   mounted() {
     this.computeVisibleStagePosition();
+    
+    // Escutar eventos de atualização de attributes para atualizar os nomes das etapas
+    if (window.bus) {
+      window.bus.$on('attributes:updated', this.handleAttributesUpdate);
+    }
+  },
+  beforeDestroy() {
+    // Limpar listener
+    if (window.bus) {
+      window.bus.$off('attributes:updated', this.handleAttributesUpdate);
+    }
   },
   methods: {
     formatCurrency(value) {
@@ -243,6 +250,10 @@ export default {
         return dateString;
       }
     },
+    handleAttributesUpdate() {
+      // Forçar re-render quando attributes são atualizados
+      this.$forceUpdate();
+    },
     onShowStages(e) {
       e.stopPropagation();
       this.showAllStages = !this.showAllStages;
@@ -252,18 +263,45 @@ export default {
       const stageContainer = this.$refs.stageContainer;
       if (!stageContainer) return;
 
-      const stages = Array.from(stageContainer.querySelectorAll('.relative.inline-flex'));
-      let stageOffset = 0;
-      this.showExpandButton = false;
+      // Temporariamente mostrar todas para medir largura real
+      const wasShowingAll = this.showAllStages;
+      if (!wasShowingAll) {
+        this.showAllStages = true;
+        this.$nextTick(() => {
+          this.calculateWithFixedWidth();
+          this.showAllStages = false;
+        });
+        return;
+      }
+      
+      this.calculateWithFixedWidth();
+    },
+    calculateWithFixedWidth() {
+      const stageContainer = this.$refs.stageContainer;
+      if (!stageContainer) return;
 
+      // Usar largura fixa do container para cálculos estáveis
+      const containerWidth = stageContainer.clientWidth;
+      const stages = Array.from(stageContainer.querySelectorAll('.relative.inline-flex'));
+      
+      if (stages.length === 0) return;
+      
+      let stageOffset = 0;
+      let newStagePosition = stages.length - 1;
+      let newShowExpandButton = false;
+      
       stages.forEach((stage, index) => {
         stageOffset += stage.offsetWidth + 4; // 4px é o gap entre as pílulas
-        if (stageOffset < stageContainer.clientWidth - 40) { // 40px para o botão de expandir
-          this.stagePosition = index;
-        } else {
-          this.showExpandButton = stages.length > 1;
+        if (stageOffset > containerWidth - 40) { // 40px para o botão de expandir
+          if (newStagePosition === stages.length - 1) {
+            newStagePosition = Math.max(0, index - 1);
+            newShowExpandButton = stages.length > 1;
+          }
         }
       });
+      
+      this.stagePosition = newStagePosition;
+      this.showExpandButton = newShowExpandButton;
     },
   },
 };
