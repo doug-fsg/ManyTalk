@@ -48,3 +48,11 @@ export const isActiveElementTypeable = e => {
     activeElement?.className?.includes('ProseMirror')
   );
 };
+
+// Keyboard layout constants
+export const LAYOUT_QWERTY = 'QWERTY';
+export const LAYOUT_QWERTZ = 'QWERTZ';
+export const LAYOUT_AZERTY = 'AZERTY';
+
+// Keys that need to be modified in QWERTZ layout
+export const keysToModifyInQWERTZ = new Set(['$KeyZ', '$KeyY']);

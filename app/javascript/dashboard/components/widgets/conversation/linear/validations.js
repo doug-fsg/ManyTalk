@@ -1,4 +1,4 @@
-import { required } from '@vuelidate/validators';
+import { required } from 'vuelidate/lib/validators';
 
 export default {
   title: {

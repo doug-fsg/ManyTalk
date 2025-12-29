@@ -1,6 +1,6 @@
 <script setup>
 import { useVuelidate } from '@vuelidate/core';
-import { required, minLength } from '@vuelidate/validators';
+import { required, minLength } from 'vuelidate/lib/validators';
 
 import { defineComponent, reactive, computed, onMounted } from 'vue';
 import { useI18n } from 'dashboard/composables/useI18n';

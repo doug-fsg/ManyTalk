@@ -41,3 +41,16 @@ export const isDomain = value => {
   }
   return true;
 };
+
+/**
+ * Creates a RegExp object from a string representation of a regular expression.
+ * @param {string} regexPatternValue - The string representation of the regex (e.g., '/pattern/flags').
+ * @returns {RegExp} A RegExp object created from the input string.
+ */
+export const getRegexp = regexPatternValue => {
+  let lastSlash = regexPatternValue.lastIndexOf('/');
+  return new RegExp(
+    regexPatternValue.slice(1, lastSlash),
+    regexPatternValue.slice(lastSlash + 1)
+  );
+};

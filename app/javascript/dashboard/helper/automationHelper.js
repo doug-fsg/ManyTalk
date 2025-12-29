@@ -145,7 +145,11 @@ export const getActionOptions = ({
     remove_label: generateConditionOptions(labels, 'title'),
     change_priority: PRIORITY_CONDITION_VALUES,
     add_sla: slaPolicies,
-    change_kanban_stage: kanbanAttributes || [],
+    change_kanban_stage: (kanbanAttributes || []).map(attr => ({
+      id: attr.id,
+      name: attr.attribute_display_name,
+      stages: attr.attribute_values || []
+    })),
   };
   return actionsMap[type];
 };
@@ -178,8 +182,8 @@ export const getConditionOptions = ({
     contact: contacts,
     inbox_id: inboxes,
     team_id: teams,
-    campaign_id: generateConditionOptions(campaigns),
-    campaigns: generateConditionOptions(campaigns),
+    campaign_id: campaigns ? generateConditionOptions(campaigns) : [],
+    campaigns: campaigns ? generateConditionOptions(campaigns) : [],
     browser_language: languages,
     conversation_language: languages,
     country_code: countries,

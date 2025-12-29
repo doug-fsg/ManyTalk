@@ -1,6 +1,8 @@
 {
   "CANNED_MGMT": {
     "HEADER": "Atalhos",
+    "DESCRIPTION": "As Respostas Prontas são modelos de resposta pré-escritos que ajudam você a responder rapidamente a uma conversa. Os atendentes podem digitar o caractere '/' seguido do código curto para inserir uma resposta pronta durante uma conversa.",
+    "LEARN_MORE": "Saiba mais sobre respostas prontas",
     "HEADER_BTN_TXT": "Adicionar resposta pronta",
     "LOADING": "Buscando respostas prontas...",
     "SEARCH_404": "Não existem itens correspondentes a esta consulta.",

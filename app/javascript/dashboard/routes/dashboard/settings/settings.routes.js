@@ -2,7 +2,6 @@ import { frontendURL } from '../../../helper/URLHelper';
 import account from './account/account.routes';
 import agent from './agents/agent.routes';
 import agentBot from './agentBots/agentBot.routes';
-import announcements from './announcements/announcements.routes';
 import attributes from './attributes/attributes.routes';
 import automation from './automation/automation.routes';
 import auditlogs from './auditlogs/audit.routes';
@@ -18,7 +17,6 @@ import store from '../../../store';
 import sla from './sla/sla.routes';
 import teams from './teams/teams.routes';
 import profile from './profile/profile.routes';
-import ia from './config_ia/ia.routes';
 
 export default {
   routes: [
@@ -38,7 +36,6 @@ export default {
     ...account.routes,
     ...agent.routes,
     ...agentBot.routes,
-    ...announcements.routes,
     ...attributes.routes,
     ...automation.routes,
     ...auditlogs.routes,
@@ -53,6 +50,5 @@ export default {
     ...sla.routes,
     ...teams.routes,
     ...profile.routes,
-    ...ia.routes, // Adição do módulo de rotas de IA
   ],
 };

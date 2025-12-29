@@ -78,6 +78,8 @@ const openInNewTab = url => {
       >
         <slot name="description">{{ description }}</slot>
       </p>
+      <!-- Link "Learn More" comentado - será adicionado no futuro -->
+      <!--
       <CustomBrandPolicyWrapper :show-on-custom-branded-instance="false">
         <a
           v-if="helpURL && linkText"
@@ -95,11 +97,14 @@ const openInNewTab = url => {
           />
         </a>
       </CustomBrandPolicyWrapper>
+      -->
     </div>
     <div
       class="flex items-start justify-start w-full gap-3 sm:hidden flex-wrap"
     >
       <slot name="actions" />
+      <!-- Link "Learn More" (mobile) comentado - será adicionado no futuro -->
+      <!--
       <CustomBrandPolicyWrapper :show-on-custom-branded-instance="false">
         <woot-button
           v-if="helpURL && linkText"
@@ -111,6 +116,7 @@ const openInNewTab = url => {
           {{ linkText }}
         </woot-button>
       </CustomBrandPolicyWrapper>
+      -->
     </div>
   </div>
 </template>

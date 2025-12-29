@@ -1,5 +1,41 @@
+<script>
+import campaignMixin from 'shared/mixins/campaignMixin';
+import Campaign from './Campaign.vue';
+import AddCampaign from './AddCampaign.vue';
+
+export default {
+  components: {
+    Campaign,
+    AddCampaign,
+  },
+  mixins: [campaignMixin],
+  data() {
+    return { showAddPopup: false };
+  },
+  computed: {
+    buttonText() {
+      if (this.isOngoingType) {
+        return this.$t('CAMPAIGN.HEADER_BTN_TXT.ONGOING');
+      }
+      return this.$t('CAMPAIGN.HEADER_BTN_TXT.ONE_OFF');
+    },
+  },
+  mounted() {
+    this.$store.dispatch('campaigns/get');
+  },
+  methods: {
+    openAddPopup() {
+      this.showAddPopup = true;
+    },
+    hideAddPopup() {
+      this.showAddPopup = false;
+    },
+  },
+};
+</script>
+
 <template>
-  <div class="flex-1 overflow-auto p-4">
+  <div class="flex-1 p-4 overflow-auto">
     <woot-button
       color-scheme="success"
       class-names="button--fixed-top"
@@ -8,118 +44,9 @@
     >
       {{ buttonText }}
     </woot-button>
-    <campaign />
+    <Campaign />
     <woot-modal :show.sync="showAddPopup" :on-close="hideAddPopup">
-      <add-campaign @on-close="hideAddPopup" />
-    </woot-modal>
-    
-    <!-- Modal para Campanhas Únicas -->
-    <woot-modal v-if="isOneOffType" :show.sync="showOneOffPopup" :on-close="hideOneOffPopup">
-      <div class="p-4 flex flex-col justify-center items-center text-center">
-
-        <h3>{{ $t('CAMPAIGN.MODAL.TITLE') }}</h3>
-        <p>{{ $t('CAMPAIGN.MODAL.DESCRIPTION') }}</p>
-        <div class="flex justify-center gap-4 mt-4">
-  <woot-button
-    class="hover-woot"
-    color-scheme="secondary"
-    @click="handleSingleBlast"
-  >
-  {{ $t('CAMPAIGN.MODAL.BUTTON_SINGLE') }}
-  </woot-button>
-  <woot-button
-    class="hover-woot"
-    color-scheme="secondary"
-    @click="handleFlowBlast"
-  >
-  {{ $t('CAMPAIGN.MODAL.BUTTON_FLOW') }}
-  </woot-button>
-</div>
-      </div>
-    </woot-modal>
-    
-    <!-- Componentes dinamicamente carregados -->
-    <woot-modal :show.sync="showComponentModal" :on-close="hideComponentModal">
-      <component :is="currentComponent" @on-close="hideComponentModal" />
+      <AddCampaign @onClose="hideAddPopup" />
     </woot-modal>
   </div>
 </template>
-
-<script>
-import campaignMixin from 'shared/mixins/campaignMixin';
-import Campaign from './Campaign.vue';
-import AddCampaign from './AddCampaign.vue';
-import OneOffCampaign from './OneOffCampaign.vue'; // Importando o OneOffCampaign
-
-export default {
-  components: {
-    Campaign,
-    AddCampaign,
-    OneOffCampaign,
-  },
-  mixins: [campaignMixin],
-  data() {
-    return {
-      showAddPopup: false,
-      showOneOffPopup: false,
-      showComponentModal: false, // Modal para componentes
-      currentComponent: null, // Componente atual carregado dinamicamente
-    };
-  },
-  computed: {
-    buttonText() {
-      if (this.isOngoingType) {
-        return this.$t('CAMPAIGN.ONGOING.HEADER');
-      }
-      return this.$t('CAMPAIGN.ADD.CREATE_BUTTON_TEXT');
-    },
-    isOneOffType() {
-      return !this.isOngoingType;
-    },
-  },
-  mounted() {
-    this.$store.dispatch('campaigns/get');
-  },
-  methods: {
-    openAddPopup() {
-      if (this.isOneOffType) {
-        this.openOneOffPopup(); // Abre o modal de campanhas únicas
-      } else {
-        this.showAddPopup = true; // Abre o modal padrão de campanhas
-      }
-    },
-    hideAddPopup() {
-      this.showAddPopup = false;
-    },
-    openOneOffPopup() {
-      this.showOneOffPopup = true; // Modal para campanhas únicas
-    },
-    hideOneOffPopup() {
-      this.showOneOffPopup = false;
-    },
-    handleSingleBlast() {
-      // Abre o OneOffCampaign.vue
-      this.currentComponent = 'OneOffCampaign';
-      this.showComponentModal = true;
-      this.hideOneOffPopup();
-    },
-    handleFlowBlast() {
-      // Abre o AddCampaign.vue
-      this.currentComponent = 'AddCampaign';
-      this.showComponentModal = true;
-      this.hideOneOffPopup();
-    },
-    hideComponentModal() {
-      this.showComponentModal = false;
-      this.currentComponent = null;
-    },
-  },
-};
-</script>
-<style scoped>
-.hover-woot:hover {
-  background-color: var(--color-woot);
-  color: white;
-}
-</style>
-
