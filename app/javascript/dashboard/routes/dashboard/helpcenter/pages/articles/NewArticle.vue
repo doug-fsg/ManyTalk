@@ -4,7 +4,7 @@
       class="flex-1 flex-shrink-0 px-6 overflow-y-auto"
       :class="{ 'flex-grow-1': showArticleSettings }"
     >
-      <edit-article-header
+      <EditArticleHeader
         :back-button-label="$t('HELP_CENTER.HEADER.TITLES.ALL_ARTICLES')"
         draft-state="saved"
         :is-sidebar-open="showArticleSettings"
@@ -13,12 +13,12 @@
         @close="closeArticleSettings"
         @save-article="createNewArticle"
       />
-      <article-editor :article="newArticle" @save-article="createNewArticle" />
+      <ArticleEditor :article="newArticle" @saveArticle="createNewArticle" />
     </div>
-    <article-settings
+    <ArticleSettings
       v-if="showArticleSettings"
       :article="article"
-      @save-article="saveArticle"
+      @saveArticle="saveArticle"
     />
   </div>
 </template>

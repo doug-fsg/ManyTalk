@@ -13,7 +13,7 @@
     <!-- Resumo principal -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <!-- Total de Cards -->
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6 border border-slate-200 dark:border-slate-700">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-soft p-6 border border-slate-200 dark:border-slate-700 hover:shadow-soft-lg transition-all duration-300 ease-smooth">
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-sm font-medium text-slate-600 dark:text-slate-400">
             {{ $t('KANBAN.DASHBOARD.TOTAL_CARDS') }}
@@ -27,7 +27,7 @@
       </div>
 
       <!-- Cards Abertos -->
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6 border border-slate-200 dark:border-slate-700">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-soft p-6 border border-slate-200 dark:border-slate-700 hover:shadow-soft-lg transition-all duration-300 ease-smooth">
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-sm font-medium text-slate-600 dark:text-slate-400">
             {{ $t('KANBAN.DASHBOARD.OPEN_CARDS') }}
@@ -41,7 +41,7 @@
       </div>
 
       <!-- Cards Ganhos -->
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6 border border-slate-200 dark:border-slate-700">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-soft p-6 border border-slate-200 dark:border-slate-700 hover:shadow-soft-lg transition-all duration-300 ease-smooth">
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-sm font-medium text-slate-600 dark:text-slate-400">
             {{ $t('KANBAN.DASHBOARD.WON_CARDS') }}
@@ -55,7 +55,7 @@
       </div>
 
       <!-- Cards Perdidos -->
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6 border border-slate-200 dark:border-slate-700">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-soft p-6 border border-slate-200 dark:border-slate-700 hover:shadow-soft-lg transition-all duration-300 ease-smooth">
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-sm font-medium text-slate-600 dark:text-slate-400">
             {{ $t('KANBAN.DASHBOARD.LOST_CARDS') }}
@@ -71,21 +71,21 @@
 
     <!-- Taxa de Conversão -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6 border border-slate-200 dark:border-slate-700">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-soft p-6 border border-slate-200 dark:border-slate-700 hover:shadow-soft-lg transition-all duration-300 ease-smooth">
         <h3 class="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
           {{ $t('KANBAN.DASHBOARD.WIN_RATE') }}
         </h3>
         <p class="text-3xl font-bold text-slate-900 dark:text-white">{{ stats.winRate }}%</p>
       </div>
 
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6 border border-slate-200 dark:border-slate-700">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-soft p-6 border border-slate-200 dark:border-slate-700 hover:shadow-soft-lg transition-all duration-300 ease-smooth">
         <h3 class="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
           {{ $t('KANBAN.DASHBOARD.AVERAGE_TIME') }}
         </h3>
         <p class="text-3xl font-bold text-slate-900 dark:text-white">{{ stats.averageTime }}</p>
       </div>
 
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6 border border-slate-200 dark:border-slate-700">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-soft p-6 border border-slate-200 dark:border-slate-700 hover:shadow-soft-lg transition-all duration-300 ease-smooth">
         <h3 class="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
           {{ $t('KANBAN.DASHBOARD.AVERAGE_DEAL_VALUE') }}
         </h3>
@@ -96,7 +96,7 @@
     </div>
 
     <!-- Cards por Estágio -->
-    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6 border border-slate-200 dark:border-slate-700 mb-6">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-soft p-6 border border-slate-200 dark:border-slate-700 mb-6 hover:shadow-soft-lg transition-all duration-300 ease-smooth">
       <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
         {{ $t('KANBAN.DASHBOARD.BY_STAGE') }}
       </h3>
@@ -141,7 +141,7 @@
     </div>
 
     <!-- Cards com mais tempo na etapa -->
-    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6 border border-slate-200 dark:border-slate-700 mb-6">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-soft p-6 border border-slate-200 dark:border-slate-700 mb-6 hover:shadow-soft-lg transition-all duration-300 ease-smooth">
       <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
         {{ $t('KANBAN.DASHBOARD.LONGEST_IN_STAGE') }}
       </h3>
@@ -149,7 +149,7 @@
         <div
           v-for="card in longestInStage"
           :key="card.id"
-          class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors"
+          class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors duration-150 ease-smooth"
           @click="$emit('view-contact', card.id)"
         >
           <div class="flex-1">

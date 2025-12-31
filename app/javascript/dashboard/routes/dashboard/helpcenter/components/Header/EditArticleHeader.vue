@@ -187,7 +187,7 @@ export default {
           articleId: this.articleSlug,
           status: status,
         });
-        this.$emit('update-meta');
+        this.$emit('updateMeta');
         this.statusUpdateSuccessMessage(status);
         this.closeActionsDropdown();
         if (status === this.ARTICLE_STATUS_TYPES.ARCHIVE) {

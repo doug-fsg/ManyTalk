@@ -5,6 +5,7 @@ import agentBot from './agentBots/agentBot.routes';
 import attributes from './attributes/attributes.routes';
 import automation from './automation/automation.routes';
 import auditlogs from './auditlogs/audit.routes';
+import announcements from './announcements/announcements.routes';
 import billing from './billing/billing.routes';
 import campaigns from './campaigns/campaigns.routes';
 import canned from './canned/canned.routes';
@@ -39,6 +40,7 @@ export default {
     ...attributes.routes,
     ...automation.routes,
     ...auditlogs.routes,
+    ...announcements.routes,
     ...billing.routes,
     ...campaigns.routes,
     ...canned.routes,

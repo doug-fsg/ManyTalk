@@ -25,7 +25,7 @@
     <div ref="editor" />
     <div
       v-show="isImageNodeSelected && showImageResizeToolbar"
-      class="absolute shadow-md rounded-[4px] flex gap-1 py-1 px-1 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-50"
+      class="absolute shadow-soft-lg rounded-lg flex gap-1 py-1 px-1 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-50 animate-scale-in"
       :style="{
         top: toolbarPosition.top,
         left: toolbarPosition.left,
@@ -34,7 +34,7 @@
       <button
         v-for="size in sizes"
         :key="size.name"
-        class="text-xs font-medium rounded-[4px] border border-solid border-slate-200 dark:border-slate-600 px-1.5 py-0.5 hover:bg-slate-100 dark:hover:bg-slate-800"
+        class="text-xs font-medium rounded-lg border border-solid border-slate-200 dark:border-slate-600 px-1.5 py-0.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors duration-150 ease-smooth"
         @click="setURLWithQueryAndImageSize(size)"
       >
         {{ size.name }}

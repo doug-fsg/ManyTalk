@@ -1,18 +1,3 @@
-<template>
-  <div>
-    <div class="editor-root editor--article">
-      <input
-        ref="imageUploadInput"
-        type="file"
-        accept="image/png, image/jpeg, image/jpg, image/gif, image/webp"
-        hidden
-        @change="onFileChange"
-      />
-      <div ref="editor" />
-    </div>
-  </div>
-</template>
-
 <script>
 import {
   fullSchema,
@@ -23,6 +8,7 @@ import {
   EditorState,
   Selection,
 } from '@chatwoot/prosemirror-schema';
+import imagePastePlugin from '@chatwoot/prosemirror-schema/src/plugins/image';
 import { checkFileSizeLimit } from 'shared/helpers/FileHelper';
 import { useAlert } from 'dashboard/composables';
 import { useUISettings } from 'dashboard/composables/useUISettings';
@@ -70,7 +56,7 @@ export default {
     return {
       editorView: null,
       state: undefined,
-      plugins: [],
+      plugins: [imagePastePlugin(this.handleImageUpload)],
     };
   },
   computed: {
@@ -91,6 +77,7 @@ export default {
       this.reloadState();
     },
   },
+
   created() {
     this.state = createState(
       this.value,
@@ -109,6 +96,24 @@ export default {
   methods: {
     openFileBrowser() {
       this.$refs.imageUploadInput.click();
+    },
+    async handleImageUpload(url) {
+      try {
+        const fileUrl = await this.$store.dispatch(
+          'articles/uploadExternalImage',
+          {
+            portalSlug: this.$route.params.portalSlug,
+            url,
+          }
+        );
+
+        return fileUrl;
+      } catch (error) {
+        useAlert(
+          this.$t('HELP_CENTER.ARTICLE_EDITOR.IMAGE_UPLOAD.UN_AUTHORIZED_ERROR')
+        );
+        return '';
+      }
     },
     onFileChange() {
       const file = this.$refs.imageUploadInput.files[0];
@@ -135,7 +140,6 @@ export default {
         if (fileUrl) {
           this.onImageUploadStart(fileUrl);
         }
-        useAlert(this.$t('HELP_CENTER.ARTICLE_EDITOR.IMAGE_UPLOAD.SUCCESS'));
       } catch (error) {
         useAlert(this.$t('HELP_CENTER.ARTICLE_EDITOR.IMAGE_UPLOAD.ERROR'));
       }
@@ -188,6 +192,18 @@ export default {
           blur: () => {
             this.onBlur();
           },
+          paste: (view, event) => {
+            const data = event.clipboardData.files;
+            if (data.length > 0) {
+              data.forEach(file => {
+                // Check if the file is an image
+                if (file.type.includes('image')) {
+                  this.uploadImageToStorage(file);
+                }
+              });
+              event.preventDefault();
+            }
+          },
         },
       });
     },
@@ -222,6 +238,21 @@ export default {
   },
 };
 </script>
+
+<template>
+  <div>
+    <div class="editor-root editor--article">
+      <input
+        ref="imageUploadInput"
+        type="file"
+        accept="image/png, image/jpeg, image/jpg, image/gif, image/webp"
+        hidden
+        @change="onFileChange"
+      />
+      <div ref="editor" />
+    </div>
+  </div>
+</template>
 
 <style lang="scss">
 @import '~@chatwoot/prosemirror-schema/src/styles/article.scss';

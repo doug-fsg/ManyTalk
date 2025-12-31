@@ -1,7 +1,7 @@
 <template>
   <div>
     <div
-      class="relative flex p-4 mb-3 bg-white border border-solid rounded-md dark:bg-slate-900 border-slate-100 dark:border-slate-600"
+      class="relative flex p-4 mb-3 bg-white border border-solid rounded-xl dark:bg-slate-900 border-slate-100 dark:border-slate-600 shadow-soft hover:shadow-soft-lg transition-all duration-300 ease-smooth"
     >
       <thumbnail :username="portal.name" variant="square" />
       <div class="flex-grow ml-2 rtl:ml-0 rtl:mr-2">

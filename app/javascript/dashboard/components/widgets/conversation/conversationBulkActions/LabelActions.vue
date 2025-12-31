@@ -131,7 +131,7 @@ export default {
 }
 
 .label-list-search {
-  @apply bg-slate-50 dark:bg-slate-900 py-0 px-2.5 border border-solid border-slate-100 dark:border-slate-600/70 rounded-md;
+  @apply bg-slate-50 dark:bg-slate-900 py-0 px-2.5 border border-solid border-slate-100 dark:border-slate-600/70 rounded-lg transition-colors duration-150 ease-smooth;
 
   .search-icon {
     @apply text-slate-400 dark:text-slate-200;
@@ -143,7 +143,7 @@ export default {
 }
 
 .labels-container {
-  @apply absolute right-2 top-12 origin-top-right w-auto z-20 max-w-[15rem] min-w-[15rem] bg-white dark:bg-slate-800 rounded-lg border border-solid border-slate-50 dark:border-slate-700 shadow-md;
+  @apply absolute right-2 top-12 origin-top-right w-auto z-20 max-w-[15rem] min-w-[15rem] bg-white dark:bg-slate-800 rounded-xl border border-solid border-slate-50 dark:border-slate-700 shadow-soft-xl animate-scale-in;
 
   .header {
     @apply p-2.5;
@@ -183,7 +183,7 @@ ul {
   @apply my-1 mx-0 py-0 px-2.5;
 
   .item {
-    @apply items-center rounded-md cursor-pointer flex py-1 px-2.5 hover:bg-slate-50 dark:hover:bg-slate-900;
+    @apply items-center rounded-lg cursor-pointer flex py-1 px-2.5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors duration-150 ease-smooth;
 
     &.label-selected {
       @apply bg-slate-50 dark:bg-slate-900;
@@ -202,7 +202,7 @@ ul {
     }
 
     .label-pill {
-      @apply bg-slate-50 rounded-md h-3 w-3 flex-shrink-0 border border-solid border-slate-50 dark:border-slate-900;
+      @apply bg-slate-50 rounded-lg h-3 w-3 flex-shrink-0 border border-solid border-slate-50 dark:border-slate-900;
     }
   }
 }

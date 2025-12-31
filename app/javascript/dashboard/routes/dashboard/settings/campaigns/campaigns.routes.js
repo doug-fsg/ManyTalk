@@ -20,7 +20,7 @@ export default {
           path: 'ongoing',
           name: 'ongoing_campaigns',
           meta: {
-            permissions: ['administrator'],
+            permissions: ['administrator', 'agent'],
           },
           component: Index,
         },
@@ -38,7 +38,7 @@ export default {
           path: 'one_off',
           name: 'one_off',
           meta: {
-            permissions: ['administrator'],
+            permissions: ['administrator', 'agent'],
           },
           component: Index,
         },

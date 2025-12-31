@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex flex-col min-w-[15rem] max-h-[21.25rem] max-w-[23.75rem] rounded-md border border-solid border-slate-75 dark:border-slate-600"
+    class="flex flex-col min-w-[15rem] max-h-[21.25rem] max-w-[23.75rem] rounded-xl border border-solid border-slate-75 dark:border-slate-600 shadow-soft hover:shadow-soft-lg transition-all duration-300 ease-smooth"
     :class="{
       'bg-woot-25 dark:bg-slate-700 border border-solid border-woot-300 dark:border-woot-400':
         active,
@@ -30,7 +30,7 @@
     <div v-if="src" class="p-3">
       <img
         :src="src"
-        class="border border-solid rounded-md"
+        class="border border-solid rounded-lg"
         :class="
           active
             ? 'border-woot-75 dark:border-woot-700'

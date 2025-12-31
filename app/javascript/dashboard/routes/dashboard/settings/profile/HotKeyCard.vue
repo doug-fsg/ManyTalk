@@ -25,7 +25,7 @@ defineProps({
 
 <template>
   <div
-    class="flex flex-col gap-4 w-full h-fit sm:max-h-[220px] p-4 sm:max-w-[350px] rounded-md border border-solid border-ash-200"
+    class="flex flex-col gap-4 w-full h-fit sm:max-h-[220px] p-4 sm:max-w-[350px] rounded-xl border border-solid border-ash-200 shadow-soft hover:shadow-soft-lg transition-all duration-300 ease-smooth"
     :class="{
       'border-primary-300 ': active,
     }"

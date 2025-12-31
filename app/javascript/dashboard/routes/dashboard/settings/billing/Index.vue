@@ -96,7 +96,7 @@ export default {
 
 <style lang="scss">
 .manage-subscription {
-  @apply bg-white dark:bg-slate-800 flex justify-between mb-2 py-6 px-4 items-center rounded-md border border-solid border-slate-75 dark:border-slate-700;
+  @apply bg-white dark:bg-slate-800 flex justify-between mb-2 py-6 px-4 items-center rounded-xl border border-solid border-slate-75 dark:border-slate-700 shadow-soft hover:shadow-soft-lg transition-all duration-300 ease-smooth;
 }
 
 .current-plan--details {

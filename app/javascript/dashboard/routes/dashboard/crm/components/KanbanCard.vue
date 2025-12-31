@@ -1,10 +1,10 @@
 <template>
   <div
-    class="group/card relative bg-white dark:bg-slate-900 rounded-lg p-4 shadow-sm dark:shadow-xl dark:shadow-black/20 mb-2 cursor-pointer transition-all duration-200 border-none dark:border dark:border-slate-800 hover:shadow-md hover:-translate-y-0.5 hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:border-slate-700"
+    class="group/card relative bg-white dark:bg-slate-900 rounded-xl p-4 shadow-soft dark:shadow-soft-xl dark:shadow-black/20 mb-2 cursor-pointer transition-all duration-300 ease-smooth border-none dark:border dark:border-slate-800 hover:shadow-soft-lg hover:-translate-y-0.5 hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:border-slate-700"
     :class="{ 
       'opacity-70 pointer-events-none': isUpdating,
       'shadow-red-100 dark:shadow-red-900/20 border-l-[3px] border-l-red-400 dark:border-l-red-500': hasError,
-      'z-10 shadow-lg dark:shadow-2xl': isExpanded,
+      'z-10 shadow-soft-xl dark:shadow-2xl': isExpanded,
       'border-l-4 border-l-green-500 bg-green-50/20 dark:bg-green-950/40 hover:bg-green-50/50 dark:hover:bg-green-950/60': winLostStatus === 'won',
       'border-l-4 border-l-red-500 bg-red-50/20 dark:bg-red-950/40 hover:bg-red-50/50 dark:hover:bg-red-950/60': winLostStatus === 'lost'
     }"
@@ -27,7 +27,7 @@
         <!-- Botões principais sempre visíveis -->
         <span 
           v-if="!isViewerMode"
-          class="cursor-pointer p-1 inline-flex items-center justify-center rounded text-slate-600 dark:text-slate-300 transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-green-500 dark:hover:text-green-400" 
+          class="cursor-pointer p-1 inline-flex items-center justify-center rounded-lg text-slate-600 dark:text-slate-300 transition-all duration-200 ease-smooth hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-green-500 dark:hover:text-green-400" 
           @click.stop="toggleValueInput"
           v-tooltip="dealValue ? $t('KANBAN.CARD.EDIT_DEAL_VALUE') : $t('KANBAN.CARD.ADD_DEAL_VALUE')"
         >
@@ -37,7 +37,7 @@
         <!-- Menu dropdown para outras ações -->
         <div v-if="!isViewerMode" class="relative inline-flex">
           <span 
-            class="cursor-pointer p-1 inline-flex items-center justify-center rounded text-slate-600 dark:text-slate-300 transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white" 
+            class="cursor-pointer p-1 inline-flex items-center justify-center rounded-lg text-slate-600 dark:text-slate-300 transition-all duration-200 ease-smooth hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white" 
             @click.stop="toggleActionsMenu"
             v-tooltip="'Mais ações'"
           >
@@ -45,11 +45,11 @@
           </span>
 
           <!-- Dropdown menu -->
-          <div v-if="showActionsMenu" class="absolute top-full right-0 mt-1 bg-white dark:bg-slate-800 rounded-md shadow-lg dark:shadow-2xl dark:shadow-black/40 border border-slate-200 dark:border-slate-700 z-[9999] min-w-[180px] overflow-hidden" @click.stop.prevent>
+          <div v-if="showActionsMenu" class="absolute top-full right-0 mt-1 bg-white dark:bg-slate-800 rounded-xl shadow-soft-xl dark:shadow-2xl dark:shadow-black/40 border border-slate-200 dark:border-slate-700 z-[9999] min-w-[180px] overflow-hidden animate-scale-in" @click.stop.prevent>
             <!-- Win/Lost Actions -->
             <div
               v-if="!winLostStatus"
-              class="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer text-slate-800 dark:text-white text-xs transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+              class="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer text-slate-800 dark:text-white text-xs transition-colors duration-150 ease-smooth hover:bg-slate-50 dark:hover:bg-slate-700"
               @click.stop.prevent="handleWinAction"
             >
               <fluent-icon icon="checkmark-circle" size="12" />
@@ -57,7 +57,7 @@
             </div>
             <div
               v-if="!winLostStatus"
-              class="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer text-slate-800 dark:text-white text-xs transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+              class="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer text-slate-800 dark:text-white text-xs transition-colors duration-150 ease-smooth hover:bg-slate-50 dark:hover:bg-slate-700"
               @click.stop.prevent="handleLostAction"
             >
               <fluent-icon icon="dismiss-circle" size="12" />
@@ -67,7 +67,7 @@
             <!-- Undo Win/Lost Action -->
             <div
               v-if="winLostStatus"
-              class="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer text-slate-800 dark:text-white text-xs transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+              class="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer text-slate-800 dark:text-white text-xs transition-colors duration-150 ease-smooth hover:bg-slate-50 dark:hover:bg-slate-700"
               @click.stop.prevent="handleUndoAction"
             >
               <fluent-icon icon="arrow-undo" size="12" />
@@ -153,7 +153,7 @@
     </div>
 
     <!-- Input de valor flutuante -->
-    <div v-if="showValueInput" class="absolute top-[30px] right-2.5 bg-white dark:bg-slate-800 rounded-md shadow-md dark:shadow-2xl dark:shadow-black/40 border border-slate-200 dark:border-slate-700 z-[9998] p-2" @click.stop>
+    <div v-if="showValueInput" class="absolute top-[30px] right-2.5 bg-white dark:bg-slate-800 rounded-xl shadow-soft-xl dark:shadow-2xl dark:shadow-black/40 border border-slate-200 dark:border-slate-700 z-[9998] p-2 animate-scale-in" @click.stop>
       <div class="flex items-center gap-2">
         <input 
           ref="valueInput"
@@ -258,7 +258,7 @@
 
     <!-- Novo botão expansível -->
     <div 
-      class="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-10 h-5 flex flex-col items-center justify-center cursor-pointer bg-white dark:bg-slate-800 rounded-b-md transition-all duration-200 z-[5] border border-slate-100 dark:border-slate-700 border-t-0 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700"
+      class="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-10 h-5 flex flex-col items-center justify-center cursor-pointer bg-white dark:bg-slate-800 rounded-b-xl transition-all duration-200 ease-smooth z-[5] border border-slate-100 dark:border-slate-700 border-t-0 shadow-soft hover:bg-slate-50 dark:hover:bg-slate-700"
       :class="{ 'bg-slate-50 dark:bg-slate-700': isExpanded }"
       @click.stop="toggleConversations"
       v-tooltip="isExpanded ? $t('KANBAN.CARD.HIDE_CONVERSATIONS') : $t('KANBAN.CARD.VIEW_CONVERSATIONS')"

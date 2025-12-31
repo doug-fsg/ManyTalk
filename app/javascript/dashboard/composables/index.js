@@ -20,3 +20,9 @@ export const useTrack = () => {
 export const useAlert = (message, action = null) => {
   emitter.emit('newToastMessage', { message, action });
 };
+
+export { useAutomation } from './useAutomation';
+export { useAgentsList } from './useAgentsList';
+export { useAI } from './useAI';
+export { useReportMetrics } from './useReportMetrics';
+export { useIntegrationHook } from './useIntegrationHook';

@@ -1,6 +1,6 @@
 <template>
   <div
-    class="z-50 rounded-md w-full flex flex-1 flex-col"
+    class="z-50 rounded-lg w-full flex flex-1 flex-col"
     :class="{ 'pb-2': showArticles, 'justify-end': !showArticles }"
   >
     <div class="px-4 pt-4 w-full">
@@ -12,7 +12,7 @@
       />
     </div>
     <div v-if="showArticles" class="px-4 py-2 w-full">
-      <div class="p-4 rounded-md bg-white dark:bg-slate-700 shadow-sm w-full">
+      <div class="p-4 rounded-xl bg-white dark:bg-slate-700 shadow-soft w-full hover:shadow-soft-lg transition-all duration-300 ease-smooth">
         <article-hero
           v-if="
             !articleUiFlags.isFetching &&
@@ -26,7 +26,7 @@
       </div>
     </div>
     <div v-if="articleUiFlags.isFetching" class="px-4 py-2 w-full">
-      <div class="p-4 rounded-md bg-white dark:bg-slate-700 shadow-sm w-full">
+      <div class="p-4 rounded-xl bg-white dark:bg-slate-700 shadow-soft w-full hover:shadow-soft-lg transition-all duration-300 ease-smooth">
         <article-card-skeleton-loader />
       </div>
     </div>

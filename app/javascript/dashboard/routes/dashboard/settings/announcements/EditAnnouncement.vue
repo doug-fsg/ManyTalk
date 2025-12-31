@@ -1,23 +1,25 @@
 <template>
-  <div class="flex flex-col h-auto overflow-auto">
-    <woot-modal-header
-      header-title="Editar Anúncio"
-      header-content="Atualize as informações do anúncio"
-    />
+  <div class="announcement-form-modal">
+    <woot-modal-header header-title="Editar Anúncio" />
     
-    <form class="flex flex-wrap mx-0 p-6" @submit.prevent="updateAnnouncement">
-      <!-- ID (READ-ONLY) -->
-      <div class="w-full mb-4">
-        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-          ID
-        </label>
-        <input
-          :value="form.id"
-          type="text"
-          disabled
-          class="w-full rounded-md border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-3 py-2 cursor-not-allowed"
-        />
-      </div>
+    <!-- Layout de 2 colunas -->
+    <div class="grid grid-cols-[2fr_1fr] gap-6 h-[calc(100vh-160px)] overflow-hidden">
+      <!-- Coluna Esquerda: Formulário -->
+      <div class="overflow-y-auto">
+        <form class="flex flex-wrap mx-0 p-6" @submit.prevent="updateAnnouncement">
+          <!-- Status Ativo -->
+          <div class="w-full mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
+            <label class="inline-flex items-center">
+              <input
+                type="checkbox"
+                v-model="form.active"
+                class="rounded-lg border-slate-300 text-woot-500 shadow-soft focus:border-woot-300 focus:ring focus:ring-woot-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600 transition-all duration-150 ease-smooth"
+              />
+              <span class="ml-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                Anúncio ativo
+              </span>
+            </label>
+          </div>
 
       <!-- Título (PT-BR) - OBRIGATÓRIO -->
       <div class="w-full mb-4">
@@ -28,7 +30,7 @@
           v-model.trim="form.title_pt_BR"
           type="text"
           required
-          class="w-full rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2"
+          class="w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 transition-colors duration-150 ease-smooth"
         />
       </div>
 
@@ -39,10 +41,14 @@
         </label>
         <textarea
           v-model.trim="form.description_pt_BR"
-          rows="3"
+          rows="4"
           required
-          class="w-full rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2"
+          placeholder="Descreva a nova funcionalidade...&#10;&#10;Você pode quebrar linhas e incluir links (http:// ou https://) que serão automaticamente clicáveis."
+          class="w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 transition-colors duration-150 ease-smooth"
         ></textarea>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          Use Enter para quebrar linhas. Links serão automaticamente detectados e tornados clicáveis.
+        </p>
       </div>
 
       <!-- Botão para mostrar traduções -->
@@ -50,7 +56,7 @@
         <button
           type="button"
           @click="showTranslations = !showTranslations"
-          class="text-sm text-slate-600 dark:text-slate-400 hover:text-woot-500 dark:hover:text-woot-400 flex items-center gap-2"
+          class="text-sm text-slate-600 dark:text-slate-400 hover:text-woot-500 dark:hover:text-woot-400 flex items-center gap-2 transition-colors duration-150 ease-smooth"
         >
           <fluent-icon :icon="showTranslations ? 'chevron-down' : 'chevron-right'" size="14" />
           {{ showTranslations ? 'Ocultar traduções' : '+ Editar traduções (opcional)' }}
@@ -58,7 +64,7 @@
       </div>
 
       <!-- Traduções (OPCIONAL - Colapsável) -->
-      <div v-if="showTranslations" class="w-full space-y-4 mb-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+      <div v-if="showTranslations" class="w-full space-y-4 mb-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl shadow-soft animate-fade-in">
         <!-- EN -->
         <div class="border-b border-slate-200 dark:border-slate-700 pb-4">
           <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
@@ -140,7 +146,7 @@
           <button
             type="button"
             @click="mediaType = 'url'"
-            class="px-3 py-1.5 rounded text-sm font-medium transition-colors"
+            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ease-smooth"
             :class="mediaType === 'url' 
               ? 'bg-woot-500 text-white' 
               : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'"
@@ -150,7 +156,7 @@
           <button
             type="button"
             @click="mediaType = 'upload'"
-            class="px-3 py-1.5 rounded text-sm font-medium transition-colors"
+            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ease-smooth"
             :class="mediaType === 'upload' 
               ? 'bg-woot-500 text-white' 
               : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'"
@@ -165,7 +171,7 @@
             v-model.trim="form.media_url"
             type="text"
             placeholder="https://exemplo.com/meu-arquivo.gif"
-            class="w-full rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2"
+            class="w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 transition-colors duration-150 ease-smooth"
           />
           <p class="text-xs text-slate-500 dark:text-slate-400">
             Cole a URL de uma imagem, GIF ou vídeo (max 10MB recomendado)
@@ -180,7 +186,7 @@
             @dragover.prevent="isDragging = true"
             @dragleave.prevent="isDragging = false"
             @drop.prevent="handleFileDrop"
-            class="border-2 border-dashed rounded-lg p-6 text-center transition-all"
+            class="border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300 ease-smooth"
             :class="[
               isDragging 
                 ? 'border-woot-500 bg-woot-50 dark:bg-woot-900/20' 
@@ -255,28 +261,6 @@
           </div>
         </div>
 
-        <!-- Preview da mídia -->
-        <div v-if="previewUrl" class="mt-4">
-          <p class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">Preview:</p>
-          <div class="border border-slate-300 dark:border-slate-700 rounded-lg p-3 bg-slate-50 dark:bg-slate-900">
-            <!-- Preview de imagem -->
-            <img 
-              v-if="isImage"
-              :src="previewUrl" 
-              alt="Preview" 
-              class="max-h-48 mx-auto rounded"
-            />
-            <!-- Preview de vídeo -->
-            <video 
-              v-else-if="isVideo"
-              :src="previewUrl"
-              controls
-              class="max-h-48 mx-auto rounded"
-            >
-              Seu navegador não suporta vídeo.
-            </video>
-          </div>
-        </div>
       </div>
 
       <!-- Público-alvo -->
@@ -306,92 +290,177 @@
         </div>
       </div>
 
-      <!-- Ativo -->
+      <!-- Agendamento e Expiração -->
       <div class="w-full mb-4">
-        <label class="inline-flex items-center">
-          <input
-            type="checkbox"
-            v-model="form.active"
-            class="rounded border-slate-300 text-woot-500 shadow-sm focus:border-woot-300 focus:ring focus:ring-woot-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600"
-          />
-          <span class="ml-2 text-sm font-medium text-slate-700 dark:text-slate-300">
-            Ativo (visível para usuários)
-          </span>
-        </label>
-      </div>
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Agendamento -->
+          <div>
+            <label class="inline-flex items-center mb-2">
+              <input
+                type="checkbox"
+                v-model="form.hasScheduled"
+                class="rounded-lg border-slate-300 text-woot-500 shadow-soft focus:border-woot-300 focus:ring focus:ring-woot-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600 transition-all duration-150 ease-smooth"
+              />
+              <span class="ml-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                📅 Agendar publicação
+              </span>
+            </label>
+            <div v-if="form.hasScheduled" class="mt-2">
+              <input
+                v-model="form.scheduled_at"
+                type="datetime-local"
+                class="w-full rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 px-3 py-2"
+              />
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                O anúncio só ficará visível a partir desta data/hora
+              </p>
+            </div>
+          </div>
 
-      <!-- Botão para mostrar opções avançadas -->
-      <div class="w-full mb-4">
-        <button
-          type="button"
-          @click="showAdvanced = !showAdvanced"
-          class="text-sm text-slate-600 dark:text-slate-400 hover:text-woot-500 dark:hover:text-woot-400 flex items-center gap-2"
-        >
-          <fluent-icon :icon="showAdvanced ? 'chevron-down' : 'chevron-right'" size="14" />
-          {{ showAdvanced ? 'Ocultar opções avançadas' : 'Agendar e Expirar (opcional)' }}
-        </button>
-      </div>
-
-      <!-- Opções Avançadas: Agendamento e Expiração -->
-      <div v-if="showAdvanced" class="w-full space-y-4 mb-6 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
-        <!-- Agendamento -->
-        <div>
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            📅 Agendar publicação (opcional)
-          </label>
-          <input
-            v-model="form.scheduled_at"
-            type="datetime-local"
-            class="w-full rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 px-3 py-2"
-          />
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            O anúncio só ficará visível a partir desta data/hora
-          </p>
-        </div>
-
-        <!-- Expiração -->
-        <div>
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            ⏰ Expirar automaticamente (opcional)
-          </label>
-          <input
-            v-model="form.expires_at"
-            type="datetime-local"
-            class="w-full rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 px-3 py-2"
-          />
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            O anúncio será desativado automaticamente nesta data/hora
-          </p>
-        </div>
-
-        <!-- Dica -->
-        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3">
-          <div class="flex">
-            <div class="flex-shrink-0">
-              <fluent-icon icon="info" size="16" class="text-blue-400" />
+          <!-- Expiração -->
+          <div>
+            <label class="inline-flex items-center mb-2">
+              <input
+                type="checkbox"
+                v-model="form.hasExpires"
+                class="rounded-lg border-slate-300 text-woot-500 shadow-soft focus:border-woot-300 focus:ring focus:ring-woot-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600 transition-all duration-150 ease-smooth"
+              />
+              <span class="ml-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                ⏰ Expirar automaticamente
+              </span>
+            </label>
+            <div v-if="form.hasExpires" class="mt-2">
+              <input
+                v-model="form.expires_at"
+                type="datetime-local"
+                class="w-full rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 px-3 py-2"
+              />
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                O anúncio será desativado automaticamente nesta data/hora
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Botões -->
-      <div class="flex items-center justify-end w-full gap-2 px-0 py-2">
-        <woot-button class="button clear" @click.prevent="onClose">
-          Cancelar
-        </woot-button>
-        <woot-button :is-loading="isUpdating">
-          Atualizar Anúncio
-        </woot-button>
+      <!-- Botão de Ação (CTA) -->
+      <div class="w-full mb-4">
+        <label class="inline-flex items-center mb-3">
+          <input
+            type="checkbox"
+            v-model="form.hasCta"
+            class="rounded border-slate-300 text-woot-500 shadow-sm focus:border-woot-300 focus:ring focus:ring-woot-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600"
+          />
+          <span class="ml-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+            Adicionar botão de ação (CTA)
+          </span>
+        </label>
+        <div v-if="form.hasCta" class="mt-3">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm text-slate-600 dark:text-slate-400 mb-1">
+                Texto do botão *
+              </label>
+              <input
+                v-model.trim="form.cta_text"
+                type="text"
+                placeholder="Ex: Ver mais, Experimentar, Saiba mais"
+                class="w-full rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 px-3 py-2"
+              />
+            </div>
+            <div>
+              <label class="block text-sm text-slate-600 dark:text-slate-400 mb-1">
+                Link do botão (URL) *
+              </label>
+              <input
+                v-model.trim="form.cta_url"
+                type="url"
+                placeholder="https://exemplo.com"
+                class="w-full rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 px-3 py-2"
+              />
+            </div>
+          </div>
+        </div>
       </div>
-    </form>
+
+      <!-- Badge de Urgência -->
+      <div class="w-full mb-4">
+        <label class="inline-flex items-center mb-3">
+          <input
+            type="checkbox"
+            v-model="form.hasBadge"
+            class="rounded border-slate-300 text-woot-500 shadow-sm focus:border-woot-300 focus:ring focus:ring-woot-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600"
+          />
+          <span class="ml-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+            Adicionar badge de urgência
+          </span>
+        </label>
+        <div v-if="form.hasBadge" class="mt-3">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm text-slate-600 dark:text-slate-400 mb-1">
+                Texto do badge *
+              </label>
+              <input
+                v-model.trim="form.badge_text"
+                type="text"
+                placeholder="Ex: Importante, Novo, Urgente"
+                class="w-full rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 px-3 py-2"
+              />
+            </div>
+            <div>
+              <label class="block text-sm text-slate-600 dark:text-slate-400 mb-1">
+                Cor do badge *
+              </label>
+              <select
+                v-model="form.badge_color"
+                class="w-full rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 px-3 py-2"
+              >
+                <option value="blue">Azul</option>
+                <option value="green">Verde</option>
+                <option value="yellow">Amarelo</option>
+                <option value="red">Vermelho</option>
+                <option value="purple">Roxo</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+          <!-- Botões -->
+          <div class="flex items-center justify-end w-full gap-2 px-0 py-2">
+            <woot-button class="button clear" @click.prevent="onClose">
+              Cancelar
+            </woot-button>
+            <woot-button :is-loading="isUpdating">
+              Atualizar Anúncio
+            </woot-button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Coluna Direita: Preview -->
+      <div class="overflow-y-auto bg-slate-50 dark:bg-slate-900 p-4 border-l border-slate-200 dark:border-slate-700">
+        <div class="sticky top-0 flex flex-col items-center">
+          <h3 class="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-3 uppercase w-full text-center">Preview</h3>
+          <div class="scale-75 origin-top">
+            <announcement-preview :announcement="previewData" />
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import AnnouncementsAPI from 'dashboard/api/announcements';
 import { useAlert } from 'dashboard/composables';
+import AnnouncementPreview from './AnnouncementPreview.vue';
 
 export default {
+  components: {
+    AnnouncementPreview,
+  },
   props: {
     announcement: { type: Object, required: true },
   },
@@ -410,11 +479,21 @@ export default {
         media_url: this.announcement.media_url || '',
         target_roles: [...this.announcement.target_roles],
         active: this.announcement.active,
+        // 🆕 Agendamento e Expiração
+        hasScheduled: !!this.announcement.scheduled_at,
         scheduled_at: this.formatDateTimeLocal(this.announcement.scheduled_at),
+        hasExpires: !!this.announcement.expires_at,
         expires_at: this.formatDateTimeLocal(this.announcement.expires_at),
+        // 🆕 CTA
+        hasCta: !!(this.announcement.cta_text && this.announcement.cta_url),
+        cta_text: this.announcement.cta_text || '',
+        cta_url: this.announcement.cta_url || '',
+        // 🆕 Badge
+        hasBadge: !!(this.announcement.badge_text && this.announcement.badge_color),
+        badge_text: this.announcement.badge_text || '',
+        badge_color: this.announcement.badge_color || 'blue',
       },
       showTranslations: false,
-      showAdvanced: false,
       isUpdating: false,
       // 🆕 Upload de mídia
       mediaType: 'url', // 'url' ou 'upload'
@@ -449,6 +528,25 @@ export default {
       const videoExtensions = ['.mp4', '.webm', '.mov'];
       return videoExtensions.some(ext => this.previewUrl.toLowerCase().includes(ext));
     },
+
+    // Dados para preview em tempo real
+    previewData() {
+      return {
+        id: this.form.id,
+        title: {
+          pt_BR: this.form.title_pt_BR || 'Título do anúncio',
+        },
+        description: {
+          pt_BR: this.form.description_pt_BR || 'Descrição do anúncio aparecerá aqui...',
+        },
+        media_url: this.form.media_url || null,
+        badge_text: this.form.hasBadge ? this.form.badge_text : null,
+        badge_color: this.form.hasBadge ? this.form.badge_color : null,
+        cta_text: this.form.hasCta ? this.form.cta_text : null,
+        cta_url: this.form.hasCta ? this.form.cta_url : null,
+        active: this.form.active,
+      };
+    },
   },
   methods: {
     async updateAnnouncement() {
@@ -459,7 +557,44 @@ export default {
           throw new Error('Por favor, faça upload de um arquivo ou escolha a opção URL.');
         }
 
-        await AnnouncementsAPI.update(this.form.id, this.form);
+        // Preparar dados para envio (remover flags internas)
+        const payload = { ...this.form };
+        
+        // Agendamento
+        if (!payload.hasScheduled) {
+          delete payload.scheduled_at;
+        }
+        delete payload.hasScheduled;
+        
+        // Expiração
+        if (!payload.hasExpires) {
+          delete payload.expires_at;
+        }
+        delete payload.hasExpires;
+        
+        // CTA
+        if (!payload.hasCta) {
+          delete payload.cta_text;
+          delete payload.cta_url;
+        }
+        delete payload.hasCta;
+        
+        // Badge
+        if (!payload.hasBadge) {
+          delete payload.badge_text;
+          delete payload.badge_color;
+        }
+        delete payload.hasBadge;
+
+        // Remover campos vazios opcionais
+        if (!payload.scheduled_at) delete payload.scheduled_at;
+        if (!payload.expires_at) delete payload.expires_at;
+        if (!payload.cta_text) delete payload.cta_text;
+        if (!payload.cta_url) delete payload.cta_url;
+        if (!payload.badge_text) delete payload.badge_text;
+        if (!payload.badge_color) delete payload.badge_color;
+
+        await AnnouncementsAPI.update(this.form.id, payload);
         useAlert('Anúncio atualizado com sucesso!');
         this.$emit('announcement-updated');
         this.onClose();
@@ -585,3 +720,14 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.announcement-form-modal {
+  @apply flex flex-col h-auto;
+}
+
+.announcement-form-modal :deep(.modal-container) {
+  max-width: 95vw !important;
+  width: 90rem !important;
+}
+</style>

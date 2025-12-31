@@ -161,6 +161,7 @@ export default {
 <style scoped>
 .campaign-history-modal {
   margin: 2rem;
+  animation: fade-in-up 0.3s ease-out;
 }
 .modal-header {
   display: flex;
@@ -187,17 +188,20 @@ export default {
   height: 20px;
   width: 100%;
   background-color: #e0e0e0;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
   margin-top: 15px;
+  transition: all 0.3s ease-smooth;
 }
 .progress-success {
   background-color: #4caf50;
   height: 100%;
+  transition: width 0.3s ease-smooth;
 }
 .progress-fail {
   background-color: #f44336;
   height: 100%;
+  transition: width 0.3s ease-smooth;
 }
 .progress-legend {
   display: flex;

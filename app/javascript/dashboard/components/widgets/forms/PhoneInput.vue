@@ -1,7 +1,7 @@
 <template>
   <div class="phone-input--wrap relative">
     <div
-      class="flex items-center dark:bg-slate-900 justify-start rounded-md border border-solid"
+      class="flex items-center dark:bg-slate-900 justify-start rounded-lg border border-solid transition-all duration-200 ease-smooth"
       :class="
         error
           ? 'border border-solid border-red-400 dark:border-red-400 mb-1'
@@ -9,7 +9,7 @@
       "
     >
       <div
-        class="cursor-pointer py-2 pr-1.5 pl-2 rounded-tl-md rounded-bl-md flex items-center justify-center gap-1.5 bg-slate-25 dark:bg-slate-700 h-10 w-14"
+        class="cursor-pointer py-2 pr-1.5 pl-2 rounded-tl-lg rounded-bl-lg flex items-center justify-center gap-1.5 bg-slate-25 dark:bg-slate-700 h-10 w-14 transition-colors duration-150 ease-smooth hover:bg-slate-50 dark:hover:bg-slate-600"
         @click.prevent="toggleCountryDropdown"
       >
         <h5 v-if="activeCountry" class="mb-0">
@@ -41,7 +41,7 @@
       ref="dropdown"
       v-on-clickaway="onOutsideClick"
       tabindex="0"
-      class="z-10 absolute h-60 w-[12.5rem] shadow-md overflow-y-auto top-10 rounded px-0 pt-0 pb-1 bg-white dark:bg-slate-900"
+      class="z-10 absolute h-60 w-[12.5rem] shadow-soft-xl overflow-y-auto top-10 rounded-xl px-0 pt-0 pb-1 bg-white dark:bg-slate-900 animate-scale-in"
       @keydown.prevent.up="moveUp"
       @keydown.prevent.down="moveDown"
       @keydown.prevent.enter="
@@ -62,7 +62,7 @@
         v-for="(country, index) in filteredCountriesBySearch"
         ref="dropdownItem"
         :key="index"
-        class="flex items-center h-7 py-0 px-1 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700"
+        class="flex items-center h-7 py-0 px-1 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors duration-150 ease-smooth rounded-lg"
         :class="{
           'bg-slate-50 dark:bg-slate-700': country.id === activeCountryCode,
           'bg-slate-25 dark:bg-slate-800': index === selectedIndex,

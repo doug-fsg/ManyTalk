@@ -87,7 +87,7 @@ onBeforeMount(() => {
       >
         <template #actions>
     <woot-button
-            class="button nice rounded-md"
+            class="button nice rounded-lg"
       icon="add-circle"
       @click="openAddPopup"
     >

@@ -1,0 +1,161 @@
+// ========================================
+// Modern Typography System
+// Compatible with Vue 2 and Vue 3
+// ========================================
+
+// Base Typography
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'kern' 1, 'liga' 1;
+}
+
+// Improved Line Heights
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+h1 {
+  line-height: 1.2;
+  font-size: 2.25rem; // 36px
+}
+
+h2 {
+  line-height: 1.3;
+  font-size: 1.875rem; // 30px
+}
+
+h3 {
+  line-height: 1.4;
+  font-size: 1.5rem; // 24px
+}
+
+h4 {
+  line-height: 1.4;
+  font-size: 1.25rem; // 20px
+}
+
+h5 {
+  line-height: 1.5;
+  font-size: 1.125rem; // 18px
+}
+
+h6 {
+  line-height: 1.5;
+  font-size: 1rem; // 16px
+}
+
+// Body Text
+p, span, div {
+  line-height: 1.6;
+  letter-spacing: -0.011em;
+}
+
+// Small Text
+small, .text-sm, .text-xs {
+  letter-spacing: 0;
+}
+
+// Code & Monospace
+code, pre, kbd, samp {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Droid Sans Mono', 'Source Code Pro', monospace;
+  font-feature-settings: 'calt' 1, 'liga' 1;
+}
+
+// Links
+a {
+  transition: color 0.15s ease-smooth;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// Lists
+ul, ol {
+  line-height: 1.7;
+}
+
+// Form Elements
+input, textarea, select, button {
+  letter-spacing: -0.011em;
+}
+
+// Tailwind Typography Override
+.prose {
+  line-height: 1.7;
+  letter-spacing: -0.011em;
+  
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.02em;
+  }
+  
+  code {
+    letter-spacing: 0;
+  }
+}
+
+// ========================================
+// Font Weight Utilities
+// ========================================
+.font-light {
+  font-weight: 300;
+}
+
+.font-normal {
+  font-weight: 400;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+// ========================================
+// Reading Optimization
+// ========================================
+.reading-optimal {
+  line-height: 1.7;
+  letter-spacing: -0.011em;
+  font-size: 1rem;
+  max-width: 65ch;
+}
+
+.reading-comfortable {
+  line-height: 1.8;
+  letter-spacing: -0.005em;
+}
+
+// ========================================
+// Truncation
+// ========================================
+.truncate-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.truncate-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+

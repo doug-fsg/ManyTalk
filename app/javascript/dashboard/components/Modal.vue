@@ -8,8 +8,8 @@
     >
       <div
         :class="{
-          'modal-container rtl:text-right shadow-md max-h-full overflow-auto relative bg-white dark:bg-slate-800 skip-context-menu': true,
-          'rounded-xl w-[37.5rem]': !fullWidth,
+          'modal-container rtl:text-right shadow-soft-xl max-h-full overflow-auto relative bg-white dark:bg-slate-800 skip-context-menu': true,
+          'rounded-2xl w-[37.5rem]': !fullWidth,
           'items-center rounded-none flex h-full justify-center w-full':
             fullWidth,
           [size]: true,
@@ -114,6 +114,9 @@ export default {
   .modal-container {
     &.medium {
       @apply max-w-[80%] w-[56.25rem];
+    }
+    &.large {
+      @apply max-w-[95%] w-[90rem];
     }
     // .content-box {
     //   @apply h-auto p-0;

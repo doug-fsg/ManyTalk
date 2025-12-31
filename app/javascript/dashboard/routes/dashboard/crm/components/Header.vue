@@ -16,7 +16,7 @@
           <button 
             ref="kanbanButton"
             :class="[
-              'px-2.5 py-1.5 rounded-md transition-colors duration-200 flex items-center gap-1.5 text-xs font-medium relative z-10',
+              'px-2.5 py-1.5 rounded-lg transition-colors duration-200 ease-smooth flex items-center gap-1.5 text-xs font-medium relative z-10',
               currentView === 'kanban' ? 'text-white' : 'text-slate-600 dark:text-slate-300'
             ]"
             @click="setView('kanban')"
@@ -28,7 +28,7 @@
           <button 
             ref="dashboardButton"
             :class="[
-              'px-2.5 py-1.5 rounded-md transition-colors duration-200 flex items-center gap-1.5 text-xs font-medium relative z-10',
+              'px-2.5 py-1.5 rounded-lg transition-colors duration-200 ease-smooth flex items-center gap-1.5 text-xs font-medium relative z-10',
               currentView === 'dashboard' ? 'text-white' : 'text-slate-600 dark:text-slate-300'
             ]"
             @click="setView('dashboard')"
@@ -40,7 +40,7 @@
           <button 
             ref="listButton"
             :class="[
-              'px-2.5 py-1.5 rounded-md transition-colors duration-200 flex items-center gap-1.5 text-xs font-medium relative z-10',
+              'px-2.5 py-1.5 rounded-lg transition-colors duration-200 ease-smooth flex items-center gap-1.5 text-xs font-medium relative z-10',
               currentView === 'list' ? 'text-white' : 'text-slate-600 dark:text-slate-300'
             ]"
             @click="setView('list')"
@@ -56,9 +56,9 @@
           <button
             @click.stop="togglePipeline"
             :class="[
-              'relative inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200',
+              'relative inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ease-smooth',
               'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-slate-100',
-              'hover:bg-slate-100 dark:hover:bg-slate-700',
+              'hover:bg-slate-50 dark:hover:bg-slate-700',
               showPipelineDropdown ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100' : ''
             ]"
           >
@@ -82,12 +82,12 @@
             leave-from-class="transform opacity-100 scale-100"
             leave-to-class="transform opacity-0 scale-95"
           >
-            <div v-if="showPipelineDropdown" class="absolute left-0 mt-2 w-56 rounded-lg shadow-lg bg-white dark:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-700 z-50 overflow-hidden">
+            <div v-if="showPipelineDropdown" class="absolute left-0 mt-2 w-56 rounded-xl shadow-soft-xl bg-white dark:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-700 z-50 overflow-hidden animate-scale-in">
               <div v-if="pipelines && pipelines.length" class="py-1">
                 <button
                   v-for="pipeline in pipelines"
                   :key="pipeline.id"
-                  class="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 focus:outline-none focus:bg-slate-50 dark:focus:bg-slate-700/50 transition-colors duration-150"
+                  class="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 focus:outline-none focus:bg-slate-50 dark:focus:bg-slate-700/50 transition-colors duration-150 ease-smooth"
                   @click="selectPipeline(pipeline)"
                 >
                   {{ pipeline.attribute_display_name || pipeline.display_name || pipeline.name || $t('KANBAN.NO_VALUE') }}
@@ -115,9 +115,9 @@
           <button
             @click="toggleSearch"
             :class="[
-              'relative inline-flex items-center justify-center w-8 h-8 rounded-md text-xs font-medium transition-all duration-200',
+              'relative inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-medium transition-all duration-200 ease-smooth',
               'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100',
-              'hover:bg-slate-100 dark:hover:bg-slate-700',
+              'hover:bg-slate-50 dark:hover:bg-slate-700',
               showSearch ? 'bg-woot-50 text-woot-600 dark:bg-woot-900/20 dark:text-woot-400' : ''
             ]"
             v-tooltip.top="showSearch ? '' : $t('KANBAN.SEARCH_PLACEHOLDER')"
@@ -137,7 +137,7 @@
               type="search" 
               v-model="searchQuery"
               :placeholder="$t('KANBAN.SEARCH_PLACEHOLDER')"
-              class="px-3 py-1.5 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-woot-500 focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:placeholder-slate-400 w-48"
+              class="px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-woot-500 focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:placeholder-slate-400 w-48 transition-colors duration-150 ease-smooth"
               @input="$emit('search', searchQuery)"
             />
           </transition>
@@ -177,7 +177,7 @@
             leave-from-class="transform opacity-100 scale-100"
             leave-to-class="transform opacity-0 scale-95"
           >
-            <div v-if="showKanbanActions" class="absolute right-0 mt-2 w-48 rounded-lg shadow-lg bg-white dark:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-700 z-50 overflow-hidden">
+            <div v-if="showKanbanActions" class="absolute right-0 mt-2 w-48 rounded-xl shadow-soft-xl bg-white dark:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-700 z-50 overflow-hidden animate-scale-in">
               <div class="py-1">
                 <button
                   class="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-woot-50 dark:hover:bg-woot-900/20 focus:outline-none focus:bg-woot-50 dark:focus:bg-woot-900/20 flex items-center gap-2 transition-colors duration-150"

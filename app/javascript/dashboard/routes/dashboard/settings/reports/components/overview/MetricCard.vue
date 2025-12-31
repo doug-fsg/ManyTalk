@@ -25,7 +25,7 @@ export default {
 
 <template>
   <div
-    class="metric-card flex flex-col m-2 p-4 border border-solid overflow-hidden rounded-md flex-grow shadow-sm text-slate-700 dark:text-slate-100 bg-white dark:bg-slate-800 border-slate-75 dark:border-slate-700 min-h-[10rem]"
+    class="metric-card flex flex-col m-2 p-4 border border-solid overflow-hidden rounded-xl flex-grow shadow-soft text-slate-700 dark:text-slate-100 bg-white dark:bg-slate-800 border-slate-75 dark:border-slate-700 min-h-[10rem] hover:shadow-soft-lg transition-all duration-300 ease-smooth"
   >
     <div class="card-header">
       <slot name="header">
@@ -71,7 +71,7 @@ export default {
 
 <style lang="scss" scoped>
 .metric-card {
-  @apply flex flex-col mb-2 p-4 border border-solid overflow-hidden rounded-md flex-grow shadow-sm text-slate-700 dark:text-slate-100 bg-white dark:bg-slate-800 border-slate-75 dark:border-slate-700 min-h-[10rem];
+  @apply flex flex-col mb-2 p-4 border border-solid overflow-hidden rounded-xl flex-grow shadow-soft text-slate-700 dark:text-slate-100 bg-white dark:bg-slate-800 border-slate-75 dark:border-slate-700 min-h-[10rem];
 
   .card-header--control-area {
     transition: opacity 0.2s ease-in-out;

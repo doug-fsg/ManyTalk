@@ -77,7 +77,7 @@ const confirmPlaceHolderText = computed(() =>
           <router-link
             v-if="isAdmin"
           :to="{ name: 'settings_teams_new' }"
-          class="button rounded-md primary"
+          class="button rounded-lg primary"
           >
           <fluent-icon icon="add-circle" />
           <span class="button__content">

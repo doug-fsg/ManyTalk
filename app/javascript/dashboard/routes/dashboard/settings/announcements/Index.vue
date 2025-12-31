@@ -137,12 +137,12 @@
     </div>
 
     <!-- Modal Add -->
-    <woot-modal :show.sync="showAddPopup" :on-close="hideAddPopup">
+    <woot-modal :show.sync="showAddPopup" :on-close="hideAddPopup" size="large">
       <add-announcement @close="hideAddPopup" />
     </woot-modal>
 
     <!-- Modal Edit -->
-    <woot-modal :show.sync="showEditPopup" :on-close="hideEditPopup">
+    <woot-modal :show.sync="showEditPopup" :on-close="hideEditPopup" size="large">
       <edit-announcement
         :announcement="selectedAnnouncement"
         @close="hideEditPopup"
@@ -309,6 +309,14 @@ export default {
           media_url: announcement.media_url,
           target_roles: announcement.target_roles,
           active: announcement.active,
+          // Preservar campos opcionais
+          cta_text: announcement.cta_text,
+          cta_url: announcement.cta_url,
+          importance_type: announcement.importance_type,
+          badge_text: announcement.badge_text,
+          badge_color: announcement.badge_color,
+          scheduled_at: announcement.scheduled_at,
+          expires_at: announcement.expires_at,
           reset_views: true // Flag especial
         });
 

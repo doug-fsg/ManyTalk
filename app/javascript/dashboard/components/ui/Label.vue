@@ -111,7 +111,7 @@ export default {
 
 <style scoped lang="scss">
 .label {
-  @apply items-center font-medium text-xs rounded-[4px] gap-1 p-1 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100 border border-solid border-slate-75 dark:border-slate-600 h-6;
+  @apply items-center font-medium text-xs rounded-lg gap-1 p-1 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100 border border-solid border-slate-75 dark:border-slate-600 h-6 transition-all duration-150 ease-smooth;
 
   &.small {
     @apply text-xs py-0.5 px-1 leading-tight h-5;
@@ -191,7 +191,7 @@ export default {
 }
 
 .label-close--button {
-  @apply text-slate-800 dark:text-slate-100 -mb-0.5 rounded-sm cursor-pointer flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700;
+  @apply text-slate-800 dark:text-slate-100 -mb-0.5 rounded-lg cursor-pointer flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors duration-150 ease-smooth;
 }
 
 .label-action--button {

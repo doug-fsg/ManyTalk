@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white dark:bg-slate-700 shadow-xl rounded-md p-1">
+  <div class="bg-white dark:bg-slate-700 shadow-soft-xl rounded-xl p-1 animate-scale-in">
     <menu-item
       v-if="!hasUnreadMessages"
       :option="unreadOption"

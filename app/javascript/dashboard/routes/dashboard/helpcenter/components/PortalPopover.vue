@@ -1,7 +1,7 @@
 <template>
   <div
     v-on-clickaway="closePortalPopover"
-    class="absolute overflow-y-scroll max-h-[96vh] p-4 bg-white dark:bg-slate-800 rounded-md shadow-lg max-w-[30rem] z-[1000]"
+    class="absolute overflow-y-scroll max-h-[96vh] p-4 bg-white dark:bg-slate-800 rounded-xl shadow-soft-xl max-w-[30rem] z-[1000] animate-scale-in"
   >
     <header>
       <div class="flex items-center justify-between mb-4">

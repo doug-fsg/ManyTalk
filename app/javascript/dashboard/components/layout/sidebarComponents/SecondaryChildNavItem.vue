@@ -6,7 +6,7 @@
     active-class="active"
   >
     <li
-      class="font-medium h-7 my-1 hover:bg-slate-25 hover:text-bg-50 flex items-center px-2 rounded-md dark:hover:bg-slate-800"
+      class="font-medium h-7 my-1 hover:bg-slate-25 hover:text-bg-50 flex items-center px-2 rounded-lg dark:hover:bg-slate-800 transition-all duration-200 ease-smooth"
       :class="{
         'bg-woot-25 dark:bg-slate-800': isActive,
         'text-ellipsis overflow-hidden whitespace-nowrap max-w-full':

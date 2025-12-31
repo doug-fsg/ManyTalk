@@ -7,18 +7,21 @@ internal_check_new_versions_job:
   cron: '0 12 */1 * *'
   class: 'Internal::CheckNewVersionsJob'
   queue: scheduled_jobs
+  active_job: true
 
 # executed At every 5th minute..
 trigger_scheduled_items_job:
   cron: '*/5 * * * *'
   class: 'TriggerScheduledItemsJob'
   queue: scheduled_jobs
+  active_job: true
 
 # executed At every minute..
 trigger_imap_email_inboxes_job:
   cron: '*/1 * * * *'
   class: 'Inboxes::FetchImapEmailInboxesJob'
   queue: scheduled_jobs
+  active_job: true
 
 # executed daily at 2230 UTC
 # which is our lowest traffic time
@@ -26,3 +29,4 @@ remove_stale_contact_inboxes_job.rb:
   cron: '30 22 * * *'
   class: 'Internal::RemoveStaleContactInboxesJob'
   queue: scheduled_jobs
+  active_job: true

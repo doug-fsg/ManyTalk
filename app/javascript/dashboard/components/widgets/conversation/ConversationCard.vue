@@ -1,6 +1,6 @@
 <template>
   <div
-    class="relative flex items-start flex-grow-0 flex-shrink-0 w-auto max-w-full px-4 py-0 border-t-0 border-b-0 border-l-2 border-r-0 border-transparent border-solid cursor-pointer conversation hover:bg-slate-25 dark:hover:bg-slate-800 group"
+    class="relative flex items-start flex-grow-0 flex-shrink-0 w-auto max-w-full px-4 py-0 border-t-0 border-b-0 border-l-2 border-r-0 border-transparent border-solid cursor-pointer conversation hover:bg-slate-25 dark:hover:bg-slate-800 group transition-all duration-200 ease-smooth"
     :class="{
       'active animate-card-select bg-slate-25 dark:bg-slate-800 border-woot-500':
         isActiveChat,
@@ -89,7 +89,7 @@
           />
         </span>
         <span
-          class="unread shadow-lg rounded-full hidden text-xxs font-semibold h-4 leading-4 ml-auto mt-1 min-w-[1rem] px-1 py-0 text-center text-white bg-green-400"
+          class="unread shadow-soft-lg rounded-full hidden text-xxs font-semibold h-4 leading-4 ml-auto mt-1 min-w-[1rem] px-1 py-0 text-center text-white bg-green-400 animate-scale-in"
         >
           {{ unreadCount > 9 ? '9+' : unreadCount }}
         </span>

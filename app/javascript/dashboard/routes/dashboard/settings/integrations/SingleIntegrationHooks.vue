@@ -21,7 +21,7 @@ export default {
           <div class="flex h-[6.25rem] w-[6.25rem]">
             <img
               :src="`/dashboard/images/integrations/${integration.id}.png`"
-              class="max-w-full rounded-md border border-slate-50 dark:border-slate-700/50 shadow-sm block dark:hidden bg-white dark:bg-slate-900"
+              class="max-w-full rounded-lg border border-slate-50 dark:border-slate-700/50 shadow-soft block dark:hidden bg-white dark:bg-slate-900"
             />
             <img
               :src="`/dashboard/images/integrations/${integration.id}-dark.png`"

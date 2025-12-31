@@ -57,7 +57,7 @@
       v-else-if="currentView === 'list' && selectedAttribute && !uiFlags.isFetching"
       class="list-view-container p-6 bg-slate-50 dark:bg-slate-900"
     >
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-soft border border-slate-200 dark:border-slate-700 hover:shadow-soft-lg transition-all duration-300 ease-smooth">
         <div class="p-4 border-b border-slate-200 dark:border-slate-700">
           <h2 class="text-xl font-semibold text-slate-900 dark:text-white">
             {{ $t('KANBAN.LIST_VIEW.TITLE') }}
@@ -89,7 +89,7 @@
                 v-for="contact in paginatedContacts"
                 :key="contact.id"
                 @click="handleOpenCardModal(contact)"
-                class="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                class="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors duration-150 ease-smooth"
               >
                 <td class="px-4 py-3 whitespace-nowrap">
                   <div class="text-sm font-medium text-slate-900 dark:text-white">

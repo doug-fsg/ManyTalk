@@ -1,6 +1,6 @@
 <template>
   <div
-    class="text-slate-800 dark:text-slate-100 menu-with-submenu min-width-calc w-full p-1 flex items-center h-7 rounded-md relative bg-white dark:bg-slate-700 justify-between hover:bg-woot-75 cursor-pointer dark:hover:bg-slate-800"
+    class="text-slate-800 dark:text-slate-100 menu-with-submenu min-width-calc w-full p-1 flex items-center h-7 rounded-lg relative bg-white dark:bg-slate-700 justify-between hover:bg-woot-75 cursor-pointer dark:hover:bg-slate-800 transition-colors duration-150 ease-smooth"
     :class="!subMenuAvailable ? 'opacity-50 cursor-not-allowed' : ''"
   >
     <div class="flex items-center">
@@ -10,7 +10,7 @@
     <fluent-icon icon="chevron-right" size="12" />
     <div
       v-if="subMenuAvailable"
-      class="submenu bg-white dark:bg-slate-700 p-1 shadow-lg rounded-md absolute left-full top-0 hidden min-h-min max-h-[15rem] overflow-y-auto overflow-x-hidden cursor-pointer"
+      class="submenu bg-white dark:bg-slate-700 p-1 shadow-soft-xl rounded-xl absolute left-full top-0 hidden min-h-min max-h-[15rem] overflow-y-auto overflow-x-hidden cursor-pointer animate-scale-in"
     >
       <slot />
     </div>

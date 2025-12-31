@@ -565,18 +565,18 @@ export default {
 }
 
 .basic-data-section {
-  @apply border border-slate-200 dark:border-slate-600 rounded-lg;
+  @apply border border-slate-200 dark:border-slate-600 rounded-xl;
   overflow: visible !important;
 }
 
 .stages-section {
-  @apply border border-slate-200 dark:border-slate-600 rounded-lg;
+  @apply border border-slate-200 dark:border-slate-600 rounded-xl;
   overflow: visible !important;
 }
 
 .section-header {
   @apply flex items-center justify-between px-4 py-3 cursor-pointer;
-  @apply bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700;
+  @apply bg-slate-50 dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors duration-150 ease-smooth;
   @apply transition-colors duration-200;
 
   .header-left {
@@ -665,7 +665,7 @@ export default {
   @apply text-sm font-medium text-slate-900 dark:text-white;
   
   &.stage-name-clickable {
-    @apply cursor-text px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700;
+    @apply cursor-text px-1 py-0.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors duration-150 ease-smooth;
     @apply transition-colors duration-200;
   }
 }
@@ -682,7 +682,7 @@ export default {
 
 .stage-action-btn {
   @apply p-1.5 rounded-lg text-slate-400 dark:text-slate-500;
-  @apply hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300;
+  @apply hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300;
   @apply transition-all duration-200 cursor-pointer flex-shrink-0;
   @apply bg-transparent border-none;
 

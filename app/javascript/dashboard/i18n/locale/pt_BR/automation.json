@@ -1,6 +1,8 @@
 {
   "AUTOMATION": {
     "HEADER": "Automações",
+    "DESCRIPTION": "As automações podem substituir e agilizar processos existentes que requerem esforço manual, como adicionar etiquetas e atribuir conversas aos melhores agentes. Isso permite que sua equipe se concentre no que faz de melhor.",
+    "LEARN_MORE": "Saiba mais sobre automações",
     "HEADER_BTN_TXT": "Adicionar regra de automação",
     "LOADING": "Buscando regras de automação",
     "SIDEBAR_TXT": "<p><b>Regras de automação</b> <p>A automação pode substituir e agilizar processos existentes que requerem esforço manual. Você pode fazer muitas coisas automatizadas, como adicionar marcadores e atribuir a conversa ao melhor atendente, enquanto a equipe se concentra no que saber fazer de melhor, que é atender, sem se preocupar com tarefas manuais.</p>",

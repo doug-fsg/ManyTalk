@@ -3,9 +3,19 @@
     <div v-if="show && current" class="announcement-overlay">
       <div class="announcement-card">
         <!-- Close Button -->
-        <button class="close-btn" @click="dismiss">
+        <button class="close-btn" @click="dismiss" aria-label="Fechar anúncio">
           <fluent-icon icon="dismiss" size="20" />
         </button>
+
+        <!-- Badge de Urgência -->
+        <div v-if="current.badge_text && current.badge_color" class="badge-container">
+          <span 
+            class="badge"
+            :class="badgeClass"
+          >
+            {{ current.badge_text }}
+          </span>
+        </div>
 
         <!-- Media -->
         <div v-if="current.media_url" class="media-container">
@@ -14,6 +24,7 @@
             v-if="isImage(current.media_url)"
             :src="current.media_url" 
             :alt="current.title"
+            class="media-image"
           />
           <!-- Vídeo -->
           <video 
@@ -23,6 +34,7 @@
             autoplay
             muted
             loop
+            class="media-video"
           >
             Seu navegador não suporta vídeo.
           </video>
@@ -30,8 +42,52 @@
 
         <!-- Content -->
         <div class="content">
-          <h2>{{ current.title }}</h2>
-          <p>{{ current.description }}</p>
+          <h2 class="announcement-title">{{ current.title }}</h2>
+          <div class="announcement-description">
+            <div 
+              v-if="!isExpanded && isLongDescription"
+              class="description-preview"
+            >
+              <span v-html="formattedDescriptionPreview"></span>
+              <button 
+                @click="toggleExpand"
+                class="read-more-btn"
+              >
+                Ler mais
+              </button>
+            </div>
+            <div 
+              v-else-if="isLongDescription"
+              class="description-full"
+            >
+              <span v-html="formattedDescription"></span>
+              <button 
+                @click="toggleExpand"
+                class="read-more-btn"
+              >
+                Ler menos
+              </button>
+            </div>
+            <div 
+              v-else
+              class="description-full"
+            >
+              <span v-html="formattedDescription"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CTA Button -->
+        <div v-if="current.cta_text && current.cta_url" class="cta-container">
+          <a 
+            :href="current.cta_url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="cta-button"
+          >
+            {{ current.cta_text }}
+            <fluent-icon icon="arrow-right" size="14" class="ml-1" />
+          </a>
         </div>
 
         <!-- Actions -->
@@ -39,7 +95,7 @@
           <button v-if="hasNext" @click="next" class="btn-next">
             Próximo ({{ remaining }})
           </button>
-          <button @click="dismissAll" class="btn-primary">
+          <button v-if="!current.cta_text || !current.cta_url" @click="dismissAll" class="btn-primary">
             Entendi ✓
           </button>
         </div>
@@ -64,6 +120,7 @@ export default {
       show: false,
       announcements: [],
       currentIndex: 0,
+      isExpanded: false,
     };
   },
 
@@ -83,6 +140,30 @@ export default {
         title: announcement.title[this.currentLocale] || announcement.title.pt_BR || announcement.title.en,
         description: announcement.description[this.currentLocale] || announcement.description.pt_BR || announcement.description.en,
       };
+    },
+
+    // Processar descrição com links e quebra de linha
+    formattedDescription() {
+      if (!this.current || !this.current.description) return '';
+      return this.processDescription(this.current.description);
+    },
+
+    formattedDescriptionPreview() {
+      if (!this.current || !this.current.description) return '';
+      const preview = this.current.description.substring(0, 300);
+      return this.processDescription(preview);
+    },
+
+    isLongDescription() {
+      if (!this.current || !this.current.description) return false;
+      return this.current.description.length > 300 || this.current.description.split('\n').length > 5;
+    },
+
+    // Classes CSS para badge
+    badgeClass() {
+      if (!this.current || !this.current.badge_color) return '';
+      const color = this.current.badge_color;
+      return `badge-${color}`;
     },
 
     hasNext() {
@@ -190,6 +271,37 @@ export default {
       const videoExtensions = ['.mp4', '.webm', '.mov'];
       return videoExtensions.some(ext => url.toLowerCase().includes(ext));
     },
+
+    // Processar descrição: detectar links e preservar quebras de linha
+    processDescription(text) {
+      if (!text) return '';
+      
+      // Escapar HTML para segurança
+      let processed = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+      // Detectar URLs e torná-las clicáveis
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
+      processed = processed.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" class="announcement-link">$1</a>');
+
+      // Converter quebras de linha em <br>
+      processed = processed.replace(/\n/g, '<br>');
+
+      return processed;
+    },
+
+    toggleExpand() {
+      this.isExpanded = !this.isExpanded;
+    },
+  },
+
+  watch: {
+    currentIndex() {
+      // Resetar estado de expansão ao mudar de anúncio
+      this.isExpanded = false;
+    },
   },
 };
 </script>
@@ -201,10 +313,38 @@ export default {
 }
 
 .announcement-card {
-  @apply relative bg-white dark:bg-slate-800 rounded-lg shadow-2xl max-w-2xl w-full mx-4;
+  @apply relative bg-white dark:bg-slate-800 rounded-2xl shadow-soft-xl max-w-2xl w-full mx-4 animate-scale-in;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
+}
+
+.badge-container {
+  @apply absolute top-4 left-4 z-10;
+}
+
+.badge {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide;
+  
+  &.badge-blue {
+    @apply bg-sky-100 text-sky-900 dark:bg-sky-700 dark:text-sky-100;
+  }
+  
+  &.badge-green {
+    @apply bg-green-100 text-green-900 dark:bg-green-700 dark:text-green-100;
+  }
+  
+  &.badge-yellow {
+    @apply bg-yellow-100 text-yellow-900 dark:bg-yellow-700 dark:text-yellow-100;
+  }
+  
+  &.badge-red {
+    @apply bg-red-100 text-red-900 dark:bg-red-700 dark:text-red-100;
+  }
+  
+  &.badge-purple {
+    @apply bg-violet-100 text-violet-900 dark:bg-violet-700 dark:text-violet-100;
+  }
 }
 
 .close-btn {
@@ -213,29 +353,66 @@ export default {
 
 .media-container {
   @apply w-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center;
-  max-height: 300px; /* Reduzido para dar mais espaço ao conteúdo */
-  min-height: 150px; /* Reduzido */
+  max-height: 400px;
+  min-height: 200px;
   overflow: hidden;
-  flex-shrink: 0; /* Não encolhe */
+  flex-shrink: 0;
   
-  img, video {
-    @apply w-full h-auto object-contain;
-    max-height: 300px; /* Reduzido */
+  .media-image {
+    @apply w-full h-full object-cover;
+    max-height: 400px;
+  }
+  
+  .media-video {
+    @apply w-full h-full object-contain;
+    max-height: 400px;
   }
 }
 
 .content {
-  @apply p-6; /* Reduzido padding */
+  @apply p-6;
   flex: 1;
-  min-height: 120px; /* Garante espaço mínimo para título e descrição */
+  min-height: 120px;
+}
+
+.announcement-title {
+  @apply text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4;
+  line-height: 1.3;
+}
+
+.announcement-description {
+  @apply text-slate-700 dark:text-slate-300 leading-relaxed;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.description-preview,
+.description-full {
+  @apply text-base;
   
-  h2 {
-    @apply text-xl font-bold text-slate-900 dark:text-slate-100 mb-3; /* Reduzido */
+  .read-more-btn {
+    @apply ml-2 text-sm font-medium text-woot-500 hover:text-woot-600 dark:text-white dark:hover:text-slate-200 transition-colors underline;
+    cursor: pointer;
+    display: inline;
+    background: none;
+    border: none;
+    padding: 0;
   }
-  
-  p {
-    @apply text-slate-600 dark:text-slate-400 leading-relaxed text-sm; /* Texto menor */
-  }
+}
+
+.announcement-link {
+  @apply text-woot-500 hover:text-woot-600 dark:text-woot-400 dark:hover:text-woot-300 underline;
+  word-break: break-all;
+}
+
+.cta-container {
+  @apply px-6 pb-4;
+  flex-shrink: 0;
+}
+
+.cta-button {
+  @apply inline-flex items-center justify-center w-full px-4 py-2.5 text-sm font-semibold text-white bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 rounded-lg transition-all duration-200 ease-smooth;
+  text-decoration: none;
 }
 
 .actions {
@@ -244,11 +421,11 @@ export default {
 }
 
 .btn-primary {
-  @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-woot-500 hover:bg-woot-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-woot-500 transition-colors;
+  @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-woot-500 hover:bg-woot-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-woot-500 transition-all duration-200 ease-smooth;
 }
 
 .btn-next {
-  @apply inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-woot-500 transition-colors;
+  @apply inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-lg text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-woot-500 transition-all duration-200 ease-smooth;
 }
 
 .progress {

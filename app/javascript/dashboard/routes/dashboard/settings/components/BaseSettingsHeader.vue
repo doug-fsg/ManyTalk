@@ -78,7 +78,7 @@ const openInNewTab = url => {
       >
         <slot name="description">{{ description }}</slot>
       </p>
-      <!-- Link "Learn More" comentado - será adicionado no futuro -->
+      <!-- Links comentados conforme solicitado -->
       <!--
       <CustomBrandPolicyWrapper :show-on-custom-branded-instance="false">
         <a
@@ -103,7 +103,7 @@ const openInNewTab = url => {
       class="flex items-start justify-start w-full gap-3 sm:hidden flex-wrap"
     >
       <slot name="actions" />
-      <!-- Link "Learn More" (mobile) comentado - será adicionado no futuro -->
+      <!-- Links comentados conforme solicitado -->
       <!--
       <CustomBrandPolicyWrapper :show-on-custom-branded-instance="false">
         <woot-button

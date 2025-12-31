@@ -4,9 +4,9 @@
     <button
       @click.stop="toggleFilters"
       :class="[
-        'relative inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all duration-200',
+        'relative inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ease-smooth',
         'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100',
-        'hover:bg-slate-100 dark:hover:bg-slate-700',
+        'hover:bg-slate-50 dark:hover:bg-slate-700',
         activeFiltersCount > 0 ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-200' : '',
         showFilters ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100' : ''
       ]"
@@ -40,7 +40,7 @@
     >
       <div 
         v-if="showFilters" 
-        class="absolute left-0 mt-2 w-96 rounded-md shadow-lg bg-white dark:bg-slate-800 ring-1 ring-black ring-opacity-5 z-50 p-4"
+        class="absolute left-0 mt-2 w-96 rounded-xl shadow-soft-xl bg-white dark:bg-slate-800 ring-1 ring-black ring-opacity-5 z-50 p-4 animate-scale-in"
       >
         <!-- Labels Filter -->
         <div v-if="availableLabels.length" class="mb-4">
@@ -52,7 +52,7 @@
               v-for="label in availableLabels"
               :key="label.id"
               :class="[
-                'px-2 py-1 rounded-md text-xs transition-colors',
+                'px-2 py-1 rounded-lg text-xs transition-colors duration-150 ease-smooth',
                 selectedLabels.includes(label.id)
                   ? 'bg-woot-500 text-white'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600'
@@ -74,7 +74,7 @@
               v-model.number="dealValueMin"
               type="number"
               :placeholder="$t('KANBAN.FILTERS.MIN_VALUE')"
-              class="flex-1 px-2 py-1 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
+              class="flex-1 px-2 py-1 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 transition-colors duration-150 ease-smooth"
               @input="handleDealValueChange"
             />
             <span class="text-slate-500 dark:text-slate-400 text-xs">-</span>
@@ -82,7 +82,7 @@
               v-model.number="dealValueMax"
               type="number"
               :placeholder="$t('KANBAN.FILTERS.MAX_VALUE')"
-              class="flex-1 px-2 py-1 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
+              class="flex-1 px-2 py-1 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 transition-colors duration-150 ease-smooth"
               @input="handleDealValueChange"
             />
           </div>
@@ -98,7 +98,7 @@
               v-model="dateFrom"
               type="date"
               :placeholder="$t('KANBAN.FILTERS.FROM_DATE')"
-              class="flex-1 px-2 py-1 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
+              class="flex-1 px-2 py-1 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 transition-colors duration-150 ease-smooth"
               @change="handleDateChange"
             />
             <span class="text-slate-500 dark:text-slate-400 text-xs">-</span>
@@ -106,7 +106,7 @@
               v-model="dateTo"
               type="date"
               :placeholder="$t('KANBAN.FILTERS.TO_DATE')"
-              class="flex-1 px-2 py-1 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
+              class="flex-1 px-2 py-1 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 transition-colors duration-150 ease-smooth"
               @change="handleDateChange"
             />
           </div>

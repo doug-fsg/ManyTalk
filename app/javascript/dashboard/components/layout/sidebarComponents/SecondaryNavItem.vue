@@ -19,7 +19,7 @@
     </div>
     <router-link
       v-else
-      class="flex items-center p-2 m-0 text-sm font-medium leading-4 rounded-lg text-slate-700 dark:text-slate-100 hover:bg-slate-25 dark:hover:bg-slate-800"
+      class="flex items-center p-2 m-0 text-sm font-medium leading-4 rounded-xl text-slate-700 dark:text-slate-100 hover:bg-slate-25 dark:hover:bg-slate-800 transition-all duration-200 ease-smooth"
       :class="computedClass"
       :to="menuItem && menuItem.toState"
     >
@@ -31,7 +31,7 @@
       {{ $t(`SIDEBAR.${menuItem.label}`) }}
       <span
         v-if="showChildCount(menuItem.count)"
-        class="px-1 py-0 mx-1 font-medium rounded-md text-xxs"
+        class="px-1 py-0 mx-1 font-medium rounded-lg text-xxs"
         :class="{
           'text-slate-300 dark:text-slate-600': isCountZero && !isActiveView,
           'text-slate-600 dark:text-slate-50': !isCountZero && !isActiveView,

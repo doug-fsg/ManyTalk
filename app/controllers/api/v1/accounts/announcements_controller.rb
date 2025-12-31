@@ -38,6 +38,12 @@ class Api::V1::Accounts::AnnouncementsController < Api::V1::Accounts::BaseContro
       # 🆕 NOVOS CAMPOS: Agendamento e Expiração
       scheduled_at: params[:scheduled_at].presence,
       expires_at: params[:expires_at].presence,
+      # 🆕 NOVOS CAMPOS: CTA, Importância e Badge
+      cta_text: params[:cta_text].presence,
+      cta_url: params[:cta_url].presence,
+      importance_type: params[:importance_type].presence,
+      badge_text: params[:badge_text].presence,
+      badge_color: params[:badge_color].presence,
       created_at: Time.current.iso8601,
       created_by: current_user.id
     }
@@ -81,6 +87,12 @@ class Api::V1::Accounts::AnnouncementsController < Api::V1::Accounts::BaseContro
       # 🆕 NOVOS CAMPOS: Agendamento e Expiração
       scheduled_at: params[:scheduled_at].presence,
       expires_at: params[:expires_at].presence,
+      # 🆕 NOVOS CAMPOS: CTA, Importância e Badge
+      cta_text: params[:cta_text].presence,
+      cta_url: params[:cta_url].presence,
+      importance_type: params[:importance_type].presence,
+      badge_text: params[:badge_text].presence,
+      badge_color: params[:badge_color].presence,
       # Mantém campos de auditoria
       created_at: existing['created_at'] || Time.current.iso8601,
       created_by: existing['created_by'],
@@ -142,6 +154,34 @@ class Api::V1::Accounts::AnnouncementsController < Api::V1::Accounts::BaseContro
       rescue ArgumentError
         return 'Data de expiração inválida'
       end
+    end
+
+    # Validar CTA (se fornecido)
+    if params[:cta_text].present? && params[:cta_url].blank?
+      return 'URL do botão CTA é obrigatória quando o texto é fornecido'
+    end
+    if params[:cta_url].present? && params[:cta_text].blank?
+      return 'Texto do botão CTA é obrigatório quando a URL é fornecida'
+    end
+    if params[:cta_url].present?
+      begin
+        uri = URI.parse(params[:cta_url])
+        return 'URL do CTA inválida' unless uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
+      rescue URI::InvalidURIError
+        return 'URL do CTA inválida'
+      end
+    end
+
+    # Validar importance_type (se fornecido)
+    if params[:importance_type].present?
+      valid_types = %w[info success warning error]
+      return "Tipo de importância inválido. Use: #{valid_types.join(', ')}" unless valid_types.include?(params[:importance_type])
+    end
+
+    # Validar badge_color (se fornecido)
+    if params[:badge_color].present?
+      valid_colors = %w[blue green yellow red purple]
+      return "Cor do badge inválida. Use: #{valid_colors.join(', ')}" unless valid_colors.include?(params[:badge_color])
     end
 
     nil # Sem erros

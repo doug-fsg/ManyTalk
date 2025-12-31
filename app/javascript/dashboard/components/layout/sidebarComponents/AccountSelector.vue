@@ -15,7 +15,7 @@
         class="pt-0 pb-0"
       >
         <button
-          class="flex justify-between items-center expanded clear link cursor-pointer px-4 py-3 w-full rounded-lg hover:underline hover:bg-slate-25 dark:hover:bg-slate-900"
+          class="flex justify-between items-center expanded clear link cursor-pointer px-4 py-3 w-full rounded-xl hover:underline hover:bg-slate-25 dark:hover:bg-slate-900 transition-all duration-200 ease-smooth"
           @click="onChangeAccount(account.id)"
         >
           <span class="w-full">

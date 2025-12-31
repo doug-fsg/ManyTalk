@@ -1,6 +1,8 @@
 {
   "MACROS": {
     "HEADER": "Macros",
+    "DESCRIPTION": "As macros são ações salvas que ajudam os agentes de suporte a executar tarefas facilmente. Os agentes podem definir um conjunto de ações como atribuir conversas e adicionar etiquetas.",
+    "LEARN_MORE": "Saiba mais sobre macros",
     "HEADER_BTN_TXT": "Adicionar uma nova macro",
     "HEADER_BTN_TXT_SAVE": "Salvar macro",
     "LOADING": "Obtendo macros",

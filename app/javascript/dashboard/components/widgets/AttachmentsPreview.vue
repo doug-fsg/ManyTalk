@@ -3,7 +3,7 @@
     <div
       v-for="(attachment, index) in nonRecordedAudioAttachments"
       :key="attachment.id"
-      class="preview-item flex items-center p-1 bg-slate-50 dark:bg-slate-800 gap-1 rounded-md w-[15rem] mb-1"
+      class="preview-item flex items-center p-1 bg-slate-50 dark:bg-slate-800 gap-1 rounded-lg w-[15rem] mb-1 shadow-soft hover:shadow-soft-lg transition-all duration-200 ease-smooth"
     >
       <div class="max-w-[4rem] flex-shrink-0 w-6 flex items-center">
         <img
@@ -29,7 +29,7 @@
       </div>
       <div class="flex items-center justify-center">
         <woot-button
-          class="!w-6 !h-6 text-sm rounded-md hover:bg-slate-50 dark:hover:bg-slate-800 clear secondary"
+          class="!w-6 !h-6 text-sm rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 clear secondary transition-colors duration-150 ease-smooth"
           icon="dismiss"
           @click="onRemoveAttachment(index)"
         />

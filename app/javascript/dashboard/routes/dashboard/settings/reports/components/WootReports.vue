@@ -3,26 +3,24 @@ import { useAlert } from 'dashboard/composables';
 import ReportFilters from './ReportFilters.vue';
 import ReportContainer from '../ReportContainer.vue';
 import { GROUP_BY_FILTER } from '../constants';
-import reportMixin from '../../../../../mixins/reportMixin';
 import { generateFileName } from '../../../../../helper/downloadHelper';
 import { REPORTS_EVENTS } from '../../../../../helper/AnalyticsHelper/events';
 
 const REPORTS_KEYS = {
-  CONVERSATIONS: 'conversations_count',
-  INCOMING_MESSAGES: 'incoming_messages_count',
-  OUTGOING_MESSAGES: 'outgoing_messages_count',
-  FIRST_RESPONSE_TIME: 'avg_first_response_time',
-  RESOLUTION_TIME: 'avg_resolution_time',
-  RESOLUTION_COUNT: 'resolutions_count',
-  REPLY_TIME: 'reply_time',
-};
-
+    CONVERSATIONS: 'conversations_count',
+    INCOMING_MESSAGES: 'incoming_messages_count',
+    OUTGOING_MESSAGES: 'outgoing_messages_count',
+    FIRST_RESPONSE_TIME: 'avg_first_response_time',
+    RESOLUTION_TIME: 'avg_resolution_time',
+    RESOLUTION_COUNT: 'resolutions_count',
+    REPLY_TIME: 'reply_time',
+  };
+  
 export default {
   components: {
     ReportFilters,
     ReportContainer,
   },
-  mixins: [reportMixin],
   props: {
     type: {
       type: String,
@@ -177,30 +175,30 @@ export default {
       });
     },
   },
-};
+  };
 </script>
 
 <template>
-  <div class="flex-1 p-4 overflow-auto">
-    <woot-button
-      color-scheme="success"
-      class-names="button--fixed-top"
-      icon="arrow-download"
-      @click="downloadReports"
-    >
-      {{ downloadButtonLabel }}
-    </woot-button>
-    <ReportFilters
-      v-if="filterItemsList"
-      :type="type"
-      :filter-items-list="filterItemsList"
-      :group-by-filter-items-list="groupByfilterItemsList"
-      :selected-group-by-filter="selectedGroupByFilter"
-      @dateRangeChange="onDateRangeChange"
-      @filterChange="onFilterChange"
-      @groupByFilterChange="onGroupByFilterChange"
-      @businessHoursToggle="onBusinessHoursToggle"
-    />
-    <ReportContainer v-if="filterItemsList.length" :group-by="groupBy" />
-  </div>
-</template>
+    <div class="flex-1 p-4 overflow-auto">
+      <woot-button
+        color-scheme="success"
+        class-names="button--fixed-top"
+        icon="arrow-download"
+        @click="downloadReports"
+      >
+        {{ downloadButtonLabel }}
+      </woot-button>
+      <ReportFilters
+        v-if="filterItemsList"
+        :type="type"
+        :filter-items-list="filterItemsList"
+        :group-by-filter-items-list="groupByfilterItemsList"
+        :selected-group-by-filter="selectedGroupByFilter"
+        @dateRangeChange="onDateRangeChange"
+        @filterChange="onFilterChange"
+        @groupByFilterChange="onGroupByFilterChange"
+        @businessHoursToggle="onBusinessHoursToggle"
+      />
+      <ReportContainer v-if="filterItemsList.length" :group-by="groupBy" />
+    </div>
+  </template>
