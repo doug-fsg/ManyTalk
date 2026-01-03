@@ -140,6 +140,19 @@
       </div>
     </div>
 
+    <!-- Distribuição por Responsável e Estágio -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-soft p-6 border border-slate-200 dark:border-slate-700 mb-6 hover:shadow-soft-lg transition-all duration-300 ease-smooth">
+      <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+        {{ $t('KANBAN.DASHBOARD.BY_ASSIGNEE_AND_STAGE') }}
+      </h3>
+      <div v-if="assigneeStageChartData.labels.length === 0" class="text-center text-slate-500 dark:text-slate-400 py-8">
+        {{ $t('KANBAN.DASHBOARD.NO_ASSIGNEE_DATA') }}
+      </div>
+      <div v-else style="height: 24rem;">
+        <stacked-bar-chart :collection="assigneeStageChartData" />
+      </div>
+    </div>
+
     <!-- Cards com mais tempo na etapa -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-soft p-6 border border-slate-200 dark:border-slate-700 mb-6 hover:shadow-soft-lg transition-all duration-300 ease-smooth">
       <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
@@ -211,10 +224,15 @@ import {
   getMetadata,
   getWinLostStatus,
   getEnteredAt,
+  getAssignee,
 } from '../utils/pipelinePositionsHelper';
+import StackedBarChart from 'dashboard/components/widgets/chart/StackedBarChart';
 
 export default {
   name: 'KanbanDashboard',
+  components: {
+    StackedBarChart,
+  },
   props: {
     contacts: {
       type: Array,
@@ -363,6 +381,103 @@ export default {
     topAssignees() {
       // Placeholder - implementar quando houver dados de responsável
       return [];
+    },
+    // Gráfico de barras empilhadas por responsável e estágio
+    assigneeStageChartData() {
+      if (!this.contacts || this.contacts.length === 0) {
+        return {
+          labels: [],
+          datasets: [],
+        };
+      }
+
+      const pipelineId = typeof this.pipelineId === 'string' ? parseInt(this.pipelineId, 10) : this.pipelineId;
+      
+      // Obter todos os estágios únicos
+      const stageSet = new Set();
+      this.contacts.forEach(contact => {
+        const stage = getStage(contact, pipelineId);
+        if (stage) {
+          stageSet.add(stage);
+        }
+      });
+      
+      // Ordenar estágios conforme ordem das colunas
+      const stages = Array.from(stageSet).sort((a, b) => {
+        const indexA = this.columns.findIndex(col => col.title === a);
+        const indexB = this.columns.findIndex(col => col.title === b);
+        if (indexA === -1 && indexB === -1) return 0;
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      });
+
+      // Agrupar por responsável
+      const assigneeMap = new Map();
+      
+      this.contacts.forEach(contact => {
+        const assignee = getAssignee(contact, pipelineId);
+        const assigneeKey = assignee ? assignee.id : 'unassigned';
+        const assigneeName = assignee ? (assignee.name || assignee.available_name || 'Sem nome') : 'Sem responsável';
+        
+        if (!assigneeMap.has(assigneeKey)) {
+          assigneeMap.set(assigneeKey, {
+            id: assigneeKey,
+            name: assigneeName,
+            avatar: assignee?.avatar_url || assignee?.thumbnail || null,
+            stages: {},
+          });
+        }
+        
+        const assigneeData = assigneeMap.get(assigneeKey);
+        const stage = getStage(contact, pipelineId);
+        
+        if (stage) {
+          if (!assigneeData.stages[stage]) {
+            assigneeData.stages[stage] = 0;
+          }
+          assigneeData.stages[stage]++;
+        }
+      });
+
+      // Converter para arrays ordenados
+      const assignees = Array.from(assigneeMap.values()).sort((a, b) => {
+        // Ordenar: primeiro "Sem responsável", depois por nome
+        if (a.id === 'unassigned' && b.id !== 'unassigned') return 1;
+        if (a.id !== 'unassigned' && b.id === 'unassigned') return -1;
+        return a.name.localeCompare(b.name);
+      });
+
+      // Criar datasets para cada estágio
+      const datasets = stages.map((stage, index) => {
+        // Gerar cores diferentes para cada estágio
+        const colors = [
+          '#3b82f6', // blue
+          '#10b981', // green
+          '#f59e0b', // amber
+          '#ef4444', // red
+          '#8b5cf6', // purple
+          '#ec4899', // pink
+          '#06b6d4', // cyan
+          '#84cc16', // lime
+          '#f97316', // orange
+          '#6366f1', // indigo
+        ];
+        const color = colors[index % colors.length];
+        
+        return {
+          label: stage,
+          backgroundColor: color,
+          borderColor: color,
+          borderWidth: 0,
+          data: assignees.map(assignee => assignee.stages[stage] || 0),
+        };
+      });
+
+      return {
+        labels: assignees.map(assignee => assignee.name),
+        datasets,
+      };
     },
   },
   methods: {

@@ -100,3 +100,14 @@ export function getWinLostStatus(contact, pipelineId) {
   return metadata?.win_lost || null;
 }
 
+/**
+ * Retorna o assignee (responsável) do pipeline para um contato
+ * @param {Object} contact - Objeto do contato
+ * @param {number|string} pipelineId - ID do pipeline
+ * @returns {Object|null} - assignee object ou null se não encontrado
+ */
+export function getAssignee(contact, pipelineId) {
+  const position = getPipelinePosition(contact, pipelineId);
+  return position?.assignee || null;
+}
+

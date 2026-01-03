@@ -410,7 +410,7 @@ export default {
       isCreating: false,
       currentLocale: this.$i18n.locale,
       isLoadingContacts: false,
-      winLostFilter: 'all', // 'all', 'won', 'lost', 'open' - será sincronizado com kanbanFilters.winLost
+      winLostFilter: 'open', // 'all', 'won', 'lost', 'open' - será sincronizado com kanbanFilters.winLost
       loadingProgress: null,
       loadingMessage: '',
       isLoadingInitialData: false,
@@ -438,7 +438,7 @@ export default {
         dateFrom: null,
         dateTo: null,
         assignees: [],
-        winLost: 'all',
+        winLost: 'open',
       },
       // Modal de detalhes do card
       showCardModal: false,

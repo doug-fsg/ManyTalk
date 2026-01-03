@@ -205,10 +205,13 @@
       "AVERAGE_TIME": "Tempo Médio na Etapa",
       "AVERAGE_DEAL_VALUE": "Valor Médio por Negócio",
       "BY_STAGE": "Distribuição por Etapa",
+      "BY_ASSIGNEE_AND_STAGE": "Distribuição por Responsável e Etapa",
       "LONGEST_IN_STAGE": "Itens com Mais Tempo na Etapa",
       "TOP_ASSIGNEES": "Top Responsáveis",
       "NO_CARDS": "Nenhum card encontrado",
       "NO_STAGE_DATA": "Nenhum dado de etapa disponível",
+      "NO_ASSIGNEE_DATA": "Nenhum dado de responsável disponível",
+      "TOTAL": "Total",
       "ITEMS": "itens",
       "ITEM": "item"
     },

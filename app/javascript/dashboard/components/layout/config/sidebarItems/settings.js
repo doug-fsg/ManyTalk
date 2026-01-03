@@ -207,11 +207,10 @@ const settings = accountId => ({
       label: 'INTELLIGENCE_AI',
       hasSubMenu: false,
       meta: {
-        permissions: ['administrator'], // Permissão necessária
+        permissions: ['administrator'],
       },
-      toState: frontendURL(`accounts/${accountId}/settings/ia`), // Rota fictícia
+      toState: frontendURL(`accounts/${accountId}/settings/ia`),
       toStateName: 'settings_ia',
-      beta: true,
       featureFlag: FEATURE_FLAGS.IA,
     },
   ],

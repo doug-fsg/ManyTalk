@@ -205,7 +205,7 @@ export default {
         dateFrom: null,
         dateTo: null,
         assignees: [],
-        winLost: 'all',
+        winLost: 'open',
       }),
     },
     showAssigneeFilter: {
@@ -222,7 +222,7 @@ export default {
       dateFrom: null,
       dateTo: null,
       selectedAssignees: [],
-      winLostFilter: 'all',
+      winLostFilter: 'open',
     };
   },
   computed: {
@@ -267,7 +267,7 @@ export default {
       if (this.dateFrom) count++;
       if (this.dateTo) count++;
       if (this.selectedAssignees.length > 0) count++;
-      if (this.winLostFilter !== 'all') count++;
+      if (this.winLostFilter !== 'open') count++;
       return count;
     },
     // Opções de assignee incluindo "Sem responsável"
@@ -289,10 +289,10 @@ export default {
     // Opções de status win/lost
     statusOptions() {
       return [
-        { value: 'all', label: this.$t('KANBAN.FILTERS.ALL'), icon: 'list' },
         { value: 'open', label: this.$t('KANBAN.FILTERS.OPEN'), icon: 'clock' },
         { value: 'won', label: this.$t('KANBAN.FILTERS.WON'), icon: 'checkmark-circle' },
-        { value: 'lost', label: this.$t('KANBAN.FILTERS.LOST'), icon: 'dismiss-circle' }
+        { value: 'lost', label: this.$t('KANBAN.FILTERS.LOST'), icon: 'dismiss-circle' },
+        { value: 'all', label: this.$t('KANBAN.FILTERS.ALL'), icon: 'list' }
       ];
     },
   },
@@ -305,7 +305,7 @@ export default {
         this.dateFrom = newFilters.dateFrom || null;
         this.dateTo = newFilters.dateTo || null;
         this.selectedAssignees = newFilters.assignees || [];
-        this.winLostFilter = newFilters.winLost || 'all';
+        this.winLostFilter = newFilters.winLost || 'open';
       },
       immediate: true,
       deep: true,
@@ -351,7 +351,7 @@ export default {
       this.dateFrom = null;
       this.dateTo = null;
       this.selectedAssignees = [];
-      this.winLostFilter = 'all';
+      this.winLostFilter = 'open';
       this.emitFilters();
     },
     setWinLostFilter(value) {

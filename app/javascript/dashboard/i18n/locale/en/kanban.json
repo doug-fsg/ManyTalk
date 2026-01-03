@@ -174,10 +174,13 @@
       "AVERAGE_TIME": "Average Time in Stage",
       "AVERAGE_DEAL_VALUE": "Average Deal Value",
       "BY_STAGE": "Distribution by Stage",
+      "BY_ASSIGNEE_AND_STAGE": "Distribution by Assignee and Stage",
       "LONGEST_IN_STAGE": "Items with Longest Time in Stage",
       "TOP_ASSIGNEES": "Top Assignees",
       "NO_CARDS": "No cards found",
       "NO_STAGE_DATA": "No stage data available",
+      "NO_ASSIGNEE_DATA": "No assignee data available",
+      "TOTAL": "Total",
       "ITEMS": "items",
       "ITEM": "item"
     },
