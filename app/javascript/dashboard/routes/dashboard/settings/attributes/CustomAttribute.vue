@@ -53,6 +53,8 @@
       const errorMessage =
         error?.response?.message || t('ATTRIBUTES_MGMT.DELETE.API.ERROR_MESSAGE');
       useAlert(errorMessage);
+    } finally {
+      closeDelete();
     }
   };
   const openEditPopup = response => {
@@ -69,7 +71,6 @@
   };
   const confirmDeletion = () => {
     deleteAttributes(selectedAttribute.value);
-    closeDelete();
   };
   const openDelete = value => {
     showDeletePopup.value = true;
@@ -152,8 +153,8 @@
         :reject-text="deleteRejectText"
         :confirm-value="selectedAttribute.attribute_display_name"
         :confirm-place-holder-text="confirmPlaceHolderText"
-        @onConfirm="confirmDeletion"
-        @onClose="closeDelete"
+        @on-confirm="confirmDeletion"
+        @on-close="closeDelete"
       />
     </div>
   </template>

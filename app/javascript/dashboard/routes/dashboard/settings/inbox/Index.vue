@@ -44,6 +44,8 @@ const deleteInbox = async ({ id }) => {
     useAlert(t('INBOX_MGMT.DELETE.API.SUCCESS_MESSAGE'));
   } catch (error) {
     useAlert(t('INBOX_MGMT.DELETE.API.ERROR_MESSAGE'));
+  } finally {
+    closeDelete();
   }
 };
 const closeDelete = () => {
@@ -53,7 +55,6 @@ const closeDelete = () => {
 
 const confirmDeletion = () => {
   deleteInbox(selectedInbox.value);
-  closeDelete();
 };
 const openDelete = inbox => {
   showDeletePopup.value = true;
@@ -182,8 +183,8 @@ const openDelete = inbox => {
       :reject-text="deleteRejectText"
       :confirm-value="selectedInbox.name"
       :confirm-place-holder-text="confirmPlaceHolderText"
-      @onConfirm="confirmDeletion"
-      @onClose="closeDelete"
+      @on-confirm="confirmDeletion"
+      @on-close="closeDelete"
     />
   </SettingsLayout>
 </template>

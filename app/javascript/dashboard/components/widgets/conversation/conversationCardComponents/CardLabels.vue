@@ -1,10 +1,7 @@
 <template>
-  <div
-    v-if="activeLabels.length || $slots.before"
-    ref="labelContainer"
-    v-resize="computeVisibleLabelPosition"
-  >
+  <div ref="labelContainer" v-resize="computeVisibleLabelPosition">
     <div
+      v-if="activeLabels.length || $slots.before"
       class="flex items-end flex-shrink min-w-0 gap-y-1"
       :class="{ 'h-auto overflow-visible flex-row flex-wrap': showAllLabels }"
     >
@@ -57,6 +54,7 @@ export default {
       showAllLabels: false,
       showExpandLabelButton: false,
       labelPosition: -1,
+      isComputing: false,
     };
   },
   watch: {
@@ -80,20 +78,75 @@ export default {
       this.$nextTick(() => this.computeVisibleLabelPosition());
     },
     computeVisibleLabelPosition() {
-      const beforeSlot = this.$slots.before ? 100 : 0;
-      const labelContainer = this.$refs.labelContainer;
-      if (!labelContainer) return;
-
-      const labels = Array.from(labelContainer.querySelectorAll('.label'));
-      let labelOffset = 0;
-      this.showExpandLabelButton = false;
-      labels.forEach((label, index) => {
-        labelOffset += label.offsetWidth + 8;
-        if (labelOffset < labelContainer.clientWidth - 16 - beforeSlot) {
-          this.labelPosition = index;
-        } else {
-          this.showExpandLabelButton = labels.length > 1;
+      // Proteção contra loops infinitos
+      if (this.isComputing) return;
+      
+      this.isComputing = true;
+      
+      // Usar requestAnimationFrame para garantir execução após atualização do DOM
+      requestAnimationFrame(() => {
+        const beforeSlot = this.$slots.before ? 100 : 0;
+        const labelContainer = this.$refs.labelContainer;
+        if (!labelContainer) {
+          this.isComputing = false;
+          return;
         }
+
+        // Buscar todos os labels
+        const allLabels = Array.from(labelContainer.querySelectorAll('.label'));
+        
+        if (allLabels.length === 0) {
+          this.showExpandLabelButton = false;
+          this.labelPosition = -1;
+          this.isComputing = false;
+          return;
+        }
+
+        const containerWidth = labelContainer.clientWidth - 16 - beforeSlot;
+        let labelOffset = 0;
+        let lastVisibleIndex = -1;
+        
+        // Para evitar loops, calcular baseado em todos os labels como se estivessem visíveis
+        // Temporariamente remover classe hidden para medir corretamente o tamanho real
+        // Isso evita que labels ocultos (que não ocupam espaço) causem cálculo incorreto
+        const hiddenLabels = [];
+        allLabels.forEach((label) => {
+          const wasHidden = label.classList.contains('hidden');
+          if (wasHidden) {
+            label.classList.remove('hidden');
+            hiddenLabels.push(label);
+          }
+        });
+
+        // Calcular quantos labels cabem no espaço disponível
+        allLabels.forEach((label, index) => {
+          const labelWidth = label.offsetWidth + 8;
+          const newOffset = labelOffset + labelWidth;
+          
+          if (newOffset <= containerWidth) {
+            labelOffset = newOffset;
+            lastVisibleIndex = index;
+          }
+        });
+
+        // Restaurar classe hidden nos labels que estavam ocultos
+        // Isso é seguro porque isComputing previne loops e requestAnimationFrame
+        // garante que isso acontece após o Vue atualizar o DOM
+        hiddenLabels.forEach((label) => {
+          label.classList.add('hidden');
+        });
+
+        // Atualizar labelPosition apenas se mudou
+        const newLabelPosition = lastVisibleIndex;
+        if (this.labelPosition !== newLabelPosition) {
+          this.labelPosition = newLabelPosition;
+        }
+
+        // Mostrar botão apenas se há labels ocultos (mais labels do que os que cabem)
+        const hasHiddenLabels = newLabelPosition < allLabels.length - 1;
+        this.showExpandLabelButton = hasHiddenLabels && allLabels.length > 1;
+
+        this.isComputing = false;
       });
     },
   },
