@@ -13,7 +13,7 @@
       @open-announcements-modal="openAnnouncementsModal"
     />
     <secondary-sidebar
-      v-if="showSecondarySidebar"
+      v-if="showSecondarySidebar && !isOnActivitiesPage"
       :class="sidebarClassName"
       :account-id="accountId"
       :inboxes="inboxes"
@@ -140,6 +140,9 @@ export default {
           menuItem => menuItem.key === this.activeSecondaryMenu.parentNav
         ) || {};
       return activePrimaryMenu;
+    },
+    isOnActivitiesPage() {
+      return this.$route.name === 'activities_view';
     },
     hideContactsForAgents() {
       return (

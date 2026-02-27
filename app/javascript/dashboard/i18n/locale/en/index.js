@@ -1,3 +1,4 @@
+import activities from './activities.json';
 import advancedFilters from './advancedFilters.json';
 import agentBots from './agentBots.json';
 import agentMgmt from './agentMgmt.json';
@@ -36,6 +37,7 @@ import general from './general.json';
 import datePicker from './datePicker.json';
 
 export default {
+  ...activities,
   ...advancedFilters,
   ...agentBots,
   ...agentMgmt,

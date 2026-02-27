@@ -1,8 +1,11 @@
 /* global axios */
 import ApiClient from './ApiClient';
 
-export const buildContactParams = (page, sortAttr, label, search) => {
+export const buildContactParams = (page, sortAttr, label, search, perPage) => {
   let params = `include_contact_inboxes=false&page=${page}&sort=${sortAttr}`;
+  if (perPage) {
+    params = `${params}&per_page=${perPage}`;
+  }
   if (search) {
     params = `${params}&q=${search}`;
   }
@@ -54,8 +57,8 @@ class ContactAPI extends ApiClient {
   }
 
   // eslint-disable-next-line default-param-last
-  filter(page = 1, sortAttr = 'name', queryPayload) {
-    let requestURL = `${this.url}/filter?${buildContactParams(page, sortAttr)}`;
+  filter(page = 1, sortAttr = 'name', queryPayload, perPage) {
+    let requestURL = `${this.url}/filter?${buildContactParams(page, sortAttr, '', '', perPage)}`;
     return axios.post(requestURL, queryPayload);
   }
 

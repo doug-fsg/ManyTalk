@@ -180,6 +180,7 @@
             :pipeline-id="selectedAttribute.id"
             :operation-manager="operationManager"
             :column-stats="columnStats[column.title]"
+            :has-active-filters="filteredColumns.length > 0"
             :is-viewer-mode="isViewerMode"
             @item-moved="onItemMoved"
             @view-contact="openContact"
@@ -1047,8 +1048,20 @@ export default {
       );
     },
 
+    updateContactStageLocally(contact, newColumn) {
+      // Apenas atualiza pipeline_positions - o vuedraggable já moveu o card nas colunas
+      if (contact.pipeline_positions && this.selectedAttribute) {
+        const position = contact.pipeline_positions.find(
+          p => p.pipeline_id === this.selectedAttribute.id || p.pipeline_id === parseInt(this.selectedAttribute.id, 10)
+        );
+        if (position) {
+          this.$set(position, 'stage_id', newColumn);
+        }
+      }
+    },
+
     updateColumnsLocally(contact, newColumn, newIndex = null) {
-      // Remover card da coluna atual
+      // Usado apenas para REVERTER em caso de erro da API
       this.columns.forEach(column => {
         const index = column.items.findIndex(item => item.id === contact.id);
         if (index !== -1) {
@@ -1056,25 +1069,20 @@ export default {
         }
       });
 
-      // ✅ ATUALIZAR pipeline_positions localmente para manter dados sincronizados
       if (contact.pipeline_positions && this.selectedAttribute) {
         const position = contact.pipeline_positions.find(
           p => p.pipeline_id === this.selectedAttribute.id || p.pipeline_id === parseInt(this.selectedAttribute.id, 10)
         );
         if (position) {
-          // Preservar assignee ao atualizar stage_id
           this.$set(position, 'stage_id', newColumn);
         }
       }
 
-      // Adicionar card na nova coluna NA POSIÇÃO EXATA
       const targetColumn = this.columns.find(col => col.title === newColumn);
       if (targetColumn) {
-        // Se newIndex foi fornecido e é válido, inserir na posição específica
         if (newIndex !== null && newIndex >= 0 && newIndex <= targetColumn.items.length) {
           targetColumn.items.splice(newIndex, 0, contact);
         } else {
-          // Fallback: adicionar no final (comportamento antigo para compatibilidade)
           targetColumn.items.push(contact);
         }
       }
@@ -1106,117 +1114,92 @@ export default {
       return operation && operation.status === 'failed';
     },
 
-    handleSearch(query) {
-      // Debounce para evitar sobrecarga em buscas rápidas
-      clearTimeout(this.searchDebounce);
-      this.searchDebounce = setTimeout(() => {
-        // Atualizar searchQuery se um parâmetro foi passado
-        if (query !== undefined) {
-          this.searchQuery = query;
-        }
-        const searchQuery = (this.searchQuery || '').toLowerCase();
-        
-        this.filteredColumns = this.columns.map(column => {
-          const filteredItems = column.items.filter(contact => {
-            // Search filter
-            let matchesSearch = true;
-            if (searchQuery && searchQuery.trim() !== '') {
-              const name = (contact.name || '').toLowerCase();
-              const email = (contact.email || '').toLowerCase();
-              const phone = (contact.phone_number || '').toLowerCase();
+    applyFiltersToColumns() {
+      const searchQuery = (this.searchQuery || '').toLowerCase();
+      this.filteredColumns = this.columns.map(column => {
+        const filteredItems = column.items.filter(contact => {
+          let matchesSearch = true;
+          if (searchQuery && searchQuery.trim() !== '') {
+            const name = (contact.name || '').toLowerCase();
+            const email = (contact.email || '').toLowerCase();
+            const phone = (contact.phone_number || '').toLowerCase();
+            matchesSearch = (
+              name.includes(searchQuery) ||
+              email.includes(searchQuery) ||
+              phone.includes(searchQuery)
+            );
+          }
 
-              matchesSearch = (
-                name.includes(searchQuery) ||
-                email.includes(searchQuery) ||
-                phone.includes(searchQuery)
-              );
+          let matchesWinLost = true;
+          if (this.winLostFilter && this.winLostFilter !== 'all' && this.selectedAttribute) {
+            const winLostData = getWinLostStatus(contact, this.selectedAttribute.id);
+            const winLostStatus = winLostData?.status;
+            if (this.winLostFilter === 'won') matchesWinLost = winLostStatus === 'won';
+            else if (this.winLostFilter === 'lost') matchesWinLost = winLostStatus === 'lost';
+            else if (this.winLostFilter === 'open') {
+              matchesWinLost = !winLostStatus || winLostStatus === null || winLostStatus === undefined;
             }
+          }
 
-            // Win/Lost filter usando pipeline_positions
-            let matchesWinLost = true;
-            if (this.winLostFilter && this.winLostFilter !== 'all' && this.selectedAttribute) {
-              const winLostData = getWinLostStatus(contact, this.selectedAttribute.id);
-              const winLostStatus = winLostData?.status;
-              
-              if (this.winLostFilter === 'won') {
-                matchesWinLost = winLostStatus === 'won';
-              } else if (this.winLostFilter === 'lost') {
-                matchesWinLost = winLostStatus === 'lost';
-              } else if (this.winLostFilter === 'open') {
-                matchesWinLost = !winLostStatus || winLostStatus === null || winLostStatus === undefined;
-              }
+          let matchesLabels = true;
+          if (this.kanbanFilters.labels && this.kanbanFilters.labels.length > 0) {
+            const contactLabels = (contact.labels || []).map(l => l.id);
+            matchesLabels = this.kanbanFilters.labels.some(labelId => contactLabels.includes(labelId));
+          }
+
+          let matchesDealValue = true;
+          if (this.selectedAttribute) {
+            const dealValue = getDealValue(contact, this.selectedAttribute.id) || 0;
+            if (this.kanbanFilters.dealValueMin !== null && this.kanbanFilters.dealValueMin !== '') {
+              matchesDealValue = matchesDealValue && dealValue >= parseFloat(this.kanbanFilters.dealValueMin);
             }
-            // 'all' shows everything
-
-            // Labels filter
-            let matchesLabels = true;
-            if (this.kanbanFilters.labels && this.kanbanFilters.labels.length > 0) {
-              const contactLabels = (contact.labels || []).map(l => l.id);
-              matchesLabels = this.kanbanFilters.labels.some(labelId => 
-                contactLabels.includes(labelId)
-              );
+            if (this.kanbanFilters.dealValueMax !== null && this.kanbanFilters.dealValueMax !== '') {
+              matchesDealValue = matchesDealValue && dealValue <= parseFloat(this.kanbanFilters.dealValueMax);
             }
+          }
 
-            // Deal Value filter usando pipeline_positions
-            let matchesDealValue = true;
-            if (this.selectedAttribute) {
-              const dealValue = getDealValue(contact, this.selectedAttribute.id) || 0;
-              if (this.kanbanFilters.dealValueMin !== null && this.kanbanFilters.dealValueMin !== '') {
-                matchesDealValue = matchesDealValue && dealValue >= parseFloat(this.kanbanFilters.dealValueMin);
-              }
-              if (this.kanbanFilters.dealValueMax !== null && this.kanbanFilters.dealValueMax !== '') {
-                matchesDealValue = matchesDealValue && dealValue <= parseFloat(this.kanbanFilters.dealValueMax);
-              }
-            }
-
-            // Date Range filter usando created_at de contact_pipeline_positions
-            let matchesDateRange = true;
-            if (this.kanbanFilters.dateFrom || this.kanbanFilters.dateTo) {
-              if (!this.selectedAttribute) {
-                matchesDateRange = false;
-              } else {
-                // Usar created_at da position do pipeline (quando o card foi criado no pipeline)
-                const createdAt = getCreatedAt(contact, this.selectedAttribute.id);
-                if (!createdAt) {
-                  matchesDateRange = false;
-                } else {
-                  const createdDate = new Date(createdAt); // created_at vem como ISO string
-                  
-                  if (this.kanbanFilters.dateFrom) {
-                    const fromDate = new Date(this.kanbanFilters.dateFrom);
-                    fromDate.setHours(0, 0, 0, 0);
-                    matchesDateRange = matchesDateRange && createdDate >= fromDate;
-                  }
-                  if (this.kanbanFilters.dateTo) {
-                    const toDate = new Date(this.kanbanFilters.dateTo);
-                    // Para dateTo, queremos incluir o dia inteiro até 23:59:59.999
-                    toDate.setHours(23, 59, 59, 999);
-                    matchesDateRange = matchesDateRange && createdDate <= toDate;
-                  }
+          let matchesDateRange = true;
+          if (this.kanbanFilters.dateFrom || this.kanbanFilters.dateTo) {
+            if (!this.selectedAttribute) matchesDateRange = false;
+            else {
+              const createdAt = getCreatedAt(contact, this.selectedAttribute.id);
+              if (!createdAt) matchesDateRange = false;
+              else {
+                const createdDate = new Date(createdAt);
+                if (this.kanbanFilters.dateFrom) {
+                  const fromDate = new Date(this.kanbanFilters.dateFrom);
+                  fromDate.setHours(0, 0, 0, 0);
+                  matchesDateRange = matchesDateRange && createdDate >= fromDate;
+                }
+                if (this.kanbanFilters.dateTo) {
+                  const toDate = new Date(this.kanbanFilters.dateTo);
+                  toDate.setHours(23, 59, 59, 999);
+                  matchesDateRange = matchesDateRange && createdDate <= toDate;
                 }
               }
             }
+          }
 
-            // Assignee filter usando pipeline_positions
-            let matchesAssignee = true;
-            if (this.kanbanFilters.assignees && this.kanbanFilters.assignees.length > 0 && this.selectedAttribute) {
-              const position = contact.pipeline_positions?.find(
-                p => p.pipeline_id === this.selectedAttribute.id || p.pipeline_id === parseInt(this.selectedAttribute.id, 10)
-              );
-              const assigneeId = position?.assignee?.id || null;
-              const selectedIds = this.kanbanFilters.assignees.map(a => a.id);
-              matchesAssignee = selectedIds.includes(assigneeId) || (selectedIds.includes(null) && assigneeId === null);
-            }
+          let matchesAssignee = true;
+          if (this.kanbanFilters.assignees && this.kanbanFilters.assignees.length > 0 && this.selectedAttribute) {
+            const position = contact.pipeline_positions?.find(
+              p => p.pipeline_id === this.selectedAttribute.id || p.pipeline_id === parseInt(this.selectedAttribute.id, 10)
+            );
+            const assigneeId = position?.assignee?.id || null;
+            const selectedIds = this.kanbanFilters.assignees.map(a => a.id);
+            matchesAssignee = selectedIds.includes(assigneeId) || (selectedIds.includes(null) && assigneeId === null);
+          }
 
-            return matchesSearch && matchesWinLost && matchesLabels && matchesDealValue && matchesDateRange && matchesAssignee;
-          });
-
-          return {
-            ...column,
-            items: filteredItems,
-          };
+          return matchesSearch && matchesWinLost && matchesLabels && matchesDealValue && matchesDateRange && matchesAssignee;
         });
-      }, 300);
+        return { ...column, items: filteredItems };
+      });
+    },
+
+    handleSearch(query) {
+      if (query !== undefined) this.searchQuery = query;
+      clearTimeout(this.searchDebounce);
+      this.searchDebounce = setTimeout(() => this.applyFiltersToColumns(), 300);
     },
 
     handleContactAttributeRemoved(contact, attributeKey) {
@@ -1305,10 +1288,21 @@ export default {
         // No modo kanban: carregar todos os contatos
         if (this.currentView === 'list') {
           await this.loadContactsPage(1);
+          // Carregar atividades dos contatos carregados de forma não-bloqueante
+          this.loadAllActivities().catch(err => {
+            console.debug('[KanbanAttributes] Activities loading failed', err);
+          });
         } else {
           await this.loadAllContacts();
           // Atualizar colunas com os contatos carregados
           this.setupColumns();
+          // Carregar atividades de forma não-bloqueante após renderização
+          // Usar nextTick para garantir que os cards já renderizaram
+          this.$nextTick(() => {
+            this.loadAllActivities().catch(err => {
+              console.debug('[KanbanAttributes] Activities loading failed', err);
+            });
+          });
         }
       } catch (error) {
         this.$store.dispatch('notifications/show', {
@@ -1363,13 +1357,15 @@ export default {
           });
         }
 
-        // Função para carregar uma página de contatos
+        // Per page maior para Kanban (100 vs 15) - reduz requisições de ~334 para ~50
+        const kanbanPerPage = 100;
         const loadContactsPage = async page => {
           try {
             const contacts = await this.$store.dispatch('contacts/filter', {
               page,
               queryPayload,
               resetState: false,
+              perPage: kanbanPerPage,
             });
             return contacts || [];
           } catch (error) {
@@ -1420,87 +1416,84 @@ export default {
           return contacts || [];
         };
 
-        // Função recursiva para carregar páginas com limite de performance
-        const loadNextPage = async page => {
-          // Limite de segurança: não carregar mais que maxContactsToLoad
-          if (totalContactsLoaded >= this.maxContactsToLoad) {
-            this.hasMoreContacts = true;
-            return {
-              lastPage: page - 1,
-              hasMore: true,
-            };
+        // Carregar até 3 páginas em paralelo para reduzir tempo total
+        const parallelPages = 3;
+        const loadNextBatch = async startPage => {
+          const pagesToLoad = [];
+          for (let p = 0; p < parallelPages; p++) {
+            const pageNum = startPage + p;
+            if (totalContactsLoaded >= this.maxContactsToLoad) break;
+            pagesToLoad.push(pageNum);
           }
 
-          const contacts = await loadContactsPage(page);
-
-          // Se não há contatos, terminamos
-          if (!contacts || contacts.length === 0) {
-            return {
-              lastPage: page - 1,
-              hasMore: false,
-            };
-          }
-
-          // Filtrar contatos duplicados
-          const newContacts = contacts.filter(
-            contact =>
-              !existingContacts.some(existing => existing.id === contact.id)
+          const results = await Promise.all(
+            pagesToLoad.map(p => loadContactsPage(p))
           );
 
-          // Adicionar todos os novos contatos (sem limite inicial para modo lista/dashboard)
-          // Apenas respeitar o limite máximo de segurança
-          if (newContacts.length > 0) {
-            // Verificar se ainda há espaço dentro do limite máximo
-            const remainingSlots = this.maxContactsToLoad - totalContactsLoaded;
-            const contactsToAdd = remainingSlots > 0
-              ? newContacts.slice(0, remainingSlots)
-              : [];
+          let lastLoadedPage = startPage - 1;
+          let hasMore = true;
 
-            if (contactsToAdd.length > 0) {
-              existingContacts.push(...contactsToAdd);
-              this.$store.commit('contacts/SET_CONTACTS', existingContacts);
-              totalContactsLoaded += contactsToAdd.length;
-              this.contactsLoadedCount = totalContactsLoaded;
+          for (let i = 0; i < results.length; i++) {
+            const contacts = results[i];
+            const pageNum = pagesToLoad[i];
 
-              // Se não adicionamos todos os contatos novos, há mais para carregar
-              if (contactsToAdd.length < newContacts.length) {
-                this.hasMoreContacts = true;
-              }
-            } else {
-              // Limite máximo atingido
-              this.hasMoreContacts = true;
+            if (!contacts || contacts.length === 0) {
+              hasMore = false;
+              break;
             }
+
+            const newContacts = contacts.filter(
+              c => !existingContacts.some(existing => existing.id === c.id)
+            );
+
+            if (newContacts.length > 0) {
+              const remainingSlots = this.maxContactsToLoad - totalContactsLoaded;
+              const contactsToAdd = remainingSlots > 0
+                ? newContacts.slice(0, remainingSlots)
+                : [];
+
+              if (contactsToAdd.length > 0) {
+                existingContacts.push(...contactsToAdd);
+                this.$store.commit('contacts/SET_CONTACTS', existingContacts);
+                totalContactsLoaded += contactsToAdd.length;
+                this.contactsLoadedCount = totalContactsLoaded;
+              }
+            }
+
+            lastLoadedPage = pageNum;
+            if (contacts.length < kanbanPerPage) {
+              hasMore = false;
+              break;
+            }
+            if (totalContactsLoaded >= this.maxContactsToLoad) break;
           }
 
-          // Se recebemos menos contatos que o tamanho da página (15), terminamos
-          if (contacts.length < 15) {
-            return {
-              lastPage: page,
-              hasMore: false,
-            };
-          }
-
-          // Se atingimos o limite máximo, parar aqui
-          if (totalContactsLoaded >= this.maxContactsToLoad) {
-            return {
-              lastPage: page,
-              hasMore: true,
-            };
-          }
-
-          // Carregar próxima página
-          return loadNextPage(page + 1);
+          return { lastPage: lastLoadedPage, hasMore };
         };
 
-        // Iniciar o carregamento recursivo
-        const result = await loadNextPage(currentPage);
+        let result = { lastPage: 0, hasMore: false };
+        let batchStart = 1;
+        while (batchStart <= 1000) {
+          result = await loadNextBatch(batchStart);
+          if (totalContactsLoaded >= this.maxContactsToLoad) {
+            this.hasMoreContacts = true;
+            break;
+          }
+          if (!result.hasMore) break;
+          batchStart = result.lastPage + 1;
+        }
 
         // Atualizar o cache do pipeline
         this.pipelineCacheManager.updateCache(this.selectedAttribute.id, {
           currentPage: result.lastPage,
-          totalPages: Math.ceil(totalContactsLoaded / 15),
+          totalPages: Math.ceil(totalContactsLoaded / kanbanPerPage),
           hasMore: result.hasMore || this.hasMoreContacts,
           isLoadingMore: false,
+        });
+
+        // Carregar atividades pendentes de todos os contatos carregados de forma não-bloqueante
+        this.loadAllActivities().catch(err => {
+          console.debug('[KanbanAttributes] Activities loading failed', err);
         });
 
       } catch (error) {
@@ -1510,6 +1503,38 @@ export default {
         });
       } finally {
         this.pagination.isLoadingMore = false;
+      }
+    },
+    async loadAllActivities() {
+      try {
+        const contacts = this.contacts || [];
+        if (!Array.isArray(contacts) || contacts.length === 0) return;
+
+        const contactIds = contacts.map(c => c.id).filter(id => id != null);
+        if (contactIds.length === 0) return;
+
+        // Requisições em lote: 100 contatos por request (em vez de 1 por contato)
+        const batchSize = 100;
+        const batches = [];
+        for (let i = 0; i < contactIds.length; i += batchSize) {
+          batches.push(contactIds.slice(i, i + batchSize));
+        }
+
+        for (let i = 0; i < batches.length; i++) {
+          try {
+            await this.$store.dispatch('activities/get', {
+              accountId: this.$route.params.accountId,
+              params: { contact_ids: batches[i], status: 'pending' },
+              merge: i > 0,
+            });
+          } catch (error) {
+            if (i === 0) {
+              this.$store.commit('activities/SET_ACTIVITIES', []);
+            }
+          }
+        }
+      } catch (error) {
+        this.$store.commit('activities/SET_ACTIVITIES', []);
       }
     },
     selectAttribute(attribute) {
@@ -1727,10 +1752,11 @@ export default {
       }
 
       // ============================================
-      // FASE 1: ATUALIZAÇÃO VISUAL IMEDIATA (UI)
+      // FASE 1: ATUALIZAÇÃO OTIMISTA (sem tocar nas colunas)
       // ============================================
-      // Atualizar a UI PRIMEIRO - move o card visualmente na posição exata
-      this.updateColumnsLocally(contact, targetColumnTitle, newIndex);
+      // O vuedraggable já moveu o card via handleColumnItemsUpdate - NÃO refazer
+      // Apenas atualizar contact.pipeline_positions para manter dados consistentes
+      this.updateContactStageLocally(contact, targetColumnTitle);
 
       // Obter deal_value e metadata existentes do pipeline_positions
       const currentPosition = contact.pipeline_positions?.find(
@@ -1784,29 +1810,18 @@ export default {
             };
             
             if (positionIndex >= 0) {
-              // Atualizar posição existente
               this.$set(updatedContact.pipeline_positions, positionIndex, positionData);
             } else {
-              // Adicionar nova posição
               updatedContact.pipeline_positions.push(positionData);
             }
-            
-            // Forçar reatividade do Vue
-            this.$forceUpdate();
           }
           
-          // Mostrar notificação de sucesso após confirmação do servidor
+          // Mostrar notificação de sucesso
           this.safeShowNotification('success', this.$t('KANBAN.SUCCESS.CARD_MOVED'));
           
-          // Reconstruir colunas após confirmação para garantir sincronização final
-          // Aguardar Vue processar TODAS as atualizações reativas antes de reconstruir
-          // Duplo nextTick garante que computed properties (como contactsByColumn) também foram atualizados
-          await this.$nextTick();
-          await this.$nextTick();
-          
-          clearTimeout(this.setupColumnsTimeout);
-          this.setupColumns();
-          // Atualizar stats após mover contato para refletir totais corretos
+          // NÃO chamar setupColumns - o card já está na coluna correta (update otimista)
+          // Reconstruir colunas causaria "piscar" e voltar o card para a origem
+          // Atualizar stats em background
           this.fetchColumnStats();
           })
           .catch(error => {
@@ -2204,7 +2219,12 @@ export default {
     handleColumnItemsUpdate({ columnId, items }) {
       const columnIndex = this.columns.findIndex(col => col.id === columnId);
       if (columnIndex !== -1) {
-        this.columns[columnIndex].items = items;
+        this.$set(this.columns[columnIndex], 'items', items);
+        // Sincronizar filteredColumns imediatamente para evitar "voltar" visual
+        // (displayColumns usa filteredColumns quando tem filtros ativos)
+        if (this.filteredColumns.length > 0) {
+          this.applyFiltersToColumns();
+        }
       }
     },
     openConversation(conversationId) {

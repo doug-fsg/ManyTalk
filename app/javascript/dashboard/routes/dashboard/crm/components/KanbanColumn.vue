@@ -120,6 +120,10 @@ export default {
       type: Object,
       default: null
     },
+    hasActiveFilters: {
+      type: Boolean,
+      default: false
+    },
     isViewerMode: {
       type: Boolean,
       default: false
@@ -146,19 +150,27 @@ export default {
         });
       }
     },
-    // Contador de cards: usa stats do backend se disponível, senão usa items.length
+    // Contador de cards: com filtros ativos usa items (filtrados), senão stats do backend
     columnCount() {
+      if (this.hasActiveFilters) {
+        return this.columnItems.length;
+      }
       if (this.columnStats && this.columnStats.count !== undefined) {
         return this.columnStats.count;
       }
       return this.columnItems.length;
     },
-    // Total monetário da coluna: usa stats do backend se disponível, senão calcula localmente
+    // Total monetário: com filtros ativos calcula dos itens, senão usa stats do backend
     columnTotal() {
+      if (this.hasActiveFilters) {
+        return this.columnItems.reduce((total, contact) => {
+          const dealValue = getDealValue(contact, this.pipelineId) || 0;
+          return total + parseFloat(dealValue);
+        }, 0);
+      }
       if (this.columnStats && this.columnStats.total_value !== undefined) {
         return parseFloat(this.columnStats.total_value) || 0;
       }
-      // Fallback: calcular localmente baseado nos itens carregados
       return this.columnItems.reduce((total, contact) => {
         const dealValue = getDealValue(contact, this.pipelineId) || 0;
         return total + parseFloat(dealValue);
@@ -229,21 +241,22 @@ export default {
       this.isDragging = true;
     },
     async onItemMoved(event) {
-      // Resetar flag de drag
-      this.isDragging = false;
-      
       if (!event || !event.item) return;
       
       const contactId = parseInt(event.item.getAttribute('data-contact-id'), 10);
+      
+      // Atrasar isDragging=false: permite que handleColumnItemsUpdate propague antes do re-render
+      // Evita flash onde itemsForDrag volta a visibleItems antes da atualização chegar
+      this.$nextTick(() => {
+        this.isDragging = false;
+      });
       const sourceColumnId = event.from.getAttribute('data-column-id');
       const targetColumnId = event.to.getAttribute('data-column-id');
       const sourceTitle = event.from.getAttribute('data-column-title');
       const targetTitle = event.to.getAttribute('data-column-title');
-      
-      // Capturar índices exatos para posicionamento preciso
       const oldIndex = event.oldIndex !== undefined ? event.oldIndex : null;
       const newIndex = event.newIndex !== undefined ? event.newIndex : null;
-      
+
       // Verificar se card não tem dono
       const contact = this.columnItems.find(c => c.id === contactId);
       if (contact) {

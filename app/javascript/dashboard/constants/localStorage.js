@@ -7,4 +7,5 @@ export const LOCAL_STORAGE_KEYS = {
   MESSAGE_REPLY_TO: 'messageReplyTo',
   DISMISSED_ANNOUNCEMENTS: 'dismissedAnnouncements',
   KANBAN_SELECTED_PIPELINE: 'kanban_selected_pipeline',
+  ACTIVITIES_ONBOARDING: 'activitiesOnboardingSeen',
 };

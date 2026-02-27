@@ -2,6 +2,7 @@ import conversations from './sidebarItems/conversations';
 import contacts from './sidebarItems/contacts';
 import reports from './sidebarItems/reports';
 import campaigns from './sidebarItems/campaigns';
+import activities from './sidebarItems/activities';
 import settings from './sidebarItems/settings';
 import notifications from './sidebarItems/notifications';
 import primaryMenu from './sidebarItems/primaryMenu';
@@ -13,6 +14,7 @@ export const getSidebarItems = accountId => ({
     contacts(accountId),
     reports(accountId),
     campaigns(accountId),
+    activities(accountId),
     settings(accountId),
     notifications(accountId),
   ],

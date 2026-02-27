@@ -10,6 +10,7 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   sort_on :country, internal_name: :order_on_country_name, type: :scope, scope_params: [:direction]
 
   RESULTS_PER_PAGE = 15
+  MAX_PER_PAGE = 200 # Limite para carregamento em lote (Kanban com muitos contatos)
 
   before_action :check_authorization
   before_action :set_current_page, only: [:index, :active, :search, :filter]
@@ -138,9 +139,11 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   end
 
   def fetch_contacts(contacts)
+    per_page = [params[:per_page].to_i, MAX_PER_PAGE].min
+    per_page = RESULTS_PER_PAGE if per_page <= 0
     contacts_with_avatar = filtrate(contacts)
                            .includes([{ avatar_attachment: [:blob] }])
-                           .page(@current_page).per(RESULTS_PER_PAGE)
+                           .page(@current_page).per(per_page)
 
     contacts_with_avatar = contacts_with_avatar.includes(contact_pipeline_positions: :assignee)
     return contacts_with_avatar.includes([{ contact_inboxes: [:inbox] }]) if @include_contact_inboxes

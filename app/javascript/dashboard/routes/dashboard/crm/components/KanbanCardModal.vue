@@ -219,12 +219,46 @@
           </accordion-item>
         </div>
 
-        <!-- Coluna Direita: Observações -->
+        <!-- Coluna Direita: Tabs (Observações | Atividades) -->
         <div class="right-column">
-          <contact-notes
-            v-if="contact.id"
-            :contact-id="contact.id"
-          />
+          <!-- Tabs -->
+          <div class="flex gap-2 mb-4 border-b border-slate-200 dark:border-slate-700">
+            <button
+              :class="[
+                'px-4 py-2 text-sm font-medium transition-colors duration-150 border-b-2',
+                activeTab === 'notes'
+                  ? 'border-woot-500 text-woot-600 dark:border-woot-400 dark:text-woot-400'
+                  : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
+              ]"
+              @click="activeTab = 'notes'"
+            >
+              {{ $t('CONTACT_PANEL.SIDEBAR_SECTIONS.NOTES') }}
+            </button>
+            <button
+              :class="[
+                'px-4 py-2 text-sm font-medium transition-colors duration-150 border-b-2',
+                activeTab === 'activities'
+                  ? 'border-woot-500 text-woot-600 dark:border-woot-400 dark:text-woot-400'
+                  : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
+              ]"
+              @click="activeTab = 'activities'"
+            >
+              {{ $t('ACTIVITIES.TITLE') }}
+            </button>
+          </div>
+
+          <!-- Conteúdo das tabs -->
+          <div class="tab-content">
+            <contact-notes
+              v-if="activeTab === 'notes' && contact.id"
+              :contact-id="contact.id"
+            />
+            <contact-activities
+              v-if="activeTab === 'activities' && contact.id"
+              :contact-id="contact.id"
+              :pipeline-id="pipelineId"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -240,6 +274,7 @@ import AccordionItem from 'dashboard/components/Accordion/AccordionItem.vue';
 import CustomAttributes from 'dashboard/routes/dashboard/conversation/customAttributes/CustomAttributes.vue';
 import ContactConversations from 'dashboard/routes/dashboard/conversation/ContactConversations.vue';
 import ContactNotes from 'dashboard/modules/notes/NotesOnContactPage.vue';
+import ContactActivities from './ContactActivities.vue';
 import MultiselectDropdown from 'shared/components/ui/MultiselectDropdown.vue';
 import { useAlert } from 'dashboard/composables';
 import ContactAPI from 'dashboard/api/contacts';
@@ -262,6 +297,7 @@ export default {
     CustomAttributes,
     ContactConversations,
     ContactNotes,
+    ContactActivities,
     MultiselectDropdown,
   },
   mixins: [agentMixin],
@@ -299,6 +335,7 @@ export default {
         customAttributes: true,
         conversations: true,
       },
+      activeTab: 'notes',
     };
   },
   computed: {
@@ -784,6 +821,10 @@ export default {
 
   .right-column {
     @apply w-3/5 overflow-y-auto p-5 bg-slate-25 dark:bg-slate-800;
+    
+    .tab-content {
+      @apply h-full;
+    }
     
     // Garantir que o modal de exclusão tenha largura própria
     ::v-deep .modal-container {

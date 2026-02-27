@@ -8,6 +8,7 @@ import auditlogs from './auditlogs/audit.routes';
 import announcements from './announcements/announcements.routes';
 import billing from './billing/billing.routes';
 import campaigns from './campaigns/campaigns.routes';
+import activities from '../activities/activities.routes';
 import canned from './canned/canned.routes';
 import inbox from './inbox/inbox.routes';
 import integrations from './integrations/integrations.routes';
@@ -44,6 +45,7 @@ export default {
     ...announcements.routes,
     ...billing.routes,
     ...campaigns.routes,
+    ...activities.routes,
     ...canned.routes,
     ...inbox.routes,
     ...integrations.routes,

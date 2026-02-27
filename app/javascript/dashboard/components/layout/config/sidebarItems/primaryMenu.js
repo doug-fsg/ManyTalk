@@ -42,6 +42,16 @@ const primaryMenuItems = accountId => [
     toStateName: 'ongoing_campaigns',
   },
   {
+    icon: 'calendar-clock',
+    key: 'activities',
+    label: 'ACTIVITIES',
+    featureFlag: FEATURE_FLAGS.WOOFED,
+    toState: frontendURL(`accounts/${accountId}/activities`),
+    toStateName: 'activities_view',
+    roles: ['administrator', 'agent'],
+    beta: true,
+  },
+  {
     icon: 'library',
     key: 'helpcenter',
     label: 'HELP_CENTER.TITLE',

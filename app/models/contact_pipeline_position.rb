@@ -3,24 +3,29 @@
 # Table name: contact_pipeline_positions
 #
 #  id          :bigint           not null, primary key
+#  deal_value  :decimal(10, 2)
+#  entered_at  :datetime
+#  metadata    :jsonb
+#  position    :integer          default(0), not null
+#  created_at  :datetime         not null
+#  updated_at  :datetime         not null
+#  assignee_id :bigint
 #  contact_id  :bigint           not null
 #  pipeline_id :bigint           not null
 #  stage_id    :string           not null
-#  deal_value  :decimal(10, 2)
-#  entered_at  :datetime
-#  metadata    :jsonb            default({})
-#  created_at  :datetime         not null
-#  updated_at  :datetime         not null
 #
 # Indexes
 #
-#  idx_contact_pipeline_positions_contact              (contact_id)
-#  idx_contact_pipeline_positions_pipeline             (pipeline_id)
-#  idx_contact_pipeline_positions_pipeline_stage       (pipeline_id,stage_id)
-#  idx_contact_pipeline_positions_unique                (contact_id,pipeline_id) UNIQUE
+#  idx_contact_pipeline_positions_contact                  (contact_id)
+#  idx_contact_pipeline_positions_pipeline                 (pipeline_id)
+#  idx_contact_pipeline_positions_pipeline_stage           (pipeline_id,stage_id)
+#  idx_contact_pipeline_positions_pipeline_stage_position  (pipeline_id,stage_id,position)
+#  idx_contact_pipeline_positions_unique                   (contact_id,pipeline_id) UNIQUE
+#  index_contact_pipeline_positions_on_assignee_id         (assignee_id)
 #
 # Foreign Keys
 #
+#  fk_rails_...  (assignee_id => users.id)
 #  fk_rails_...  (contact_id => contacts.id)
 #  fk_rails_...  (pipeline_id => custom_attribute_definitions.id)
 #

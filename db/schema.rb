@@ -96,6 +96,34 @@ ActiveRecord::Schema[7.0].define(version: 2025_03_30_030320) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "activities", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "assignee_id"
+    t.string "activity_type", null: false
+    t.string "title", null: false
+    t.text "description"
+    t.string "status", default: "pending"
+    t.datetime "scheduled_at", null: false
+    t.bigint "contact_pipeline_position_id"
+    t.bigint "contact_id"
+    t.bigint "conversation_id"
+    t.text "message_content"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "inbox_id"
+    t.index ["account_id", "assignee_id"], name: "index_activities_on_account_id_and_assignee_id"
+    t.index ["account_id", "scheduled_at"], name: "index_activities_on_account_id_and_scheduled_at"
+    t.index ["account_id", "status"], name: "index_activities_on_account_id_and_status"
+    t.index ["account_id"], name: "index_activities_on_account_id"
+    t.index ["assignee_id"], name: "index_activities_on_assignee_id"
+    t.index ["contact_id"], name: "index_activities_on_contact_id"
+    t.index ["contact_pipeline_position_id"], name: "index_activities_on_contact_pipeline_position_id"
+    t.index ["conversation_id"], name: "index_activities_on_conversation_id"
+    t.index ["inbox_id"], name: "index_activities_on_inbox_id"
+    t.index ["user_id"], name: "index_activities_on_user_id"
+  end
+
   create_table "agent_bot_inboxes", force: :cascade do |t|
     t.integer "inbox_id"
     t.integer "agent_bot_id"
@@ -1045,6 +1073,13 @@ ActiveRecord::Schema[7.0].define(version: 2025_03_30_030320) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "activities", "accounts"
+  add_foreign_key "activities", "contact_pipeline_positions"
+  add_foreign_key "activities", "contacts"
+  add_foreign_key "activities", "conversations"
+  add_foreign_key "activities", "inboxes"
+  add_foreign_key "activities", "users"
+  add_foreign_key "activities", "users", column: "assignee_id"
   add_foreign_key "contact_inboxes", "contacts", on_delete: :cascade
   add_foreign_key "contact_inboxes", "inboxes", on_delete: :cascade
   add_foreign_key "contact_pipeline_positions", "contacts"

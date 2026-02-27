@@ -129,6 +129,11 @@ Rails.application.routes.draw do
             end
           end
 
+          resources :activities, only: [:index, :show, :create, :update, :destroy] do
+            member do
+              post :complete
+            end
+          end
           resources :contacts, only: [:index, :show, :update, :create, :destroy] do
             collection do
               get :active

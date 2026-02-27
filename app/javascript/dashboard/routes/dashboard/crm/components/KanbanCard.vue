@@ -228,6 +228,18 @@
           />
         </div>
         
+        <!-- Badge de atividades pendentes -->
+        <div
+          v-if="pendingActivitiesCount > 0"
+          class="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium shadow-sm border transition-colors duration-200"
+          :class="activityBadgeClasses"
+          v-tooltip="nextActivityTooltip"
+          @click.stop
+        >
+          <fluent-icon icon="calendar-clock" size="12" />
+          <span class="font-semibold">{{ pendingActivitiesCount }}</span>
+        </div>
+        
         <!-- Badge do agente responsável -->
         <div 
           v-if="cardAssignee"
@@ -368,6 +380,56 @@ export default {
   computed: {
     conversations() {
       return this.$store.state.contactConversations.records[this.contact.id] || [];
+    },
+    pendingActivitiesCount() {
+      const getCount = this.$store.getters['activities/getPendingCountByContactId'];
+      if (!getCount) return 0;
+      const contactId = this.contact.id;
+      return getCount(contactId) || getCount(String(contactId)) || 0;
+    },
+    nextActivity() {
+      const getNext = this.$store.getters['activities/getNextActivityByContactId'];
+      if (!getNext) return null;
+      return getNext(this.contact.id) || getNext(String(this.contact.id)) || null;
+    },
+    nextActivityTooltip() {
+      if (!this.nextActivity) {
+        return `${this.pendingActivitiesCount} atividade(s) pendente(s)`;
+      }
+      
+      const scheduledDate = new Date(this.nextActivity.scheduled_at);
+      const formattedDate = this.formatRelativeDate(scheduledDate);
+      const title = this.nextActivity.title || 'Sem título';
+      
+      if (this.pendingActivitiesCount === 1) {
+        return `${title} • ${formattedDate}`;
+      }
+      
+      return `${title} • ${formattedDate} (+${this.pendingActivitiesCount - 1})`;
+    },
+    // Retorna classes de cor do badge baseado no status da próxima atividade
+    activityBadgeClasses() {
+      if (!this.nextActivity) {
+        return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+      }
+      
+      const scheduledDate = new Date(this.nextActivity.scheduled_at);
+      const now = new Date();
+      const diffMs = scheduledDate - now;
+      const diffHours = diffMs / (1000 * 60 * 60);
+      
+      // Atrasado (vermelho)
+      if (diffHours < 0) {
+        return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800';
+      }
+      
+      // Próximo - menos de 24h (amarelo)
+      if (diffHours < 24) {
+        return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800';
+      }
+      
+      // Futuro - mais de 24h (cinza)
+      return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
     },
     isFetchingConversations() {
       return this.$store.state.contactConversations.uiFlags.isFetching;
@@ -604,6 +666,32 @@ export default {
       }
       return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
     },
+    formatRelativeDate(date) {
+      const now = new Date();
+      const target = new Date(date);
+      
+      // Resetar horas para comparação de dias
+      const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const targetDate = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+      const daysDiff = Math.floor((targetDate - nowDate) / (1000 * 60 * 60 * 24));
+      
+      const timeString = target.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      
+      if (daysDiff === 0) {
+        return `Hoje às ${timeString}`;
+      } else if (daysDiff === 1) {
+        return `Amanhã às ${timeString}`;
+      } else if (daysDiff === -1) {
+        return `Ontem às ${timeString}`;
+      } else if (daysDiff < 0) {
+        const daysAgo = Math.abs(daysDiff);
+        return `${daysAgo}d atrás`;
+      } else if (daysDiff <= 7) {
+        return `${target.toLocaleDateString('pt-BR', { weekday: 'short' })} às ${timeString}`;
+      } else {
+        return `${target.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} às ${timeString}`;
+      }
+    },
     toggleValueInput() {
       this.showValueInput = !this.showValueInput;
       this.editingValue = this.dealValue || 0;
@@ -719,8 +807,8 @@ export default {
     }
   },
   mounted() {
-    // Carrega conversas automaticamente para exibir assignee e labels
-    this.loadConversations();
+    // Conversas carregadas sob demanda ao expandir (evita N requisições no load inicial)
+    // Atividades são carregadas pelo componente pai (KanbanAttributes) para todos os contatos de uma vez
   },
   watch: {
     showValueInput(newValue) {
