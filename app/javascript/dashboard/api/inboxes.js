@@ -28,6 +28,14 @@ class Inboxes extends CacheEnabledApiClient {
       agent_bot: botId,
     });
   }
+
+  postWhatsappWebConnection(inboxId, payload, responseType = 'json') {
+    return axios.post(
+      `${this.url}/${inboxId}/whatsapp_web_connection`,
+      payload,
+      { responseType }
+    );
+  }
 }
 
 export default new Inboxes();

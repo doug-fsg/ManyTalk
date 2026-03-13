@@ -276,7 +276,10 @@
     "SLA": "SLA",
     "BETA": "Beta",
     "REPORTS_OVERVIEW": "Resumen",
-    "REAUTHORIZE": "Your inbox connection has expired, please reconnect\n to continue receiving and sending messages",
+    "REAUTHORIZE": "La conexión de tu bandeja de entrada ha expirado. Reconecta para seguir recibiendo y enviando mensajes",
+    "WHATSAPP_WEB_DISCONNECTED": "WhatsApp desconectado",
+    "WHATSAPP_WEB_DISCONNECTED_HINT": "WhatsApp desconectado",
+    "CONNECT": "Conectar",
     "HELP_CENTER": {
       "TITLE": "Centro de ayuda",
       "ALL_ARTICLES": "Todos los artículos",

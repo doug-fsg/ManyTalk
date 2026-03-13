@@ -186,6 +186,7 @@ Rails.application.routes.draw do
             get :agent_bot, on: :member
             post :set_agent_bot, on: :member
             delete :avatar, on: :member
+            resource :whatsapp_web_connection, only: [:create], controller: 'whatsapp_web_connections'
           end
           resources :inbox_members, only: [:create, :show], param: :inbox_id do
             collection do
@@ -235,6 +236,10 @@ Rails.application.routes.draw do
           end
 
           namespace :google do
+            resource :authorization, only: [:create]
+          end
+
+          namespace :whatsapp do
             resource :authorization, only: [:create]
           end
 

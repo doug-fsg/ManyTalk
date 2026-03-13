@@ -1,6 +1,10 @@
 {
   "GENERAL": {
-    "SHOWING_RESULTS": "A mostrar {firstIndex}-{lastIndex} de {totalCount} itens",
-    "CANCEL": "Cancelar"
+    "SHOWING_RESULTS": "A mostrar {firstIndex}-{lastIndex} de {totalCount} itens"
+  },
+  "COMMON": {
+    "CANCEL": "Cancelar",
+    "APPLY": "Aplicar",
+    "OR": "Ou"
   }
 }

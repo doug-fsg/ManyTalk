@@ -4,6 +4,7 @@
   },
   "COMMON": {
     "CANCEL": "Cancel",
-    "APPLY": "Apply"
+    "APPLY": "Apply",
+    "OR": "Or"
   }
 }

@@ -279,6 +279,9 @@
     "BETA": "Beta",
     "REPORTS_OVERVIEW": "Overview",
     "REAUTHORIZE": "Your inbox connection has expired, please reconnect\n to continue receiving and sending messages",
+    "WHATSAPP_WEB_DISCONNECTED": "WhatsApp disconnected",
+    "WHATSAPP_WEB_DISCONNECTED_HINT": "WhatsApp disconnected",
+    "CONNECT": "Connect",
     "HELP_CENTER": {
       "TITLE": "Help Center",
       "ALL_ARTICLES": "All Articles",

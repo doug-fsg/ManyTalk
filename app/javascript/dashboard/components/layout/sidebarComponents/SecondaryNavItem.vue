@@ -62,6 +62,8 @@
         :should-truncate="child.truncateLabel"
         :icon="computedInboxClass(child)"
         :warning-icon="computedInboxErrorClass(child)"
+        :warning-tooltip-key="child.warningTooltipKey"
+        :reconnect-settings-url="child.reconnectSettingsUrl"
         :show-child-count="showChildCount(child.count)"
         :child-item-count="child.count"
       />

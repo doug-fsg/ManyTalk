@@ -282,7 +282,10 @@
     "SLA": "VAR",
     "BETA": "Beta",
     "REPORTS_OVERVIEW": "Visão geral",
-    "REAUTHORIZE": "Your inbox connection has expired, please reconnect\n to continue receiving and sending messages",
+    "REAUTHORIZE": "A conexão do seu canal expirou. Reconecte para continuar recebendo e enviando mensagens",
+    "WHATSAPP_WEB_DISCONNECTED": "WhatsApp desconectado",
+    "WHATSAPP_WEB_DISCONNECTED_HINT": "WhatsApp desconectado",
+    "CONNECT": "Conectar",
     "HELP_CENTER": {
       "TITLE": "Central de Ajuda",
       "ALL_ARTICLES": "Todos os artigos",

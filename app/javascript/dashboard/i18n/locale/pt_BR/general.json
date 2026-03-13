@@ -3,6 +3,7 @@
     "SHOWING_RESULTS": "Mostrando {firstIndex}-{lastIndex} de {totalCount} itens"
   },
   "COMMON": {
+    "OR": "Ou",
     "CANCEL": "Cancelar",
     "APPLY": "Aplicar"
   }

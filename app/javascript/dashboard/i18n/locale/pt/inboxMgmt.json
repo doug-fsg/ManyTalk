@@ -215,10 +215,38 @@
         "DESC": "Comece a apoiar os seus clientes via WhatsApp.",
         "PROVIDERS": {
           "LABEL": "API Provider",
+          "WHATSAPP_EMBEDDED": "Conectar com WhatsApp Business (Embedded Signup)",
           "TWILIO": "Twilio",
           "WHATSAPP_CLOUD": "WhatsApp Cloud",
           "360_DIALOG": "360Dialog",
-          "UNOAPI": "Unoapi"
+          "UNOAPI": "Unoapi",
+          "WHATSAPP_WEB": "WhatsApp Web"
+        },
+        "EMBEDDED_SIGNUP": {
+          "TITLE": "Conectar com WhatsApp Business",
+          "DESC": "Use o fluxo OAuth simplificado da Meta para conectar sua conta WhatsApp Business. Sem configuração manual de webhook.",
+          "BENEFITS": {
+            "EASY_SETUP": "Configuração rápida em minutos",
+            "SECURE_AUTH": "Autenticação segura baseada em OAuth",
+            "AUTO_CONFIG": "Configuração automática de webhook e número de telefone"
+          },
+          "LEARN_MORE": {
+            "LINK_TEXT": "Saiba mais sobre WhatsApp Embedded Signup",
+            "URL": "https://developers.facebook.com/docs/whatsapp/embedded-signup/"
+          },
+          "SUBMIT_BUTTON": "Conectar com WhatsApp Business",
+          "AUTH_PROCESSING": "Autenticando com Facebook...",
+          "WAITING_FOR_AUTH": "Aguardando autenticação...",
+          "WAITING_FOR_BUSINESS_INFO": "Aguardando informações da empresa...",
+          "PROCESSING": "Configurando seu canal WhatsApp...",
+          "AUTH_NOT_COMPLETED": "A autenticação não foi concluída. Tente novamente.",
+          "INVALID_BUSINESS_DATA": "Dados de negócio inválidos recebidos. Tente novamente.",
+          "SIGNUP_ERROR": "Ocorreu um erro durante o cadastro. Tente novamente.",
+          "SDK_LOAD_ERROR": "Falha ao carregar o Facebook SDK. Verifique sua conexão e tente novamente.",
+          "CANCELLED": "O cadastro foi cancelado.",
+          "SUCCESS_FALLBACK": "Canal WhatsApp criado com sucesso.",
+          "OR_MANUAL_SETUP": "Ou configurar manualmente com credenciais da API",
+          "USE_QUICK_CONNECT": "Usar conexão rápida (OAuth) em vez disso"
         },
         "INBOX_NAME": {
           "LABEL": "Inbox Name",
@@ -304,6 +332,10 @@
         "API": {
           "ERROR_MESSAGE": "We were not able to save the api channel"
         }
+      },
+      "WHATSAPP_WEB_CHANNEL": {
+        "TITLE": "WhatsApp Web",
+        "DESC": "Conecte o WhatsApp Web via API e gerencie conversas no Chatwoot."
       },
       "NOTIFICA_ME_CHANNEL": {
         "TITLE": "NotificaMe Channel",
@@ -447,7 +479,23 @@
       "MESSAGE": "Agora, você pode se envolver com seus clientes através do seu novo Canal. Feliz apoio",
       "BUTTON_TEXT": "Me leve lá",
       "MORE_SETTINGS": "Mais configurações",
-      "WEBSITE_SUCCESS": "Você terminou de criar um canal de site. Copie o código mostrado abaixo e cole-o em seu site. Na próxima vez que um cliente usar o chat em tempo real, a conversa aparecerá automaticamente em sua caixa de entrada."
+      "READ_QRCODE": "Ler Qrcode",
+      "DO_THIS_LATER": "Fazer isso mais tarde",
+      "WEBSITE_SUCCESS": "Você terminou de criar um canal de site. Copie o código mostrado abaixo e cole-o em seu site. Na próxima vez que um cliente usar o chat em tempo real, a conversa aparecerá automaticamente em sua caixa de entrada.",
+      "WHATSAPP_WEB": {
+        "GENERATING_QR": "Gerando QR Code...",
+        "VERIFYING": "Verificando conexão...",
+        "CONNECTED_SUCCESS": "WhatsApp conectado com sucesso!",
+        "CONNECTED_DESC": "Seu canal está pronto para receber mensagens.",
+        "VERIFY_FAILED": "Não foi possível verificar a conexão",
+        "DISCONNECTED": "WhatsApp está desconectado. Tente novamente.",
+        "VERIFY_ERROR": "Não foi possível verificar a conexão. Tente novamente.",
+        "GENERATE_NEW_QR": "Gerar novo QR Code",
+        "QR_EXPIRY": "O QR Code tem validade de 20 segundos. Escaneie com o celular em mãos.",
+        "SECONDS_LEFT": "segundos restantes",
+        "CONNECTED_PHONE": "Número conectado",
+        "ADVANCED_SETTINGS": "Configurações avançadas"
+      }
     },
     "REAUTH": "Reautorizar",
     "VIEW": "Visualizar",
@@ -803,6 +851,19 @@
       "MICROSOFT": "Microsoft",
       "GOOGLE": "Google",
       "OTHER_PROVIDERS": "Other Providers"
+    },
+    "CHANNELS": {
+      "MESSENGER": "Messenger",
+      "WEB_WIDGET": "Website",
+      "TWITTER_PROFILE": "Twitter",
+      "TWILIO_SMS": "Twilio SMS",
+      "WHATSAPP": "WhatsApp",
+      "SMS": "SMS",
+      "EMAIL": "Email",
+      "TELEGRAM": "Telegram",
+      "LINE": "Line",
+      "API": "Canal API",
+      "WHATSAPP_WEB": "WhatsApp Web"
     }
   }
 }

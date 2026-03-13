@@ -1,5 +1,10 @@
 {
   "GENERAL": {
     "SHOWING_RESULTS": "Mostrando {firstIndex}-{lastIndex} de {totalCount} elementos"
+  },
+  "COMMON": {
+    "CANCEL": "Cancelar",
+    "APPLY": "Aplicar",
+    "OR": "O"
   }
 }

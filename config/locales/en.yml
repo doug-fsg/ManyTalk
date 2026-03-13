@@ -36,6 +36,11 @@ en:
     reset_password_failure: Uh ho! We could not find any user with the specified email.
     inbox_deletetion_response: Your inbox deletion request will be processed in some time.
 
+  inbox:
+    reauthorization:
+      not_required: Reauthorization is not required for this inbox
+      success: Inbox reauthorized successfully
+
   errors:
     validations:
       presence: must not be blank
@@ -66,6 +71,8 @@ en:
       invalid_message_type: "Invalid message type. Action not permitted"
     slack:
       invalid_channel_id: "Invalid slack channel. Please try again"
+    whatsapp:
+      phone_number_already_exists: "A WhatsApp channel with phone number %{phone_number} already exists"
     inboxes:
       imap:
         socket_error: Please check the network connection, IMAP address and try again.

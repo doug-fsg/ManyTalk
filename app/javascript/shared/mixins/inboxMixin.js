@@ -56,6 +56,13 @@ export default {
     isAPIInbox() {
       return this.channelType === INBOX_TYPES.API;
     },
+    isWhatsAppWebInbox() {
+      return (
+        this.isAPIInbox &&
+        (this.inbox.channel?.additional_attributes?.source === 'whatsapp_web' ||
+          this.inbox.additional_attributes?.source === 'whatsapp_web')
+      );
+    },
     isATwitterInbox() {
       return this.channelType === INBOX_TYPES.TWITTER;
     },

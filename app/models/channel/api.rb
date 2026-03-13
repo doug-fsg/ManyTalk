@@ -29,6 +29,12 @@ class Channel::Api < ApplicationRecord
   validate :ensure_valid_agent_reply_time_window
   validates :webhook_url, length: { maximum: Limits::URL_LENGTH_LIMIT }
 
+  after_commit :invalidate_inbox_cache, on: :update
+
+  def invalidate_inbox_cache
+    account.update_cache_key('inbox')
+  end
+
   def name
     'API'
   end

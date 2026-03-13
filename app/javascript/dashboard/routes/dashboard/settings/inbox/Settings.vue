@@ -52,7 +52,7 @@
           @blur="v$.selectedInboxName.$touch"
         />
         <woot-input
-          v-if="isAPIInbox"
+          v-if="isAPIInbox && !isWhatsAppWebInbox"
           v-model.trim="webhookUrl"
           class="w-3/4 pb-4"
           :class="{ error: v$.webhookUrl.$error }"
@@ -384,7 +384,7 @@
       </SettingsSection>
       <SettingsSection :show-border="false">
         <woot-submit-button
-          v-if="isAPIInbox"
+          v-if="isAPIInbox && !isWhatsAppWebInbox"
           type="submit"
           :disabled="v$.webhookUrl.$invalid"
           :button-text="$t('INBOX_MGMT.SETTINGS_POPUP.UPDATE')"
@@ -695,6 +695,12 @@ export default {
     onTabChange(selectedTabIndex) {
       this.selectedTabIndex = selectedTabIndex;
     },
+    applyTabFromQuery() {
+      const tabKey = this.$route.query?.tab;
+      if (!tabKey) return;
+      const idx = this.tabs.findIndex(t => t.key === tabKey);
+      if (idx >= 0) this.selectedTabIndex = idx;
+    },
     fetchInboxSettings() {
       this.selectedTabIndex = 0;
       this.selectedAgents = [];
@@ -723,6 +729,7 @@ export default {
         this.selectedPortalSlug = this.inbox.help_center
           ? this.inbox.help_center.slug
           : '';
+        this.$nextTick(() => this.applyTabFromQuery());
       });
     },
     async updateInbox() {

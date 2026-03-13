@@ -3,6 +3,8 @@ import PageHeader from '../../SettingsSubPageHeader.vue';
 import Twilio from './Twilio.vue';
 import ThreeSixtyDialogWhatsapp from './360DialogWhatsapp.vue';
 import CloudWhatsapp from './CloudWhatsapp.vue';
+import WhatsappWeb from './WhatsappWeb.vue';
+import WhatsappEmbeddedSignup from './WhatsappEmbeddedSignup.vue';
 
 export default {
   components: {
@@ -10,11 +12,44 @@ export default {
     Twilio,
     ThreeSixtyDialogWhatsapp,
     CloudWhatsapp,
+    WhatsappWeb,
+    WhatsappEmbeddedSignup,
   },
   data() {
     return {
-      provider: 'whatsapp_cloud',
+      provider: 'whatsapp_web',
+      cloudSetupMode: 'embedded', // 'embedded' | 'manual'
     };
+  },
+  computed: {
+    hasWhatsappEmbeddedConfig() {
+      return (
+        window.chatwootConfig?.whatsappAppId &&
+        window.chatwootConfig.whatsappAppId !== 'none' &&
+        window.chatwootConfig?.whatsappConfigurationId &&
+        window.chatwootConfig.whatsappConfigurationId !== 'none'
+      );
+    },
+    showCloudEmbedded() {
+      return (
+        this.provider === 'whatsapp_cloud' &&
+        this.hasWhatsappEmbeddedConfig &&
+        this.cloudSetupMode === 'embedded'
+      );
+    },
+    showCloudManual() {
+      return (
+        this.provider === 'whatsapp_cloud' &&
+        (this.cloudSetupMode === 'manual' || !this.hasWhatsappEmbeddedConfig)
+      );
+    },
+  },
+  watch: {
+    provider(newVal) {
+      if (newVal === 'whatsapp_cloud' && this.hasWhatsappEmbeddedConfig) {
+        this.cloudSetupMode = 'embedded';
+      }
+    },
   },
 };
 </script>
@@ -34,6 +69,9 @@ export default {
           <option value="whatsapp_cloud">
             {{ $t('INBOX_MGMT.ADD.WHATSAPP.PROVIDERS.WHATSAPP_CLOUD') }}
           </option>
+          <option value="whatsapp_web">
+            {{ $t('INBOX_MGMT.ADD.WHATSAPP.PROVIDERS.WHATSAPP_WEB') }}
+          </option>
           <option value="twilio">
             {{ $t('INBOX_MGMT.ADD.WHATSAPP.PROVIDERS.TWILIO') }}
           </option>
@@ -41,8 +79,36 @@ export default {
       </label>
     </div>
 
-    <Twilio v-if="provider === 'twilio'" type="whatsapp" />
+    <template v-if="provider === 'whatsapp_cloud'">
+      <WhatsappEmbeddedSignup v-if="showCloudEmbedded" />
+      <CloudWhatsapp v-else-if="showCloudManual" />
+      <div
+        v-if="showCloudEmbedded"
+        class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700"
+      >
+        <button
+          type="button"
+          class="text-sm text-slate-600 dark:text-slate-400 hover:text-woot-500 dark:hover:text-woot-500"
+          @click="cloudSetupMode = 'manual'"
+        >
+          {{ $t('INBOX_MGMT.ADD.WHATSAPP.EMBEDDED_SIGNUP.OR_MANUAL_SETUP') }}
+        </button>
+      </div>
+      <div
+        v-if="showCloudManual && hasWhatsappEmbeddedConfig"
+        class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700"
+      >
+        <button
+          type="button"
+          class="text-sm text-slate-600 dark:text-slate-400 hover:text-woot-500 dark:hover:text-woot-500"
+          @click="cloudSetupMode = 'embedded'"
+        >
+          {{ $t('INBOX_MGMT.ADD.WHATSAPP.EMBEDDED_SIGNUP.USE_QUICK_CONNECT') }}
+        </button>
+      </div>
+    </template>
+    <Twilio v-else-if="provider === 'twilio'" type="whatsapp" />
     <ThreeSixtyDialogWhatsapp v-else-if="provider === '360dialog'" />
-    <CloudWhatsapp v-else />
+    <WhatsappWeb v-else-if="provider === 'whatsapp_web'" />
   </div>
 </template>

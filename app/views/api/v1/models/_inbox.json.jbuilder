@@ -99,7 +99,9 @@ if resource.api?
   json.hmac_token resource.channel.try(:hmac_token) if Current.account_user&.administrator?
   json.webhook_url resource.channel.try(:webhook_url)
   json.inbox_identifier resource.channel.try(:identifier)
-  json.additional_attributes resource.channel.try(:additional_attributes)
+  attrs = (resource.channel.try(:additional_attributes) || {}).with_indifferent_access
+  json.additional_attributes attrs
+  json.reauthorization_required(attrs['source'] == 'whatsapp_web' && attrs['connection_status'] == 'disconnected')
 end
 
 json.provider resource.channel.try(:provider)

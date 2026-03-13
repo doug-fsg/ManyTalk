@@ -65,14 +65,37 @@
         </div>
         <span
           v-if="warningIcon"
-          class="inline-flex mr-1 bg-red-50 dark:bg-red-900 p-0.5 rounded-sm"
+          class="inline-flex items-center gap-1 mr-1 flex-shrink-0"
+          @click.stop
         >
-          <fluent-icon
-            v-tooltip.top-end="$t('SIDEBAR.REAUTHORIZE')"
-            class="text-xxs text-red-500 dark:text-red-300"
-            :icon="warningIcon"
-            size="12"
-          />
+          <router-link
+            v-if="reconnectSettingsUrl"
+            :to="reconnectSettingsUrl"
+            v-tooltip.top-end="$t('SIDEBAR.WHATSAPP_WEB_DISCONNECTED_HINT')"
+            class="inline-flex items-center gap-1 text-woot-500 hover:text-woot-600 dark:text-woot-500 dark:hover:text-woot-400 underline cursor-pointer text-xs"
+          >
+            <span
+              class="inline-flex bg-red-50 dark:bg-red-900 p-0.5 rounded-sm"
+            >
+              <fluent-icon
+                class="text-xxs text-red-500 dark:text-red-300"
+                :icon="warningIcon"
+                size="12"
+              />
+            </span>
+            <span>{{ $t('SIDEBAR.CONNECT') }}</span>
+          </router-link>
+          <span
+            v-else
+            v-tooltip.top-end="$t(warningTooltipKey || 'SIDEBAR.REAUTHORIZE')"
+            class="inline-flex bg-red-50 dark:bg-red-900 p-0.5 rounded-sm"
+          >
+            <fluent-icon
+              class="text-xxs text-red-500 dark:text-red-300"
+              :icon="warningIcon"
+              size="12"
+            />
+          </span>
         </span>
       </a>
     </li>
@@ -102,6 +125,14 @@ export default {
       default: '',
     },
     warningIcon: {
+      type: String,
+      default: '',
+    },
+    warningTooltipKey: {
+      type: String,
+      default: '',
+    },
+    reconnectSettingsUrl: {
       type: String,
       default: '',
     },
