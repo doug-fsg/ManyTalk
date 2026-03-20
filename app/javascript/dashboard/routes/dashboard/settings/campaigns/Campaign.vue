@@ -6,10 +6,12 @@
       :show-empty-result="showEmptyResult"
       :is-loading="uiFlags.isFetching"
       :campaign-type="type"
+      :pagination-meta="paginationMeta"
       @edit="openEditPopup"
       @delete="openDeletePopup"
       @show-history="openHistoryModal"
       @resend="handleResend"
+      @page-change="onPageChange"
     />
     
     <woot-modal :show.sync="showEditPopup" :on-close="hideEditPopup">
@@ -80,6 +82,9 @@ export default {
     campaigns() {
       return this.$store.getters['campaigns/getCampaigns'](this.campaignType);
     },
+    paginationMeta() {
+      return this.$store.getters['campaigns/getCampaignsMeta'] || {};
+    },
     showEmptyResult() {
       return !this.uiFlags.isFetching && this.campaigns.length === 0;
     },
@@ -87,19 +92,16 @@ export default {
   methods: {
     async handleResend(campaign) {
       try {
-        // Atualiza localmente para evitar rollback visual
-        this.$set(campaign, 'campaign_status', 0);
-
-        // Faz a requisição para atualizar no backend
+        this.$set(campaign, 'campaign_status', 'active');
         await this.$store.dispatch('campaigns/update', {
-          id: campaign.id,
-          campaign_status: 0,
+          id: campaign.display_id || campaign.id,
+          campaign_status: 'active',
+          trigger_rules: { ...(campaign.trigger_rules || {}), force_resend: true },
         });
-
         this.$toast.success('Campanha reenviada com sucesso!');
       } catch (error) {
         this.$toast.error('Erro ao reenviar campanha.');
-        this.$set(campaign, 'campaign_status', 1); // Reverte caso dê erro
+        this.$set(campaign, 'campaign_status', 'completed');
       }
     },
     openEditPopup(campaign) {
@@ -144,6 +146,9 @@ export default {
     },
     hideHistoryModal() {
       this.showHistoryModal = false;
+    },
+    onPageChange(page) {
+      this.$emit('page-change', page);
     },
   },
 };

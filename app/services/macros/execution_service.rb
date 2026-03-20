@@ -7,11 +7,17 @@ class Macros::ExecutionService < ActionService
     Current.user = user
   end
 
+  SEND_ACTIONS = %w[send_message send_attachment].freeze
+  # Delay para garantir que SendReplyJob do anexo (wait: 2.seconds) execute antes da próxima ação.
+  # Evita condição de corrida onde anexos no meio da macro não eram enviados.
+  SEND_ACTION_DELAY = 2.5.seconds
+
   def perform
-    @macro.actions.each do |action|
+    @macro.actions.each_with_index do |action, index|
       action = action.with_indifferent_access
       begin
         send(action[:action_name], action[:action_params])
+        wait_after_send_action(action[:action_name], index)
       rescue StandardError => e
         ChatwootExceptionTracker.new(e, account: @account).capture_exception
       end
@@ -21,6 +27,13 @@ class Macros::ExecutionService < ActionService
   end
 
   private
+
+  def wait_after_send_action(action_name, current_index)
+    return unless SEND_ACTIONS.include?(action_name)
+    return if current_index == @macro.actions.length - 1 # última ação, não precisa esperar
+
+    sleep(SEND_ACTION_DELAY)
+  end
 
   def send_webhook_event(webhook_url)
     payload = @conversation.webhook_data.merge(event: "macro_event.#{@macro.name}")

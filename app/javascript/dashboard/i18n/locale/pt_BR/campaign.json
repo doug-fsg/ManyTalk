@@ -12,16 +12,24 @@
       "BUTTON_SINGLE": "Disparo Único",
       "BUTTON_FLOW": "Envio de Fluxo"
     },
+    "FILTERS": {
+      "ALL": "Todos",
+      "SEARCH_PLACEHOLDER": "Buscar campanha..."
+    },
     "HISTORY": {
       "TITLE": "Histórico da Campanha: {campaignTitle}",
       "TOTAL_PROCESSED": "Total de números processados: {count}",
       "SUCCESSFUL": "Bem-sucedidos: {count}",
       "FAILED": "Falharam: {count}",
-      "DETAILS": "Detalhes",
+      "DETAILS": "Detalhes da entrega",
       "CLOSE_BUTTON": "Fechar",
+      "RETRY_FAILED_BUTTON": "Reenviar com falha",
       "TABLE": {
-        "NUMBER": "Números",
-        "STATUS": "Status"
+        "NUMBER": "Contato",
+        "STATUS": "Status",
+        "STATUS_SUCCESS": "Sucesso",
+        "STATUS_FAILED": "Falha",
+        "ERROR": "Erro"
       }
     },
     "ADD": {
@@ -150,14 +158,26 @@
         "EDIT": "Alterar",
         "DELETE": "Excluir",
         "HISTORY": "Relatório",
-        "RESEND": "Enviar Novamente"
+        "RESEND": "Enviar Novamente",
+        "PAUSE": "Pausar",
+        "STOP": "Parar",
+        "RESUME": "Retomar"
       },
       "STATUS": {
         "ENABLED": "Ativado",
         "DISABLED": "Desativado",
         "COMPLETED": "Concluído",
-        "ACTIVE": "Em espera"
+        "ACTIVE": "Em espera",
+        "PROCESSING": "Em disparo",
+        "PAUSED": "Pausada",
+        "STOPPED": "Parada"
       },
+      "PAUSE_SUCCESS": "Campanha pausada com sucesso",
+      "PAUSE_ERROR": "Não foi possível pausar a campanha",
+      "STOP_SUCCESS": "Campanha parada com sucesso",
+      "STOP_ERROR": "Não foi possível parar a campanha",
+      "RESUME_SUCCESS": "Campanha retomada com sucesso",
+      "RESUME_ERROR": "Não foi possível retomar a campanha",
       "SENDER": {
         "BOT": "Bot"
       }

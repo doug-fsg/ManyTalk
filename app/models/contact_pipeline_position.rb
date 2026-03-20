@@ -37,6 +37,8 @@ class ContactPipelinePosition < ApplicationRecord
   belongs_to :pipeline, class_name: 'CustomAttributeDefinition', foreign_key: 'pipeline_id'
   belongs_to :assignee, class_name: 'User', optional: true
 
+  has_many :activities, dependent: :nullify
+
   validates :contact_id, presence: true
   validates :pipeline_id, presence: true
   validates :stage_id, presence: true

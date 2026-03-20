@@ -43,7 +43,7 @@ class Campaign < ApplicationRecord
 
   enum campaign_type: { ongoing: 0, one_off: 1 }
   # TODO : enabled attribute is unneccessary . lets move that to the campaign status with additional statuses like draft, disabled etc.
-  enum campaign_status: { active: 0, completed: 1 }
+  enum campaign_status: { active: 0, completed: 1, processing: 2, stopped: 3, paused: 4, failed: 5 }
 
   has_many :conversations, dependent: :nullify, autosave: true
 
@@ -53,6 +53,7 @@ class Campaign < ApplicationRecord
   def trigger!
     return unless one_off?
     return if completed?
+    return if processing?
 
     Twilio::OneoffSmsCampaignService.new(campaign: self).perform if inbox.inbox_type == 'Twilio SMS'
     Sms::OneoffSmsCampaignService.new(campaign: self).perform if inbox.inbox_type == 'Sms'

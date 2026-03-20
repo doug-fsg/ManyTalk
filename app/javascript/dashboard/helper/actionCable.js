@@ -31,6 +31,7 @@ class ActionCableConnector extends BaseActionCableConnector {
       'conversation.read': this.onConversationRead,
       'conversation.updated': this.onConversationUpdated,
       'account.cache_invalidated': this.onCacheInvalidate,
+      'campaign.progress': this.onCampaignProgress,
     };
   }
 
@@ -206,6 +207,10 @@ class ActionCableConnector extends BaseActionCableConnector {
     this.app.$store.dispatch('labels/revalidate', { newKey: keys.label });
     this.app.$store.dispatch('inboxes/revalidate', { newKey: keys.inbox });
     this.app.$store.dispatch('teams/revalidate', { newKey: keys.team });
+  };
+
+  onCampaignProgress = data => {
+    this.app.$store.commit('campaigns/UPDATE_CAMPAIGN_PROGRESS', data);
   };
 }
 

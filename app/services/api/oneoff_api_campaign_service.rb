@@ -1,124 +1,106 @@
-#deu certo
-
 class Api::OneoffApiCampaignService
   pattr_initialize [:campaign!]
 
-  BATCH_SIZE = 50
-  WEBHOOK_URL = ENV.fetch('WEBHOOK_URL_CAMPANHA', nil)
+  DEFAULT_DELAY_SECONDS = 3
+  LABEL_BATCH_SIZE = 500
 
   def perform
-    Rails.logger.info "Campaign Details: #{campaign.inspect}"
-    Rails.logger.info "Campaign Audience: #{campaign.audience.inspect}"
-    Rails.logger.info "Campaign Inbox Type: #{campaign.inbox.inbox_type}"
-    Rails.logger.info "Campaign Type: #{campaign.campaign_type}"
+    validate!
 
-    # Verificações iniciais
-    raise "Invalid campaign #{campaign.id}" if campaign.inbox.inbox_type != 'API' || !campaign.one_off?
-    raise 'Completed Campaign' if campaign.completed?
+    audience_contacts = resolve_audience_contacts
+    label_relation = resolve_label_relation
 
-    # marks campaign completed so that other jobs won't pick it up
-    campaign.completed!
+    total = count_total(label_relation, audience_contacts)
 
-    # Filtra os IDs das labels e os contatos da audiência
-    audience_label_ids = campaign.audience.select { |audience| audience['type'] == 'Label' }.map { |a| a['id'] }
-    audience_contacts = campaign.audience.select { |audience| audience['type'] == 'Contact' }
+    if total.zero?
+      campaign.completed!
+      return
+    end
 
-    Rails.logger.info "Audience Label IDs: #{audience_label_ids}"
-    Rails.logger.info "Audience Contacts: #{audience_contacts}"
+    campaign.processing!
+    init_redis_counters(campaign, total)
+    persist_initial_snapshot(campaign, total)
 
-    # Processa as labels e os contatos
-    audience_labels = campaign.account.labels.where(id: audience_label_ids).pluck(:title)
-    
-    Rails.logger.info "Audience Label Titles: #{audience_labels}"
-
-    process_audience_labels(audience_labels)
-    process_audience_contacts(audience_contacts)
+    delay_seconds = (ENV['CAMPANHA_DELAY_SECONDS'] || DEFAULT_DELAY_SECONDS).to_i
+    index = enqueue_label_contacts(label_relation, delay_seconds, 0)
+    enqueue_audience_contacts(audience_contacts, delay_seconds, index)
   end
 
   private
 
-  # Processa os contatos associados às labels através do banco de dados
-  def process_audience_labels(audience_labels)
-    Rails.logger.info "Campaign Audience: #{campaign.audience.inspect}"
-    Rails.logger.info "Processing Labels: #{audience_labels}"
-    
-    if audience_labels.empty?
-      Rails.logger.warn "No labels to process for campaign #{campaign.id}"
-      return
+  def validate!
+    raise "Invalid campaign #{campaign.id}" unless campaign.inbox.inbox_type == 'API' && campaign.one_off?
+    raise 'Campaign is already completed' if campaign.completed?
+    raise 'Campaign is already processing' if campaign.processing?
+    raise 'Campaign is paused' if campaign.paused?
+    raise 'Campaign is stopped' if campaign.stopped?
+    raise 'Inbox webhook URL is not configured' if campaign.inbox.channel.webhook_url.blank?
+  end
+
+  def resolve_audience_contacts
+    campaign.audience.to_a.select { |a| a['type'] == 'Contact' && phone_from(a).present? }
+  end
+
+  def resolve_label_relation(label_ids = nil)
+    ids = label_ids || campaign.audience.to_a.select { |a| a['type'] == 'Label' }.map { |a| a['id'] }
+    return Contact.none if ids.blank?
+
+    labels = campaign.account.labels.where(id: ids).pluck(:title)
+    return Contact.none if labels.blank?
+
+    campaign.account.contacts
+            .joins(:conversations)
+            .where('conversations.cached_label_list ~* ?', labels.join('|'))
+            .distinct
+  end
+
+  def count_total(label_relation, audience_contacts)
+    label_count = label_relation.respond_to?(:count) ? label_relation.count : 0
+    label_count + audience_contacts.size
+  end
+
+  def enqueue_label_contacts(label_relation, delay_seconds, start_index)
+    return start_index unless label_relation.respond_to?(:find_each)
+
+    idx = start_index
+    label_relation.find_each(batch_size: LABEL_BATCH_SIZE) do |contact|
+      contact_data = { 'type' => 'Label', 'id' => contact.phone_number, 'name' => contact.name, 'db_id' => contact.id }
+      next unless phone_from(contact_data).present?
+
+      Campaigns::SendContactJob.set(wait: (idx * delay_seconds).seconds).perform_later(campaign.id, contact_data)
+      idx += 1
     end
-
-    # Busca os contatos através do cached_label_list
-    contacts = campaign.account.contacts.joins(:conversations)
-      .where("conversations.cached_label_list ~* ?", audience_labels.join('|'))
-      .distinct
-    
-    Rails.logger.info "Contacts for Conversation Labels: #{contacts.count}"
-    Rails.logger.info "Contacts Details: #{contacts.map(&:attributes)}"
-    
-    process_contacts(contacts)
+    idx
   end
 
-  # Processa os contatos diretamente se o tipo for 'Contact', sem consultar o banco de dados
-  def process_audience_contacts(audience_contacts)
-    # Para os contatos que vêm diretamente da audiência, apenas os processa
-    process_contacts(audience_contacts)
-  end
-
-  # Processa os contatos, seja eles da audiência diretamente ou da consulta
-  def process_contacts(contacts)
-    contacts.each_slice(BATCH_SIZE) do |batch|
-      send_webhook(batch)
+  def enqueue_audience_contacts(audience_contacts, delay_seconds, start_index)
+    audience_contacts.each_with_index do |contact_data, i|
+      index = start_index + i
+      Campaigns::SendContactJob.set(wait: (index * delay_seconds).seconds).perform_later(campaign.id, contact_data)
     end
   end
 
-  # Envia os dados ao webhook
-  def send_webhook(contacts)
-    payload = {
-      campaign_id: campaign.id,
-      message: campaign.message,
-      inbox: campaign.inbox.id,
-      account: campaign.account.id,
-      account_name: campaign.account.name,
-      macros: campaign.trigger_rules,
-      contacts: contacts.map { |contact| contact_payload(contact) }
-    }
+  def phone_from(contact_data)
+    contact_data.is_a?(Hash) ? (contact_data['id'] || contact_data['phone_number']) : contact_data.to_s
+  end
 
-    response = HTTParty.post(
-      WEBHOOK_URL,
-      body: payload.to_json,
-      headers: { 'Content-Type' => 'application/json' }
+  def init_redis_counters(campaign, total)
+    now = Time.current.to_i
+    $alfred.with do |redis|
+      redis.set("campaign:#{campaign.id}:total_count", total)
+      redis.set("campaign:#{campaign.id}:processed_count", 0)
+      redis.set("campaign:#{campaign.id}:sent_count", 0)
+      redis.set("campaign:#{campaign.id}:failed_count", 0)
+      redis.set("campaign:#{campaign.id}:paused_or_stopped_count", 0)
+      redis.set("campaign:#{campaign.id}:last_heartbeat_at", now)
+      redis.del("campaign:#{campaign.id}:failed_list")
+    end
+  end
+
+  def persist_initial_snapshot(campaign, total)
+    campaign.update_column(
+      :trigger_rules,
+      (campaign.trigger_rules || {}).merge('delivery_stats' => { 'total' => total, 'sent' => 0, 'failed' => 0 })
     )
-
-    if response.success?
-      Rails.logger.info("Webhook sent successfully for campaign #{campaign.id} with #{contacts.size} contacts")
-    else
-      Rails.logger.error("Failed to send webhook for campaign #{campaign.id}. Error: #{response.body}")
-    end
-  rescue StandardError => e
-    Rails.logger.error("Error sending webhook for campaign #{campaign.id}. Error: #{e.message}")
-  end
-
-  # Monta o payload de contato, seja do banco de dados ou diretamente da audiência
-  def contact_payload(contact)
-    if contact.is_a?(Hash) # Se vier diretamente da audiência
-      {
-        type: 'contact',
-        name: contact['name'] || contact['nome'],
-        email: contact['email'],
-        phone_number: contact['phone_number'],
-        identifier: contact['id'],
-        nome: contact['nome'],
-        variavel: contact['variavel']
-      }
-    else # Se vier do banco de dados
-      {
-        type: 'label',
-        id: contact.id,
-        name: contact.name,
-        email: contact.email,
-        phone_number: contact.phone_number,
-        nome: contact.name
-      }
-    end
   end
 end

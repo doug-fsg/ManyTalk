@@ -17,10 +17,53 @@
       
       <!-- Reorganização da área de botões -->
       <div class="flex flex-row items-center">
-        <!-- Botões de histórico e reenvio à esquerda do Select -->
+        <!-- Botões de histórico, controle e reenvio à esquerda do Select -->
         <div class="flex flex-row space-x-3 mr-2">
+          <!-- Indicador de progresso durante disparo -->
+          <div
+            v-if="isProcessing"
+            class="flex items-center space-x-2 text-xs text-woot-600 dark:text-woot-400"
+          >
+            <span class="animate-spin inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full"></span>
+            <span>{{ progressText }}</span>
+          </div>
+          <!-- Botões Pause/Stop quando em disparo -->
           <woot-button
-            v-if="campaign.campaign_status === 'completed'"
+            v-if="isProcessing && !isOngoingType"
+            :is-loading="isPausing"
+            variant="link"
+            icon="pause"
+            size="small"
+            color-scheme="secondary"
+            @click="pauseCampaign"
+          >
+            {{ $t('CAMPAIGN.LIST.BUTTONS.PAUSE') }}
+          </woot-button>
+          <woot-button
+            v-if="isProcessing && !isOngoingType"
+            :is-loading="isStopping"
+            variant="link"
+            icon="stop"
+            size="small"
+            color-scheme="alert"
+            @click="stopCampaign"
+          >
+            {{ $t('CAMPAIGN.LIST.BUTTONS.STOP') }}
+          </woot-button>
+          <!-- Botão Resume quando pausada -->
+          <woot-button
+            v-if="isPaused && !isOngoingType"
+            :is-loading="isResuming"
+            variant="link"
+            icon="play"
+            size="small"
+            color-scheme="success"
+            @click="resumeCampaign"
+          >
+            {{ $t('CAMPAIGN.LIST.BUTTONS.RESUME') }}
+          </woot-button>
+          <woot-button
+            v-if="canShowHistory"
             variant="link"
             icon="clock"
             size="small"
@@ -110,6 +153,7 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
 import UserAvatarWithName from 'dashboard/components/widgets/UserAvatarWithName.vue';
 import InboxName from 'dashboard/components/widgets/InboxName.vue';
 import messageFormatterMixin from 'shared/mixins/messageFormatterMixin';
@@ -133,10 +177,37 @@ export default {
   },
   data() {
     return {
-      isDropdownOpen: false
+      isDropdownOpen: false,
+      isPausing: false,
+      isStopping: false,
+      isResuming: false,
     };
   },
   computed: {
+    ...mapGetters({
+      getCampaignProgress: 'campaigns/getCampaignProgress',
+    }),
+    liveProgress() {
+      return this.getCampaignProgress(this.campaign.id);
+    },
+    isProcessing() {
+      const status = this.liveProgress?.status || this.campaign.campaign_status;
+      return status === 'processing';
+    },
+    isPaused() {
+      const status = this.liveProgress?.status || this.campaign.campaign_status;
+      return status === 'paused';
+    },
+    canShowHistory() {
+      const status = this.liveProgress?.status || this.campaign.campaign_status;
+      return status === 'completed' || status === 'stopped';
+    },
+    progressText() {
+      if (!this.liveProgress) return this.$t('CAMPAIGN.LIST.STATUS.PROCESSING');
+      const { sent = 0, failed = 0, total = 0 } = this.liveProgress;
+      if (total === 0) return this.$t('CAMPAIGN.LIST.STATUS.PROCESSING');
+      return `${sent + failed}/${total}`;
+    },
     campaignStatus() {
       if (this.isOngoingType) {
         return this.campaign.enabled
@@ -144,17 +215,23 @@ export default {
           : this.$t('CAMPAIGN.LIST.STATUS.DISABLED');
       }
 
-      return this.campaign.campaign_status === 'completed'
-        ? this.$t('CAMPAIGN.LIST.STATUS.COMPLETED')
-        : this.$t('CAMPAIGN.LIST.STATUS.ACTIVE');
+      const status = this.liveProgress?.status || this.campaign.campaign_status;
+      if (status === 'completed') return this.$t('CAMPAIGN.LIST.STATUS.COMPLETED');
+      if (status === 'processing') return this.$t('CAMPAIGN.LIST.STATUS.PROCESSING');
+      if (status === 'paused') return this.$t('CAMPAIGN.LIST.STATUS.PAUSED');
+      if (status === 'stopped') return this.$t('CAMPAIGN.LIST.STATUS.STOPPED');
+      return this.$t('CAMPAIGN.LIST.STATUS.ACTIVE');
     },
     colorScheme() {
       if (this.isOngoingType) {
         return this.campaign.enabled ? 'success' : 'secondary';
       }
-      return this.campaign.campaign_status === 'completed'
-        ? 'secondary'
-        : 'success';
+      const status = this.liveProgress?.status || this.campaign.campaign_status;
+      if (status === 'completed') return 'secondary';
+      if (status === 'processing') return 'warning';
+      if (status === 'paused') return 'warning';
+      if (status === 'stopped') return 'alert';
+      return 'success';
     },
   },
   mounted() {
@@ -166,14 +243,55 @@ export default {
   methods: {
     messageStamp,
     successPercentage() {
-      if (this.isOngoingType || !this.campaign.audience) return 0;
-      const total = this.campaign.audience.length;
+      if (this.isOngoingType) return 0;
+      const progress = this.liveProgress || {};
+      const stats = this.campaign.trigger_rules?.delivery_stats || {};
+      const sent = progress.sent ?? stats.sent ?? 0;
+      const total = progress.total ?? stats.total ?? this.campaign.audience?.length ?? 0;
       if (total === 0) return 0;
-      const successful = this.campaign.audience.filter(item => item.status === 'success').length;
-      return Math.round((successful / total) * 100);
+      return Math.round((sent / total) * 100);
     },
     resendCampaign() {
       this.$emit('resend', this.campaign);
+    },
+    async pauseCampaign() {
+      if (this.isPausing) return;
+      this.isPausing = true;
+      try {
+        await this.$store.dispatch('campaigns/pause', this.campaign.id);
+        this.$emit('pause', this.campaign);
+        this.$toast.success(this.$t('CAMPAIGN.LIST.PAUSE_SUCCESS'));
+      } catch (error) {
+        this.$toast.error(this.formatApiError(error) || this.$t('CAMPAIGN.LIST.PAUSE_ERROR'));
+      } finally {
+        this.isPausing = false;
+      }
+    },
+    async stopCampaign() {
+      if (this.isStopping) return;
+      this.isStopping = true;
+      try {
+        await this.$store.dispatch('campaigns/stop', this.campaign.id);
+        this.$emit('stop', this.campaign);
+        this.$toast.success(this.$t('CAMPAIGN.LIST.STOP_SUCCESS'));
+      } catch (error) {
+        this.$toast.error(this.formatApiError(error) || this.$t('CAMPAIGN.LIST.STOP_ERROR'));
+      } finally {
+        this.isStopping = false;
+      }
+    },
+    async resumeCampaign() {
+      if (this.isResuming) return;
+      this.isResuming = true;
+      try {
+        await this.$store.dispatch('campaigns/resume', this.campaign.id);
+        this.$emit('resume', this.campaign);
+        this.$toast.success(this.$t('CAMPAIGN.LIST.RESUME_SUCCESS'));
+      } catch (error) {
+        this.$toast.error(this.formatApiError(error) || this.$t('CAMPAIGN.LIST.RESUME_ERROR'));
+      } finally {
+        this.isResuming = false;
+      }
     },
     toggleDropdown(event) {
       event.stopPropagation();
@@ -191,7 +309,12 @@ export default {
       if (this.$el && !this.$el.contains(event.target)) {
         this.isDropdownOpen = false;
       }
-    }
+    },
+    formatApiError(error) {
+      const errors = error?.response?.data?.errors;
+      if (!errors) return null;
+      return Array.isArray(errors) ? errors.join(', ') : errors;
+    },
   },
 };
 </script>

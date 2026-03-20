@@ -125,7 +125,10 @@ class Messages::MessageBuilder
   end
 
   def campaign_id
-    @params[:campaign_id].present? ? { additional_attributes: { campaign_id: @params[:campaign_id] } } : {}
+    attrs = {}
+    attrs[:campaign_id] = @params[:campaign_id] if @params[:campaign_id].present?
+    attrs[:macro_id] = @params[:macro_id] if @params[:macro_id].present?
+    attrs.present? ? { additional_attributes: attrs } : {}
   end
 
   def template_params

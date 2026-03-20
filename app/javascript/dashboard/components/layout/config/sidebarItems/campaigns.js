@@ -2,16 +2,8 @@ import { frontendURL } from '../../../../helper/URLHelper';
 
 const campaigns = accountId => ({
   parentNav: 'campaigns',
-  routes: ['ongoing_campaigns', 'one_off'],
+  routes: ['one_off', 'ongoing_campaigns'],
   menuItems: [
-    {
-      icon: 'arrow-swap',
-      label: 'ONGOING',
-      key: 'ongoingCampaigns',
-      hasSubMenu: false,
-      toState: frontendURL(`accounts/${accountId}/campaigns/ongoing`),
-      toStateName: 'ongoing_campaigns',
-    },
     {
       key: 'oneOffCampaigns',
       icon: 'sound-source',
@@ -19,6 +11,14 @@ const campaigns = accountId => ({
       hasSubMenu: false,
       toState: frontendURL(`accounts/${accountId}/campaigns/one_off`),
       toStateName: 'one_off',
+    },
+    {
+      icon: 'arrow-swap',
+      label: 'ONGOING',
+      key: 'ongoingCampaigns',
+      hasSubMenu: false,
+      toState: frontendURL(`accounts/${accountId}/campaigns/ongoing`),
+      toStateName: 'ongoing_campaigns',
     },
   ],
 });

@@ -57,6 +57,7 @@ class Contact < ApplicationRecord
 
   belongs_to :account
   has_many :conversations, dependent: :destroy_async
+  has_many :activities, dependent: :destroy
   has_many :contact_inboxes, dependent: :destroy_async
   has_many :contact_pipeline_positions, dependent: :destroy
   has_many :csat_survey_responses, dependent: :destroy_async

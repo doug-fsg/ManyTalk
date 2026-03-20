@@ -17,6 +17,17 @@
           @show-history="onShowHistory"
           @resend="campaign => $emit('resend', campaign)"
         />
+        <div
+          v-if="showPagination"
+          class="flex justify-center mt-4 py-4"
+        >
+          <table-footer-pagination
+            :current-page="paginationMeta.current_page || 1"
+            :total-count="paginationMeta.count || 0"
+            :total-pages="paginationMeta.total_pages || 1"
+            @page-change="$emit('page-change', $event)"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -25,6 +36,7 @@
 <script>
 import Spinner from 'shared/components/Spinner.vue';
 import EmptyState from 'dashboard/components/widgets/EmptyState.vue';
+import TableFooterPagination from 'dashboard/components/widgets/TableFooterPagination.vue';
 import campaignMixin from 'shared/mixins/campaignMixin';
 import CampaignCard from './CampaignCard.vue';
 
@@ -33,6 +45,7 @@ export default {
     EmptyState,
     Spinner,
     CampaignCard,
+    TableFooterPagination,
   },
 
   mixins: [campaignMixin],
@@ -50,9 +63,16 @@ export default {
       type: Boolean,
       default: false,
     },
+    paginationMeta: {
+      type: Object,
+      default: () => ({}),
+    },
   },
-
   computed: {
+    showPagination() {
+      const { total_pages = 0 } = this.paginationMeta;
+      return total_pages > 1;
+    },
     currentInboxId() {
       return this.$route.params.inboxId;
     },
@@ -77,10 +97,16 @@ export default {
         : this.$t('CAMPAIGN.ONE_OFF.INBOXES_NOT_FOUND');
     },
     successfulCount() {
-      return (campaign) => campaign.audience.filter(item => item.status === 'success').length;
+      return (campaign) => {
+        const stats = campaign.trigger_rules?.delivery_stats || {};
+        return stats.sent || 0;
+      };
     },
     failedCount() {
-      return (campaign) => campaign.audience.length - this.successfulCount(campaign);
+      return (campaign) => {
+        const stats = campaign.trigger_rules?.delivery_stats || {};
+        return stats.failed || 0;
+      };
     },
   },
 

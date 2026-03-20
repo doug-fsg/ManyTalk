@@ -12,16 +12,24 @@
       "BUTTON_SINGLE": "Send once",
       "BUTTON_FLOW": "Send with flow"
     },
+    "FILTERS": {
+      "ALL": "All",
+      "SEARCH_PLACEHOLDER": "Search campaign..."
+    },
     "HISTORY": {
       "TITLE": "Campaign History: {campaignTitle}",
       "TOTAL_PROCESSED": "Total numbers processed: {count}",
       "SUCCESSFUL": "Successful: {count}",
       "FAILED": "Failed: {count}",
-      "DETAILS": "Details",
+      "DETAILS": "Delivery details",
       "CLOSE_BUTTON": "Close",
+      "RETRY_FAILED_BUTTON": "Retry failed",
       "TABLE": {
-        "NUMBER": "Numbers",
-        "STATUS": "Status"
+        "NUMBER": "Contact",
+        "STATUS": "Status",
+        "STATUS_SUCCESS": "Success",
+        "STATUS_FAILED": "Failed",
+        "ERROR": "Error"
       }
     },
     "ADD": {
@@ -150,14 +158,26 @@
         "EDIT": "Edit",
         "DELETE": "Delete",
         "HISTORY": "Report",
-        "RESEND": "Resend"
+        "RESEND": "Resend",
+        "PAUSE": "Pause",
+        "STOP": "Stop",
+        "RESUME": "Resume"
       },
       "STATUS": {
         "ENABLED": "Enabled",
         "DISABLED": "Disabled",
         "COMPLETED": "Completed",
-        "ACTIVE": "Active"
+        "ACTIVE": "Active",
+        "PROCESSING": "Sending",
+        "PAUSED": "Paused",
+        "STOPPED": "Stopped"
       },
+      "PAUSE_SUCCESS": "Campaign paused successfully",
+      "PAUSE_ERROR": "Could not pause campaign",
+      "STOP_SUCCESS": "Campaign stopped successfully",
+      "STOP_ERROR": "Could not stop campaign",
+      "RESUME_SUCCESS": "Campaign resumed successfully",
+      "RESUME_ERROR": "Could not resume campaign",
       "SENDER": {
         "BOT": "Bot"
       }

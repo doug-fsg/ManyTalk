@@ -14,7 +14,7 @@ export default {
       children: [
         {
           path: '',
-          redirect: 'ongoing',
+          redirect: 'one_off',
         },
         {
           path: 'ongoing',

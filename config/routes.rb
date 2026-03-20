@@ -79,7 +79,15 @@ Rails.application.routes.draw do
             post :execute, on: :member
           end
           resources :sla_policies, only: [:index, :create, :show, :update, :destroy]
-          resources :campaigns, only: [:index, :create, :show, :update, :destroy]
+          resources :campaigns, only: [:index, :create, :show, :update, :destroy] do
+            member do
+              get :progress
+              post :retry_failed
+              post :pause
+              post :stop
+              post :resume
+            end
+          end
           resources :dashboard_apps, only: [:index, :show, :create, :update, :destroy]
           namespace :channels do
             resource :twilio_channel, only: [:create]
