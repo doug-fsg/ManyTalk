@@ -62,10 +62,15 @@ class Campaigns::SendContactJob < ApplicationJob
     conversation ||= create_conversation(campaign, contact_inbox)
     Rails.logger.error("[SendContactJob] conversation: campaign_id=#{campaign.id} conversation_id=#{conversation.id} inbox_type=#{campaign.inbox&.inbox_type}")
 
-    message = send_message(campaign, conversation)
-    Rails.logger.error("[SendContactJob] mensagem criada no DB: campaign_id=#{campaign.id} conversation_id=#{conversation.id} message_id=#{message&.id}")
-
-    execute_macro_if_present(campaign, conversation)
+    if campaign_has_macro_only?(campaign)
+      # Disparo de fluxo: executa somente a macro, não envia a mensagem da campanha
+      execute_macro_if_present(campaign, conversation)
+    else
+      # Disparo único: envia a mensagem da campanha
+      message = send_message(campaign, conversation, contact_data)
+      Rails.logger.error("[SendContactJob] mensagem criada no DB: campaign_id=#{campaign.id} conversation_id=#{conversation.id} message_id=#{message&.id}")
+      execute_macro_if_present(campaign, conversation)
+    end
 
     track_success(campaign, contact_data)
     increment_processed_and_maybe_finalize(campaign)
@@ -172,17 +177,34 @@ class Campaigns::SendContactJob < ApplicationJob
     )
   end
 
-  def send_message(campaign, conversation)
+  def send_message(campaign, conversation, contact_data = {})
+    content = substitute_message_variables(campaign.message, contact_data, conversation.contact)
     user = campaign.sender || campaign.account.administrators.first
     message = Messages::MessageBuilder.new(
       user,
       conversation,
-      content: campaign.message,
+      content: content,
       message_type: 'outgoing',
       campaign_id: campaign.id,
       macro_id: campaign.trigger_rules['macro_id'].presence
     ).perform
     message
+  end
+
+  def substitute_message_variables(text, contact_data, contact = nil)
+    return text if text.blank?
+
+    # @nome: planilha (nome), label (name no contact_data), ou fallback no contact do banco
+    nome = contact_data['nome'].presence || contact_data['name'].presence || contact&.name.presence || ''
+    variavel = contact_data['variavel'].presence || ''
+
+    text
+      .gsub('@nome', nome.to_s)
+      .gsub('@variavel', variavel.to_s)
+  end
+
+  def campaign_has_macro_only?(campaign)
+    campaign.trigger_rules['macro_id'].present?
   end
 
   def execute_macro_if_present(campaign, conversation)

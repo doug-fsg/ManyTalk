@@ -91,7 +91,8 @@ export const actions = {
   fetchProgress: async ({ commit }, campaignId) => {
     try {
       const response = await CampaignsAPI.getProgress(campaignId);
-      commit(types.UPDATE_CAMPAIGN_PROGRESS, response.data);
+      // Usar campaignId (display_id) como chave para que getCampaignProgress(campaign.id) encontre os dados
+      commit(types.UPDATE_CAMPAIGN_PROGRESS, { ...response.data, campaign_id: campaignId });
     } catch (error) {
       // Ignore silently
     }

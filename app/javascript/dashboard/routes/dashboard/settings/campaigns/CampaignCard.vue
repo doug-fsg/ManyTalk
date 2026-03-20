@@ -73,7 +73,7 @@
             {{ $t('CAMPAIGN.LIST.BUTTONS.HISTORY') }}
           </woot-button>
           <woot-button
-            v-if="campaign.campaign_status === 'completed'"
+            v-if="canShowResend"
             variant="link"
             icon="refresh"
             size="small"
@@ -199,6 +199,11 @@ export default {
       return status === 'paused';
     },
     canShowHistory() {
+      const status = this.liveProgress?.status || this.campaign.campaign_status;
+      return status === 'completed' || status === 'stopped';
+    },
+    canShowResend() {
+      if (this.isOngoingType) return false;
       const status = this.liveProgress?.status || this.campaign.campaign_status;
       return status === 'completed' || status === 'stopped';
     },

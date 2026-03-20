@@ -83,7 +83,7 @@
         },
         "MESSAGE": {
           "LABEL": "Messagem",
-          "PLACEHOLDER": "Por favor, insira a mensagem da campanha",
+          "PLACEHOLDER": "Por favor, insira a mensagem da campanha. Use @nome e @variavel para personalizar (ex: Bom dia @nome Tudo bem?)",
           "ERROR": "A mensagem é obrigatória"
         },
         "SENT_BY": {
