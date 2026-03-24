@@ -68,7 +68,28 @@ class Campaigns::SendContactJob < ApplicationJob
     else
       # Disparo único: envia a mensagem da campanha
       message = send_message(campaign, conversation, contact_data)
-      Rails.logger.error("[SendContactJob] mensagem criada no DB: campaign_id=#{campaign.id} conversation_id=#{conversation.id} message_id=#{message&.id}")
+      
+      if message.blank? || !message.persisted?
+        error_msg = message&.errors&.full_messages&.join(', ').presence || 'Falha ao enfileirar mensagem'
+        Rails.logger.error("[SendContactJob] falha na criacao da mensagem: campaign_id=#{campaign.id} error=#{error_msg}")
+        track_failure(campaign, contact_data, error_msg)
+        increment_processed_and_maybe_finalize(campaign)
+        return
+      end
+      
+      # Espera simplificada para capturar erros de disparos do provedor externo (Ex: 301, WhaTicket, WPPConnect)
+      sleep 2
+      message.reload
+      
+      if message.failed?
+        error_msg = message.external_error.presence || 'Erro ao enviar no provedor (status failed)'
+        Rails.logger.error("[SendContactJob] falha na API: campaign_id=#{campaign.id} error=#{error_msg}")
+        track_failure(campaign, contact_data, error_msg)
+        increment_processed_and_maybe_finalize(campaign)
+        return
+      end
+
+      Rails.logger.error("[SendContactJob] mensagem criada no DB: campaign_id=#{campaign.id} conversation_id=#{conversation.id} message_id=#{message.id}")
       execute_macro_if_present(campaign, conversation)
     end
 
@@ -198,9 +219,17 @@ class Campaigns::SendContactJob < ApplicationJob
     nome = contact_data['nome'].presence || contact_data['name'].presence || contact&.name.presence || ''
     variavel = contact_data['variavel'].presence || ''
 
+    if text.match?(/@nome/i) && nome.blank?
+      raise 'A mensagem exige a variável @nome, mas ela está vazia ou não preenchida na planilha.'
+    end
+
+    if text.match?(/@variavel/i) && variavel.blank?
+      raise 'A mensagem exige a variável @variavel, mas ela está vazia na planilha.'
+    end
+
     text
-      .gsub('@nome', nome.to_s)
-      .gsub('@variavel', variavel.to_s)
+      .gsub(/@nome/i, nome.to_s)
+      .gsub(/@variavel/i, variavel.to_s)
   end
 
   def campaign_has_macro_only?(campaign)
@@ -274,7 +303,7 @@ class Campaigns::SendContactJob < ApplicationJob
     return if tokens.blank?
 
     payload = {
-      campaign_id: campaign.id,
+      campaign_id: campaign.display_id,
       account_id: campaign.account_id,
       sent: sent,
       failed: failed,
@@ -321,7 +350,7 @@ class Campaigns::SendContactJob < ApplicationJob
     return if tokens.blank?
 
     payload = {
-      campaign_id: campaign.id,
+      campaign_id: campaign.display_id,
       account_id: campaign.account_id,
       sent: sent,
       failed: failed,

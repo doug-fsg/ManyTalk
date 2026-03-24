@@ -23,7 +23,7 @@ class Api::V1::Accounts::CampaignsController < Api::V1::Accounts::BaseController
     if @campaign.update(filtered_params)
       if campaign_params[:audience].present?
         formatted_audience = campaign_params[:audience].map do |item|
-          { id: item[:id], type: item[:type] }
+          { id: item[:id], type: item[:type], nome: item[:nome], variavel: item[:variavel] }
         end
         @campaign.update_column(:audience, JSON.parse(JSON.generate(formatted_audience)))
       end
@@ -49,7 +49,10 @@ class Api::V1::Accounts::CampaignsController < Api::V1::Accounts::BaseController
     failed_contacts = retry_contacts_param
     return render json: { errors: 'No contacts to retry' }, status: :unprocessable_entity if failed_contacts.blank?
 
-    delay_seconds = (ENV['CAMPANHA_DELAY_SECONDS'] || 3).to_i
+    new_rules = (@campaign.trigger_rules || {}).merge('force_resend' => true)
+    @campaign.update_column(:trigger_rules, new_rules)
+
+    delay_seconds = (ENV['CAMPANHA_DELAY_SECONDS'] || 5).to_i
 
     @campaign.processing! if @campaign.completed?
     init_retry_redis(@campaign, failed_contacts.length)
@@ -75,10 +78,12 @@ class Api::V1::Accounts::CampaignsController < Api::V1::Accounts::BaseController
   end
 
   def stop
-    return render json: { errors: 'Campaign must be processing to stop' }, status: :unprocessable_entity unless @campaign.processing?
+    return render json: { errors: 'Campaign must be processing or active to stop' }, status: :unprocessable_entity unless (@campaign.processing? || @campaign.active?)
 
-    $alfred.with { |redis| redis.set("campaign:#{@campaign.id}:stop_requested", 1) }
-    persist_partial_stats(@campaign)
+    if @campaign.processing?
+      $alfred.with { |redis| redis.set("campaign:#{@campaign.id}:stop_requested", 1) }
+      persist_partial_stats(@campaign)
+    end
     @campaign.stopped!
     broadcast_campaign_status(@campaign, 'stopped')
     render :stop
@@ -140,7 +145,7 @@ class Api::V1::Accounts::CampaignsController < Api::V1::Accounts::BaseController
     else
       stats = campaign.trigger_rules['delivery_stats'] || {}
       {
-        campaign_id: campaign.id,
+        campaign_id: campaign.display_id,
         status: campaign.campaign_status,
         sent: stats['sent'].to_i,
         failed: stats['failed'].to_i,
@@ -156,7 +161,7 @@ class Api::V1::Accounts::CampaignsController < Api::V1::Accounts::BaseController
       sent_list = redis.lrange("campaign:#{campaign.id}:sent_list", 0, -1).filter_map { |e| JSON.parse(e) rescue nil }
       failed_list = redis.lrange("campaign:#{campaign.id}:failed_list", 0, -1).filter_map { |e| JSON.parse(e) rescue nil }
       {
-        campaign_id: campaign.id,
+        campaign_id: campaign.display_id,
         status: campaign.campaign_status,
         sent: redis.get("campaign:#{campaign.id}:sent_count").to_i,
         failed: redis.get("campaign:#{campaign.id}:failed_count").to_i,
@@ -171,13 +176,30 @@ class Api::V1::Accounts::CampaignsController < Api::V1::Accounts::BaseController
     now = Time.current.to_i
     $alfred.with do |redis|
       total = redis.get("campaign:#{campaign.id}:total_count").to_i
-      new_total = total + count
-      redis.set("campaign:#{campaign.id}:total_count", new_total)
-      if total.zero?
+      
+      if total.zero? && campaign.trigger_rules.present? && campaign.trigger_rules['delivery_stats'].present?
+        stats = campaign.trigger_rules['delivery_stats']
+        base_total = stats['total'].to_i
+        base_sent = stats['sent'].to_i
+        
+        redis.set("campaign:#{campaign.id}:total_count", base_total)
+        redis.set("campaign:#{campaign.id}:processed_count", [base_total - count, 0].max)
+        redis.set("campaign:#{campaign.id}:sent_count", base_sent)
+        redis.set("campaign:#{campaign.id}:failed_count", [(stats['failed'].to_i - count), 0].max)
+        redis.set("campaign:#{campaign.id}:paused_or_stopped_count", 0)
+
+        sent_list = campaign.trigger_rules['successful_contacts'] || []
+        sent_list.each { |item| redis.rpush("campaign:#{campaign.id}:sent_list", item.to_json) }
+        redis.ltrim("campaign:#{campaign.id}:sent_list", -5000, -1)
+      elsif total.zero?
+        redis.set("campaign:#{campaign.id}:total_count", count)
         redis.set("campaign:#{campaign.id}:processed_count", 0)
         redis.set("campaign:#{campaign.id}:sent_count", 0)
         redis.set("campaign:#{campaign.id}:failed_count", 0)
         redis.set("campaign:#{campaign.id}:paused_or_stopped_count", 0)
+      else
+        new_total = total + count
+        redis.set("campaign:#{campaign.id}:total_count", new_total)
       end
       redis.set("campaign:#{campaign.id}:last_heartbeat_at", now)
     end
@@ -211,7 +233,7 @@ class Api::V1::Accounts::CampaignsController < Api::V1::Accounts::BaseController
     return if tokens.blank?
 
     payload = {
-      campaign_id: campaign.id,
+      campaign_id: campaign.display_id,
       account_id: campaign.account_id,
       sent: sent,
       failed: failed,

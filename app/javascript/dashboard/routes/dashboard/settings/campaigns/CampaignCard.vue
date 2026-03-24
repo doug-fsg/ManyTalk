@@ -27,6 +27,18 @@
             <span class="animate-spin inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full"></span>
             <span>{{ progressText }}</span>
           </div>
+          <!-- Botão Cancelar quando está agendado -->
+          <woot-button
+            v-if="isActiveScheduled && !isOngoingType"
+            :is-loading="isStopping"
+            variant="link"
+            icon="dismiss-circle"
+            size="small"
+            color-scheme="alert"
+            @click="stopCampaign"
+          >
+            Cancelar
+          </woot-button>
           <!-- Botões Pause/Stop quando em disparo -->
           <woot-button
             v-if="isProcessing && !isOngoingType"
@@ -194,13 +206,18 @@ export default {
       const status = this.liveProgress?.status || this.campaign.campaign_status;
       return status === 'processing';
     },
+    isActiveScheduled() {
+      const status = this.liveProgress?.status || this.campaign.campaign_status;
+      return status === 'active';
+    },
     isPaused() {
       const status = this.liveProgress?.status || this.campaign.campaign_status;
       return status === 'paused';
     },
     canShowHistory() {
+      if (this.isOngoingType) return false;
       const status = this.liveProgress?.status || this.campaign.campaign_status;
-      return status === 'completed' || status === 'stopped';
+      return ['completed', 'stopped', 'processing', 'paused'].includes(status);
     },
     canShowResend() {
       if (this.isOngoingType) return false;

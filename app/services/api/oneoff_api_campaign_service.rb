@@ -1,7 +1,7 @@
 class Api::OneoffApiCampaignService
   pattr_initialize [:campaign!]
 
-  DEFAULT_DELAY_SECONDS = 3
+  DEFAULT_DELAY_SECONDS = 5
   LABEL_BATCH_SIZE = 500
 
   def perform

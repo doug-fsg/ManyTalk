@@ -628,7 +628,13 @@ export default {
       if (this.isOngoingType) {
         // Prossiga com o salvamento mesmo sem público
         const campaignDetails = this.getCampaignDetails();
-        await this.$store.dispatch('campaigns/create', campaignDetails);
+        if (this.selectedCampaign && this.selectedCampaign.id) {
+          await this.$store.dispatch('campaigns/update', { id: this.selectedCampaign.id, ...campaignDetails });
+        } else {
+          await this.$store.dispatch('campaigns/create', campaignDetails);
+        }
+        
+        this.onClose();
         return;
       }
 
@@ -673,13 +679,21 @@ export default {
 
       try {
         const campaignDetails = this.getCampaignDetails();
-        await this.$store.dispatch('campaigns/create', campaignDetails);
+        
+        let successMessage = '';
+        if (this.selectedCampaign && this.selectedCampaign.id) {
+          await this.$store.dispatch('campaigns/update', { id: this.selectedCampaign.id, ...campaignDetails });
+          successMessage = this.$t('CAMPAIGN.EDIT.API.SUCCESS_MESSAGE') || 'Campaign updated successfully';
+        } else {
+          await this.$store.dispatch('campaigns/create', campaignDetails);
+          successMessage = this.$t('CAMPAIGN.ADD.API.SUCCESS_MESSAGE') || 'Campaign created successfully';
+          
+          this.$track(CAMPAIGNS_EVENTS.CREATE_CAMPAIGN, {
+            type: this.campaignType,
+          });
+        }
 
-        this.$track(CAMPAIGNS_EVENTS.CREATE_CAMPAIGN, {
-          type: this.campaignType,
-        });
-
-        useAlert(this.$t('CAMPAIGN.ADD.API.SUCCESS_MESSAGE'));
+        useAlert(successMessage);
         this.onClose();
       } catch (error) {
         const errorMessage =
