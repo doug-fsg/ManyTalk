@@ -67,6 +67,33 @@ class Api::V1::Accounts::CampaignsController < Api::V1::Accounts::BaseController
     render json: { message: "Retrying #{failed_contacts.length} contacts" }
   end
 
+  def resend
+    return render json: { errors: 'Only completed or stopped campaigns can be resent' }, status: :unprocessable_entity unless @campaign.completed? || @campaign.stopped?
+
+    audience_contacts = resolve_audience_contacts_for_resend
+
+    return render json: { errors: 'No contacts to resend' }, status: :unprocessable_entity if audience_contacts.blank?
+
+    new_rules = (@campaign.trigger_rules || {}).merge('force_resend' => true)
+    @campaign.update_column(:trigger_rules, new_rules)
+
+    delay_seconds = (ENV['CAMPANHA_DELAY_SECONDS'] || 5).to_i
+    @campaign.processing!
+
+    init_resend_redis(@campaign, audience_contacts.length)
+
+    audience_contacts.each_with_index do |contact_data, index|
+      Campaigns::SendContactJob.set(wait: (index * delay_seconds).seconds).perform_later(
+        @campaign.id,
+        contact_data
+      )
+    end
+
+    render json: { message: "Resending to #{audience_contacts.length} contacts" }
+  rescue StandardError => e
+    render json: { errors: e.message }, status: :unprocessable_entity
+  end
+
   def pause
     return render json: { errors: 'Campaign must be processing to pause' }, status: :unprocessable_entity unless @campaign.processing?
 
@@ -92,17 +119,76 @@ class Api::V1::Accounts::CampaignsController < Api::V1::Accounts::BaseController
   def resume
     return render json: { errors: 'Only paused campaigns can be resumed' }, status: :unprocessable_entity unless @campaign.paused?
 
+    audience_contacts = resolve_audience_contacts_for_resend
+    return render json: { errors: 'No contacts found in campaign audience' }, status: :unprocessable_entity if audience_contacts.blank?
+
+    sent_list = read_sent_contacts_from_rules(@campaign)
+    failed_list = read_failed_contacts_from_rules(@campaign)
+    
+    # Identifica contatos que já foram processados
+    processed_phones = (sent_list + failed_list).map do |entry|
+      # Entry has format: {"contact" => { "id" => "123", ...}, "status" => "..."} OR {"contact" => "123", ...}
+      contact_data = entry.is_a?(Hash) && entry.key?('contact') ? entry['contact'] : entry
+      
+      if contact_data.is_a?(Hash)
+        (contact_data['id'] || contact_data['phone_number']).to_s
+      else
+        contact_data.to_s
+      end
+    end.compact.reject(&:empty?)
+
+    pending_contacts = audience_contacts.reject do |contact_data|
+      phone = contact_data['id'] || contact_data['phone_number']
+      processed_phones.include?(phone.to_s)
+    end
+
+    if pending_contacts.blank?
+      @campaign.completed!
+      broadcast_campaign_status(@campaign, 'completed')
+      return render json: { message: 'All contacts were all processed before resuming', status: 'completed' }
+    end
+
     $alfred.with do |redis|
       redis.del("campaign:#{@campaign.id}:pause_requested")
       redis.del("campaign:#{@campaign.id}:stop_requested")
+      
+      # Restauramos os contadores exatos para que SendContactJob não termine antes da hora 
+      # e nem calcule porcentagens erradas
+      redis.set("campaign:#{@campaign.id}:total_count", audience_contacts.length)
+      redis.set("campaign:#{@campaign.id}:processed_count", processed_phones.length)
+      redis.set("campaign:#{@campaign.id}:sent_count", sent_list.length)
+      redis.set("campaign:#{@campaign.id}:failed_count", failed_list.length)
+      redis.set("campaign:#{@campaign.id}:paused_or_stopped_count", 0)
     end
 
     @campaign.processing!
+    
+    clear_scheduled_jobs_for_campaign(@campaign.id)
+
+    delay_seconds = (ENV['CAMPANHA_DELAY_SECONDS'] || 5).to_i
+    
+    pending_contacts.each_with_index do |contact_data, index|
+      Campaigns::SendContactJob.set(wait: (index * delay_seconds).seconds).perform_later(
+        @campaign.id,
+        contact_data
+      )
+    end
+
     broadcast_campaign_status(@campaign, 'processing')
     render :resume
+  rescue StandardError => e
+    render json: { errors: e.message }, status: :unprocessable_entity
   end
 
   private
+
+  def read_sent_contacts_from_rules(campaign)
+    campaign.trigger_rules['successful_contacts'] || []
+  end
+
+  def read_failed_contacts_from_rules(campaign)
+    campaign.trigger_rules['failed_contacts'] || []
+  end
 
   def campaign
     @campaign ||= Current.account.campaigns.find_by(display_id: params[:id])
@@ -205,6 +291,37 @@ class Api::V1::Accounts::CampaignsController < Api::V1::Accounts::BaseController
     end
   end
 
+  def resolve_audience_contacts_for_resend
+    @campaign.audience.to_a.select { |a| a['id'].present? }
+  end
+
+  def init_resend_redis(campaign, count)
+    now = Time.current.to_i
+    $alfred.with do |redis|
+      redis.del(
+        "campaign:#{campaign.id}:sent_count",
+        "campaign:#{campaign.id}:failed_count",
+        "campaign:#{campaign.id}:total_count",
+        "campaign:#{campaign.id}:processed_count",
+        "campaign:#{campaign.id}:paused_or_stopped_count",
+        "campaign:#{campaign.id}:last_heartbeat_at",
+        "campaign:#{campaign.id}:failed_list",
+        "campaign:#{campaign.id}:sent_list",
+        "campaign:#{campaign.id}:finalizing",
+        "campaign:#{campaign.id}:broadcast_counter",
+        "campaign:#{campaign.id}:last_broadcast_at",
+        "campaign:#{campaign.id}:stop_requested",
+        "campaign:#{campaign.id}:pause_requested"
+      )
+      redis.set("campaign:#{campaign.id}:total_count", count)
+      redis.set("campaign:#{campaign.id}:processed_count", 0)
+      redis.set("campaign:#{campaign.id}:sent_count", 0)
+      redis.set("campaign:#{campaign.id}:failed_count", 0)
+      redis.set("campaign:#{campaign.id}:paused_or_stopped_count", 0)
+      redis.set("campaign:#{campaign.id}:last_heartbeat_at", now)
+    end
+  end
+
   def persist_partial_stats(campaign)
     sent, failed, total = $alfred.with do |redis|
       [
@@ -216,13 +333,16 @@ class Api::V1::Accounts::CampaignsController < Api::V1::Accounts::BaseController
     total = campaign.trigger_rules.dig('delivery_stats', 'total').to_i if total.zero? && campaign.trigger_rules.present?
     return if total.zero?
 
-    failed_list = $alfred.with do |redis|
-      entries = redis.lrange("campaign:#{campaign.id}:failed_list", 0, -1)
-      entries.filter_map { |e| JSON.parse(e) rescue nil }
+    failed_list, sent_list = $alfred.with do |redis|
+      f_list = redis.lrange("campaign:#{campaign.id}:failed_list", 0, -1).filter_map { |e| JSON.parse(e) rescue nil }
+      s_list = redis.lrange("campaign:#{campaign.id}:sent_list", 0, -1).filter_map { |e| JSON.parse(e) rescue nil }
+      [f_list, s_list]
     end
+    
     new_rules = (campaign.trigger_rules || {}).merge(
       'delivery_stats' => { 'sent' => sent, 'failed' => failed, 'total' => total },
-      'failed_contacts' => failed_list
+      'failed_contacts' => failed_list,
+      'successful_contacts' => sent_list
     )
     campaign.update_column(:trigger_rules, new_rules)
   end
@@ -241,5 +361,22 @@ class Api::V1::Accounts::CampaignsController < Api::V1::Accounts::BaseController
       status: status
     }
     ActionCableBroadcastJob.perform_later(tokens, 'campaign.progress', payload)
+  end
+
+  def clear_scheduled_jobs_for_campaign(campaign_id)
+    require 'sidekiq/api'
+    
+    [Sidekiq::ScheduledSet.new, Sidekiq::Queue.new('low')].each do |queue|
+      queue.each do |job|
+        job_wrapper = job.args.first
+        next unless job_wrapper.is_a?(Hash)
+        
+        if job_wrapper['job_class'] == 'Campaigns::SendContactJob' && job_wrapper['arguments']&.first == campaign_id
+          job.delete
+        end
+      end
+    end
+  rescue StandardError => e
+    Rails.logger.error("Failed to clear Sidekiq jobs for campaign #{campaign_id}: #{e.message}")
   end
 end

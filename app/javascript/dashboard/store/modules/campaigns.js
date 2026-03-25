@@ -132,6 +132,19 @@ export const actions = {
       throw new Error(error);
     }
   },
+  resend: async ({ commit }, id) => {
+    try {
+      await CampaignsAPI.resend(id);
+      commit(types.UPDATE_CAMPAIGN_PROGRESS, {
+        campaign_id: id,
+        status: 'processing',
+        sent: 0,
+        failed: 0,
+      });
+    } catch (error) {
+      throw new Error(error);
+    }
+  },
 };
 
 export const mutations = {

@@ -92,23 +92,9 @@ export default {
   methods: {
     async handleResend(campaign) {
       try {
-        const id = campaign.id;
-        // Atualiza a store local instantaneamente para disparar o Spinner no Frontend
-        this.$store.commit('campaigns/UPDATE_CAMPAIGN_PROGRESS', { 
-          campaign_id: id, 
-          status: 'processing',
-          sent: 0,
-          failed: 0 
-        });
-        
-        await this.$store.dispatch('campaigns/update', {
-          id: campaign.display_id || id,
-          campaign_status: 'processing',
-          trigger_rules: { ...(campaign.trigger_rules || {}), force_resend: true },
-        });
+        await this.$store.dispatch('campaigns/resend', campaign.id);
       } catch (error) {
         useAlert(this.$t('CAMPAIGN.LIST.RESUME_ERROR'));
-        this.$set(campaign, 'campaign_status', 'completed');
       }
     },
     openEditPopup(campaign) {

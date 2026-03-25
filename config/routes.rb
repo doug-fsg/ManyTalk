@@ -83,6 +83,7 @@ Rails.application.routes.draw do
             member do
               get :progress
               post :retry_failed
+              post :resend
               post :pause
               post :stop
               post :resume

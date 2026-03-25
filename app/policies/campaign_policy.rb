@@ -38,4 +38,8 @@ class CampaignPolicy < ApplicationPolicy
   def resume?
     true  # Permite retomar campanha pausada
   end
+
+  def resend?
+    true  # Permite reenviar campanha completa
+  end
 end

@@ -1,25 +1,25 @@
 /* eslint-disable vue/html-closing-bracket-newline */
 <template>
-  <div class="p-6 max-w-3xl mx-auto dark:bg-slate-900 rounded-lg shadow-sm">
+  <div class="h-full">
     <div v-if="loading" class="flex flex-col items-center justify-center p-12">
       <LoadingState />
-      <p class="mt-4 text-slate-600 dark:text-slate-400 font-medium">
+      <p class="mt-4 text-slate-600 dark:text-slate-400 font-medium text-sm">
         Carregando...
       </p>
     </div>
 
-    <div v-else>
+    <div v-else class="space-y-4">
       <!-- Connected State -->
-      <div v-if="isWhatsappConnected" class="space-y-6">
+      <div v-if="isWhatsappConnected" class="space-y-4">
         <SettingsSection
           title="Status da Conexão"
           sub-title="Gerencie sua conexão ativa do WhatsApp e o estado do canal."
         >
           <div v-if="whatsappStatusMessage" :class="statusClass" role="alert">
-            <p class="font-medium">{{ whatsappStatusMessage }}</p>
+            <p class="font-medium text-sm">{{ whatsappStatusMessage }}</p>
           </div>
 
-          <div class="mt-4 flex items-center justify-between">
+          <div class="mt-4">
             <woot-button
               variant="smooth"
               color-scheme="danger"
@@ -36,66 +36,51 @@
           title="Configurações Adicionais"
           sub-title="Personalize como as mensagens e grupos são tratados neste canal."
         >
-          <div class="space-y-4">
-            <div class="flex items-center gap-3">
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-2">
               <input
                 id="enableGroup"
                 v-model="enableGroup"
                 type="checkbox"
-                class="w-4 h-4 text-primary-600 rounded border-slate-300 transition focus:ring-primary-500"
                 @change="handleCheckoutChange"
               />
-              <label
-                for="enableGroup"
-                class="text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer"
-              >
+              <label for="enableGroup" class="cursor-pointer text-sm">
                 Habilitar Grupo
               </label>
             </div>
 
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
               <input
                 id="enableAgentName"
                 v-model="enableAgentName"
                 type="checkbox"
-                class="w-4 h-4 text-primary-600 rounded border-slate-300 transition focus:ring-primary-500"
                 @change="handleCheckoutChange"
               />
-              <label
-                for="enableAgentName"
-                class="text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer"
-              >
+              <label for="enableAgentName" class="cursor-pointer text-sm">
                 Habilitar nome do atendente na mensagem
               </label>
             </div>
 
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
               <input
                 id="enableSingle"
                 v-model="enableSingle"
                 type="checkbox"
-                class="w-4 h-4 text-primary-600 rounded border-slate-300 transition focus:ring-primary-500"
                 @change="handleCheckoutChange"
               />
-              <label
-                for="enableSingle"
-                class="text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer"
-              >
+              <label for="enableSingle" class="cursor-pointer text-sm">
                 Conversa Única
               </label>
             </div>
           </div>
 
-          <div
-            v-if="enableGroup"
-            class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-md"
-          >
-            <p class="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+          <div v-if="enableGroup" class="mt-4">
+            <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               Para saber como visualizar os grupos, acesse
               <a
                 href="https://app.manytalks.com.br/hc/manytalks/articles/1708550110-como-visualizar-os-grupos"
                 target="_blank"
-                class="underline font-semibold hover:text-blue-900 dark:hover:text-blue-200 transition"
+                class="underline hover:text-primary-500 transition"
               >
                 este link
               </a>
@@ -105,40 +90,38 @@
       </div>
 
       <!-- Disconnected State (QR Code) -->
-      <div v-else class="space-y-6">
-        <div v-if="qrcodeImage" class="flex flex-col md:flex-row gap-8 items-center p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
-          <div class="bg-white p-3 rounded-lg shadow-md">
-            <img :src="qrcodeImage" alt="QR Code" class="w-48 h-48 block" />
-          </div>
-          
-          <div class="flex-1 space-y-4 text-center md:text-left">
-            <h3 class="text-lg font-bold text-slate-800 dark:text-white">Escaneie o QR Code</h3>
-            <p class="text-sm text-slate-600 dark:text-slate-400">
-              Lembre-se que o QR Code terá validade apenas de <strong>20 segundos</strong>. Esteja com o celular em mãos para realizar a leitura.
-            </p>
-            <div class="inline-flex items-center px-4 py-2 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full text-sm font-bold animate-pulse">
-              {{ timeLeft }} segundos restantes
+      <div v-else>
+        <SettingsSection
+          title="Conectar WhatsApp"
+          sub-title="Escaneie o QR Code abaixo para conectar sua conta."
+        >
+          <div v-if="qrcodeImage" class="flex flex-col md:flex-row gap-8 mt-4 items-start">
+            <div class="bg-white p-2 border border-slate-200 dark:border-slate-800 rounded-sm">
+              <img :src="qrcodeImage" alt="QR Code" class="w-48 h-48 block" />
+            </div>
+            
+            <div class="flex-1 space-y-3">
+              <p class="text-sm text-slate-700 dark:text-slate-300">
+                Lembre-se que o QR Code terá validade apenas de <strong>{{ timeLeft }} segundos</strong>.
+              </p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                Pode ser necessário escanear novamente caso expire.
+              </p>
             </div>
           </div>
-        </div>
 
-        <div v-else class="text-center p-12 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
-          <div class="max-w-md mx-auto space-y-4">
-            <h2 class="text-xl font-bold text-slate-800 dark:text-white">Conecte seu WhatsApp</h2>
-            <p class="text-sm text-slate-600 dark:text-slate-400">
-              Clique no botão abaixo para gerar um QR Code. Ele expira em 20 segundos por motivos de segurança.
+          <div v-else class="mt-4">
+            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+              Clique no botão abaixo para gerar um QR Code. Ele expira rapidamente por motivos de segurança.
             </p>
             <woot-button
-              class="mt-6"
-              size="large"
-              icon="qr-code"
               :loading="isUpdatingLocal"
               @click="sendPayloadToWebhook('qrcode_created')"
             >
               Gerar QR Code
             </woot-button>
           </div>
-        </div>
+        </SettingsSection>
       </div>
     </div>
   </div>
@@ -226,7 +209,7 @@ export default {
             this.isWhatsappConnected = true;
             this.whatsappStatusMessage = `WhatsApp está conectado ✅. Número: ${numero}`;
             this.statusClass =
-              'alert alert-success p-4 mb-4 border rounded-md shadow-sm bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800';
+              'p-2 mb-2 rounded-sm bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800';
 
             // Atualiza os checkboxes com as informações do webhook
             this.enableGroup = grupo;
@@ -257,7 +240,8 @@ export default {
     handleError(error) {
       if (error.response && error.response.status === 503) {
         this.whatsappStatusMessage = 'WhatsApp está desconectado ❌';
-        this.statusClass = 'alert alert-danger p-4 mb-4 border rounded-md shadow-sm bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800';
+        this.statusClass =
+          'p-2 mb-2 rounded-sm bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800';
         useAlert(this.whatsappStatusMessage);
       } else {
         useAlert(this.$t('INBOX_MGMT.EDIT.API.ERROR_MESSAGE'));

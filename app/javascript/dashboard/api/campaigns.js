@@ -30,6 +30,10 @@ class CampaignsAPI extends ApiClient {
   resume(id) {
     return axios.post(`${this.url}/${id}/resume`);
   }
+
+  resend(id) {
+    return axios.post(`${this.url}/${id}/resend`);
+  }
 }
 
 export default new CampaignsAPI();
