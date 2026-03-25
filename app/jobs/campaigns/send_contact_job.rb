@@ -64,7 +64,7 @@ class Campaigns::SendContactJob < ApplicationJob
 
     if campaign_has_macro_only?(campaign)
       # Disparo de fluxo: executa somente a macro, não envia a mensagem da campanha
-      execute_macro_if_present(campaign, conversation)
+      execute_macro_if_present(campaign, conversation, contact_data)
     else
       # Disparo único: envia a mensagem da campanha
       message = send_message(campaign, conversation, contact_data)
@@ -90,7 +90,7 @@ class Campaigns::SendContactJob < ApplicationJob
       end
 
       Rails.logger.error("[SendContactJob] mensagem criada no DB: campaign_id=#{campaign.id} conversation_id=#{conversation.id} message_id=#{message.id}")
-      execute_macro_if_present(campaign, conversation)
+      execute_macro_if_present(campaign, conversation, contact_data)
     end
 
     track_success(campaign, contact_data)
@@ -236,7 +236,7 @@ class Campaigns::SendContactJob < ApplicationJob
     campaign.trigger_rules['macro_id'].present?
   end
 
-  def execute_macro_if_present(campaign, conversation)
+  def execute_macro_if_present(campaign, conversation, contact_data = nil)
     macro_id = campaign.trigger_rules['macro_id'].presence
     return unless macro_id
 
@@ -244,7 +244,7 @@ class Campaigns::SendContactJob < ApplicationJob
     return unless macro
 
     user = campaign.sender || campaign.account.administrators.first
-    MacrosExecutionJob.perform_later(macro, conversation_ids: [conversation.display_id], user: user)
+    MacrosExecutionJob.perform_later(macro, conversation_ids: [conversation.display_id], user: user, contact_data: contact_data)
   end
 
   def track_success(campaign, contact_data = nil)

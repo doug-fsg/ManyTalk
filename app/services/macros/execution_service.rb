@@ -1,9 +1,10 @@
 class Macros::ExecutionService < ActionService
-  def initialize(macro, conversation, user)
+  def initialize(macro, conversation, user, contact_data = nil)
     super(conversation)
     @macro = macro
     @account = macro.account
     @user = user
+    @contact_data = contact_data
     Current.user = user
   end
 
@@ -58,7 +59,16 @@ class Macros::ExecutionService < ActionService
   def send_message(message)
     return if conversation_a_tweet?
 
-    params = { content: message[0], private: false }
+    content = message[0]
+
+    if @contact_data.present? && content.present?
+      nome = @contact_data['nome'].presence || @contact_data['name'].presence || @conversation.contact&.name.presence || ''
+      variavel = @contact_data['variavel'].presence || ''
+
+      content = content.gsub(/@nome/i, nome.to_s).gsub(/@variavel/i, variavel.to_s)
+    end
+
+    params = { content: content, private: false }
 
     # Added reload here to ensure conversation us persistent with the latest updates
     mb = Messages::MessageBuilder.new(@user, @conversation.reload, params)
