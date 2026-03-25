@@ -22,7 +22,9 @@ RSpec.describe Campaigns::SendContactJob do
                     get: '0',
                     rpush: true,
                     set: true,
+                    setex: true,
                     del: true,
+                    zrangebyscore: [],
                     lrange: [],
                     ltrim: true)
   end
@@ -30,6 +32,11 @@ RSpec.describe Campaigns::SendContactJob do
   before do
     allow($alfred).to receive(:with).and_yield(redis_double)
     allow(ActionCableBroadcastJob).to receive(:perform_later)
+    stub_request(:any, /n8n.example.com/).to_return(status: 200, body: "")
+    
+    # Global redis mocks to avoid "paused_or_stopped_count" false positives
+    allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:stop_requested").and_return(nil)
+    allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:pause_requested").and_return(nil)
   end
 
   describe '#perform' do
@@ -49,8 +56,6 @@ RSpec.describe Campaigns::SendContactJob do
         allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:processed_count").and_return('1')
         allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:sent_count").and_return('1')
         allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:failed_count").and_return('0')
-        allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:stop_requested").and_return(nil)
-        allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:pause_requested").and_return(nil)
         allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:last_broadcast_at").and_return('0')
       end
 
@@ -69,7 +74,7 @@ RSpec.describe Campaigns::SendContactJob do
 
       it 'broadcasts progress' do
         described_class.perform_now(campaign.id, contact_data)
-        expect(ActionCableBroadcastJob).to have_received(:perform_later)
+        expect(ActionCableBroadcastJob).to have_received(:perform_later).at_least(:once)
       end
     end
 
@@ -80,7 +85,6 @@ RSpec.describe Campaigns::SendContactJob do
         contact = create(:contact, account: account, phone_number: '+5511999990002')
         contact_inbox = create(:contact_inbox, contact: contact, inbox: api_inbox, source_id: '5511999990002')
         create(:conversation, account: account, contact: contact, inbox: api_inbox, contact_inbox: contact_inbox, campaign_id: campaign.id)
-        allow(redis_double).to receive(:get).and_return('0')
         allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:total_count").and_return('10')
         allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:processed_count").and_return('1')
         allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:last_broadcast_at").and_return('0')
@@ -101,7 +105,6 @@ RSpec.describe Campaigns::SendContactJob do
 
       before do
         campaign.update!(trigger_rules: { 'macro_id' => macro.id.to_s })
-        allow(redis_double).to receive(:get).and_return('0')
         allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:total_count").and_return('10')
         allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:processed_count").and_return('1')
         allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:last_broadcast_at").and_return('0')
@@ -118,7 +121,6 @@ RSpec.describe Campaigns::SendContactJob do
 
       before do
         allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:stop_requested").and_return('1')
-        allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:pause_requested").and_return(nil)
         allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:total_count").and_return('10')
         allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:processed_count").and_return('1')
         allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:last_broadcast_at").and_return('0')

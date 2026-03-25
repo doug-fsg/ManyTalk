@@ -44,7 +44,7 @@
             v-if="isProcessing && !isOngoingType"
             :is-loading="isPausing"
             variant="link"
-            icon="pause"
+            icon="microphone-pause"
             size="small"
             color-scheme="secondary"
             @click="pauseCampaign"
@@ -55,7 +55,7 @@
             v-if="isProcessing && !isOngoingType"
             :is-loading="isStopping"
             variant="link"
-            icon="stop"
+            icon="dismiss-circle"
             size="small"
             color-scheme="alert"
             @click="stopCampaign"
@@ -67,7 +67,7 @@
             v-if="isPaused && !isOngoingType"
             :is-loading="isResuming"
             variant="link"
-            icon="play"
+            icon="play-circle"
             size="small"
             color-scheme="success"
             @click="resumeCampaign"
@@ -87,7 +87,7 @@
           <woot-button
             v-if="canShowResend"
             variant="link"
-            icon="refresh"
+            icon="arrow-clockwise"
             size="small"
             color-scheme="secondary"
             @click="resendCampaign"
@@ -170,6 +170,7 @@ import UserAvatarWithName from 'dashboard/components/widgets/UserAvatarWithName.
 import InboxName from 'dashboard/components/widgets/InboxName.vue';
 import messageFormatterMixin from 'shared/mixins/messageFormatterMixin';
 import { messageStamp } from 'shared/helpers/timeHelper';
+import { useAlert } from 'dashboard/composables';
 
 export default {
   components: {
@@ -282,9 +283,9 @@ export default {
       try {
         await this.$store.dispatch('campaigns/pause', this.campaign.id);
         this.$emit('pause', this.campaign);
-        this.$toast.success(this.$t('CAMPAIGN.LIST.PAUSE_SUCCESS'));
+        useAlert(this.$t('CAMPAIGN.LIST.PAUSE_SUCCESS'));
       } catch (error) {
-        this.$toast.error(this.formatApiError(error) || this.$t('CAMPAIGN.LIST.PAUSE_ERROR'));
+        useAlert(this.formatApiError(error) || this.$t('CAMPAIGN.LIST.PAUSE_ERROR'));
       } finally {
         this.isPausing = false;
       }
@@ -295,9 +296,9 @@ export default {
       try {
         await this.$store.dispatch('campaigns/stop', this.campaign.id);
         this.$emit('stop', this.campaign);
-        this.$toast.success(this.$t('CAMPAIGN.LIST.STOP_SUCCESS'));
+        useAlert(this.$t('CAMPAIGN.LIST.STOP_SUCCESS'));
       } catch (error) {
-        this.$toast.error(this.formatApiError(error) || this.$t('CAMPAIGN.LIST.STOP_ERROR'));
+        useAlert(this.formatApiError(error) || this.$t('CAMPAIGN.LIST.STOP_ERROR'));
       } finally {
         this.isStopping = false;
       }
@@ -308,9 +309,9 @@ export default {
       try {
         await this.$store.dispatch('campaigns/resume', this.campaign.id);
         this.$emit('resume', this.campaign);
-        this.$toast.success(this.$t('CAMPAIGN.LIST.RESUME_SUCCESS'));
+        useAlert(this.$t('CAMPAIGN.LIST.RESUME_SUCCESS'));
       } catch (error) {
-        this.$toast.error(this.formatApiError(error) || this.$t('CAMPAIGN.LIST.RESUME_ERROR'));
+        useAlert(this.formatApiError(error) || this.$t('CAMPAIGN.LIST.RESUME_ERROR'));
       } finally {
         this.isResuming = false;
       }
