@@ -1,6 +1,6 @@
-import { createLocalVue, mount } from '@vue/test-utils';
-import Vuex from 'vuex';
-import VueI18n from 'vue-i18n';
+import { mount } from '@vue/test-utils';
+import { createStore } from 'vuex';
+import { createI18n } from 'vue-i18n';
 import VTooltip from 'v-tooltip';
 import Button from 'dashboard/components/buttons/Button.vue';
 import i18n from 'dashboard/i18n';
@@ -17,56 +17,41 @@ vi.mock('shared/helpers/mitt', () => ({
 
 import { emitter } from 'shared/helpers/mitt';
 
-const localVue = createLocalVue();
-localVue.use(Vuex);
-localVue.use(VueI18n);
-localVue.use(VTooltip);
+const i18nInstance = createI18n({ legacy: true, locale: 'en', messages: i18n });
 
-localVue.component('fluent-icon', FluentIcon);
-localVue.component('woot-button', Button);
-
-localVue.prototype.$emitter = {
-  emit: vi.fn(),
-  on: vi.fn(),
-  off: vi.fn(),
-};
-
-const i18nConfig = new VueI18n({ locale: 'en', messages: i18n });
+const mockEmitter = { emit: vi.fn(), on: vi.fn(), off: vi.fn() };
 
 describe('MoveActions', () => {
   let currentChat = { id: 8, muted: false };
-  let state = null;
   let muteConversation = null;
   let unmuteConversation = null;
-  let modules = null;
-  let getters = null;
   let store = null;
   let moreActions = null;
 
   beforeEach(() => {
-    state = {
-      authenticated: true,
-      currentChat,
-    };
-
     muteConversation = vi.fn(() => Promise.resolve());
     unmuteConversation = vi.fn(() => Promise.resolve());
 
-    modules = {
-      conversations: { actions: { muteConversation, unmuteConversation } },
-    };
-
-    getters = { getSelectedChat: () => currentChat };
-
-    store = new Vuex.Store({ state, modules, getters });
+    store = createStore({
+      state: { authenticated: true, currentChat },
+      modules: {
+        conversations: { actions: { muteConversation, unmuteConversation } },
+      },
+      getters: { getSelectedChat: () => currentChat },
+    });
 
     moreActions = mount(MoreActions, {
-      store,
-      localVue,
-      i18n: i18nConfig,
-      stubs: {
-        WootModal: { template: '<div><slot/> </div>' },
-        WootModalHeader: { template: '<div><slot/> </div>' },
+      global: {
+        plugins: [store, i18nInstance, VTooltip],
+        components: {
+          'fluent-icon': FluentIcon,
+          'woot-button': Button,
+        },
+        mocks: { $emitter: mockEmitter },
+        stubs: {
+          WootModal: { template: '<div><slot/></div>' },
+          WootModalHeader: { template: '<div><slot/></div>' },
+        },
       },
     });
   });

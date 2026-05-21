@@ -1,10 +1,8 @@
-import { createWrapper } from '@vue/test-utils';
+import { mount } from '@vue/test-utils';
 import nextAvailabilityTimeMixin from '../nextAvailabilityTime';
-import Vue from 'vue';
-import VueI18n from 'vue-i18n';
+import { createI18n } from 'vue-i18n';
 
-Vue.use(VueI18n);
-const i18n = new VueI18n({
+const i18n = createI18n({ legacy: true,
   locale: 'en',
   messages: {
     en: {
@@ -92,11 +90,8 @@ describe('nextAvailabilityTimeMixin', () => {
     const Component = {
       render() {},
       mixins: [nextAvailabilityTimeMixin],
-      i18n,
     };
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component, { global: { plugins: [i18n] } });
     wrapper.vm.dayNames = [
       'Sunday',
       'Monday',
@@ -121,11 +116,8 @@ describe('nextAvailabilityTimeMixin', () => {
     const Component = {
       render() {},
       mixins: [nextAvailabilityTimeMixin],
-      i18n,
     };
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component, { global: { plugins: [i18n] } });
     expect(wrapper.vm.channelConfig).toEqual(chatwootWebChannel);
   });
 
@@ -133,11 +125,8 @@ describe('nextAvailabilityTimeMixin', () => {
     const Component = {
       render() {},
       mixins: [nextAvailabilityTimeMixin],
-      i18n,
     };
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component, { global: { plugins: [i18n] } });
     expect(wrapper.vm.workingHours).toEqual(chatwootWebChannel.workingHours);
   });
 
@@ -145,15 +134,12 @@ describe('nextAvailabilityTimeMixin', () => {
     const Component = {
       render() {},
       mixins: [nextAvailabilityTimeMixin],
-      i18n,
     };
     const currentDay = new Date().getDay();
     const expectedWorkingHours = chatwootWebChannel.workingHours.find(
       slot => slot.day_of_week === currentDay
     );
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component, { global: { plugins: [i18n] } });
     wrapper.vm.dayNames = [
       'Sunday',
       'Monday',
@@ -170,16 +156,13 @@ describe('nextAvailabilityTimeMixin', () => {
     const Component = {
       render() {},
       mixins: [nextAvailabilityTimeMixin],
-      i18n,
     };
     const currentDay = new Date().getDay();
     const nextDay = currentDay === 6 ? 0 : currentDay + 1;
     const expectedWorkingHours = chatwootWebChannel.workingHours.find(
       slot => slot.day_of_week === nextDay
     );
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component, { global: { plugins: [i18n] } });
     wrapper.vm.dayNames = [
       'Sunday',
       'Monday',
@@ -196,11 +179,8 @@ describe('nextAvailabilityTimeMixin', () => {
     const Component = {
       render() {},
       mixins: [nextAvailabilityTimeMixin],
-      i18n,
     };
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component, { global: { plugins: [i18n] } });
     expect(wrapper.vm.presentHour).toBe(new Date().getHours());
   });
 
@@ -208,11 +188,8 @@ describe('nextAvailabilityTimeMixin', () => {
     const Component = {
       render() {},
       mixins: [nextAvailabilityTimeMixin],
-      i18n,
     };
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component, { global: { plugins: [i18n] } });
     wrapper.vm.dayNames = [
       'Sunday',
       'Monday',
@@ -229,11 +206,8 @@ describe('nextAvailabilityTimeMixin', () => {
     const Component = {
       render() {},
       mixins: [nextAvailabilityTimeMixin],
-      i18n,
     };
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component, { global: { plugins: [i18n] } });
     wrapper.vm.dayNames = [
       'Sunday',
       'Monday',
@@ -255,11 +229,8 @@ describe('nextAvailabilityTimeMixin', () => {
     const Component = {
       render() {},
       mixins: [nextAvailabilityTimeMixin],
-      i18n,
     };
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component, { global: { plugins: [i18n] } });
     wrapper.vm.dayNames = [
       'Sunday',
       'Monday',
@@ -285,11 +256,8 @@ describe('nextAvailabilityTimeMixin', () => {
     const Component = {
       render() {},
       mixins: [nextAvailabilityTimeMixin],
-      i18n,
     };
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component, { global: { plugins: [i18n] } });
     wrapper.vm.dayNames = [
       'Sunday',
       'Monday',
@@ -312,11 +280,8 @@ describe('nextAvailabilityTimeMixin', () => {
     const Component = {
       render() {},
       mixins: [nextAvailabilityTimeMixin],
-      i18n,
     };
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component, { global: { plugins: [i18n] } });
     wrapper.vm.dayNames = [
       'Sunday',
       'Monday',
@@ -341,11 +306,8 @@ describe('nextAvailabilityTimeMixin', () => {
     const Component = {
       render() {},
       mixins: [nextAvailabilityTimeMixin],
-      i18n,
     };
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component, { global: { plugins: [i18n] } });
     wrapper.vm.dayNames = [
       'Sunday',
       'Monday',
@@ -364,11 +326,8 @@ describe('nextAvailabilityTimeMixin', () => {
     const Component = {
       render() {},
       mixins: [nextAvailabilityTimeMixin],
-      i18n,
     };
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component, { global: { plugins: [i18n] } });
     wrapper.vm.dayNames = [
       'Sunday',
       'Monday',
@@ -403,11 +362,8 @@ describe('nextAvailabilityTimeMixin', () => {
     const Component = {
       render() {},
       mixins: [nextAvailabilityTimeMixin],
-      i18n,
     };
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component, { global: { plugins: [i18n] } });
     expect(wrapper.vm.getNextDay(6)).toBe(0);
   });
 
@@ -415,14 +371,11 @@ describe('nextAvailabilityTimeMixin', () => {
     const Component = {
       render() {},
       mixins: [nextAvailabilityTimeMixin],
-      i18n,
     };
     vi.useFakeTimers('modern').setSystemTime(
       new Date('Thu Apr 14 2022 23:04:46 GMT+0530')
     );
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component, { global: { plugins: [i18n] } });
     wrapper.vm.timeSlot = {
       day: 4,
       from: '12:00 AM',
@@ -450,14 +403,11 @@ describe('nextAvailabilityTimeMixin', () => {
     const Component = {
       render() {},
       mixins: [nextAvailabilityTimeMixin],
-      i18n,
     };
     vi.useFakeTimers('modern').setSystemTime(
       new Date('Thu Apr 14 2022 23:04:46 GMT+0530')
     );
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component, { global: { plugins: [i18n] } });
     wrapper.vm.timeSlot = {
       day: 4,
       from: '12:00 PM',
@@ -482,14 +432,11 @@ describe('nextAvailabilityTimeMixin', () => {
     const Component = {
       render() {},
       mixins: [nextAvailabilityTimeMixin],
-      i18n,
     };
     vi.useFakeTimers('modern').setSystemTime(
       new Date('Thu Apr 14 2022 23:04:46 GMT+0530')
     );
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component, { global: { plugins: [i18n] } });
     wrapper.vm.timeSlot = {
       day: 4,
       from: '10:00 AM',
@@ -514,14 +461,11 @@ describe('nextAvailabilityTimeMixin', () => {
     const Component = {
       render() {},
       mixins: [nextAvailabilityTimeMixin],
-      i18n,
     };
     vi.useFakeTimers('modern').setSystemTime(
       new Date('Thu Apr 14 2022 23:04:46 GMT+0530')
     );
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component, { global: { plugins: [i18n] } });
     wrapper.vm.timeSlot = {
       day: 0,
       from: '12:00 AM',
@@ -547,14 +491,11 @@ describe('nextAvailabilityTimeMixin', () => {
     const Component = {
       render() {},
       mixins: [nextAvailabilityTimeMixin],
-      i18n,
     };
     vi.useFakeTimers('modern').setSystemTime(
       new Date('Thu Apr 14 2022 23:04:46 GMT+0530')
     );
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component, { global: { plugins: [i18n] } });
     wrapper.vm.timeSlot = {
       day: 0,
       from: '12:00 AM',

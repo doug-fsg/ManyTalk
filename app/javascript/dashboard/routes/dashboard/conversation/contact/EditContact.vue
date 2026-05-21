@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/no-mutating-props -->
 <template>
-  <woot-modal :show.sync="show" :on-close="onCancel" modal-type="right-aligned">
+  <woot-modal :show="show" @update:show="$emit('update:show', $event)" :on-close="onCancel" modal-type="right-aligned">
     <div class="h-auto overflow-auto flex flex-col">
       <woot-modal-header
         :header-title="`${$t('EDIT_CONTACT.TITLE')} - ${

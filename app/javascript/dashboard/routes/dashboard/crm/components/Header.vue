@@ -211,7 +211,7 @@
 </template>
 
 <script>
-import { directive as onClickaway } from 'vue-clickaway';
+import onClickAwayDirective from 'shared/directives/onClickOutside';
 import KanbanFilters from './KanbanFilters.vue';
 
 export default {
@@ -220,7 +220,7 @@ export default {
     KanbanFilters,
   },
   directives: {
-    onClickaway,
+    onClickaway: onClickAwayDirective,
   },
   props: {
     pipelineName: {

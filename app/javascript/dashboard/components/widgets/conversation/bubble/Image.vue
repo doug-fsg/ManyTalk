@@ -1,7 +1,7 @@
 <template>
   <div class="image message-text__wrap">
     <img :src="url" @click="onClick" @error="$emit('error')" />
-    <woot-modal :full-width="true" :show.sync="show" :on-close="onClose">
+    <woot-modal :full-width="true" :show="show" @update:show="$emit('update:show', $event)" :on-close="onClose">
       <img :src="url" class="modal-image skip-context-menu" />
     </woot-modal>
   </div>

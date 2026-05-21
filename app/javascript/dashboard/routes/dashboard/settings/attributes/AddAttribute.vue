@@ -158,7 +158,7 @@
   </script>
   
   <template>
-    <woot-modal :show.sync="show" :on-close="onClose">
+    <woot-modal :show="show" @update:show="$emit('update:show', $event)" :on-close="onClose">
       <div class="flex flex-col h-auto overflow-auto">
         <woot-modal-header :header-title="$t('ATTRIBUTES_MGMT.ADD.TITLE')" />
   

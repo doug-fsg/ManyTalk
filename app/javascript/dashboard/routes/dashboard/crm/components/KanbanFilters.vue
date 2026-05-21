@@ -179,13 +179,13 @@
 </template>
 
 <script>
-import { directive as onClickaway } from 'vue-clickaway';
+import onClickAwayDirective from 'shared/directives/onClickOutside';
 import { mapGetters } from 'vuex';
 
 export default {
   name: 'KanbanFilters',
   directives: {
-    onClickaway,
+    onClickaway: onClickAwayDirective,
   },
   props: {
     contacts: {

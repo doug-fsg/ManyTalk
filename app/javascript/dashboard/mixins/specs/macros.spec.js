@@ -1,6 +1,5 @@
-import { createWrapper } from '@vue/test-utils';
+import { mount } from '@vue/test-utils';
 import macrosMixin from '../macrosMixin';
-import Vue from 'vue';
 import { teams, labels, agents } from '../../helper/specs/macrosFixtures';
 import { PRIORITY_CONDITION_VALUES } from 'dashboard/helper/automationHelper.js';
 describe('webhookMixin', () => {
@@ -31,9 +30,7 @@ describe('webhookMixin', () => {
         };
       });
 
-      const Constructor = Vue.extend(Component);
-      const vm = new Constructor().$mount();
-      const wrapper = createWrapper(vm);
+      const wrapper = mount(Component);
       expect(wrapper.vm.getDropdownValues('assign_team')).toEqual(teams);
       expect(wrapper.vm.getDropdownValues('send_email_to_team')).toEqual(teams);
       expect(wrapper.vm.getDropdownValues('add_label')).toEqual(resolvedLabels);

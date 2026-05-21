@@ -1,9 +1,6 @@
-import { shallowMount, createLocalVue } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import accountMixin from '../account';
-import Vuex from 'vuex';
-
-const localVue = createLocalVue();
-localVue.use(Vuex);
+import { createStore } from 'vuex';
 
 describe('accountMixin', () => {
   let getters;
@@ -14,7 +11,7 @@ describe('accountMixin', () => {
       getCurrentAccountId: () => 1,
     };
 
-    store = new Vuex.Store({ getters });
+    store = createStore({ getters });
   });
 
   it('set accountId properly', () => {
@@ -23,7 +20,9 @@ describe('accountMixin', () => {
       title: 'TestComponent',
       mixins: [accountMixin],
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, {
+      global: { plugins: [store] },
+    });
     expect(wrapper.vm.accountId).toBe(1);
   });
 
@@ -34,7 +33,9 @@ describe('accountMixin', () => {
       mixins: [accountMixin],
     };
 
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, {
+      global: { plugins: [store] },
+    });
     expect(wrapper.vm.addAccountScoping('settings/inboxes/new')).toBe(
       '/app/accounts/1/settings/inboxes/new'
     );

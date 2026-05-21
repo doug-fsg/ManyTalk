@@ -1,4 +1,4 @@
-import VueRouter from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router';
 
 import { frontendURL } from '../helper/URLHelper';
 import dashboard from './dashboard/dashboard.routes';
@@ -9,7 +9,10 @@ import { buildPermissionsFromRouter } from '../helper/permissionsHelper';
 
 const routes = [...dashboard.routes];
 
-export const router = new VueRouter({ mode: 'history', routes });
+export const router = createRouter({
+  history: createWebHistory(),
+  routes,
+});
 export const routesWithPermissions = buildPermissionsFromRouter(routes);
 
 export const validateAuthenticateRoutePermission = (to, next, { getters }) => {

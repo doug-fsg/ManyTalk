@@ -1,4 +1,4 @@
-<script>
+<script lang="jsx">
 import { mapGetters } from 'vuex';
 import { VeTable, VePagination } from 'vue-easytable';
 import Spinner from 'shared/components/Spinner.vue';

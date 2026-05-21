@@ -1,5 +1,6 @@
 const { environment } = require('@rails/webpacker');
 const { VueLoaderPlugin } = require('vue-loader');
+const webpack = require('webpack');
 const resolve = require('./resolve');
 const vue = require('./loaders/vue');
 
@@ -27,6 +28,24 @@ environment.loaders.keys().forEach(loaderName => {
 
 environment.plugins.prepend('VueLoaderPlugin', new VueLoaderPlugin());
 environment.loaders.prepend('vue', vue);
+
+// estree-walker (pulled in by @vue/compat) is transpiled to use regeneratorRuntime
+environment.plugins.prepend(
+  'ProvideRegeneratorRuntime',
+  new webpack.ProvidePlugin({
+    regeneratorRuntime: 'regenerator-runtime',
+  })
+);
+
+// Vue 3 tree-shaking feature flags (required by @vue/compiler-core)
+environment.plugins.append(
+  'VueFeatureFlags',
+  new webpack.DefinePlugin({
+    __VUE_OPTIONS_API__: JSON.stringify(true),
+    __VUE_PROD_DEVTOOLS__: JSON.stringify(false),
+    __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false),
+  })
+);
 
 environment.loaders.append('mjs-comptaibility-loader', {
   test: /\.mjs$/,

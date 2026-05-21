@@ -1,6 +1,5 @@
-import { createWrapper } from '@vue/test-utils';
+import { mount } from '@vue/test-utils';
 import configMixin from '../configMixin';
-import Vue from 'vue';
 const preChatFields = [
   {
     label: 'Email Id',
@@ -39,9 +38,7 @@ describe('configMixin', () => {
       title: 'TestComponent',
       mixins: [configMixin],
     };
-    const Constructor = Vue.extend(Component);
-    const vm = new Constructor().$mount();
-    const wrapper = createWrapper(vm);
+    const wrapper = mount(Component);
     expect(wrapper.vm.hasEmojiPickerEnabled).toBe(true);
     expect(wrapper.vm.hasEndConversationEnabled).toBe(true);
     expect(wrapper.vm.hasAttachmentsEnabled).toBe(true);

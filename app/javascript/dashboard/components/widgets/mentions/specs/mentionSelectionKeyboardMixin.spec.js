@@ -1,7 +1,5 @@
-import { shallowMount, createLocalVue } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import keyboardEventListenerMixins from 'shared/mixins/keyboardEventListenerMixins';
-
-const localVue = createLocalVue();
 
 const buildComponent = ({ data = {}, methods = {} }) => ({
   render() {},
@@ -17,7 +15,7 @@ describe('mentionSelectionKeyboardMixin', () => {
 
   beforeEach(() => {
     const Component = buildComponent({});
-    wrapper = shallowMount(Component, { localVue });
+    wrapper = shallowMount(Component);
   });
 
   it('ArrowUp and Control+KeyP update selectedIndex correctly', () => {

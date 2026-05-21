@@ -1,14 +1,9 @@
-import { shallowMount, createLocalVue } from '@vue/test-utils';
-import Vuex from 'vuex';
+import { shallowMount } from '@vue/test-utils';
+import { createStore } from 'vuex';
 import ReportsFiltersTeams from '../../Filters/Teams.vue';
 
-const localVue = createLocalVue();
-localVue.use(Vuex);
-
-const mountParams = {
-  mocks: {
-    $t: msg => msg,
-  },
+const globalOpts = {
+  mocks: { $t: msg => msg },
   stubs: ['multiselect'],
 };
 
@@ -30,27 +25,19 @@ describe('ReportsFiltersTeams.vue', () => {
       },
     };
 
-    store = new Vuex.Store({
-      modules: {
-        teams: teamsModule,
-      },
-    });
+    store = createStore({ modules: { teams: teamsModule } });
   });
 
   it('dispatches "teams/get" action when component is mounted', () => {
     shallowMount(ReportsFiltersTeams, {
-      store,
-      localVue,
-      ...mountParams,
+      global: { ...globalOpts, plugins: [store] },
     });
     expect(teamsModule.actions.get).toHaveBeenCalled();
   });
 
   it('emits "team-filter-selection" event when handleInput is called', () => {
     const wrapper = shallowMount(ReportsFiltersTeams, {
-      store,
-      localVue,
-      ...mountParams,
+      global: { ...globalOpts, plugins: [store] },
     });
     wrapper.setData({ selectedOption: { id: 1, name: 'Team 1' } });
     wrapper.vm.handleInput();

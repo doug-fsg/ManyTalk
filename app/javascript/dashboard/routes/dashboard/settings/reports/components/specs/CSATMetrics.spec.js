@@ -1,22 +1,17 @@
-import { shallowMount, createLocalVue } from '@vue/test-utils';
-import Vuex from 'vuex';
+import { shallowMount } from '@vue/test-utils';
+import { createStore } from 'vuex';
 import CsatMetrics from '../CsatMetrics.vue';
-
-const localVue = createLocalVue();
-localVue.use(Vuex);
-
-const mountParams = {
-  mocks: {
-    $t: msg => msg,
-  },
-  stubs: ['csat-metric-card', 'woot-horizontal-bar'],
-};
 
 describe('CsatMetrics.vue', () => {
   let getters;
   let store;
   let wrapper;
   const filters = { rating: 3 };
+
+  const globalOpts = {
+    mocks: { $t: msg => msg },
+    stubs: ['csat-metric-card', 'woot-horizontal-bar'],
+  };
 
   beforeEach(() => {
     getters = {
@@ -26,15 +21,11 @@ describe('CsatMetrics.vue', () => {
       'csat/getResponseRate': () => 90,
     };
 
-    store = new Vuex.Store({
-      getters,
-    });
+    store = createStore({ getters });
 
     wrapper = shallowMount(CsatMetrics, {
-      store,
-      localVue,
-      propsData: { filters },
-      ...mountParams,
+      props: { filters },
+      global: { ...globalOpts, plugins: [store] },
     });
   });
 
@@ -49,14 +40,12 @@ describe('CsatMetrics.vue', () => {
   });
 
   it('maps rating value to emoji correctly', () => {
-    const rating = wrapper.vm.csatRatings[0]; // assuming this is { value: 1, emoji: '😡' }
+    const rating = wrapper.vm.csatRatings[0];
     expect(wrapper.vm.ratingToEmoji(rating.value)).toBe(rating.emoji);
   });
 
   it('hides report card if rating filter is enabled', () => {
-    expect(wrapper.find({ ref: 'csatHorizontalBarChart' }).exists()).toBe(
-      false
-    );
+    expect(wrapper.find({ ref: 'csatHorizontalBarChart' }).exists()).toBe(false);
   });
 
   it('shows report card if rating filter is not enabled', async () => {

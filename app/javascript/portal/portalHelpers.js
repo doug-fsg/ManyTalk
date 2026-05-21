@@ -1,14 +1,51 @@
 import slugifyWithCounter from '@sindresorhus/slugify';
-import Vue from 'vue';
+import { createApp, h, configureCompat } from 'vue';
 
 import PublicArticleSearch from './components/PublicArticleSearch.vue';
 import TableOfContents from './components/TableOfContents.vue';
 import { initializeTheme } from './portalThemeHelper.js';
-import { directive as onClickaway } from 'vue-clickaway';
+import { registerPortalGlobals } from './portalAppConfig';
+import { compatConfig } from 'shared/compatConfig';
+
+configureCompat(compatConfig);
+
+/** @type {{ el: Element, app: import('vue').App }[]} */
+const mountedPortalApps = [];
+
+export function unmountAllPortalApps() {
+  mountedPortalApps.forEach(({ app }) => {
+    app.unmount();
+  });
+  mountedPortalApps.length = 0;
+}
+
+function mountPortalApp(el, render) {
+  const existing = mountedPortalApps.find(entry => entry.el === el);
+  if (existing) {
+    existing.app.unmount();
+    const idx = mountedPortalApps.indexOf(existing);
+    mountedPortalApps.splice(idx, 1);
+  }
+
+  const app = createApp({ render });
+  registerPortalGlobals(app);
+  app.mount(el);
+  mountedPortalApps.push({ el, app });
+  return app;
+}
+
+export function setupPortalTurbolinks() {
+  document.addEventListener('turbolinks:before-cache', unmountAllPortalApps);
+  document.addEventListener('turbolinks:before-render', unmountAllPortalApps);
+}
 
 export const getHeadingsfromTheArticle = () => {
   const rows = [];
   const articleElement = document.getElementById('cw-article-content');
+  if (!articleElement) {
+    return rows;
+  }
+
   articleElement.querySelectorAll('h1, h2, h3').forEach(element => {
     const slug = slugifyWithCounter(element.innerText);
     element.id = slug;
@@ -79,24 +116,15 @@ export const InitializationHelpers = {
   initializeSearch: () => {
     const isSearchContainerAvailable = document.querySelector('#search-wrap');
     if (isSearchContainerAvailable) {
-      new Vue({
-        components: { PublicArticleSearch },
-        directives: {
-          'on-clickaway': onClickaway,
-        },
-        template: '<PublicArticleSearch />',
-      }).$mount('#search-wrap');
+      mountPortalApp(isSearchContainerAvailable, () => h(PublicArticleSearch));
     }
   },
 
   initializeTableOfContents: () => {
     const isOnArticlePage = document.querySelector('#cw-hc-toc');
     if (isOnArticlePage) {
-      new Vue({
-        components: { TableOfContents },
-        data: { rows: getHeadingsfromTheArticle() },
-        template: '<table-of-contents :rows="rows" />',
-      }).$mount('#cw-hc-toc');
+      const rows = getHeadingsfromTheArticle();
+      mountPortalApp(isOnArticlePage, () => h(TableOfContents, { rows }));
     }
   },
 

@@ -1,5 +1,5 @@
 <template>
-  <woot-modal :show.sync="show" :on-close="onClose">
+  <woot-modal :show="show" @update:show="$emit('update:show', $event)" :on-close="onClose">
     <woot-modal-header :header-title="$t('FILTER.CUSTOM_VIEWS.ADD.TITLE')" />
     <form class="w-full" @submit.prevent="saveCustomViews">
       <div class="w-full">

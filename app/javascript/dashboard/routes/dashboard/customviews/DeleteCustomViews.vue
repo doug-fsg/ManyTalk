@@ -3,7 +3,7 @@
   <div>
     <woot-delete-modal
       v-if="showDeletePopup"
-      :show.sync="showDeletePopup"
+      :show="showDeletePopup" @update:show="$emit('update:showDeletePopup', $event)"
       :on-close="closeDeletePopup"
       :on-confirm="deleteSavedCustomViews"
       :title="$t('FILTER.CUSTOM_VIEWS.DELETE.MODAL.CONFIRM.TITLE')"

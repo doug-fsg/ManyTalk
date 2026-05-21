@@ -1,7 +1,7 @@
 /* eslint-disable */
 
 <template>
-  <woot-modal :show.sync="show" :on-close="onClose" class="campaign-modal-container">
+  <woot-modal :show="show" @update:show="$emit('update:show', $event)" :on-close="onClose" class="campaign-modal-container">
     <div class="h-auto overflow-auto flex flex-col">
       <woot-modal-header
         :header-title="$t('CAMPAIGN.ADD.TITLE')"

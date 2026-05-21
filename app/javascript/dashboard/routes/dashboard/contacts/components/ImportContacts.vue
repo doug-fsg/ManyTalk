@@ -1,5 +1,5 @@
 <template>
-  <modal :show.sync="show" :on-close="onClose">
+  <modal :show="show" @update:show="$emit('update:show', $event)" :on-close="onClose">
     <div class="flex flex-col h-auto overflow-auto">
       <woot-modal-header :header-title="$t('IMPORT_CONTACTS.TITLE')">
         <p>

@@ -1,9 +1,7 @@
-import { shallowMount, createLocalVue } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import attributeMixin from '../attributeMixin';
-import Vuex from 'vuex';
+import { createStore } from 'vuex';
 
-const localVue = createLocalVue();
-localVue.use(Vuex);
 
 describe('attributeMixin', () => {
   let getters;
@@ -27,7 +25,7 @@ describe('attributeMixin', () => {
       getCurrentAccountId: () => 1,
       attributeType: () => 'conversation_attribute',
     };
-    store = new Vuex.Store({ actions, getters });
+    store = createStore({ actions, getters });
   });
 
   it('returns currently selected conversation id', () => {
@@ -36,7 +34,7 @@ describe('attributeMixin', () => {
       title: 'TestComponent',
       mixins: [attributeMixin],
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, { global: { plugins: [store] } });
     expect(wrapper.vm.conversationId).toEqual(7165);
   });
 
@@ -46,7 +44,7 @@ describe('attributeMixin', () => {
       title: 'TestComponent',
       mixins: [attributeMixin],
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, { global: { plugins: [store] } });
     expect(wrapper.vm.attributeDisplayType('date')).toBe('text');
     expect(
       wrapper.vm.attributeDisplayType('https://www.chatwoot.com/pricing')
@@ -60,7 +58,7 @@ describe('attributeMixin', () => {
       title: 'TestComponent',
       mixins: [attributeMixin],
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, { global: { plugins: [store] } });
     expect(wrapper.vm.isAttributeNumber(9988)).toBe(true);
   });
 
@@ -80,7 +78,7 @@ describe('attributeMixin', () => {
         },
       },
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, { global: { plugins: [store] } });
     expect(wrapper.vm.contact).toEqual({
       id: 7165,
       custom_attributes: {
@@ -95,7 +93,7 @@ describe('attributeMixin', () => {
       title: 'TestComponent',
       mixins: [attributeMixin],
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, { global: { plugins: [store] } });
     expect(wrapper.vm.contactIdentifier).toEqual(1212);
   });
 
@@ -115,7 +113,7 @@ describe('attributeMixin', () => {
         },
       },
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, { global: { plugins: [store] } });
     expect(wrapper.vm.customAttributes).toEqual({
       product_id: 2021,
     });
@@ -137,7 +135,7 @@ describe('attributeMixin', () => {
         },
       },
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, { global: { plugins: [store] } });
     expect(wrapper.vm.customAttributes).toEqual({
       cloudCustomer: true,
     });

@@ -53,12 +53,12 @@ const WootUIKit = {
   TabsItem,
   Thumbnail,
   DatePicker,
-  install(Vue) {
+  install(app) {
     const keys = Object.keys(this);
     keys.pop(); // remove 'install' from keys
     let i = keys.length;
     while (i--) {
-      Vue.component(`woot${keys[i]}`, this[keys[i]]);
+      app.component(`woot${keys[i]}`, this[keys[i]]);
     }
   },
 };

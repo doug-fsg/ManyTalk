@@ -1,9 +1,17 @@
 import path from 'path';
 import { defineConfig } from 'vitest/config';
-import Vue2 from '@vitejs/plugin-vue2';
+import Vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
-  plugins: [Vue2()],
+  plugins: [
+    Vue({
+      template: {
+        compilerOptions: {
+          compatConfig: { MODE: 2 },
+        },
+      },
+    }),
+  ],
   test: {
     environment: 'jsdom',
     include: ['app/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
@@ -20,15 +28,22 @@ export default defineConfig({
     outputFile: 'coverage/sonar-report.xml',
     server: {
       deps: {
-        inline: ['tinykeys', '@material/mwc-icon'],
+        inline: ['tinykeys', '@material/mwc-icon', '@vue/compat'],
       },
     },
-    setupFiles: ['fake-indexeddb/auto'],
+    setupFiles: [
+      'fake-indexeddb/auto',
+      './app/javascript/shared/vitest.setup.js',
+    ],
     mockReset: true,
     clearMocks: true,
   },
   resolve: {
     alias: {
+      // Redirect all vue imports to @vue/compat in tests
+      vue: path.resolve(
+        './node_modules/@vue/compat/dist/vue.cjs.js'
+      ),
       dashboard: path.resolve('./app/javascript/dashboard'),
       widget: path.resolve('./app/javascript/widget'),
       survey: path.resolve('./app/javascript/survey'),

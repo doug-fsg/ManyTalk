@@ -1,6 +1,6 @@
 <template>
   <woot-modal
-    :show.sync="show"
+    :show="show" @update:show="$emit('update:show', $event)"
     :on-close="onClose"
     size="medium"
     :full-width="false"

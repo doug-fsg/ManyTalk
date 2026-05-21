@@ -23,15 +23,9 @@ import {
   AUTOMATION_ACTION_TYPES,
 } from '../../../dashboard/routes/dashboard/settings/automation/constants.js';
 
-import { createWrapper, createLocalVue } from '@vue/test-utils';
-import Vue from 'vue';
-import Vuex from 'vuex';
-const localVue = createLocalVue();
-localVue.use(Vuex);
-
-// Vuelidate required to test submit method
+import { mount } from '@vue/test-utils';
+import { createStore } from 'vuex';
 import Vuelidate from 'vuelidate';
-Vue.use(Vuelidate);
 
 const createComponent = (
   mixins,
@@ -50,9 +44,7 @@ const createComponent = (
     methods,
     validations,
   };
-  const Constructor = Vue.extend(Component);
-  const vm = new Constructor().$mount();
-  return createWrapper(vm);
+  return mount(Component, { global: { plugins: [Vuelidate] } });
 };
 
 const generateComputedProperties = () => {

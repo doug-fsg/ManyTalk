@@ -1,5 +1,5 @@
 <template>
-  <woot-modal :show.sync="show" :on-close="onClose">
+  <woot-modal :show="show" @update:show="$emit('update:show', $event)" :on-close="onClose">
     <div class="h-auto overflow-auto flex flex-col">
       <woot-modal-header
         header-title="Relatório da Campanha"

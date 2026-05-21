@@ -1,7 +1,9 @@
 import 'chart.js';
-import Vue from 'vue';
+import { createApp, h, configureCompat } from 'vue';
 import VueDOMPurifyHTML from 'vue-dompurify-html';
-Vue.use(VueDOMPurifyHTML);
+import { compatConfig } from 'shared/compatConfig';
+
+configureCompat(compatConfig);
 
 const PlaygroundIndex = () =>
   import('../superadmin_pages/views/playground/Index.vue');
@@ -11,11 +13,15 @@ const ComponentMapping = {
 };
 
 const renderComponent = (componentName, props) => {
-  Vue.component(componentName, ComponentMapping[componentName]);
-  new Vue({
-    data: { props: props },
-    template: `<${componentName} :component-data="props"/>`,
-  }).$mount('#app');
+  const app = createApp({
+    data: () => ({ props }),
+    render() {
+      return h(ComponentMapping[componentName], { 'component-data': this.props });
+    },
+  });
+
+  app.use(VueDOMPurifyHTML);
+  app.mount('#app');
 };
 
 document.addEventListener('DOMContentLoaded', () => {

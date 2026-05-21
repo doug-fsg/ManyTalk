@@ -1,9 +1,7 @@
-import { shallowMount, createLocalVue } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import agentMixin from '../agentMixin';
 import agentFixtures from './agentFixtures';
-import Vuex from 'vuex';
-const localVue = createLocalVue();
-localVue.use(Vuex);
+import { createStore } from 'vuex';
 
 describe('agentMixin', () => {
   let getters;
@@ -22,7 +20,7 @@ describe('agentMixin', () => {
       }),
       getCurrentAccountId: () => 1,
     };
-    store = new Vuex.Store({ getters });
+    store = createStore({ getters });
   });
 
   it('return agents by availability', () => {
@@ -42,7 +40,7 @@ describe('agentMixin', () => {
         },
       },
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, { global: { plugins: [store] } });
     expect(
       wrapper.vm.getAgentsByAvailability(agentFixtures.allAgents, 'online')
     ).toEqual(agentFixtures.onlineAgents);
@@ -71,7 +69,7 @@ describe('agentMixin', () => {
         },
       },
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, { global: { plugins: [store] } });
     expect(
       wrapper.vm.sortedAgentsByAvailability(agentFixtures.allAgents)
     ).toEqual(agentFixtures.sortedByAvailability);
@@ -94,7 +92,7 @@ describe('agentMixin', () => {
         },
       },
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, { global: { plugins: [store] } });
     expect(wrapper.vm.agentsList).toEqual(agentFixtures.formattedAgents);
   });
 
@@ -130,7 +128,7 @@ describe('agentMixin', () => {
         },
       },
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, { global: { plugins: [store] } });
     expect(
       wrapper.vm.getAgentsByUpdatedPresence(
         agentFixtures.formattedAgentsByPresenceOnline

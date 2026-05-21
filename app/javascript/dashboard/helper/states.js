@@ -1,7 +1,9 @@
 /* eslint no-console: 0 */
 /* eslint no-param-reassign: 0 */
-export default Vuex => {
-  const wootState = new Vuex.Store({
+import { createStore } from 'vuex';
+
+export default () => {
+  const wootState = createStore({
     state: {
       authenticated: false,
       currentChat: null,

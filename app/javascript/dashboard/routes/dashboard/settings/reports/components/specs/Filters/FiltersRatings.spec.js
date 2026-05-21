@@ -1,21 +1,16 @@
-import { shallowMount, createLocalVue } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import ReportFiltersRatings from '../../Filters/Ratings.vue';
 import { CSAT_RATINGS } from 'shared/constants/messages';
 
-const mountParams = {
-  mocks: {
-    $t: msg => msg,
-  },
+const globalOpts = {
+  mocks: { $t: msg => msg },
   stubs: ['multiselect'],
 };
-
-const localVue = createLocalVue();
 
 describe('ReportFiltersRatings.vue', () => {
   it('emits "rating-filter-selection" event when handleInput is called', () => {
     const wrapper = shallowMount(ReportFiltersRatings, {
-      localVue,
-      ...mountParams,
+      global: globalOpts,
     });
 
     const selectedRating = { value: 1, label: 'Rating 1' };
@@ -24,15 +19,12 @@ describe('ReportFiltersRatings.vue', () => {
     wrapper.vm.handleInput(selectedRating);
 
     expect(wrapper.emitted('ratingFilterSelection')).toBeTruthy();
-    expect(wrapper.emitted('ratingFilterSelection')[0]).toEqual([
-      selectedRating,
-    ]);
+    expect(wrapper.emitted('ratingFilterSelection')[0]).toEqual([selectedRating]);
   });
 
   it('initializes options correctly', () => {
     const wrapper = shallowMount(ReportFiltersRatings, {
-      localVue,
-      ...mountParams,
+      global: globalOpts,
     });
 
     const expectedOptions = CSAT_RATINGS.map(option => ({

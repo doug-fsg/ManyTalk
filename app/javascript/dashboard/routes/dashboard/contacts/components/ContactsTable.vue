@@ -27,7 +27,7 @@
   </section>
 </template>
 
-<script>
+<script lang="jsx">
 import { VeTable } from 'vue-easytable';
 import { getCountryFlag } from 'dashboard/helper/flag';
 

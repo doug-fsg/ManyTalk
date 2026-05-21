@@ -1,7 +1,7 @@
 <template>
   <div class="video message-text__wrap">
     <video ref="videoElement" :src="url" muted playsInline @click="onClick" />
-    <woot-modal :show.sync="show" :on-close="onClose">
+    <woot-modal :show="show" @update:show="$emit('update:show', $event)" :on-close="onClose">
       <video
         :src="url"
         controls

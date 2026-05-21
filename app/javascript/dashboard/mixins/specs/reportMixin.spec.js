@@ -1,9 +1,7 @@
-import { shallowMount, createLocalVue } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import reportMixin from '../reportMixin';
 import reportFixtures from './reportMixinFixtures';
-import Vuex from 'vuex';
-const localVue = createLocalVue();
-localVue.use(Vuex);
+import { createStore } from 'vuex';
 
 describe('reportMixin', () => {
   let getters;
@@ -14,7 +12,7 @@ describe('reportMixin', () => {
       getBotSummary: () => reportFixtures.botSummary,
       getAccountReports: () => reportFixtures.report,
     };
-    store = new Vuex.Store({ getters });
+    store = createStore({ getters });
   });
 
   it('display the metric for account', async () => {
@@ -23,7 +21,7 @@ describe('reportMixin', () => {
       title: 'TestComponent',
       mixins: [reportMixin],
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, { global: { plugins: [store] } });
     await wrapper.setProps({
       accountSummaryKey: 'getAccountSummary',
     });
@@ -39,7 +37,7 @@ describe('reportMixin', () => {
       title: 'TestComponent',
       mixins: [reportMixin],
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, { global: { plugins: [store] } });
     await wrapper.setProps({
       accountSummaryKey: 'getBotSummary',
     });
@@ -53,7 +51,7 @@ describe('reportMixin', () => {
       title: 'TestComponent',
       mixins: [reportMixin],
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, { global: { plugins: [store] } });
     expect(wrapper.vm.displayMetric('conversations_count')).toEqual('5,000');
     expect(wrapper.vm.displayMetric('avg_first_response_time')).toEqual(
       '3 Min 18 Sec'
@@ -66,7 +64,7 @@ describe('reportMixin', () => {
       title: 'TestComponent',
       mixins: [reportMixin],
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, { global: { plugins: [store] } });
     expect(wrapper.vm.calculateTrend('conversations_count')).toEqual(124900);
     expect(wrapper.vm.calculateTrend('resolutions_count')).toEqual(0);
   });
@@ -94,7 +92,7 @@ describe('reportMixin', () => {
         },
       },
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, { global: { plugins: [store] } });
     expect(wrapper.vm.displayInfoText('avg_first_response_time')).toEqual(
       'Total number of conversations used for computation: 4'
     );
@@ -129,7 +127,7 @@ describe('reportMixin', () => {
         },
       },
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, { global: { plugins: [store] } });
     expect(wrapper.vm.displayInfoText('conversation_count')).toEqual('');
     expect(wrapper.vm.displayInfoText('incoming_messages_count')).toEqual('');
   });

@@ -31,7 +31,7 @@
     </audio>
     <gallery-view
       v-if="show"
-      :show.sync="show"
+      :show="show" @update:show="$emit('update:show', $event)"
       :attachment="attachment"
       :all-attachments="filteredCurrentChatAttachments"
       @error="onImgError"

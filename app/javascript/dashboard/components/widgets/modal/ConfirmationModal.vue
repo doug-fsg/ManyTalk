@@ -1,5 +1,5 @@
 <template>
-  <modal :show.sync="show" :on-close="cancel">
+  <modal :show="show" @update:show="$emit('update:show', $event)" :on-close="cancel">
     <div class="h-auto overflow-auto flex flex-col">
       <woot-modal-header :header-title="title" :header-content="description" />
       <div class="flex flex-row justify-end gap-2 py-4 px-6 w-full">

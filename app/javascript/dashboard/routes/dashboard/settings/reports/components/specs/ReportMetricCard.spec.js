@@ -1,10 +1,11 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import ReportMetricCard from '../ReportMetricCard.vue';
-
 import VTooltip from 'v-tooltip';
 
-const localVue = createLocalVue();
-localVue.use(VTooltip);
+const globalOpts = {
+  plugins: [VTooltip],
+  stubs: ['fluent-icon'],
+};
 
 describe('ReportMetricCard.vue', () => {
   it('renders props correctly', () => {
@@ -12,9 +13,8 @@ describe('ReportMetricCard.vue', () => {
     const value = '100';
     const infoText = 'Total number of responses';
     const wrapper = shallowMount(ReportMetricCard, {
-      propsData: { label, value, infoText },
-      localVue,
-      stubs: ['fluent-icon'],
+      props: { label, value, infoText },
+      global: globalOpts,
     });
 
     expect(wrapper.find({ ref: 'reportMetricLabel' }).text()).toMatch(label);
@@ -26,9 +26,8 @@ describe('ReportMetricCard.vue', () => {
 
   it('adds disabled class when disabled prop is true', () => {
     const wrapper = shallowMount(ReportMetricCard, {
-      propsData: { label: '', value: '', infoText: '', disabled: true },
-      localVue,
-      stubs: ['fluent-icon'],
+      props: { label: '', value: '', infoText: '', disabled: true },
+      global: globalOpts,
     });
 
     expect(wrapper.classes().join(' ')).toContain(
@@ -38,9 +37,8 @@ describe('ReportMetricCard.vue', () => {
 
   it('does not add disabled class when disabled prop is false', () => {
     const wrapper = shallowMount(ReportMetricCard, {
-      propsData: { label: '', value: '', infoText: '', disabled: false },
-      localVue,
-      stubs: ['fluent-icon'],
+      props: { label: '', value: '', infoText: '', disabled: false },
+      global: globalOpts,
     });
 
     expect(

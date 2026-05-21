@@ -1,6 +1,5 @@
-import { createWrapper } from '@vue/test-utils';
+import { mount } from '@vue/test-utils';
 import webhookMixin from '../webhookMixin';
-import Vue from 'vue';
 
 describe('webhookMixin', () => {
   describe('#getEventLabel', () => {
@@ -15,9 +14,7 @@ describe('webhookMixin', () => {
           },
         },
       };
-      const Constructor = Vue.extend(Component);
-      const vm = new Constructor().$mount();
-      const wrapper = createWrapper(vm);
+      const wrapper = mount(Component);
       expect(wrapper.vm.getEventLabel('message_created')).toEqual(
         `INTEGRATION_SETTINGS.WEBHOOK.FORM.SUBSCRIPTIONS.EVENTS.MESSAGE_CREATED`
       );

@@ -1,6 +1,5 @@
-import Vue from 'vue';
-import VueI18n from 'vue-i18n';
-import VueRouter from 'vue-router';
+import { createApp, h, configureCompat } from 'vue';
+import { createI18n } from 'vue-i18n';
 import Vuelidate from 'vuelidate';
 import i18n from 'dashboard/i18n';
 import * as Sentry from '@sentry/vue';
@@ -15,51 +14,51 @@ import router, { initalizeRouter } from '../v3/views/index';
 import store from '../v3/store';
 import FluentIcon from 'shared/components/FluentIcon/DashboardIcon';
 import { emitter } from '../shared/helpers/mitt';
+import { compatConfigV3App } from 'shared/compatConfig';
 
-Vue.config.env = process.env;
+configureCompat(compatConfigV3App);
 
-if (window.errorLoggingConfig) {
-  Sentry.init({
-    Vue,
-    dsn: window.errorLoggingConfig,
-    denyUrls: [
-      // Chrome extensions
-      /^chrome:\/\//i,
-      /chrome-extension:/i,
-      /extensions\//i,
-
-      // Locally saved copies
-      /file:\/\//i,
-
-      // Safari extensions.
-      /safari-web-extension:/i,
-      /safari-extension:/i,
-    ],
-    integrations: [new Integrations.BrowserTracing()],
-    ignoreErrors: [
-      'ResizeObserver loop completed with undelivered notifications',
-    ],
-  });
-}
-
-Vue.use(VueRouter);
-Vue.use(VueI18n);
-Vue.use(Vuelidate);
-Vue.use(AnalyticsPlugin);
-Vue.prototype.$emitter = emitter;
-Vue.component('fluent-icon', FluentIcon);
-
-const i18nConfig = new VueI18n({ locale: 'en', messages: i18n });
+const i18nInstance = createI18n({
+  legacy: true,
+  locale: 'en',
+  messages: i18n,
+});
 
 initializeChatwootEvents();
 initializeAnalyticsEvents();
 initalizeRouter();
+
 window.onload = () => {
-  new Vue({
-    router,
-    store,
-    i18n: i18nConfig,
-    components: { App },
-    template: '<App/>',
-  }).$mount('#app');
+  const app = createApp({
+    render: () => h(App),
+  });
+
+  app.use(router);
+  app.use(store);
+  app.use(i18nInstance);
+  app.use(Vuelidate);
+  app.use(AnalyticsPlugin);
+  app.component('fluent-icon', FluentIcon);
+  app.config.globalProperties.$emitter = emitter;
+
+  if (window.errorLoggingConfig) {
+    Sentry.init({
+      app,
+      dsn: window.errorLoggingConfig,
+      denyUrls: [
+        /^chrome:\/\//i,
+        /chrome-extension:/i,
+        /extensions\//i,
+        /file:\/\//i,
+        /safari-web-extension:/i,
+        /safari-extension:/i,
+      ],
+      integrations: [new Integrations.BrowserTracing()],
+      ignoreErrors: [
+        'ResizeObserver loop completed with undelivered notifications',
+      ],
+    });
+  }
+
+  app.mount('#app');
 };

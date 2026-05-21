@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/no-mutating-props -->
 <template>
-  <modal :show.sync="show" :on-close="onClose">
+  <modal :show="show" @update:show="$emit('update:show', $event)" :on-close="onClose">
     <woot-modal-header
       :header-title="$t('CUSTOM_ATTRIBUTES.ADD.TITLE')"
       :header-content="$t('CUSTOM_ATTRIBUTES.ADD.DESC')"

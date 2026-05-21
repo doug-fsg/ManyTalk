@@ -317,7 +317,7 @@
 import { mapGetters } from 'vuex';
 import { useAlert } from 'dashboard/composables';
 import { required, minLength } from 'vuelidate/lib/validators';
-import { directive as onClickaway } from 'vue-clickaway';
+import onClickAwayDirective from 'shared/directives/onClickOutside';
 import draggable from 'vuedraggable';
 import customAttributeMixin from '../../../../mixins/customAttributeMixin';
 import FunnelAgentsPermissions from 'dashboard/routes/dashboard/crm/components/FunnelAgentsPermissions.vue';
@@ -332,7 +332,7 @@ export default {
     draggable,
   },
   directives: {
-    onClickaway,
+    onClickaway: onClickAwayDirective,
   },
   mixins: [customAttributeMixin],
   props: {

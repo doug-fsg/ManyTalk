@@ -1,6 +1,6 @@
-import Vue from 'vue';
+import { createApp, h, configureCompat } from 'vue';
 import Vuelidate from 'vuelidate';
-import VueI18n from 'vue-i18n';
+import { createI18n } from 'vue-i18n';
 import VueDOMPurifyHTML from 'vue-dompurify-html';
 import VueFormulate from '@braid/vue-formulate';
 import store from '../widget/store';
@@ -12,51 +12,53 @@ import {
   isPhoneNumberValidWithDialCode,
 } from 'shared/helpers/Validators';
 import router from '../widget/router';
-import { directive as onClickaway } from 'vue-clickaway';
+import onClickAwayDirective from 'shared/directives/onClickOutside';
 import { emitter } from 'shared/helpers/mitt';
 import { domPurifyConfig } from '../shared/helpers/HTMLSanitizer';
+import { compatConfig } from 'shared/compatConfig';
 const PhoneInput = () => import('../widget/components/Form/PhoneInput');
 
-Vue.use(VueI18n);
-Vue.use(Vuelidate);
-Vue.use(VueDOMPurifyHTML, domPurifyConfig);
-Vue.directive('on-clickaway', onClickaway);
+configureCompat(compatConfig);
 
-const i18nConfig = new VueI18n({
+const i18nInstance = createI18n({
+  legacy: true,
   locale: 'en',
   messages: i18n,
 });
-Vue.use(VueFormulate, {
-  library: {
-    phoneInput: {
-      classification: 'number',
-      component: PhoneInput,
-      slotProps: {
-        component: ['placeholder', 'hasErrorInPhoneInput'],
-      },
-    },
-  },
-  rules: {
-    startsWithPlus: ({ value }) => startsWithPlus(value),
-    isValidPhoneNumber: ({ value }) => isPhoneNumberValidWithDialCode(value),
-  },
-  classes: {
-    outer: 'mb-2 wrapper',
-    error: 'text-red-400 mt-2 text-xs leading-3 font-medium',
-  },
-});
-// Event Bus
-Vue.prototype.$emitter = emitter;
-
-Vue.config.productionTip = false;
 
 window.onload = () => {
-  window.WOOT_WIDGET = new Vue({
-    router,
-    store,
-    i18n: i18nConfig,
-    render: h => h(App),
-  }).$mount('#app');
+  const app = createApp({
+    render: () => h(App),
+  });
+
+  app.use(router);
+  app.use(store);
+  app.use(i18nInstance);
+  app.use(Vuelidate);
+  app.use(VueDOMPurifyHTML, domPurifyConfig);
+  app.directive('on-clickaway', onClickAwayDirective);
+  app.use(VueFormulate, {
+    library: {
+      phoneInput: {
+        classification: 'number',
+        component: PhoneInput,
+        slotProps: {
+          component: ['placeholder', 'hasErrorInPhoneInput'],
+        },
+      },
+    },
+    rules: {
+      startsWithPlus: ({ value }) => startsWithPlus(value),
+      isValidPhoneNumber: ({ value }) => isPhoneNumberValidWithDialCode(value),
+    },
+    classes: {
+      outer: 'mb-2 wrapper',
+      error: 'text-red-400 mt-2 text-xs leading-3 font-medium',
+    },
+  });
+  app.config.globalProperties.$emitter = emitter;
+
+  window.WOOT_WIDGET = app.mount('#app');
 
   window.actionCable = new ActionCableConnector(
     window.WOOT_WIDGET,

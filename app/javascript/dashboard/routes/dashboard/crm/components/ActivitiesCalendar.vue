@@ -557,6 +557,7 @@
 import FluentIcon from 'shared/components/FluentIcon/DashboardIcon.vue';
 import Spinner from 'shared/components/Spinner.vue';
 import ActivityFormModal from './ActivityFormModal.vue';
+import onClickAwayDirective from 'shared/directives/onClickOutside';
 import {
   startOfMonth,
   endOfMonth,
@@ -986,7 +987,7 @@ export default {
     },
   },
   directives: {
-    onClickaway: require('vue-clickaway').directive,
+    onClickaway: onClickAwayDirective,
   },
 };
 </script>

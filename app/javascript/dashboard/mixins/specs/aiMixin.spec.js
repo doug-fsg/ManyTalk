@@ -1,14 +1,11 @@
-import { shallowMount, createLocalVue } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import aiMixin from '../aiMixin';
-import Vuex from 'vuex';
+import { createStore } from 'vuex';
 import OpenAPI from '../../api/integrations/openapi';
 import { LocalStorage } from '../../../shared/helpers/localStorage';
 
 vi.mock('../../api/integrations/openapi');
 vi.mock('../../../shared/helpers/localStorage');
-
-const localVue = createLocalVue();
-localVue.use(Vuex);
 
 describe('aiMixin', () => {
   let wrapper;
@@ -42,11 +39,14 @@ describe('aiMixin', () => {
     };
 
     wrapper = shallowMount(component, {
-      store: new Vuex.Store({
-        getters: getters,
-        actions,
-      }),
-      localVue,
+      global: {
+        plugins: [
+          createStore({
+            getters: getters,
+            actions,
+          }),
+        ],
+      },
     });
 
     emptyGetters = {
@@ -56,11 +56,14 @@ describe('aiMixin', () => {
 
   it('fetches integrations if required', async () => {
     wrapper = shallowMount(component, {
-      store: new Vuex.Store({
-        getters: emptyGetters,
-        actions,
-      }),
-      localVue,
+      global: {
+        plugins: [
+          createStore({
+            getters: emptyGetters,
+            actions,
+          }),
+        ],
+      },
     });
 
     const dispatchSpy = vi.spyOn(wrapper.vm.$store, 'dispatch');

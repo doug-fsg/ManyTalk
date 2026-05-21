@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/no-mutating-props -->
 <template>
-  <woot-modal :show.sync="show" :on-close="onClose">
+  <woot-modal :show="show" @update:show="$emit('update:show', $event)" :on-close="onClose">
     <woot-modal-header
       :header-title="$t('HELP_CENTER.CATEGORY.EDIT.TITLE')"
       :header-content="$t('HELP_CENTER.CATEGORY.EDIT.SUB_TITLE')"

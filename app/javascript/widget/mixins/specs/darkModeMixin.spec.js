@@ -1,8 +1,6 @@
-import { shallowMount, createLocalVue } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import darkModeMixin from '../darkModeMixin';
-import Vuex from 'vuex';
-const localVue = createLocalVue();
-localVue.use(Vuex);
+import { createStore } from 'vuex';
 
 const darkModeValues = ['light', 'auto'];
 
@@ -13,7 +11,7 @@ describe('darkModeMixin', () => {
     getters = {
       'appConfig/darkMode': () => darkModeValues[0],
     };
-    store = new Vuex.Store({ getters });
+    store = createStore({ getters });
   });
 
   it('if light theme', () => {
@@ -21,7 +19,7 @@ describe('darkModeMixin', () => {
       render() {},
       mixins: [darkModeMixin],
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, { global: { plugins: [store] } });
     expect(wrapper.vm.$dm('bg-100', 'bg-600')).toBe('bg-100');
   });
 
@@ -29,13 +27,13 @@ describe('darkModeMixin', () => {
     getters = {
       'appConfig/darkMode': () => darkModeValues[2],
     };
-    store = new Vuex.Store({ getters });
+    store = createStore({ getters });
 
     const Component = {
       render() {},
       mixins: [darkModeMixin],
     };
-    const wrapper = shallowMount(Component, { store, localVue });
+    const wrapper = shallowMount(Component, { global: { plugins: [store] } });
     expect(wrapper.vm.$dm('bg-100', 'bg-600')).toBe('bg-100 bg-600');
   });
 });

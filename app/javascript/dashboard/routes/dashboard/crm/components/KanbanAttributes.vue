@@ -326,7 +326,7 @@ import { mapGetters } from 'vuex';
 import { useAlert } from 'dashboard/composables';
 import draggable from 'vuedraggable';
 import { formatUnixDate } from 'shared/helpers/DateHelper';
-import Vue from 'vue';
+import { emitter } from 'shared/helpers/mitt';
 import KanbanColumn from './KanbanColumn.vue';
 import KanbanHeader from './Header.vue';
 import KanbanDashboard from './KanbanDashboard.vue';
@@ -354,11 +354,7 @@ import {
   getWinLostStatus
 } from '../utils/pipelinePositionsHelper';
 
-// Criar um barramento de eventos global compartilhado
-if (!window.bus) {
-  window.bus = new Vue();
-}
-const bus = window.bus;
+const bus = emitter;
 
 export default {
   name: 'KanbanAttributes',
@@ -462,13 +458,13 @@ export default {
     this.bus = this.$bus || bus;
 
     if (this.bus) {
-      this.bus.$on(BUS_EVENTS.THEME_CHANGE, this.checkDarkMode);
-      this.bus.$on(
+      this.bus.on(BUS_EVENTS.THEME_CHANGE, this.checkDarkMode);
+      this.bus.on(
         'contact_attribute_updated',
         this.handleContactAttributeUpdate
       );
-      this.bus.$on('contact_updated', this.handleContactUpdate);
-      this.bus.$on('kanban_clear_updates', this.clearUpdateCache);
+      this.bus.on('contact_updated', this.handleContactUpdate);
+      this.bus.on('kanban_clear_updates', this.clearUpdateCache);
     }
 
     this.startCycleDetection();
@@ -485,13 +481,13 @@ export default {
     clearTimeout(this.setupColumnsTimeout);
 
     if (this.bus) {
-      this.bus.$off(BUS_EVENTS.THEME_CHANGE, this.checkDarkMode);
-      this.bus.$off(
+      this.bus.off(BUS_EVENTS.THEME_CHANGE, this.checkDarkMode);
+      this.bus.off(
         'contact_attribute_updated',
         this.handleContactAttributeUpdate
       );
-      this.bus.$off('contact_updated', this.handleContactUpdate);
-      this.bus.$off('kanban_clear_updates', this.clearUpdateCache);
+      this.bus.off('contact_updated', this.handleContactUpdate);
+      this.bus.off('kanban_clear_updates', this.clearUpdateCache);
     }
 
     this.operationManager.clearOperations();
@@ -853,7 +849,7 @@ export default {
     safeShowNotification(type, message) {
       try {
         if (window.bus) {
-          window.bus.$emit('show-alert', {
+          emitter.emit('show-alert', {
             type,
             message,
             show: true,
@@ -2022,7 +2018,7 @@ export default {
 
         // Show success message
         if (window.bus) {
-          window.bus.$emit('show-alert', {
+          emitter.emit('show-alert', {
             message: this.$t('KANBAN.CARD_REMOVED_SUCCESS'),
             type: 'success',
           });
@@ -2032,7 +2028,7 @@ export default {
         this.closeRemoveCardModal();
       } catch (error) {
         if (window.bus) {
-          window.bus.$emit('show-alert', {
+          emitter.emit('show-alert', {
             message: this.$t('KANBAN.ERRORS.REMOVE_FAILED'),
             type: 'error',
           });

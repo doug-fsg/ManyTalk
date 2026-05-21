@@ -1,40 +1,20 @@
 import AccountSelector from '../AccountSelector.vue';
-import { createLocalVue, mount } from '@vue/test-utils';
-import Vuex from 'vuex';
-import VueI18n from 'vue-i18n';
-
+import { mount } from '@vue/test-utils';
+import { createStore } from 'vuex';
+import { createI18n } from 'vue-i18n';
 import i18n from 'dashboard/i18n';
 import WootModal from 'dashboard/components/Modal.vue';
 import WootModalHeader from 'dashboard/components/ModalHeader.vue';
 import FluentIcon from 'shared/components/FluentIcon/DashboardIcon.vue';
 
-const localVue = createLocalVue();
-localVue.component('woot-modal', WootModal);
-localVue.component('woot-modal-header', WootModalHeader);
-localVue.component('fluent-icon', FluentIcon);
-
-localVue.use(Vuex);
-localVue.use(VueI18n);
-
-const i18nConfig = new VueI18n({
-  locale: 'en',
-  messages: i18n,
-});
+const i18nInstance = createI18n({ legacy: true, locale: 'en', messages: i18n });
 
 describe('accountSelctor', () => {
   let accountSelector = null;
   const currentUser = {
     accounts: [
-      {
-        id: 1,
-        name: 'Chatwoot',
-        role: 'administrator',
-      },
-      {
-        id: 2,
-        name: 'GitX',
-        role: 'agent',
-      },
+      { id: 1, name: 'Chatwoot', role: 'administrator' },
+      { id: 2, name: 'GitX', role: 'agent' },
     ],
   };
 
@@ -57,13 +37,18 @@ describe('accountSelctor', () => {
       },
     };
 
-    let store = new Vuex.Store({ actions, modules });
+    const store = createStore({ actions, modules });
     accountSelector = mount(AccountSelector, {
-      store,
-      localVue,
-      i18n: i18nConfig,
-      propsData: { showAccountModal: true },
-      stubs: { WootButton: { template: '<button />' } },
+      props: { showAccountModal: true },
+      global: {
+        plugins: [store, i18nInstance],
+        components: {
+          'woot-modal': WootModal,
+          'woot-modal-header': WootModalHeader,
+          'fluent-icon': FluentIcon,
+        },
+        stubs: { WootButton: { template: '<button />' } },
+      },
     });
   });
 
@@ -71,21 +56,15 @@ describe('accountSelctor', () => {
     const headerComponent = accountSelector.findComponent(WootModalHeader);
     const title = headerComponent.findComponent({ ref: 'modalHeaderTitle' });
     expect(title.text()).toBe('Switch Account');
-    const content = headerComponent.findComponent({
-      ref: 'modalHeaderContent',
-    });
+    const content = headerComponent.findComponent({ ref: 'modalHeaderContent' });
     expect(content.text()).toBe('Select an account from the following list');
   });
 
   it('first account item is checked', () => {
-    const selectedAccountCheckmark = accountSelector.find(
-      '#account-1 > button > svg'
-    );
+    const selectedAccountCheckmark = accountSelector.find('#account-1 > button > svg');
     expect(selectedAccountCheckmark.exists()).toBe(true);
 
-    const otherAccountCheckmark = accountSelector.find(
-      '#account-2 > button > svg'
-    );
+    const otherAccountCheckmark = accountSelector.find('#account-2 > button > svg');
     expect(otherAccountCheckmark.exists()).toBe(true);
   });
 });

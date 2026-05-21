@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/no-mutating-props -->
 <template>
-  <modal :show.sync="show" :on-close="closeModal">
+  <modal :show="show" @update:show="$emit('update:show', $event)" :on-close="closeModal">
     <woot-modal-header :header-title="title" :header-content="message" />
     <form @submit.prevent="onConfirm">
       <woot-input

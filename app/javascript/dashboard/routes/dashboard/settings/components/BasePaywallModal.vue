@@ -33,7 +33,7 @@ const openUpgradeUrl = url => {
 
 <template>
   <woot-modal
-    :show.sync="show"
+    :show="show" @update:show="$emit('update:show', $event)"
     :on-close="() => $emit('close')"
     size="medium"
   >

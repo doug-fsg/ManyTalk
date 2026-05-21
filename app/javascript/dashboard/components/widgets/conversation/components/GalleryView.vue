@@ -2,7 +2,7 @@
 <template>
   <woot-modal
     full-width
-    :show.sync="show"
+    :show="show" @update:show="$emit('update:show', $event)"
     :show-close-button="false"
     :on-close="onClose"
   >
