@@ -67,7 +67,7 @@ module ActivityMessageHandler
   end
 
   def automation_status_change_activity_content
-    if Current.executed_by.instance_of?(AutomationRule)
+    if Current.executed_by.instance_of?(AutomationRule) || Current.executed_by.is_a?(Workflow)
       I18n.t("conversations.activity.status.#{status}", user_name: 'Automation System')
     elsif Current.executed_by.instance_of?(Contact)
       Current.executed_by = nil

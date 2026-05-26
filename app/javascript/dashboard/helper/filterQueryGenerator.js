@@ -2,10 +2,23 @@ const setArrayValues = item => {
   return item.values[0]?.id ? item.values.map(val => val.id) : item.values;
 };
 
+const contentValuesToArray = values => {
+  if (Array.isArray(values)) {
+    return values.map(v => (v && typeof v === 'object' && v.id != null ? v.id : v));
+  }
+  if (values && typeof values === 'object' && values.id != null) {
+    return [values.id];
+  }
+  const text = values == null ? '' : String(values);
+  return text
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+};
+
 const generateValues = item => {
   if (item.attribute_key === 'content') {
-    const values = item.values || '';
-    return values.split(',');
+    return contentValuesToArray(item.values);
   }
   if (Array.isArray(item.values)) {
     return setArrayValues(item);

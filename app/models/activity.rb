@@ -2,22 +2,45 @@
 #
 # Table name: activities
 #
-#  id                          :bigint           not null, primary key
-#  account_id                  :bigint           not null
-#  user_id                     :bigint           not null
-#  assignee_id                 :bigint
-#  activity_type               :string           not null
-#  title                       :string           not null
-#  description                 :text
-#  status                      :string           default("pending")
-#  scheduled_at                :datetime         not null
+#  id                           :bigint           not null, primary key
+#  activity_type                :string           not null
+#  description                  :text
+#  message_content              :text
+#  scheduled_at                 :datetime         not null
+#  status                       :string           default("pending")
+#  title                        :string           not null
+#  created_at                   :datetime         not null
+#  updated_at                   :datetime         not null
+#  account_id                   :bigint           not null
+#  assignee_id                  :bigint
+#  contact_id                   :bigint
 #  contact_pipeline_position_id :bigint
-#  contact_id                  :bigint
-#  conversation_id             :bigint
+#  conversation_id              :bigint
 #  inbox_id                     :bigint
-#  message_content             :text
-#  created_at                  :datetime         not null
-#  updated_at                  :datetime         not null
+#  user_id                      :bigint           not null
+#
+# Indexes
+#
+#  index_activities_on_account_id                    (account_id)
+#  index_activities_on_account_id_and_assignee_id    (account_id,assignee_id)
+#  index_activities_on_account_id_and_scheduled_at   (account_id,scheduled_at)
+#  index_activities_on_account_id_and_status         (account_id,status)
+#  index_activities_on_assignee_id                   (assignee_id)
+#  index_activities_on_contact_id                    (contact_id)
+#  index_activities_on_contact_pipeline_position_id  (contact_pipeline_position_id)
+#  index_activities_on_conversation_id               (conversation_id)
+#  index_activities_on_inbox_id                      (inbox_id)
+#  index_activities_on_user_id                       (user_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_id => accounts.id)
+#  fk_rails_...  (assignee_id => users.id)
+#  fk_rails_...  (contact_id => contacts.id)
+#  fk_rails_...  (contact_pipeline_position_id => contact_pipeline_positions.id)
+#  fk_rails_...  (conversation_id => conversations.id)
+#  fk_rails_...  (inbox_id => inboxes.id)
+#  fk_rails_...  (user_id => users.id)
 #
 
 class Activity < ApplicationRecord

@@ -1,0 +1,103 @@
+{
+  "WORKFLOW": {
+    "TABS": {
+      "WORKFLOWS": "Fluxo de trabalho",
+      "NEW_BADGE": "Novo"
+    },
+    "BANNER": {
+      "ADMIN_ONLY_AUTOMATIONS": "Somente administradores podem criar ou editar Automações clássicas."
+    },
+    "LEARN_MORE": "Saiba mais sobre fluxos de trabalho",
+    "HEADER": "Fluxo de trabalho",
+    "DESCRIPTION": "Monte jornadas com gatilhos, espera entre passos e ações automáticas.",
+    "LOADING": "Carregando fluxos…",
+    "LIST": {
+      "EMPTY": "Nenhum fluxo criado ainda. Crie o primeiro para automatizar jornadas de clientes.",
+      "EMPTY_TITLE": "Nenhum fluxo ainda",
+      "CREATE": "Novo fluxo",
+      "TABLE_HEADER": ["Nome", "Status", "Gatilho", "Ações"],
+      "ACTIVE": "Ativo",
+      "INACTIVE": "Inativo",
+      "STEPS": "passos",
+      "TRIGGER_UNKNOWN": "—",
+      "EDIT": "Editar",
+      "ACTIVATE": "Ativar",
+      "DEACTIVATE": "Desativar",
+      "CLONE": "Duplicar",
+      "DELETE": "Excluir",
+      "TRIGGER_LABELS": {
+        "conversation_created": "Conversa criada",
+        "conversation_updated": "Conversa atualizada",
+        "conversation_opened": "Conversa aberta",
+        "conversation_resolved": "Conversa resolvida",
+        "message_created": "Mensagem criada"
+      }
+    },
+    "DELETE_MODAL": {
+      "TITLE": "Excluir fluxo",
+      "DESCRIPTION": "Este fluxo será removido permanentemente. Esta ação não pode ser desfeita."
+    },
+    "TOGGLE": {
+      "SUCCESS": "Status do fluxo atualizado.",
+      "ERROR": "Não foi possível atualizar o fluxo."
+    },
+    "CLONE": {
+      "SUCCESS": "Fluxo duplicado.",
+      "ERROR": "Não foi possível duplicar o fluxo."
+    },
+    "DELETE": {
+      "SUCCESS": "Fluxo excluído.",
+      "ERROR": "Não foi possível excluir o fluxo."
+    },
+    "ACTIVATE_MODAL": {
+      "TITLE": "Ativar fluxo de trabalho",
+      "DESCRIPTION": "Este fluxo pode enviar mensagens automáticas aos clientes. Confirme que as condições e cancelamentos estão corretos."
+    },
+    "EDITOR": {
+      "BACK": "Voltar",
+      "NAME_PLACEHOLDER": "Nome do fluxo",
+      "SAVE": "Salvar",
+      "SAVE_AND_ACTIVATE": "Salvar e ativar",
+      "WORKFLOW_ACTIVE": "Ativo",
+      "ACTIVE_SWITCH_ON": "Fluxo ativo (aplica ao salvar)",
+      "ACTIVE_SWITCH_OFF": "Fluxo inativo (aplica ao salvar)",
+      "NODE_TRIGGER": "Gatilho",
+      "NODE_WAIT": "Espera",
+      "NODE_CONDITION": "Condição",
+      "NODE_ACTION": "Ação",
+      "SAVING": "Salvando...",
+      "SAVED": "Salvo",
+      "UNSAVED": "Alterações não salvas",
+      "SAVE_SUCCESS": "Fluxo salvo com sucesso.",
+      "SAVE_ERROR": "Não foi possível salvar o fluxo.",
+      "LOAD_ERROR": "Não foi possível carregar o fluxo.",
+      "ACTIVE_READONLY": "Desative o fluxo para editar o diagrama.",
+      "FIT_VIEW": "Ajustar tela",
+      "PALETTE_TITLE": "Nós",
+      "PALETTE_HINT": "Clique para adicionar ao canvas",
+      "LOADING": "Carregando fluxo...",
+      "RETRY": "Tentar novamente",
+      "NODE_SETTINGS": "Configurar nó",
+      "CANCEL_SECTION": "Cancelamento automático",
+      "WAIT_HINT": "O fluxo aguarda este período antes do próximo passo.",
+      "MESSAGE_LABEL": "Mensagem",
+      "WEBHOOK_LABEL": "URL do webhook",
+      "BRANCH_YES": "Saída Sim — condição verdadeira",
+      "BRANCH_NO": "Saída Não — condição falsa",
+      "FLOW_SETTINGS": "Configurações do fluxo",
+      "CANCEL_ON_REPLY": "Cancelar se o cliente responder",
+      "CANCEL_ON_RESOLVED": "Cancelar se a conversa for resolvida",
+      "SELECT_NODE_HINT": "Selecione um nó no diagrama para editar.",
+      "EVENT": "Evento",
+      "DURATION": "Duração",
+      "MINUTES": "Minutos",
+      "HOURS": "Horas",
+      "DAYS": "Dias",
+      "ACTION": "Ação",
+      "CONDITION_HINT": "Todas as condições devem ser verdadeiras (AND). Conecte as saídas Sim e Não no diagrama.",
+      "FLOW_CONDITION_HINT": "Avalia o estado atual da conversa. Mesmos filtros das automações v1, com etiquetas, atendente e datas.",
+      "ADD_CONDITION": "Adicionar condição",
+      "MESSAGE_PLACEHOLDER": "Conteúdo da mensagem"
+    }
+  }
+}

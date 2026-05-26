@@ -1,0 +1,14 @@
+type: object
+properties:
+  name:
+    type: string
+    description: Workflow name
+  description:
+    type: string
+    description: Workflow description
+  active:
+    type: boolean
+    description: Whether the workflow is active
+  graph:
+    type: object
+    description: Workflow graph with nodes, edges, and settings

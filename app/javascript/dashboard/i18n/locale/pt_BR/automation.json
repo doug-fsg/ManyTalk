@@ -118,6 +118,9 @@
       "LABEL_UPLOADING": "Enviando...",
       "LABEL_UPLOADED": "Upload feito com sucesso",
       "LABEL_UPLOAD_FAILED": "Faha no envio"
+    },
+    "TABS": {
+      "CLASSIC": "Automações"
     }
   }
 }

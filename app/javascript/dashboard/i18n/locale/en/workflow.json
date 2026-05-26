@@ -1,0 +1,94 @@
+{
+  "WORKFLOW": {
+    "TABS": {
+      "WORKFLOWS": "Workflow",
+      "NEW_BADGE": "New"
+    },
+    "BANNER": {
+      "ADMIN_ONLY_AUTOMATIONS": "Only administrators can edit classic automations."
+    },
+    "LEARN_MORE": "Learn more about workflows",
+    "HEADER": "Workflow",
+    "DESCRIPTION": "Build journeys with triggers, waits, and automatic actions.",
+    "LOADING": "Loading workflows…",
+    "LIST": {
+      "EMPTY": "No workflows yet. Create the first one to automate customer journeys.",
+      "EMPTY_TITLE": "No workflows yet",
+      "CREATE": "New workflow",
+      "TABLE_HEADER": ["Name", "Status", "Trigger", "Actions"],
+      "ACTIVE": "Active",
+      "INACTIVE": "Inactive",
+      "STEPS": "steps",
+      "TRIGGER_UNKNOWN": "—",
+      "EDIT": "Edit",
+      "ACTIVATE": "Activate",
+      "DEACTIVATE": "Deactivate",
+      "CLONE": "Clone",
+      "DELETE": "Delete",
+      "TRIGGER_LABELS": {
+        "conversation_created": "Conversation created",
+        "conversation_updated": "Conversation updated",
+        "conversation_opened": "Conversation opened",
+        "conversation_resolved": "Conversation resolved",
+        "message_created": "Message created"
+      }
+    },
+    "DELETE_MODAL": {
+      "TITLE": "Delete workflow",
+      "DESCRIPTION": "This workflow will be removed permanently. You cannot undo this action."
+    },
+    "TOGGLE": { "SUCCESS": "Workflow updated.", "ERROR": "Could not update workflow." },
+    "CLONE": { "SUCCESS": "Workflow cloned.", "ERROR": "Could not clone workflow." },
+    "DELETE": { "SUCCESS": "Workflow deleted.", "ERROR": "Could not delete workflow." },
+    "ACTIVATE_MODAL": {
+      "TITLE": "Activate workflow",
+      "DESCRIPTION": "This workflow may send automatic messages to customers."
+    },
+    "EDITOR": {
+      "BACK": "Back",
+      "NAME_PLACEHOLDER": "Workflow name",
+      "SAVE": "Save",
+      "SAVE_AND_ACTIVATE": "Save and activate",
+      "WORKFLOW_ACTIVE": "Active",
+      "ACTIVE_SWITCH_ON": "Workflow active (saved on Save)",
+      "ACTIVE_SWITCH_OFF": "Workflow inactive (saved on Save)",
+      "NODE_TRIGGER": "Trigger",
+      "NODE_WAIT": "Wait",
+      "NODE_CONDITION": "Condition",
+      "NODE_ACTION": "Action",
+      "SAVING": "Saving...",
+      "SAVED": "Saved",
+      "UNSAVED": "Unsaved changes",
+      "SAVE_SUCCESS": "Workflow saved.",
+      "SAVE_ERROR": "Could not save workflow.",
+      "LOAD_ERROR": "Could not load workflow.",
+      "ACTIVE_READONLY": "Deactivate the workflow to edit the diagram.",
+      "FIT_VIEW": "Fit view",
+      "PALETTE_TITLE": "Nodes",
+      "PALETTE_HINT": "Click to add to canvas",
+      "LOADING": "Loading workflow...",
+      "RETRY": "Try again",
+      "NODE_SETTINGS": "Configure node",
+      "CANCEL_SECTION": "Automatic cancellation",
+      "WAIT_HINT": "The flow waits for this period before the next step.",
+      "MESSAGE_LABEL": "Message",
+      "WEBHOOK_LABEL": "Webhook URL",
+      "BRANCH_YES": "Yes branch — condition is true",
+      "BRANCH_NO": "No branch — condition is false",
+      "FLOW_SETTINGS": "Flow settings",
+      "CANCEL_ON_REPLY": "Cancel if customer replies",
+      "CANCEL_ON_RESOLVED": "Cancel if conversation is resolved",
+      "SELECT_NODE_HINT": "Select a node on the canvas to edit.",
+      "EVENT": "Event",
+      "DURATION": "Duration",
+      "MINUTES": "Minutes",
+      "HOURS": "Hours",
+      "DAYS": "Days",
+      "ACTION": "Action",
+      "CONDITION_HINT": "All conditions must match (AND). Connect Yes and No branches on the canvas.",
+      "FLOW_CONDITION_HINT": "Evaluates the current conversation state. Same filters as v1 automations, plus labels, assignee, and dates.",
+      "ADD_CONDITION": "Add condition",
+      "MESSAGE_PLACEHOLDER": "Message content"
+    }
+  }
+}

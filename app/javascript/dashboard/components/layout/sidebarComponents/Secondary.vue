@@ -77,6 +77,10 @@ export default {
       currentRole: 'getCurrentRole',
     }),
     hasSecondaryMenu() {
+      const hideSecondaryForRoutes = ['workflows_new', 'workflows_edit'];
+      if (hideSecondaryForRoutes.includes(this.$route.name)) {
+        return false;
+      }
       return this.menuConfig.menuItems && this.menuConfig.menuItems.length;
     },
     contactCustomViews() {

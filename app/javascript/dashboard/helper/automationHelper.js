@@ -137,6 +137,7 @@ export const getConditionOptions = ({
   countries,
   customAttributes,
   inboxes,
+  labels,
   languages,
   statusFilterOptions,
   teams,
@@ -165,6 +166,7 @@ export const getConditionOptions = ({
     message_type: MESSAGE_CONDITION_VALUES,
     priority: PRIORITY_CONDITION_VALUES,
     kanban_stage: kanbanAttributes || [],
+    labels: labels ? generateConditionOptions(labels, 'title') : [],
   };
 
   return conditionFilterMaps[type];
@@ -271,9 +273,10 @@ export const getAttributes = (automationTypes, key) => {
  * @returns {Object} The automation type object.
  */
 export const getAutomationType = (automationTypes, automation, key) => {
-  return automationTypes[automation.event_name].conditions.find(
-    condition => condition.key === key
-  );
+  if (!key || !automation?.event_name) return undefined;
+  const eventTypes = automationTypes[automation.event_name];
+  if (!eventTypes?.conditions) return undefined;
+  return eventTypes.conditions.find(condition => condition.key === key);
 };
 
 /**
@@ -295,7 +298,7 @@ export const getInputType = (
     return getCustomAttributeInputType(customAttribute.attribute_display_type);
   }
   const type = getAutomationType(automationTypes, automation, key);
-  return type.inputType;
+  return type?.inputType || 'plain_text';
 };
 
 /**
@@ -321,7 +324,7 @@ export const getOperators = (
     }
   }
   const type = getAutomationType(automationTypes, automation, key);
-  return type.filterOperators;
+  return type?.filterOperators || [];
 };
 
 /**
@@ -332,9 +335,8 @@ export const getOperators = (
  * @returns {string} The custom attribute type.
  */
 export const getCustomAttributeType = (automationTypes, automation, key) => {
-  return automationTypes[automation.event_name].conditions.find(
-    i => i.key === key
-  ).customAttributeType;
+  const type = getAutomationType(automationTypes, automation, key);
+  return type?.customAttributeType || '';
 };
 
 /**

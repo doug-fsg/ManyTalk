@@ -41,8 +41,7 @@ class Whatsapp::ChannelCreationService
   end
 
   def build_channel
-    Channel::Whatsapp.build(
-      account: @account,
+    @account.whatsapp_channels.create!(
       phone_number: @phone_info[:phone_number],
       provider: 'whatsapp_cloud',
       provider_config: build_provider_config

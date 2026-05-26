@@ -8,6 +8,9 @@ const settings = accountId => ({
     'agent_list',
     'attributes_list',
     'automation_list',
+    'workflows_list',
+    'workflows_new',
+    'workflows_edit',
     'auditlogs_list',
     'billing_settings_index',
     'canned_list',
@@ -47,7 +50,7 @@ const settings = accountId => ({
       label: 'ACCOUNT_SETTINGS',
       hasSubMenu: false,
       meta: {
-        permissions: ['administrator'],
+        permissions: ['administrator', 'agent'],
       },
       toState: frontendURL(`accounts/${accountId}/settings/general`),
       toStateName: 'general_settings_index',
@@ -57,7 +60,7 @@ const settings = accountId => ({
       label: 'AGENTS',
       hasSubMenu: false,
       meta: {
-        permissions: ['administrator'],
+        permissions: ['administrator', 'agent'],
       },
       toState: frontendURL(`accounts/${accountId}/settings/agents/list`),
       toStateName: 'agent_list',
@@ -68,7 +71,7 @@ const settings = accountId => ({
       label: 'TEAMS',
       hasSubMenu: false,
       meta: {
-        permissions: ['administrator'],
+        permissions: ['administrator', 'agent'],
       },
       toState: frontendURL(`accounts/${accountId}/settings/teams/list`),
       toStateName: 'settings_teams_list',
@@ -79,7 +82,7 @@ const settings = accountId => ({
       label: 'INBOXES',
       hasSubMenu: false,
       meta: {
-        permissions: ['administrator'],
+        permissions: ['administrator', 'agent'],
       },
       toState: frontendURL(`accounts/${accountId}/settings/inboxes/list`),
       toStateName: 'settings_inbox_list',
@@ -90,7 +93,7 @@ const settings = accountId => ({
       label: 'LABELS',
       hasSubMenu: false,
       meta: {
-        permissions: ['administrator'],
+        permissions: ['administrator', 'agent'],
       },
       toState: frontendURL(`accounts/${accountId}/settings/labels/list`),
       toStateName: 'labels_list',
@@ -101,7 +104,7 @@ const settings = accountId => ({
       label: 'CUSTOM_ATTRIBUTES',
       hasSubMenu: false,
       meta: {
-        permissions: ['administrator'],
+        permissions: ['administrator', 'agent'],
       },
       toState: frontendURL(
         `accounts/${accountId}/settings/custom-attributes/list`
@@ -114,7 +117,7 @@ const settings = accountId => ({
       label: 'AUTOMATION',
       hasSubMenu: false,
       meta: {
-        permissions: ['administrator'],
+        permissions: ['administrator', 'agent'],
       },
       toState: frontendURL(`accounts/${accountId}/settings/automation/list`),
       toStateName: 'automation_list',
@@ -125,7 +128,7 @@ const settings = accountId => ({
       label: 'AGENT_BOTS',
       hasSubMenu: false,
       meta: {
-        permissions: ['administrator'],
+        permissions: ['administrator', 'agent'],
       },
       globalConfigFlag: 'csmlEditorHost',
       toState: frontendURL(`accounts/${accountId}/settings/agent-bots`),
@@ -161,7 +164,7 @@ const settings = accountId => ({
       label: 'INTEGRATIONS',
       hasSubMenu: false,
       meta: {
-        permissions: ['administrator'],
+        permissions: ['administrator', 'agent'],
       },
       toState: frontendURL(`accounts/${accountId}/settings/integrations`),
       toStateName: 'settings_applications',
@@ -172,7 +175,7 @@ const settings = accountId => ({
       label: 'AUDIT_LOGS',
       hasSubMenu: false,
       meta: {
-        permissions: ['administrator'],
+        permissions: ['administrator', 'agent'],
       },
       toState: frontendURL(`accounts/${accountId}/settings/audit-log/list`),
       toStateName: 'auditlogs_list',
@@ -184,7 +187,7 @@ const settings = accountId => ({
       label: 'SLA',
       hasSubMenu: false,
       meta: {
-        permissions: ['administrator'],
+        permissions: ['administrator', 'agent'],
       },
       toState: frontendURL(`accounts/${accountId}/settings/sla/list`),
       toStateName: 'sla_list',
@@ -196,7 +199,7 @@ const settings = accountId => ({
       label: 'BILLING',
       hasSubMenu: false,
       meta: {
-        permissions: ['administrator'],
+        permissions: ['administrator', 'agent'],
       },
       toState: frontendURL(`accounts/${accountId}/settings/billing`),
       toStateName: 'billing_settings_index',
@@ -207,7 +210,7 @@ const settings = accountId => ({
       label: 'INTELLIGENCE_AI',
       hasSubMenu: false,
       meta: {
-        permissions: ['administrator'],
+        permissions: ['administrator', 'agent'],
       },
       toState: frontendURL(`accounts/${accountId}/settings/ia`),
       toStateName: 'settings_ia',

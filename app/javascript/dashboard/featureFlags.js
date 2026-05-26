@@ -5,6 +5,7 @@ export const FEATURE_FLAGS = {
   AGENT_MANAGEMENT: 'agent_management',
   AUTO_RESOLVE_CONVERSATIONS: 'auto_resolve_conversations',
   AUTOMATIONS: 'automations',
+  WORKFLOWS: 'workflows',
   CAMPAIGNS: 'campaigns',
   CANNED_RESPONSES: 'canned_responses',
   CRM: 'crm',

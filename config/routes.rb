@@ -75,6 +75,13 @@ Rails.application.routes.draw do
           resources :automation_rules, only: [:index, :create, :show, :update, :destroy] do
             post :clone
           end
+          resources :workflows, only: [:index, :create, :show, :update, :destroy] do
+            member do
+              post :clone
+              post :toggle_active
+            end
+            resources :enrollments, only: [:index], controller: 'workflow_enrollments'
+          end
           resources :macros, only: [:index, :create, :show, :update, :destroy] do
             post :execute, on: :member
           end

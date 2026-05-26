@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_03_30_030320) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_21_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1055,6 +1055,57 @@ ActiveRecord::Schema[7.0].define(version: 2025_03_30_030320) do
     t.index ["account_id", "url"], name: "index_webhooks_on_account_id_and_url", unique: true
   end
 
+  create_table "workflow_enrollments", force: :cascade do |t|
+    t.bigint "workflow_id", null: false
+    t.bigint "conversation_id", null: false
+    t.bigint "account_id", null: false
+    t.string "status", default: "active", null: false
+    t.string "current_node_id"
+    t.string "cancel_reason"
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.datetime "cancelled_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "conversation_id"], name: "index_workflow_enrollments_on_account_id_and_conversation_id"
+    t.index ["account_id"], name: "index_workflow_enrollments_on_account_id"
+    t.index ["conversation_id"], name: "index_workflow_enrollments_on_conversation_id"
+    t.index ["workflow_id", "conversation_id"], name: "index_workflow_enrollments_unique_active", unique: true, where: "((status)::text = ANY ((ARRAY['active'::character varying, 'waiting'::character varying])::text[]))"
+    t.index ["workflow_id"], name: "index_workflow_enrollments_on_workflow_id"
+  end
+
+  create_table "workflow_step_executions", force: :cascade do |t|
+    t.bigint "workflow_enrollment_id", null: false
+    t.string "node_id", null: false
+    t.string "status", default: "scheduled", null: false
+    t.datetime "scheduled_at"
+    t.datetime "executed_at"
+    t.string "job_id"
+    t.text "error_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["workflow_enrollment_id", "node_id"], name: "index_wse_unique_enrollment_node", unique: true
+    t.index ["workflow_enrollment_id"], name: "index_wse_on_enrollment_id"
+  end
+
+  create_table "workflows", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.boolean "active", default: false, null: false
+    t.jsonb "graph", default: {}, null: false
+    t.bigint "created_by_id"
+    t.bigint "updated_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "trigger_event_name"
+    t.index ["account_id", "active", "trigger_event_name"], name: "index_workflows_on_account_active_trigger_event", where: "(active = true)"
+    t.index ["account_id", "active"], name: "index_workflows_on_account_id_and_active"
+    t.index ["account_id"], name: "index_workflows_on_account_id"
+    t.index ["created_by_id"], name: "index_workflows_on_created_by_id"
+    t.index ["updated_by_id"], name: "index_workflows_on_updated_by_id"
+  end
+
   create_table "working_hours", force: :cascade do |t|
     t.bigint "inbox_id"
     t.bigint "account_id"
@@ -1086,6 +1137,13 @@ ActiveRecord::Schema[7.0].define(version: 2025_03_30_030320) do
   add_foreign_key "contact_pipeline_positions", "custom_attribute_definitions", column: "pipeline_id"
   add_foreign_key "contact_pipeline_positions", "users", column: "assignee_id"
   add_foreign_key "inboxes", "portals"
+  add_foreign_key "workflow_enrollments", "accounts"
+  add_foreign_key "workflow_enrollments", "conversations"
+  add_foreign_key "workflow_enrollments", "workflows"
+  add_foreign_key "workflow_step_executions", "workflow_enrollments"
+  add_foreign_key "workflows", "accounts"
+  add_foreign_key "workflows", "users", column: "created_by_id"
+  add_foreign_key "workflows", "users", column: "updated_by_id"
   create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).
       on("accounts").
       after(:insert).

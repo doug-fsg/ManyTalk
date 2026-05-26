@@ -28,6 +28,9 @@ const toggleModalDescription = ref(
 const records = computed(() => getters['automations/getAutomations'].value);
 const uiFlags = computed(() => getters['automations/getUIFlags'].value);
 const accountId = computed(() => getters.getCurrentAccountId.value);
+const isAdministrator = computed(
+  () => getters.getCurrentRole.value === 'administrator'
+);
 
 const deleteConfirmText = computed(
   () => `${t('AUTOMATION.DELETE.CONFIRM.YES')} ${selectedAutomation.value.name}`
@@ -179,6 +182,7 @@ const toggleAutomation = async ({ id, name, status }) => {
       >
         <template #actions>
           <woot-button
+            v-if="isAdministrator"
             class="button nice rounded-md"
             icon="add-circle"
             @click="openAddPopup"

@@ -79,3 +79,6 @@ yarn-debug.log*
 /storybook-static
 *:Zone.Identifier
 .cursor
+
+# Local reference copy of upstream Chatwoot (not part of this repo)
+/chatwoot-develop/

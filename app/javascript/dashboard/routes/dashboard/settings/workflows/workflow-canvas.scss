@@ -1,0 +1,136 @@
+/* Nós LogicFlow (HTML) — estilo card n8n, respeita tema claro/escuro do app */
+.workflow-lf-card {
+  box-sizing: border-box;
+  width: 240px;
+  min-height: 72px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  font-family: Inter, system-ui, sans-serif;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+  }
+
+  &.is-selected {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+  }
+}
+
+.dark .workflow-lf-card,
+.workflow-canvas--dark .workflow-lf-card {
+  background: #1e293b;
+  border-color: #475569;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+
+  &:hover {
+    border-color: #64748b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  &.is-selected {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.35);
+  }
+}
+
+.workflow-lf-card__stripe {
+  height: 3px;
+  width: 100%;
+}
+
+.workflow-lf-card__body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+}
+
+.workflow-lf-card__icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.workflow-lf-card__text {
+  min-width: 0;
+  flex: 1;
+}
+
+.workflow-lf-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.dark .workflow-lf-card__title,
+.workflow-canvas--dark .workflow-lf-card__title {
+  color: #f1f5f9;
+}
+
+.workflow-lf-card__subtitle {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.dark .workflow-lf-card__subtitle,
+.workflow-canvas--dark .workflow-lf-card__subtitle {
+  color: #94a3b8;
+}
+
+/* Esconde texto padrão do LogicFlow nos nós customizados */
+.workflow-canvas-host .lf-node-text {
+  display: none !important;
+}
+
+/*
+ * Retângulo SVG de fundo do HtmlNode: transparente em todos os estados.
+ * O LF injeta um <rect> como background/hit-area do nó via React.
+ * Quando o cursor passa por cima, o React re-renderiza o estilo inline
+ * e o <rect> fica preto (SVG fill padrão). Forçamos transparência aqui.
+ */
+.workflow-canvas-host svg .lf-node rect {
+  fill: transparent !important;
+  stroke: transparent !important;
+  fill-opacity: 0 !important;
+}
+
+.workflow-canvas-host svg .lf-node:hover rect {
+  fill: transparent !important;
+  stroke: transparent !important;
+  fill-opacity: 0 !important;
+}
+
+/* Só o retângulo de fundo do nó — evita afetar outras formas no SVG (ex.: arestas). */
+.workflow-canvas-host svg .lf-node rect.lf-basic-shape {
+  fill: transparent !important;
+  stroke: transparent !important;
+}
+
+/* Cobrir também o seletor genérico do LF */
+.lf-graph .lf-node rect {
+  fill: transparent !important;
+  stroke: transparent !important;
+  fill-opacity: 0 !important;
+}
+
+.lf-graph .lf-node:hover rect {
+  fill: transparent !important;
+  stroke: transparent !important;
+}

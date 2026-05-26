@@ -2,14 +2,18 @@
 <template>
   <div>
     <div
-      class="rounded-lg p-2 border border-solid transition-all duration-200 ease-smooth"
-      :class="getInputErrorClass(errorMessage)"
+      class="rounded-lg border border-solid transition-all duration-200 ease-smooth"
+      :class="[
+        getInputErrorClass(errorMessage),
+        isStackedLayout ? 'p-3.5 workflow-filter--stacked' : 'p-2',
+      ]"
     >
-      <div class="flex">
+      <div :class="isStackedLayout ? 'flex flex-col gap-2.5' : 'flex'">
         <select
           v-if="groupedFilters"
           v-model="attributeKey"
-          class="bg-white max-w-[30%] dark:bg-slate-900 mb-0 mr-1 text-slate-800 dark:text-slate-100 border-slate-75 dark:border-slate-600"
+          class="bg-white dark:bg-slate-900 mb-0 text-slate-800 dark:text-slate-100 border-slate-75 dark:border-slate-600"
+          :class="isStackedLayout ? 'w-full min-w-0' : 'max-w-[30%] mr-1'"
           @change="resetFilter()"
         >
           <optgroup
@@ -29,7 +33,8 @@
         <select
           v-else
           v-model="attributeKey"
-          class="bg-white max-w-[30%] dark:bg-slate-900 mb-0 mr-1 text-slate-800 dark:text-slate-100 border-slate-75 dark:border-slate-600"
+          class="bg-white dark:bg-slate-900 mb-0 text-slate-800 dark:text-slate-100 border-slate-75 dark:border-slate-600"
+          :class="isStackedLayout ? 'w-full min-w-0' : 'max-w-[30%] mr-1'"
           @change="resetFilter()"
         >
           <option
@@ -44,7 +49,8 @@
 
         <select
           v-model="filterOperator"
-          class="bg-white dark:bg-slate-900 max-w-[20%] mb-0 mr-1 text-slate-800 dark:text-slate-100 border-slate-75 dark:border-slate-600"
+          class="bg-white dark:bg-slate-900 mb-0 text-slate-800 dark:text-slate-100 border-slate-75 dark:border-slate-600"
+          :class="isStackedLayout ? 'w-full min-w-0' : 'max-w-[20%] mr-1'"
         >
           <option
             v-for="(operator, o) in operators"
@@ -55,7 +61,11 @@
           </option>
         </select>
 
-        <div v-if="showUserInput" class="filter__answer--wrap mr-1 flex-grow">
+        <div
+          v-if="showUserInput"
+          class="filter__answer--wrap flex-grow"
+          :class="isStackedLayout ? 'w-full min-w-0 mr-0' : 'mr-1'"
+        >
           <div
             v-if="inputType === 'multi_select'"
             class="multiselect-wrap--small"
@@ -120,12 +130,14 @@
             placeholder="Enter value"
           />
         </div>
-        <woot-button
-          icon="dismiss"
-          variant="clear"
-          color-scheme="secondary"
-          @click="removeFilter"
-        />
+        <div :class="isStackedLayout ? 'flex justify-end pt-0.5' : ''">
+          <woot-button
+            icon="dismiss"
+            variant="clear"
+            color-scheme="secondary"
+            @click="removeFilter"
+          />
+        </div>
       </div>
       <p v-if="errorMessage" class="filter-error">
         {{ errorMessage }}
@@ -205,8 +217,17 @@ export default {
       type: String,
       default: '',
     },
+    /** 'horizontal' (default) | 'stacked' — stacked fits narrow sidebars (workflow editor). */
+    layout: {
+      type: String,
+      default: 'horizontal',
+      validator: v => ['horizontal', 'stacked'].includes(v),
+    },
   },
   computed: {
+    isStackedLayout() {
+      return this.layout === 'stacked';
+    },
     attributeKey: {
       get() {
         if (!this.value) return null;
@@ -303,7 +324,8 @@ export default {
 <style lang="scss" scoped>
 .filter__answer--wrap {
   input {
-    @apply bg-white dark:bg-slate-900 mb-0 text-slate-800 dark:text-slate-100 border-slate-75 dark:border-slate-600;
+    margin-bottom: 0;
+    @apply bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border-slate-75 dark:border-slate-600;
   }
 }
 
@@ -312,6 +334,16 @@ export default {
 }
 
 .multiselect {
-  @apply mb-0;
+  margin-bottom: 0;
+}
+
+.workflow-filter--stacked .multiselect-wrap--small {
+  width: 100%;
+  min-width: 0;
+}
+
+.workflow-filter--stacked .filter__answer--wrap input {
+  width: 100%;
+  box-sizing: border-box;
 }
 </style>

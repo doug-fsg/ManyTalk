@@ -123,3 +123,5 @@
   enabled: false
 - name: inteligencia_artificial
   enabled: false
+- name: workflows
+  enabled: false

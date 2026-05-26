@@ -352,6 +352,7 @@ class Message < ApplicationRecord
     # if campaign id is present, it's not a human response
     outgoing? &&
       content_attributes['automation_rule_id'].blank? &&
+      content_attributes['workflow_id'].blank? &&
       additional_attributes['campaign_id'].blank? &&
       sender.is_a?(User)
   end

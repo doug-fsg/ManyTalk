@@ -64,6 +64,7 @@
     "ionicons": "~2.0.1",
     "js-cookie": "^3.0.5",
     "lamejs": "1.2.0",
+    "@logicflow/core": "^1.2.28",
     "libphonenumber-js": "^1.10.24",
     "markdown-it": "^13.0.2",
     "markdown-it-link-attributes": "^4.0.1",
