@@ -33,7 +33,8 @@ RSpec.describe Conversations::EventDataPresenter do
         created_at: conversation.created_at.to_i,
         waiting_since: conversation.waiting_since.to_i,
         priority: nil,
-        unread_count: 0
+        unread_count: 0,
+        workflow: { active: false }
       }
     end
 

@@ -170,6 +170,16 @@ class ActionCableListener < BaseListener
     broadcast(account, [user.pubsub_token], CONVERSATION_MENTIONED, conversation.push_event_data)
   end
 
+  def workflow_enrollment_updated(event)
+    enrollment = event.data[:enrollment]
+    conversation = event.data[:conversation]
+    account = event.data[:account]
+    tokens = user_tokens(account, conversation.inbox.members)
+
+    payload = Workflows::EnrollmentPayloadBuilder.for_action_cable(enrollment)
+    broadcast(account, tokens, WORKFLOW_ENROLLMENT_UPDATED, payload)
+  end
+
   private
 
   def typing_event_listener_tokens(account, conversation, user)

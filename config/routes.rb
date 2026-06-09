@@ -76,12 +76,19 @@ Rails.application.routes.draw do
             post :clone
           end
           resources :workflows, only: [:index, :create, :show, :update, :destroy] do
+            collection do
+              get :templates
+              post :from_template
+              post :validate
+              post :test_external_whatsapp
+            end
             member do
               post :clone
               post :toggle_active
             end
             resources :enrollments, only: [:index], controller: 'workflow_enrollments'
           end
+          resources :workflow_enrollment_summaries, only: [:index]
           resources :macros, only: [:index, :create, :show, :update, :destroy] do
             post :execute, on: :member
           end
@@ -122,6 +129,18 @@ Rails.application.routes.draw do
               resource :participants, only: [:show, :create, :update, :destroy]
               resource :direct_uploads, only: [:create]
               resource :draft_messages, only: [:show, :update, :destroy]
+              resources :workflow_enrollments, only: [:create] do
+                collection do
+                  get :active
+                end
+                member do
+                  post :pause
+                  post :resume
+                  post :cancel
+                  post :jump
+                  post :rebind
+                end
+              end
             end
             member do
               post :mute
@@ -383,6 +402,7 @@ Rails.application.routes.draw do
               get :conversations
               get :conversation_traffic
               get :bot_metrics
+              get :workflows, to: 'reports/workflows#show'
             end
           end
         end

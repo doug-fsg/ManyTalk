@@ -24,12 +24,44 @@ module Workflows
     def send_message(message)
       return if conversation_a_tweet?
 
+      node = @workflow.find_node(@node_id)
+      data = node&.dig('data') || {}
+      content, variant_id = resolve_message_content(data, message)
+
       params = {
-        content: message[0],
+        content: Workflows::MessageInterpolator.new(@conversation).interpolate(content),
         private: false,
-        content_attributes: { workflow_id: @workflow.id, workflow_node_id: @node_id }
+        content_attributes: {
+          workflow_id: @workflow.id,
+          workflow_node_id: @node_id,
+          ab_variant_id: variant_id
+        }.compact
       }
       Messages::MessageBuilder.new(nil, @conversation, params).perform
+      track_variant_execution(variant_id) if variant_id.present?
+    end
+
+    def resolve_message_content(data, message)
+      if data.dig('ab_test', 'enabled') && data['variants'].present?
+        variant = Workflows::AbVariantSelector.new(
+          contact_id: @conversation.contact_id,
+          node_id: @node_id,
+          variants: data['variants']
+        ).selected_variant
+        [variant['message'], variant['id']]
+      else
+        [message[0] || data.dig('action_params', 0), nil]
+      end
+    end
+
+    def track_variant_execution(variant_id)
+      enrollment = WorkflowEnrollment.enrollments_for_conversation(@conversation).first
+      return if enrollment.blank?
+
+      execution = enrollment.workflow_step_executions.find_by(node_id: @node_id)
+      return if execution.blank?
+
+      execution.update!(metadata: (execution.metadata || {}).merge('variant_id' => variant_id))
     end
 
     def add_private_note(message)
@@ -63,6 +95,20 @@ module Workflows
       teams.each do |team|
         TeamNotifications::AutomationNotificationMailer.conversation_creation(@conversation, team, params[0][:message])&.deliver_now
       end
+    end
+
+    def send_whatsapp_external(params)
+      inbox_id = params[0]
+      phone_number = params[1]
+      raw_message = params[2] || ''
+      content = Workflows::MessageInterpolator.new(@conversation).interpolate(raw_message)
+
+      Workflows::ExternalWhatsappNotifier.new(
+        account: @account,
+        inbox_id: inbox_id,
+        phone_number: phone_number,
+        message: content
+      ).send!
     end
 
     def change_kanban_stage(stage_params)

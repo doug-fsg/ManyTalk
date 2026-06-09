@@ -144,6 +144,8 @@ import {
 } from '../store/modules/conversations/helpers/actionHelpers';
 import { CONVERSATION_EVENTS } from '../helper/AnalyticsHelper/events';
 import IntersectionObserver from './IntersectionObserver.vue';
+import debounce from 'lodash/debounce';
+import WorkflowEnrollmentSummariesAPI from 'dashboard/api/workflowEnrollmentSummaries';
 
 export default {
   components: {
@@ -236,6 +238,7 @@ export default {
 
       itemComponent: ConversationItem,
       // virtualListExtraProps is to pass the props to the conversationItem component.
+      enrollmentSummaries: {},
       virtualListExtraProps: {
         label: this.label,
         teamId: this.teamId,
@@ -243,6 +246,7 @@ export default {
         conversationType: this.conversationType,
         showAssignee: false,
         isConversationSelected: this.isConversationSelected,
+        enrollmentSummaries: {},
       },
     };
   },
@@ -523,6 +527,18 @@ export default {
         this.$store.dispatch('updateChatListFilters', newVal);
       }
     },
+    conversationList: {
+      handler() {
+        this.debouncedFetchEnrollmentSummaries();
+      },
+      deep: true,
+    },
+  },
+  created() {
+    this.debouncedFetchEnrollmentSummaries = debounce(
+      this.fetchEnrollmentSummaries,
+      300
+    );
   },
   mounted() {
     this.$store.dispatch('setChatListFilters', this.conversationFilters);
@@ -538,8 +554,39 @@ export default {
     this.$emitter.on('fetch_conversation_stats', () => {
       this.$store.dispatch('conversationStats/get', this.conversationFilters);
     });
+
+    this.$emitter.on('workflow_enrollment.updated', this.onWorkflowEnrollmentUpdated);
+
+    if (this.isFeatureEnabledonAccount(this.accountId, 'workflows')) {
+      this.fetchEnrollmentSummaries();
+    }
+  },
+  beforeDestroy() {
+    this.$emitter.off('workflow_enrollment.updated', this.onWorkflowEnrollmentUpdated);
   },
   methods: {
+    onWorkflowEnrollmentUpdated(payload) {
+      if (!payload?.conversation_id) return;
+      this.fetchEnrollmentSummaries();
+    },
+    async fetchEnrollmentSummaries() {
+      if (!this.isFeatureEnabledonAccount(this.accountId, 'workflows')) return;
+
+      const ids = this.conversationList.map(c => c.id).slice(0, 50);
+      if (!ids.length) {
+        this.enrollmentSummaries = {};
+        this.updateVirtualListProps('enrollmentSummaries', {});
+        return;
+      }
+
+      try {
+        const { data } = await WorkflowEnrollmentSummariesAPI.getSummaries(ids);
+        this.enrollmentSummaries = data.summaries || {};
+        this.updateVirtualListProps('enrollmentSummaries', this.enrollmentSummaries);
+      } catch {
+        // Badge is optional; ignore fetch errors
+      }
+    },
     updateVirtualListProps(key, value) {
       this.virtualListExtraProps = {
         ...this.virtualListExtraProps,

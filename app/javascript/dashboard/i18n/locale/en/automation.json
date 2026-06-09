@@ -1,6 +1,8 @@
 {
   "AUTOMATION": {
     "HEADER": "Automations",
+    "DESCRIPTION": "Automations can replace and streamline manual processes such as adding labels and assigning conversations to the right agents. This lets your team focus on what they do best.",
+    "LEARN_MORE": "Learn more about automations",
     "HEADER_BTN_TXT": "Add Automation Rule",
     "LOADING": "Fetching automation rules",
     "SIDEBAR_TXT": "<p><b>Automation Rules</b> <p>Automation can replace and automate existing processes that require manual effort. You can do many things with automation, including adding labels and assigning conversation to the best agent. So the team focuses on what they do best and spends more little time on manual tasks.</p>",
@@ -118,7 +120,7 @@
       "LABEL_UPLOAD_FAILED": "Upload Failed"
     },
     "TABS": {
-      "CLASSIC": "Automations"
+      "CLASSIC": "Classic mode"
     }
   }
 }

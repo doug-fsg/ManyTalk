@@ -37,11 +37,107 @@ RSpec.describe Workflows::GraphValidationService do
     expect(result[:valid]).to be false
   end
 
-  it 'rejects edge whose target is the trigger node' do
+  it 'accepts valid ai_outreach node when inteligencia_artificial is enabled' do
+    account.enable_features!('inteligencia_artificial')
     graph = build(:workflow).graph
-    graph['edges'] << { 'id' => 'e_bad', 'source' => 'action_1', 'target' => 'trigger_1' }
+    graph['nodes'] << {
+      'id' => 'ai_1',
+      'type' => 'ai_outreach',
+      'data' => {
+        'objective_preset' => 'reengagement',
+        'tone_preset' => 'friendly',
+        'language' => 'client',
+        'prompt' => 'Retome o contato com o cliente de forma amigável.',
+        'prompt_customized' => false
+      }
+    }
+    graph['edges'] << { 'id' => 'e_ai', 'source' => 'trigger_1', 'target' => 'ai_1' }
+
+    result = described_class.new(graph: graph, account: account).perform
+    expect(result[:valid]).to be true
+  end
+
+  it 'rejects ai_outreach node without inteligencia_artificial feature' do
+    graph = build(:workflow).graph
+    graph['nodes'] << {
+      'id' => 'ai_1',
+      'type' => 'ai_outreach',
+      'data' => {
+        'objective_preset' => 'reengagement',
+        'tone_preset' => 'friendly',
+        'language' => 'client',
+        'prompt' => 'Retome o contato com o cliente de forma amigável.',
+        'prompt_customized' => false
+      }
+    }
+    graph['edges'] << { 'id' => 'e_ai', 'source' => 'trigger_1', 'target' => 'ai_1' }
+
     result = described_class.new(graph: graph, account: account).perform
     expect(result[:valid]).to be false
-    expect(result[:errors].join).to include('trigger')
+    expect(result[:errors].map { |e| e[:message] }).to include(
+      'AI outreach requires the inteligencia_artificial feature'
+    )
+  end
+
+  it 'rejects ai_outreach node without prompt' do
+    account.enable_features!('inteligencia_artificial')
+    graph = build(:workflow).graph
+    graph['nodes'] << {
+      'id' => 'ai_1',
+      'type' => 'ai_outreach',
+      'data' => {
+        'objective_preset' => 'reengagement',
+        'tone_preset' => 'friendly',
+        'prompt' => ''
+      }
+    }
+    graph['edges'] << { 'id' => 'e_ai', 'source' => 'trigger_1', 'target' => 'ai_1' }
+
+    result = described_class.new(graph: graph, account: account).perform
+    expect(result[:valid]).to be false
+  end
+
+  it 'rejects wait_for_reply edge without valid sourceHandle' do
+    graph = build(:workflow).graph
+    graph['nodes'] << {
+      'id' => 'wait_reply_1',
+      'type' => 'wait_for_reply',
+      'data' => { 'duration' => 1, 'unit' => 'hours' }
+    }
+    graph['nodes'] << {
+      'id' => 'action_timeout',
+      'type' => 'action',
+      'data' => { 'action_name' => 'add_label', 'action_params' => ['timeout'] }
+    }
+    graph['edges'] << { 'id' => 'e_wr', 'source' => 'trigger_1', 'target' => 'wait_reply_1' }
+    graph['edges'] << { 'id' => 'e_bad', 'source' => 'wait_reply_1', 'target' => 'action_timeout' }
+
+    result = described_class.new(graph: graph, account: account).perform
+    expect(result[:valid]).to be false
+    expect(Workflows::GraphValidationService.error_messages(result[:errors]).join).to include('replied or timeout')
+  end
+
+  it 'accepts valid wait_for_reply graph' do
+    graph = build(:workflow).graph
+    graph['nodes'] << {
+      'id' => 'wait_reply_1',
+      'type' => 'wait_for_reply',
+      'data' => { 'duration' => 1, 'unit' => 'hours' }
+    }
+    graph['nodes'] << {
+      'id' => 'action_timeout',
+      'type' => 'action',
+      'data' => { 'action_name' => 'add_label', 'action_params' => ['timeout'] }
+    }
+    graph['edges'] << { 'id' => 'e_wr', 'source' => 'trigger_1', 'target' => 'wait_reply_1' }
+    graph['edges'] << {
+      'id' => 'e_to',
+      'source' => 'wait_reply_1',
+      'target' => 'action_timeout',
+      'sourceHandle' => 'timeout'
+    }
+
+    result = described_class.new(graph: graph, account: account).perform
+    expect(result[:valid]).to be true
   end
 end

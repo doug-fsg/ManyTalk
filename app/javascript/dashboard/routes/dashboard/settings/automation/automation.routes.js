@@ -1,5 +1,7 @@
 import { frontendURL } from '../../../../helper/URLHelper';
-import { requireWorkflowsFeature } from '../../../../helper/workflowsFeatureGuard';
+import {
+  requireWorkflowsFeature,
+} from '../../../../helper/workflowsFeatureGuard';
 
 const SettingsWrapper = () => import('../SettingsWrapper.vue');
 const AutomationHub = () => import('./AutomationHub.vue');
@@ -26,6 +28,10 @@ export default {
           children: [
             {
               path: '',
+              redirect: 'workflows',
+            },
+            {
+              path: 'classic',
               name: 'automation_list',
               component: Automation,
               meta: {

@@ -9,7 +9,7 @@ module Workflows
 
     def perform(enrollment_id, node_id)
       enrollment = WorkflowEnrollment.find_by(id: enrollment_id)
-      return if enrollment.blank? || enrollment.cancelled? || enrollment.completed?
+      return if enrollment.blank? || enrollment.paused? || enrollment.cancelled? || enrollment.completed?
 
       Workflows::OrchestratorService.on_step(enrollment_id: enrollment_id, node_id: node_id)
     rescue StandardError => e

@@ -114,13 +114,15 @@ const settings = accountId => ({
     },
     {
       icon: 'automation',
-      label: 'AUTOMATION',
+      label: 'REPORTS_WORKFLOWS',
       hasSubMenu: false,
       meta: {
         permissions: ['administrator', 'agent'],
       },
-      toState: frontendURL(`accounts/${accountId}/settings/automation/list`),
-      toStateName: 'automation_list',
+      toState: frontendURL(
+        `accounts/${accountId}/settings/automation/list/workflows`
+      ),
+      toStateName: 'workflows_list',
       featureFlag: FEATURE_FLAGS.AUTOMATIONS,
     },
     {

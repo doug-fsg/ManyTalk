@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_05_21_140000) do
+ActiveRecord::Schema[7.0].define(version: 2026_06_05_120100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1067,10 +1067,22 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_21_140000) do
     t.datetime "cancelled_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "paused_at"
+    t.bigint "paused_by_id"
+    t.bigint "started_by_id"
+    t.string "pause_reason"
+    t.datetime "resume_at"
+    t.jsonb "context", default: {}, null: false
+    t.bigint "contact_id", null: false
+    t.string "enrollment_scope", default: "contact", null: false
+    t.index ["account_id", "contact_id"], name: "index_we_on_account_id_and_contact_id"
     t.index ["account_id", "conversation_id"], name: "index_workflow_enrollments_on_account_id_and_conversation_id"
+    t.index ["account_id", "status"], name: "idx_we_in_progress_by_account", where: "((status)::text = ANY ((ARRAY['active'::character varying, 'waiting'::character varying, 'paused'::character varying])::text[]))"
     t.index ["account_id"], name: "index_workflow_enrollments_on_account_id"
+    t.index ["contact_id"], name: "index_workflow_enrollments_on_contact_id"
     t.index ["conversation_id"], name: "index_workflow_enrollments_on_conversation_id"
-    t.index ["workflow_id", "conversation_id"], name: "index_workflow_enrollments_unique_active", unique: true, where: "((status)::text = ANY ((ARRAY['active'::character varying, 'waiting'::character varying])::text[]))"
+    t.index ["workflow_id", "contact_id"], name: "index_we_unique_active_contact_scope", unique: true, where: "(((status)::text = ANY ((ARRAY['active'::character varying, 'waiting'::character varying, 'paused'::character varying])::text[])) AND ((enrollment_scope)::text = 'contact'::text))"
+    t.index ["workflow_id", "conversation_id"], name: "index_workflow_enrollments_unique_active", unique: true, where: "((status)::text = ANY (ARRAY[('active'::character varying)::text, ('waiting'::character varying)::text, ('paused'::character varying)::text]))"
     t.index ["workflow_id"], name: "index_workflow_enrollments_on_workflow_id"
   end
 
@@ -1084,6 +1096,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_21_140000) do
     t.text "error_message"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "metadata", default: {}, null: false
     t.index ["workflow_enrollment_id", "node_id"], name: "index_wse_unique_enrollment_node", unique: true
     t.index ["workflow_enrollment_id"], name: "index_wse_on_enrollment_id"
   end
@@ -1139,6 +1152,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_21_140000) do
   add_foreign_key "inboxes", "portals"
   add_foreign_key "workflow_enrollments", "accounts"
   add_foreign_key "workflow_enrollments", "conversations"
+  add_foreign_key "workflow_enrollments", "users", column: "paused_by_id"
+  add_foreign_key "workflow_enrollments", "users", column: "started_by_id"
   add_foreign_key "workflow_enrollments", "workflows"
   add_foreign_key "workflow_step_executions", "workflow_enrollments"
   add_foreign_key "workflows", "accounts"

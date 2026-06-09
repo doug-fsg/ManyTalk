@@ -6,9 +6,34 @@ class Api::V1::Accounts::WorkflowsController < Api::V1::Accounts::BaseController
 
   def index
     @workflows = Current.account.workflows.order(updated_at: :desc)
+    @metrics = Workflows::ListMetricsService.new(
+      account: Current.account,
+      user: current_user,
+      workflow_ids: @workflows.map(&:id)
+    ).build
   end
 
   def show; end
+
+  def templates
+    @templates = Workflows::TemplateFactory.available_templates
+  end
+
+  def from_template
+    @workflow = Workflows::TemplateFactory.clone_to_account(
+      params[:template_key],
+      account: Current.account,
+      user: current_user
+    )
+  rescue ArgumentError => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
+  def validate
+    graph = normalize_graph_param
+    result = Workflows::GraphValidationService.new(graph: graph, account: Current.account).perform
+    render json: result
+  end
 
   def create
     result = Workflows::CreateService.new(
@@ -39,7 +64,7 @@ class Api::V1::Accounts::WorkflowsController < Api::V1::Accounts::BaseController
   end
 
   def destroy
-    @workflow.workflow_enrollments.active_or_waiting.find_each(&:cancel!)
+    @workflow.workflow_enrollments.in_progress.find_each { |e| e.cancel!('workflow_deleted') }
     @workflow.update!(active: false)
     @workflow.destroy!
     head :ok
@@ -60,7 +85,29 @@ class Api::V1::Accounts::WorkflowsController < Api::V1::Accounts::BaseController
     @workflow
   end
 
+  def test_external_whatsapp
+    result = Workflows::ExternalWhatsappNotifier.new(
+      account: Current.account,
+      inbox_id: params[:inbox_id],
+      phone_number: params[:phone_number],
+      message: params[:message].presence || 'Teste — Fluxo de Atendimento'
+    ).send!
+
+    if result[:success]
+      render json: { success: true, message_id: result[:message_id] }
+    else
+      render json: { error: result[:error], detail: result[:detail] }, status: :unprocessable_entity
+    end
+  end
+
   private
+
+  def normalize_graph_param
+    graph = Workflows::GraphParamsParser.to_hash(params[:graph]) if params[:graph].present?
+    graph ||= { 'nodes' => [], 'edges' => [], 'settings' => Workflows::Constants::DEFAULT_SETTINGS }
+    graph['settings'] = Workflows::Constants::DEFAULT_SETTINGS.merge(graph['settings'] || {})
+    graph
+  end
 
   def workflow_params
     base = params.permit(:name, :description, :active).to_h

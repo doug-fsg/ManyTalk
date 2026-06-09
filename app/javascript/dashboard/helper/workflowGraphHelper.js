@@ -3,10 +3,83 @@ import {
   WORKFLOW_LF_NODE_TYPE,
   workflowAnchorInId,
   workflowAnchorOutId,
+  sourceHandleToAnchorId,
+  anchorIdToSourceHandle,
+  sourceHandleLabel,
+  isBranchNodeType,
 } from 'dashboard/routes/dashboard/settings/workflows/workflowLogicFlowNodes';
+import { WORKFLOW_EDGE_TYPE } from 'dashboard/routes/dashboard/settings/workflows/workflowLogicFlowEdges';
 import { serializeWorkflowConditions } from 'dashboard/helper/workflowConditionHelper';
 
 export const emptyGraph = () => JSON.parse(JSON.stringify(DEFAULT_WORKFLOW_GRAPH));
+
+const nodeTypeById = (nodes, nodeId) => {
+  const node = (nodes || []).find(n => n.id === nodeId);
+  return node?.type || node?.data?.workflowNodeType;
+};
+
+const NODE_LAYOUT_WIDTH = 128;
+const NODE_LAYOUT_H_GAP = 56;
+const NODE_LAYOUT_H_STEP = NODE_LAYOUT_WIDTH + NODE_LAYOUT_H_GAP;
+const NODE_LAYOUT_V_STEP = 120;
+const NODE_LAYOUT_START_X = 120;
+const NODE_LAYOUT_START_Y = 120;
+
+const nodeHasExplicitPosition = node =>
+  node.x != null ||
+  node.y != null ||
+  (node.position &&
+    (node.position.x != null || node.position.y != null));
+
+const applyLinearLayoutFromTrigger = (normalized, shouldAutoLayout = true) => {
+  const { nodes, edges } = normalized;
+  if (!nodes.length || !shouldAutoLayout) return;
+
+  const trigger = nodes.find(node => node.type === 'trigger');
+  if (!trigger) return;
+
+  const adjacency = {};
+  (edges || []).forEach(edge => {
+    if (!adjacency[edge.source]) adjacency[edge.source] = [];
+    adjacency[edge.source].push(edge.target);
+  });
+
+  const layoutMeta = new Map();
+  const visited = new Set();
+
+  const visit = (nodeId, depth, row) => {
+    if (visited.has(nodeId)) return;
+    visited.add(nodeId);
+    layoutMeta.set(nodeId, { depth, row });
+
+    const children = adjacency[nodeId] || [];
+    children.forEach((childId, index) => {
+      visit(childId, depth + 1, row + index);
+    });
+  };
+
+  visit(trigger.id, 0, 0);
+
+  let extraDepth =
+    Math.max(...[...layoutMeta.values()].map(meta => meta.depth), 0) + 1;
+  nodes.forEach(node => {
+    if (visited.has(node.id)) return;
+    layoutMeta.set(node.id, { depth: extraDepth, row: 0 });
+    extraDepth += 1;
+  });
+
+  normalized.nodes = nodes.map(node => {
+    const meta = layoutMeta.get(node.id) || { depth: 0, row: 0 };
+    const x = NODE_LAYOUT_START_X + meta.depth * NODE_LAYOUT_H_STEP;
+    const y = NODE_LAYOUT_START_Y + meta.row * NODE_LAYOUT_V_STEP;
+    return {
+      ...node,
+      x,
+      y,
+      position: { x, y },
+    };
+  });
+};
 
 export const normalizeWorkflowGraph = graph => {
   const source = graph && typeof graph === 'object' ? graph : {};
@@ -18,6 +91,9 @@ export const normalizeWorkflowGraph = graph => {
       ...(source.settings || {}),
     },
   };
+
+  const sourceNodes = Array.isArray(source.nodes) ? source.nodes : [];
+  const shouldAutoLayout = sourceNodes.some(node => !nodeHasExplicitPosition(node));
 
   normalized.nodes = normalized.nodes.map((node, index) => {
     const rawData = node.data || node.properties || {};
@@ -50,15 +126,47 @@ export const normalizeWorkflowGraph = graph => {
     });
   });
 
+  applyLinearLayoutFromTrigger(normalized, shouldAutoLayout);
+
+  // Assign default sourceHandle for branch edges missing handles (legacy graphs)
+  const branchEdgesBySource = {};
+  normalized.edges.forEach((edge, index) => {
+    const srcType = nodeTypeById(normalized.nodes, edge.source);
+    if (!isBranchNodeType(srcType)) return;
+    if (edge.sourceHandle) return;
+    if (!branchEdgesBySource[edge.source]) branchEdgesBySource[edge.source] = [];
+    branchEdgesBySource[edge.source].push(index);
+  });
+  Object.values(branchEdgesBySource).forEach(indices => {
+    indices.forEach((edgeIndex, i) => {
+      const srcType = nodeTypeById(normalized.nodes, normalized.edges[edgeIndex].source);
+      if (srcType === 'wait_for_reply') {
+        normalized.edges[edgeIndex].sourceHandle = i === 0 ? 'replied' : 'timeout';
+      } else {
+        normalized.edges[edgeIndex].sourceHandle = i === 0 ? 'true' : 'false';
+      }
+    });
+  });
+
   return normalized;
 };
 
 export const graphToLogicFlowData = graph => {
-  const g = graph || emptyGraph();
+  const g = normalizeWorkflowGraph(graph);
   const nodes = (g.nodes || []).map((node, index) => {
     const data = node.data || node.properties || {};
-    const posX = node.x != null ? node.x : (node.position && node.position.x != null ? node.position.x : 100 + index * 40);
-    const posY = node.y != null ? node.y : (node.position && node.position.y != null ? node.position.y : 100 + index * 60);
+    const posX =
+      node.x != null
+        ? node.x
+        : node.position && node.position.x != null
+          ? node.position.x
+          : 100 + index * 40;
+    const posY =
+      node.y != null
+        ? node.y
+        : node.position && node.position.y != null
+          ? node.position.y
+          : 100 + index * 60;
     return {
       id: node.id,
       type: WORKFLOW_LF_NODE_TYPE,
@@ -72,15 +180,19 @@ export const graphToLogicFlowData = graph => {
     };
   });
 
-  const edges = (g.edges || []).map(edge => ({
-    id: edge.id || `e_${edge.source}_${edge.target}`,
-    type: 'polyline',
-    sourceNodeId: edge.source,
-    targetNodeId: edge.target,
-    sourceAnchorId: workflowAnchorOutId(edge.source),
-    targetAnchorId: workflowAnchorInId(edge.target),
-    text: edge.sourceHandle || '',
-  }));
+  const edges = (g.edges || []).map(edge => {
+    const srcType = nodeTypeById(g.nodes, edge.source);
+    const sourceHandle = edge.sourceHandle;
+    return {
+      id: edge.id || `e_${edge.source}_${edge.target}_${sourceHandle || 'default'}`,
+      type: WORKFLOW_EDGE_TYPE,
+      sourceNodeId: edge.source,
+      targetNodeId: edge.target,
+      sourceAnchorId: sourceHandleToAnchorId(edge.source, sourceHandle, srcType),
+      targetAnchorId: workflowAnchorInId(edge.target),
+      text: sourceHandleLabel(sourceHandle, srcType) || sourceHandle || '',
+    };
+  });
 
   return { nodes, edges };
 };
@@ -93,8 +205,13 @@ const coerceArray = value => {
 
 export const logicFlowDataToGraph = (lfData, settings = {}) => {
   const lfNodes = coerceArray(lfData && lfData.nodes);
+  const nodeTypeMap = {};
+  lfNodes.forEach(node => {
+    const props = node.properties || node.property || {};
+    nodeTypeMap[node.id] = props.workflowNodeType || 'action';
+  });
+
   const nodes = lfNodes.map(node => {
-    // LF 1.x can expose properties either as node.properties or node.property (internal)
     const props = node.properties || node.property || {};
     const workflowType = props.workflowNodeType || 'action';
     const data = { ...props };
@@ -110,12 +227,24 @@ export const logicFlowDataToGraph = (lfData, settings = {}) => {
   });
 
   const lfEdges = coerceArray(lfData && lfData.edges);
-  const edges = lfEdges.map(edge => ({
-    id: edge.id,
-    source: edge.sourceNodeId,
-    target: edge.targetNodeId,
-    sourceHandle: edge.text || undefined,
-  }));
+  const edges = lfEdges.map(edge => {
+    const srcType = nodeTypeMap[edge.sourceNodeId];
+    let sourceHandle =
+      anchorIdToSourceHandle(edge.sourceAnchorId, srcType) ||
+      edge.text ||
+      undefined;
+    if (sourceHandle === 'Respondeu') sourceHandle = 'replied';
+    if (sourceHandle === 'Sem resposta') sourceHandle = 'timeout';
+    if (sourceHandle === 'Então') sourceHandle = 'true';
+    if (sourceHandle === 'Senão') sourceHandle = 'false';
+
+    return {
+      id: edge.id,
+      source: edge.sourceNodeId,
+      target: edge.targetNodeId,
+      sourceHandle,
+    };
+  });
 
   return {
     nodes,
@@ -124,31 +253,33 @@ export const logicFlowDataToGraph = (lfData, settings = {}) => {
   };
 };
 
-const nodeLabel = node => {
-  const data = node.data || node.properties || {};
-  switch (node.type) {
-    case 'trigger':
-      return `Gatilho: ${data.event_name || '—'}`;
-    case 'wait':
-      return `Espera ${data.duration || '?'} ${data.unit || ''}`;
-    case 'condition':
-      return 'Condição';
-    case 'action':
-      return `Ação: ${data.action_name || '—'}`;
-    default:
-      return node.type;
-  }
-};
-
 export const nextNodeId = () => `node_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
-/** Stable string for comparing graph snapshots (avoids unnecessary canvas re-renders). */
 export const workflowGraphSnapshot = graph =>
   JSON.stringify(normalizeWorkflowGraph(graph));
 
-/** Plain object safe for axios JSON (strips Vue reactivity). */
 export const serializeGraphForApi = graph =>
   JSON.parse(JSON.stringify(normalizeWorkflowGraph(graph)));
+
+export const extractInvalidNodeIds = errors => {
+  const ids = new Set();
+  (errors || []).forEach(error => {
+    if (error && typeof error === 'object' && error.node_id) {
+      ids.add(error.node_id);
+      return;
+    }
+    const message = typeof error === 'string' ? error : error?.message;
+    if (!message) return;
+    const nodeMatch = message.match(/Node ([\w-]+)/);
+    if (nodeMatch) ids.add(nodeMatch[1]);
+  });
+  return [...ids];
+};
+
+export const validationErrorMessages = errors =>
+  (errors || []).map(error =>
+    typeof error === 'string' ? error : error?.message || String(error)
+  );
 
 export const exportGraphFromLogicFlow = (lf, fallbackGraph) => {
   if (!lf) return normalizeWorkflowGraph(fallbackGraph);
@@ -157,8 +288,7 @@ export const exportGraphFromLogicFlow = (lf, fallbackGraph) => {
       typeof lf.getGraphRawData === 'function'
         ? lf.getGraphRawData()
         : lf.getGraphData();
-    const settings =
-      (fallbackGraph && fallbackGraph.settings) || undefined;
+    const settings = (fallbackGraph && fallbackGraph.settings) || undefined;
     return normalizeWorkflowGraph(logicFlowDataToGraph(raw, settings));
   } catch (e) {
     return normalizeWorkflowGraph(fallbackGraph);

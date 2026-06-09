@@ -93,6 +93,21 @@ export const actions = {
       await dispatch('get');
     }
   },
+  getTemplates: async () => {
+    const response = await WorkflowsAPI.getTemplates();
+    return response.data.payload || [];
+  },
+  createFromTemplate: async ({ commit, dispatch }, templateKey) => {
+    commit(types.SET_WORKFLOW_UI_FLAG, { isCreating: true });
+    try {
+      const response = await WorkflowsAPI.createFromTemplate(templateKey);
+      commit(types.ADD_WORKFLOW, response.data);
+      return response.data;
+    } finally {
+      commit(types.SET_WORKFLOW_UI_FLAG, { isCreating: false });
+      await dispatch('get');
+    }
+  },
 };
 
 export const mutations = {

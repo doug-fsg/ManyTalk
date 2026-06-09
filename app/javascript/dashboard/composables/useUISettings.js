@@ -11,6 +11,10 @@ export const DEFAULT_CONVERSATION_SIDEBAR_ITEMS_ORDER = Object.freeze([
   { name: 'conversation_participants' },
 ]);
 
+const HIDDEN_CONVERSATION_SIDEBAR_ITEMS = Object.freeze([
+  'regua_relacionamento',
+]);
+
 export const DEFAULT_CONTACT_SIDEBAR_ITEMS_ORDER = Object.freeze([
   { name: 'contact_attributes' },
   { name: 'contact_labels' },
@@ -46,7 +50,9 @@ const useConversationSidebarItemsOrder = uiSettings => {
         itemsOrderCopy.push(item);
       }
     });
-    return itemsOrderCopy;
+    return itemsOrderCopy.filter(
+      item => !HIDDEN_CONVERSATION_SIDEBAR_ITEMS.includes(item.name)
+    );
   });
 };
 

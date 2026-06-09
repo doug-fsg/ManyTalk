@@ -7,7 +7,7 @@ module Workflows
     def perform
       graph = normalize_graph(params[:graph])
       validation = GraphValidationService.new(graph: graph, account: account).perform
-      return failure(validation[:errors]) unless validation[:valid]
+      return failure(GraphValidationService.error_messages(validation[:errors])) unless validation[:valid]
 
       workflow = nil
       ActiveRecord::Base.transaction do

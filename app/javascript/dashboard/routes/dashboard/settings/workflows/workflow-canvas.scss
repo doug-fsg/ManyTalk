@@ -1,94 +1,147 @@
-/* Nós LogicFlow (HTML) — estilo card n8n, respeita tema claro/escuro do app */
+/* Canvas host — fundo por tema (não depende só do Tailwind dark:) */
+.workflow-canvas-host.workflow-canvas--light {
+  background-color: #f4f6f8;
+}
+
+.workflow-canvas-host.workflow-canvas--dark {
+  background-color: #0f172a;
+}
+
+/* Grade LogicFlow — quase invisível */
+.workflow-canvas-host.workflow-canvas--light .lf-grid circle {
+  fill: rgba(148, 163, 184, 0.05) !important;
+  stroke: none !important;
+}
+
+.workflow-canvas-host.workflow-canvas--dark .lf-grid circle {
+  fill: rgba(226, 232, 240, 0.06) !important;
+  stroke: none !important;
+}
+
+/* Área de hit da aresta (append) — nunca visível; antes o CSS pintava todos os path */
+.workflow-canvas-host .lf-edge-append path {
+  stroke: transparent !important;
+  stroke-width: 0 !important;
+  fill: none !important;
+  opacity: 0 !important;
+}
+
+.workflow-canvas-host.workflow-canvas--dark .lf-background-area,
+.workflow-canvas-host.workflow-canvas--dark .lf-graph {
+  background-color: #0f172a !important;
+}
+
+.workflow-canvas-host.workflow-canvas--light .lf-background-area,
+.workflow-canvas-host.workflow-canvas--light .lf-graph {
+  background-color: #f4f6f8 !important;
+}
+
+/* Nós LogicFlow — compacto estilo n8n */
 .workflow-lf-card {
   box-sizing: border-box;
-  width: 240px;
-  min-height: 72px;
-  border-radius: 10px;
+  width: 128px;
+  height: 84px;
+  border-radius: 14px;
   border: 1px solid #e2e8f0;
   background: #ffffff;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
   overflow: hidden;
   font-family: Inter, system-ui, sans-serif;
-  cursor: pointer;
-  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+  transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 
   &:hover {
     border-color: #cbd5e1;
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
   }
 
   &.is-selected {
     border-color: #6366f1;
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.22);
+  }
+
+  &.is-invalid {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
   }
 }
 
+.workflow-lf-card.is-dark,
 .dark .workflow-lf-card,
 .workflow-canvas--dark .workflow-lf-card {
   background: #1e293b;
   border-color: #475569;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 
   &:hover {
     border-color: #64748b;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
   }
 
   &.is-selected {
     border-color: #818cf8;
-    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.35);
+    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.3);
+  }
+
+  &.is-invalid {
+    border-color: #f87171;
+    box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.35);
   }
 }
 
-.workflow-lf-card__stripe {
-  height: 3px;
-  width: 100%;
-}
-
-.workflow-lf-card__body {
+.workflow-lf-card__content {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
+  justify-content: center;
+  gap: 3px;
+  height: 100%;
+  padding: 8px 10px 6px;
+  text-align: center;
 }
 
 .workflow-lf-card__icon {
   flex-shrink: 0;
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.workflow-lf-card__text {
-  min-width: 0;
-  flex: 1;
-}
-
 .workflow-lf-card__title {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
   color: #0f172a;
-  line-height: 1.3;
+  line-height: 1.25;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+.workflow-lf-card.is-dark .workflow-lf-card__title,
 .dark .workflow-lf-card__title,
 .workflow-canvas--dark .workflow-lf-card__title {
   color: #f1f5f9;
 }
 
 .workflow-lf-card__subtitle {
-  font-size: 11px;
+  font-size: 9px;
   color: #64748b;
-  margin-top: 2px;
-  white-space: nowrap;
+  line-height: 1.25;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.3;
+  white-space: nowrap;
 }
 
+.workflow-lf-card.is-dark .workflow-lf-card__subtitle,
 .dark .workflow-lf-card__subtitle,
 .workflow-canvas--dark .workflow-lf-card__subtitle {
   color: #94a3b8;
@@ -99,12 +152,6 @@
   display: none !important;
 }
 
-/*
- * Retângulo SVG de fundo do HtmlNode: transparente em todos os estados.
- * O LF injeta um <rect> como background/hit-area do nó via React.
- * Quando o cursor passa por cima, o React re-renderiza o estilo inline
- * e o <rect> fica preto (SVG fill padrão). Forçamos transparência aqui.
- */
 .workflow-canvas-host svg .lf-node rect {
   fill: transparent !important;
   stroke: transparent !important;
@@ -117,13 +164,11 @@
   fill-opacity: 0 !important;
 }
 
-/* Só o retângulo de fundo do nó — evita afetar outras formas no SVG (ex.: arestas). */
 .workflow-canvas-host svg .lf-node rect.lf-basic-shape {
   fill: transparent !important;
   stroke: transparent !important;
 }
 
-/* Cobrir também o seletor genérico do LF */
 .lf-graph .lf-node rect {
   fill: transparent !important;
   stroke: transparent !important;
@@ -133,4 +178,197 @@
 .lf-graph .lf-node:hover rect {
   fill: transparent !important;
   stroke: transparent !important;
+}
+
+/* Toolbar na linha de conexão (estilo n8n) */
+.workflow-edge-toolbar {
+  position: absolute;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  animation: workflow-edge-toolbar-in 0.15s ease-out;
+}
+
+.workflow-canvas--dark .workflow-edge-toolbar {
+  background: #1e293b;
+  border-color: #475569;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.workflow-edge-toolbar__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #cbd5e1;
+  }
+}
+
+.workflow-canvas--dark .workflow-edge-toolbar__btn {
+  background: #334155;
+  border-color: #475569;
+  color: #cbd5e1;
+
+  &:hover {
+    background: #475569;
+    color: #f8fafc;
+  }
+}
+
+.workflow-edge-toolbar__btn--danger:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.workflow-canvas--dark .workflow-edge-toolbar__btn--danger:hover {
+  background: rgba(153, 27, 27, 0.25);
+  border-color: #991b1b;
+  color: #fca5a5;
+}
+
+@keyframes workflow-edge-toolbar-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.workflow-canvas-drop-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  border: 2px dashed #6366f1;
+  border-radius: 8px;
+  margin: 8px;
+  background: rgba(99, 102, 241, 0.06);
+}
+
+.workflow-canvas-zoom-controls {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.workflow-canvas--dark .workflow-canvas-zoom-controls {
+  background: #1e293b;
+  border-color: #475569;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.workflow-canvas-zoom-controls__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+}
+
+.workflow-canvas--dark .workflow-canvas-zoom-controls__btn {
+  color: #cbd5e1;
+
+  &:hover {
+    background: #334155;
+    color: #f8fafc;
+  }
+}
+
+.workflow-canvas-zoom-controls__level {
+  min-width: 52px;
+  height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+}
+
+.workflow-canvas--dark .workflow-canvas-zoom-controls__level {
+  color: #e2e8f0;
+
+  &:hover {
+    background: #334155;
+    color: #f8fafc;
+  }
+}
+
+.workflow-canvas-zoom-controls__divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 2px;
+  background: #e2e8f0;
+}
+
+.workflow-canvas--dark .workflow-canvas-zoom-controls__divider {
+  background: #475569;
+}
+
+.workflow-canvas-host--drop-active .workflow-canvas-drop-overlay {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workflow-canvas-drop-overlay,
+  .workflow-edge-toolbar,
+  .workflow-canvas-zoom-controls__btn,
+  .workflow-canvas-zoom-controls__level {
+    transition: none;
+    animation: none;
+  }
 }

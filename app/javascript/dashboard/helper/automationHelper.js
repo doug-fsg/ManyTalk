@@ -166,6 +166,12 @@ export const getConditionOptions = ({
     message_type: MESSAGE_CONDITION_VALUES,
     priority: PRIORITY_CONDITION_VALUES,
     kanban_stage: kanbanAttributes || [],
+    kanban_pipeline_id: kanbanAttributes
+      ? kanbanAttributes.map(attr => ({
+          id: String(attr.id),
+          name: attr.attribute_display_name,
+        }))
+      : [],
     labels: labels ? generateConditionOptions(labels, 'title') : [],
   };
 

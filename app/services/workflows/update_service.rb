@@ -5,7 +5,9 @@ module Workflows
     pattr_initialize [:workflow!, :user!, :params!]
 
     def perform
-      if workflow.active? && graph_changed?
+      deactivating = params.key?(:active) && !ActiveModel::Type::Boolean.new.cast(params[:active])
+
+      if workflow.active? && graph_changed? && !deactivating
         return failure(['Desative o fluxo para editar o diagrama'])
       end
 
@@ -16,10 +18,10 @@ module Workflows
       }
       attrs[:active] = params[:active] if params.key?(:active)
 
-      if graph_changed? && !workflow.active?
+      if graph_changed? && (!workflow.active? || deactivating)
         graph = normalize_graph(params[:graph])
         validation = GraphValidationService.new(graph: graph, account: workflow.account).perform
-        return failure(validation[:errors]) unless validation[:valid]
+        return failure(GraphValidationService.error_messages(validation[:errors])) unless validation[:valid]
 
         attrs[:graph] = graph
       end

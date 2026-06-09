@@ -36,8 +36,17 @@ FactoryBot.define do
     workflow
     conversation
     account { workflow.account }
+    contact { conversation.contact }
+    enrollment_scope { 'contact' }
     status { 'active' }
     current_node_id { 'trigger_1' }
     started_at { Time.current }
+  end
+
+  factory :workflow_step_execution do
+    workflow_enrollment
+    sequence(:node_id) { |n| "node_#{n}" }
+    status { 'scheduled' }
+    scheduled_at { 1.hour.from_now }
   end
 end

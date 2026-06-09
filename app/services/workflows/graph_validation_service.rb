@@ -20,6 +20,10 @@ module Workflows
       { valid: @errors.empty?, errors: @errors }
     end
 
+    def self.error_messages(errors)
+      Array(errors).map { |error| error.is_a?(Hash) ? error[:message] : error.to_s }
+    end
+
     private
 
     def nodes
@@ -30,27 +34,31 @@ module Workflows
       @edges ||= graph['edges'].presence || []
     end
 
+    def add_error(message, node_id: nil)
+      @errors << { message: message, node_id: node_id }
+    end
+
     def validate_size
       return if graph.to_json.bytesize <= Constants::MAX_GRAPH_BYTES
 
-      @errors << "Graph exceeds maximum size of #{Constants::MAX_GRAPH_BYTES} bytes"
+      add_error("Graph exceeds maximum size of #{Constants::MAX_GRAPH_BYTES} bytes")
     end
 
     def validate_structure
-      @errors << 'Graph must include nodes array' unless graph['nodes'].is_a?(Array)
-      @errors << 'Graph must include edges array' unless graph['edges'].is_a?(Array)
+      add_error('Graph must include nodes array') unless graph['nodes'].is_a?(Array)
+      add_error('Graph must include edges array') unless graph['edges'].is_a?(Array)
     end
 
     def validate_trigger
       triggers = nodes.select { |n| n['type'] == 'trigger' }
-      @errors << 'Graph must have exactly one trigger node' if triggers.size != 1
+      add_error('Graph must have exactly one trigger node') if triggers.size != 1
     end
 
     def validate_nodes
       node_ids = []
       nodes.each do |node|
-        @errors << 'Each node must have an id' if node['id'].blank?
-        @errors << "Duplicate node id: #{node['id']}" if node_ids.include?(node['id'])
+        add_error('Each node must have an id') if node['id'].blank?
+        add_error("Duplicate node id: #{node['id']}", node_id: node['id']) if node_ids.include?(node['id'])
 
         node_ids << node['id']
         validate_node(node)
@@ -60,70 +68,180 @@ module Workflows
     def validate_node(node)
       type = node['type']
       unless Constants::NODE_TYPES.include?(type)
-        @errors << "Invalid node type: #{type}"
+        add_error("Invalid node type: #{type}", node_id: node['id'])
         return
       end
 
       data = node['data'] || {}
       case type
       when 'trigger'
-        validate_trigger_node(data)
+        validate_trigger_node(data, node)
       when 'wait'
-        validate_wait_node(data)
+        validate_wait_node(data, node)
+      when 'wait_for_reply'
+        validate_wait_for_reply_node(data, node)
       when 'condition'
-        validate_condition_node(data)
+        validate_condition_node(data, node)
       when 'action'
-        validate_action_node(data)
+        validate_action_node(data, node)
+      when 'ai_outreach'
+        validate_ai_outreach_node(data, node)
+      when 'ai_conversation_analysis'
+        validate_ai_conversation_analysis_node(data, node)
       end
     end
 
-    def validate_trigger_node(data)
+    def validate_trigger_node(data, node)
       event = data['event_name']
-      @errors << "Invalid trigger event: #{event}" unless Constants::ALLOWED_TRIGGER_EVENTS.include?(event)
+      return if Constants::ALLOWED_TRIGGER_EVENTS.include?(event)
+
+      add_error("Invalid trigger event: #{event}", node_id: node['id'])
     end
 
-    def validate_wait_node(data)
+    def validate_wait_node(data, node)
+      validate_wait_duration(data, node)
+    end
+
+    def validate_wait_for_reply_node(data, node)
+      validate_wait_duration(data, node)
+      responder = data['wait_responder'].presence || 'contact'
+      return if Workflows::Constants::WAIT_RESPONDERS.include?(responder)
+
+      add_error("Invalid wait responder: #{responder}", node_id: node['id'])
+    end
+
+    def validate_wait_duration(data, node)
       unit = data['unit']
       duration = data['duration'].to_i
       limits = Constants::WAIT_LIMITS[unit]
-      @errors << "Invalid wait unit: #{unit}" unless limits
+      add_error("Invalid wait unit: #{unit}", node_id: node['id']) unless limits
       return unless limits
 
-      @errors << "Wait duration must be between #{limits[:min]} and #{limits[:max]} #{unit}" if duration < limits[:min] || duration > limits[:max]
+      if duration < limits[:min] || duration > limits[:max]
+        add_error("Wait duration must be between #{limits[:min]} and #{limits[:max]} #{unit}", node_id: node['id'])
+      end
     end
 
-    def validate_condition_node(data)
+    def validate_condition_node(data, node)
       conditions = data['conditions'] || []
       return if conditions.blank?
 
       rule = ConditionRuleAdapter.new(account: account, conditions: conditions, id: 0)
       return if AutomationRules::ConditionValidationService.new(rule).perform
 
-      @errors << 'Condition node has invalid filter configuration'
+      add_error('Condition node has invalid filter configuration', node_id: node['id'])
     end
 
-    def validate_action_node(data)
+    def validate_action_node(data, node)
       name = data['action_name']
-      @errors << "Invalid action: #{name}" unless Constants::ALLOWED_ACTION_NAMES.include?(name)
+      return if Constants::ALLOWED_ACTION_NAMES.include?(name)
+
+      add_error("Invalid action: #{name}", node_id: node['id'])
+    end
+
+    def validate_ai_outreach_node(data, node)
+      unless account&.feature_enabled?('inteligencia_artificial')
+        add_error('AI outreach requires the inteligencia_artificial feature', node_id: node['id'])
+        return
+      end
+
+      objective = data['objective_preset'].presence || 'reengagement'
+      unless Constants::AI_OUTREACH_OBJECTIVES.include?(objective)
+        add_error("Invalid AI objective preset: #{objective}", node_id: node['id'])
+      end
+
+      tone = data['tone_preset'].presence || 'friendly'
+      unless Constants::AI_OUTREACH_TONES.include?(tone)
+        add_error("Invalid AI tone preset: #{tone}", node_id: node['id'])
+      end
+
+      language = data['language'].presence || 'client'
+      unless Constants::AI_LANGUAGES.include?(language)
+        add_error("Invalid AI language: #{language}", node_id: node['id'])
+      end
+
+      prompt = data['prompt'].to_s
+      if prompt.blank?
+        add_error('AI outreach node requires a prompt', node_id: node['id'])
+      elsif prompt.length > Constants::MAX_AI_OUTREACH_PROMPT_LENGTH
+        add_error(
+          "AI prompt exceeds maximum length of #{Constants::MAX_AI_OUTREACH_PROMPT_LENGTH} characters",
+          node_id: node['id']
+        )
+      end
+    end
+
+    def validate_ai_conversation_analysis_node(data, node)
+      unless account&.feature_enabled?('inteligencia_artificial')
+        add_error('AI conversation analysis requires the inteligencia_artificial feature', node_id: node['id'])
+        return
+      end
+
+      types = Array(data['analysis_types'])
+      invalid = types.reject { |t| Constants::AI_ANALYSIS_TYPES.include?(t) }
+      invalid.each do |t|
+        add_error("Invalid analysis type: #{t}", node_id: node['id'])
+      end
+
+      destination = data['output_destination'].presence || 'private_note'
+      unless Constants::AI_ANALYSIS_OUTPUT_DESTINATIONS.include?(destination)
+        add_error("Invalid output destination: #{destination}", node_id: node['id'])
+      end
+
+      if destination == 'whatsapp_external'
+        if data['whatsapp_inbox_id'].blank?
+          add_error('AI analysis whatsapp_external requires whatsapp_inbox_id', node_id: node['id'])
+        end
+        if data['whatsapp_phone'].blank?
+          add_error('AI analysis whatsapp_external requires whatsapp_phone', node_id: node['id'])
+        end
+      end
     end
 
     def validate_edges
       node_ids = nodes.map { |n| n['id'] }
       edges.each do |edge|
-        @errors << 'Edge missing source or target' if edge['source'].blank? || edge['target'].blank?
-        @errors << "Edge references unknown node: #{edge['source']}" unless node_ids.include?(edge['source'])
-        @errors << "Edge references unknown node: #{edge['target']}" unless node_ids.include?(edge['target'])
+        add_error('Edge missing source or target') if edge['source'].blank? || edge['target'].blank?
+        add_error("Edge references unknown node: #{edge['source']}", node_id: edge['source']) unless node_ids.include?(edge['source'])
+        add_error("Edge references unknown node: #{edge['target']}", node_id: edge['target']) unless node_ids.include?(edge['target'])
 
         target_node = nodes.find { |n| n['id'] == edge['target'] }
         if target_node&.dig('type') == 'trigger'
-          @errors << 'Edges cannot connect into the trigger node'
+          add_error('Edges cannot connect into the trigger node', node_id: edge['target'])
         end
 
         source_node = nodes.find { |n| n['id'] == edge['source'] }
-        next unless source_node&.dig('type') == 'condition'
+        next if source_node.blank?
 
+        validate_branch_edge(source_node, edge)
+      end
+
+      validate_branch_nodes_have_outbound_edges
+    end
+
+    def validate_branch_edge(source_node, edge)
+      case source_node['type']
+      when 'condition'
         handle = edge['sourceHandle']
-        @errors << 'Condition edges must use sourceHandle true or false' unless %w[true false].include?(handle)
+        unless Constants::CONDITION_SOURCE_HANDLES.include?(handle)
+          add_error('Condition edges must use sourceHandle true or false', node_id: source_node['id'])
+        end
+      when 'wait_for_reply'
+        handle = edge['sourceHandle']
+        unless Constants::REPLY_WATCH_SOURCE_HANDLES.include?(handle)
+          add_error('Wait for reply edges must use sourceHandle replied or timeout', node_id: source_node['id'])
+        end
+      end
+    end
+
+    def validate_branch_nodes_have_outbound_edges
+      nodes.each do |node|
+        next unless Constants::BRANCH_NODE_TYPES.include?(node['type'])
+
+        outbound = edges.select { |e| e['source'] == node['id'] }
+        if outbound.empty?
+          add_error("Node #{node['id']} must have at least one outbound connection", node_id: node['id'])
+        end
       end
     end
 
@@ -135,7 +253,9 @@ module Workflows
       nodes.each do |node|
         next if node['type'] == 'trigger'
 
-        @errors << "Node #{node['id']} is not reachable from trigger" unless reachable.include?(node['id'])
+        unless reachable.include?(node['id'])
+          add_error("Node #{node['id']} is not reachable from trigger", node_id: node['id'])
+        end
       end
     end
 
@@ -158,7 +278,7 @@ module Workflows
 
       return unless cycle_detected?(trigger['id'], Set.new, Set.new)
 
-      @errors << 'Graph contains a cycle'
+      add_error('Graph contains a cycle')
     end
 
     def cycle_detected?(node_id, visiting, visited)
@@ -177,10 +297,12 @@ module Workflows
 
     def validate_limits
       send_count = nodes.count { |n| n['type'] == 'action' && n.dig('data', 'action_name') == 'send_message' }
-      @errors << "Maximum #{Constants::MAX_SEND_MESSAGE_ACTIONS} send_message actions allowed" if send_count > Constants::MAX_SEND_MESSAGE_ACTIONS
+      if send_count > Constants::MAX_SEND_MESSAGE_ACTIONS
+        add_error("Maximum #{Constants::MAX_SEND_MESSAGE_ACTIONS} send_message actions allowed")
+      end
 
-      wait_count = nodes.count { |n| n['type'] == 'wait' }
-      @errors << "Maximum #{Constants::MAX_WAIT_NODES} wait nodes allowed" if wait_count > Constants::MAX_WAIT_NODES
+      wait_count = nodes.count { |n| %w[wait wait_for_reply].include?(n['type']) }
+      add_error("Maximum #{Constants::MAX_WAIT_NODES} wait nodes allowed") if wait_count > Constants::MAX_WAIT_NODES
     end
   end
 end

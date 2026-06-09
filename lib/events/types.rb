@@ -54,4 +54,7 @@ module Events::Types
   # agent events
   AGENT_ADDED = 'agent.added'
   AGENT_REMOVED = 'agent.removed'
+
+  # workflow events
+  WORKFLOW_ENROLLMENT_UPDATED = 'workflow_enrollment.updated'
 end

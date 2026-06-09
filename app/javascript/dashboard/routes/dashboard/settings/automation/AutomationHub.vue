@@ -1,5 +1,12 @@
 <script setup>
-import { computed, watch } from 'vue';
+import {
+  computed,
+  watch,
+  onMounted,
+  onBeforeUnmount,
+  nextTick,
+  ref,
+} from 'vue';
 import { useRoute, useRouter } from 'dashboard/composables/route';
 import { useStoreGetters } from 'dashboard/composables/store';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
@@ -33,6 +40,11 @@ const activeTab = computed(() => {
   return 'automations';
 });
 
+const viewToggleContainer = ref(null);
+const workflowsButton = ref(null);
+const automationsButton = ref(null);
+const badgeStyle = ref({ left: '2px', width: '0px' });
+
 const switchTab = tab => {
   if (tab === 'workflows' && !isWorkflowsEnabled.value) return;
   router.push({
@@ -40,13 +52,33 @@ const switchTab = tab => {
   });
 };
 
+const updateBadgePosition = () => {
+  nextTick(() => {
+    if (!viewToggleContainer.value) return;
+
+    const activeButton =
+      activeTab.value === 'workflows'
+        ? workflowsButton.value
+        : automationsButton.value;
+
+    if (!activeButton) return;
+
+    const containerRect = viewToggleContainer.value.getBoundingClientRect();
+    const buttonRect = activeButton.getBoundingClientRect();
+
+    badgeStyle.value = {
+      left: `${buttonRect.left - containerRect.left}px`,
+      width: `${buttonRect.width}px`,
+    };
+  });
+};
+
+watch(activeTab, updateBadgePosition);
+
 watch(
   [() => route.name, isWorkflowsEnabled],
   () => {
-    if (
-      !isWorkflowsEnabled.value &&
-      route.name === 'workflows_list'
-    ) {
+    if (!isWorkflowsEnabled.value && route.name === 'workflows_list') {
       router.replace({
         name: 'automation_list',
         params: { accountId: route.params.accountId },
@@ -55,45 +87,75 @@ watch(
   },
   { immediate: true }
 );
+
+onMounted(() => {
+  nextTick(() => {
+    setTimeout(updateBadgePosition, 150);
+  });
+  window.addEventListener('resize', updateBadgePosition);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateBadgePosition);
+});
 </script>
 
 <template>
   <div class="flex flex-col flex-1 overflow-hidden bg-white dark:bg-slate-900">
-    <!-- Tab bar -->
     <div
-      class="flex items-center gap-1 px-4 pt-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+      v-if="isWorkflowsEnabled"
+      class="px-4 py-3 bg-white border-b border-slate-200 dark:bg-slate-900 dark:border-slate-700"
     >
-      <button
-        type="button"
-        class="relative px-4 py-2.5 text-sm font-medium transition-colors duration-150 cursor-pointer rounded-t-lg -mb-px"
-        :class="
-          activeTab === 'automations'
-            ? 'text-woot-600 dark:text-woot-400 border-b-2 border-woot-500'
-            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-b-2 border-transparent'
-        "
-        @click="switchTab('automations')"
+      <div
+        ref="viewToggleContainer"
+        class="inline-flex items-center gap-0.5 bg-slate-100/60 rounded-lg p-0.5 dark:bg-slate-700/50 relative"
       >
-        {{ $t('AUTOMATION.TABS.CLASSIC') }}
-      </button>
+        <div
+          :style="badgeStyle"
+          class="absolute h-[calc(100%-4px)] rounded-md bg-woot-500 dark:bg-woot-800 transition-all duration-300 ease-out top-[2px] z-0"
+          style="pointer-events: none"
+        />
 
-      <button
-        v-if="isWorkflowsEnabled"
-        type="button"
-        class="relative flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors duration-150 cursor-pointer rounded-t-lg -mb-px"
-        :class="
-          activeTab === 'workflows'
-            ? 'text-woot-600 dark:text-woot-400 border-b-2 border-woot-500'
-            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-b-2 border-transparent'
-        "
-        @click="switchTab('workflows')"
-      >
-        {{ $t('WORKFLOW.TABS.WORKFLOWS') }}
-        <span
-          class="text-xs font-semibold px-1.5 py-0.5 rounded-md bg-woot-500 text-white leading-none"
+        <button
+          ref="workflowsButton"
+          type="button"
+          :class="[
+            'px-2.5 py-1.5 rounded-lg transition-colors duration-200 ease-smooth flex items-center gap-1.5 text-xs font-medium relative z-10',
+            activeTab === 'workflows'
+              ? 'text-white'
+              : 'text-slate-600 dark:text-slate-300',
+          ]"
+          @click="switchTab('workflows')"
         >
-          {{ $t('WORKFLOW.TABS.NEW_BADGE') }}
-        </span>
-      </button>
+          <fluent-icon icon="flash-settings" size="14" />
+          <span>{{ $t('WORKFLOW.TABS.WORKFLOWS') }}</span>
+          <span
+            class="inline-block px-1 font-medium leading-4 rounded-lg text-xxs border"
+            :class="
+              activeTab === 'workflows'
+                ? 'text-green-200 border-green-300'
+                : 'text-green-500 border-green-400'
+            "
+          >
+            {{ $t('SIDEBAR.BETA') }}
+          </span>
+        </button>
+
+        <button
+          ref="automationsButton"
+          type="button"
+          :class="[
+            'px-2.5 py-1.5 rounded-lg transition-colors duration-200 ease-smooth flex items-center gap-1.5 text-xs font-medium relative z-10',
+            activeTab === 'automations'
+              ? 'text-white'
+              : 'text-slate-600 dark:text-slate-300',
+          ]"
+          @click="switchTab('automations')"
+        >
+          <fluent-icon icon="automation" size="14" />
+          <span>{{ $t('AUTOMATION.TABS.CLASSIC') }}</span>
+        </button>
+      </div>
     </div>
 
     <div

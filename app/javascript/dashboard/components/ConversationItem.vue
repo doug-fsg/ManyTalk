@@ -8,6 +8,7 @@
     :conversation-type="conversationType"
     :selected="isConversationSelected(source.id)"
     :show-assignee="showAssignee"
+    :enrollment-summary="enrollmentSummary"
     :enable-context-menu="true"
     @select-conversation="selectConversation"
     @de-select-conversation="deSelectConversation"
@@ -66,6 +67,15 @@ export default {
     showAssignee: {
       type: Boolean,
       default: false,
+    },
+    enrollmentSummaries: {
+      type: Object,
+      default: () => ({}),
+    },
+  },
+  computed: {
+    enrollmentSummary() {
+      return this.enrollmentSummaries[this.source.id] || null;
     },
   },
 };

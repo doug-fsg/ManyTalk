@@ -43,6 +43,7 @@ class Account < ApplicationRecord
   has_many :articles, dependent: :destroy_async, class_name: '::Article'
   has_many :automation_rules, dependent: :destroy_async
   has_many :workflows, dependent: :destroy_async
+  has_many :workflow_enrollments, dependent: :destroy_async
   has_many :macros, dependent: :destroy_async
   has_many :campaigns, dependent: :destroy_async
   has_many :canned_responses, dependent: :destroy_async

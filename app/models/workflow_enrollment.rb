@@ -4,43 +4,64 @@
 #
 # Table name: workflow_enrollments
 #
-#  id              :bigint           not null, primary key
-#  cancel_reason   :string
-#  cancelled_at    :datetime
-#  completed_at    :datetime
-#  started_at      :datetime
-#  status          :string           default("active"), not null
-#  created_at      :datetime         not null
-#  updated_at      :datetime         not null
-#  account_id      :bigint           not null
-#  conversation_id :bigint           not null
-#  current_node_id :string
-#  workflow_id     :bigint           not null
+#  id               :bigint           not null, primary key
+#  cancel_reason    :string
+#  cancelled_at     :datetime
+#  completed_at     :datetime
+#  context          :jsonb            not null
+#  enrollment_scope :string           default("contact"), not null
+#  pause_reason     :string
+#  paused_at        :datetime
+#  resume_at        :datetime
+#  started_at       :datetime
+#  status           :string           default("active"), not null
+#  created_at       :datetime         not null
+#  updated_at       :datetime         not null
+#  account_id       :bigint           not null
+#  contact_id       :bigint           not null
+#  conversation_id  :bigint           not null
+#  current_node_id  :string
+#  paused_by_id     :bigint
+#  started_by_id    :bigint
+#  workflow_id      :bigint           not null
 #
 # Indexes
 #
+#  idx_we_in_progress_by_account                                 (account_id,status) WHERE ((status)::text = ANY ((ARRAY['active'::character varying, 'waiting'::character varying, 'paused'::character varying])::text[]))
+#  index_we_on_account_id_and_contact_id                         (account_id,contact_id)
+#  index_we_unique_active_contact_scope                          (workflow_id,contact_id) UNIQUE WHERE (((status)::text = ANY ((ARRAY['active'::character varying, 'waiting'::character varying, 'paused'::character varying])::text[])) AND ((enrollment_scope)::text = 'contact'::text))
 #  index_workflow_enrollments_on_account_id                      (account_id)
 #  index_workflow_enrollments_on_account_id_and_conversation_id  (account_id,conversation_id)
+#  index_workflow_enrollments_on_contact_id                      (contact_id)
 #  index_workflow_enrollments_on_conversation_id                 (conversation_id)
 #  index_workflow_enrollments_on_workflow_id                     (workflow_id)
-#  index_workflow_enrollments_unique_active                      (workflow_id,conversation_id) UNIQUE WHERE ((status)::text = ANY ((ARRAY['active'::character varying, 'waiting'::character varying])::text[]))
+#  index_workflow_enrollments_unique_active                      (workflow_id,conversation_id) UNIQUE WHERE ((status)::text = ANY (ARRAY[('active'::character varying)::text, ('waiting'::character varying)::text, ('paused'::character varying)::text]))
 #
 # Foreign Keys
 #
 #  fk_rails_...  (account_id => accounts.id)
 #  fk_rails_...  (conversation_id => conversations.id)
+#  fk_rails_...  (paused_by_id => users.id)
+#  fk_rails_...  (started_by_id => users.id)
 #  fk_rails_...  (workflow_id => workflows.id)
 #
 class WorkflowEnrollment < ApplicationRecord
-  STATUSES = %w[active waiting completed cancelled].freeze
+  include WorkflowEnrollment::Lifecycle
+  include WorkflowEnrollment::ReplyWatch
+
+  STATUSES = %w[active waiting paused completed cancelled].freeze
 
   belongs_to :workflow
   belongs_to :conversation
   belongs_to :account
+  belongs_to :contact, optional: true
 
   has_many :workflow_step_executions, dependent: :destroy_async
 
   validates :status, inclusion: { in: STATUSES }
+  validates :enrollment_scope, inclusion: { in: Workflows::Constants::ENROLLMENT_SCOPES }, allow_nil: true
+
+  before_validation :sync_contact_from_conversation, on: :create
 
   scope :active_or_waiting, -> { where(status: %w[active waiting]) }
   scope :for_conversation, ->(conversation_id) { where(conversation_id: conversation_id) }
@@ -70,7 +91,8 @@ class WorkflowEnrollment < ApplicationRecord
       update!(
         status: 'cancelled',
         cancel_reason: reason,
-        cancelled_at: Time.current
+        cancelled_at: Time.current,
+        context: (context || {}).except('reply_watch')
       )
       workflow_step_executions.where(status: 'scheduled').update_all(status: 'skipped', updated_at: Time.current)
     end
@@ -78,13 +100,41 @@ class WorkflowEnrollment < ApplicationRecord
 
   def complete!
     with_lock do
-      update!(status: 'completed', completed_at: Time.current, current_node_id: nil)
+      update!(
+        status: 'completed',
+        completed_at: Time.current,
+        current_node_id: nil,
+        context: (context || {}).except('reply_watch')
+      )
     end
   end
 
+  def sync_contact_from_conversation
+    self.contact_id ||= conversation&.contact_id
+    self.enrollment_scope ||= Workflows::Constants::DEFAULT_SETTINGS['enrollment_scope']
+  end
+
   class << self
+    def handle_contact_reply!(conversation)
+      handle_reply!(conversation, nil)
+    end
+
+    def handle_reply!(conversation, message)
+      enrollments_for_conversation(conversation).find_each do |enrollment|
+        Workflows::EnrollmentControlService.new.handle_reply(enrollment, message)
+      end
+    end
+
+    def enrollments_for_conversation(conversation)
+      by_conversation = in_progress.where(conversation_id: conversation.id)
+      return by_conversation if conversation.contact_id.blank?
+
+      by_contact = in_progress.where(contact_id: conversation.contact_id, enrollment_scope: 'contact')
+      by_conversation.or(by_contact)
+    end
+
     def cancel_for_conversation!(conversation, reason:)
-      active_or_waiting.where(conversation_id: conversation.id).find_each do |enrollment|
+      in_progress.where(conversation_id: conversation.id).find_each do |enrollment|
         workflow = enrollment.workflow
         next unless cancel_enabled?(workflow, reason)
 

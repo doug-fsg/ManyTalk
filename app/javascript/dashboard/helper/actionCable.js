@@ -32,6 +32,7 @@ class ActionCableConnector extends BaseActionCableConnector {
       'conversation.updated': this.onConversationUpdated,
       'account.cache_invalidated': this.onCacheInvalidate,
       'campaign.progress': this.onCampaignProgress,
+      'workflow_enrollment.updated': this.onWorkflowEnrollmentUpdated,
     };
   }
 
@@ -211,6 +212,10 @@ class ActionCableConnector extends BaseActionCableConnector {
 
   onCampaignProgress = data => {
     this.app.$store.commit('campaigns/UPDATE_CAMPAIGN_PROGRESS', data);
+  };
+
+  onWorkflowEnrollmentUpdated = data => {
+    emitter.emit('workflow_enrollment.updated', data);
   };
 }
 

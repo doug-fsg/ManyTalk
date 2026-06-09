@@ -7,6 +7,7 @@
 #  id                     :bigint           not null, primary key
 #  error_message          :text
 #  executed_at            :datetime
+#  metadata               :jsonb            not null
 #  scheduled_at           :datetime
 #  status                 :string           default("scheduled"), not null
 #  created_at             :datetime         not null

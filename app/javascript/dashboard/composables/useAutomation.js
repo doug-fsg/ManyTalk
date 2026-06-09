@@ -63,6 +63,14 @@ export function useAutomation() {
    * @param {string} type - The type of condition.
    * @returns {Array} An array of condition dropdown values.
    */
+  const kanbanPipelineAttributes = computed(() => {
+    const attrs = getters['attributes/getAttributes'].value || [];
+    return attrs.filter(
+      attr =>
+        attr.attribute_model === 'contact_attribute' && attr.is_kanban === true
+    );
+  });
+
   const getConditionDropdownValues = type => {
     return getConditionOptions({
       agents: agents.value,
@@ -74,6 +82,7 @@ export function useAutomation() {
       labels: labels.value,
       statusFilterOptions: statusFilterOptions.value,
       teams: teams.value,
+      kanbanAttributes: kanbanPipelineAttributes.value,
       languages,
       countries,
       type,

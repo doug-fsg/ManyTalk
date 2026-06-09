@@ -47,6 +47,7 @@ class ContactPipelinePosition < ApplicationRecord
   # Disparar evento CONTACT_UPDATED quando pipeline position é criado, atualizado ou destruído
   # Isso garante sincronização em tempo real entre chat, Kanban, macros e automações
   after_commit :dispatch_contact_updated_event, on: [:create, :update, :destroy]
+  after_commit :enqueue_kanban_workflow_if_needed, on: [:create, :update]
   
   # Auto-atribuir dono ao criar card
   before_create :auto_assign_owner_if_new
@@ -159,6 +160,26 @@ class ContactPipelinePosition < ApplicationRecord
       self.assignee = last_conv.assignee if last_conv&.assignee.present?
     end
     # Se não conseguir atribuir, fica nil (sem dono)
+  end
+
+  def enqueue_kanban_workflow_if_needed
+    return if Current.skip_workflow_triggers
+    return unless saved_change_to_stage_id? || previously_new_record?
+
+    account = contact&.account
+    return unless account&.feature_enabled?('workflows')
+
+    previous_stage = saved_change_to_stage_id? ? saved_change_to_stage_id[0] : nil
+
+    Workflows::ProcessContactKanbanJob.perform_later(
+      account.id,
+      contact_id,
+      pipeline_id,
+      stage_id,
+      previous_stage
+    )
+  rescue StandardError => e
+    Rails.logger.error("Error enqueuing kanban workflow job: #{e.class.name} - #{e.message}")
   end
 
   def dispatch_contact_updated_event

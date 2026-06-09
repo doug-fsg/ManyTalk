@@ -38,9 +38,7 @@ class WorkflowListener < BaseListener
       event.data[:changed_attributes]
     )
 
-    return unless message.incoming?
-
-    WorkflowEnrollment.cancel_for_conversation!(conversation, reason: 'contact_replied')
+    WorkflowEnrollment.handle_reply!(conversation, message)
   end
 
   private

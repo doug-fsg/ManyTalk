@@ -52,9 +52,12 @@
       </div>
       
       <!-- Kanban Stage Indicator - Acima do nome -->
-      <div class="mx-2 mb-1">
+      <div class="mx-2 mb-1 flex flex-wrap items-center gap-1">
         <woot-feature-toggle feature-key="kanban">
           <kanban-stage-indicator :contact="currentContact" />
+        </woot-feature-toggle>
+        <woot-feature-toggle feature-key="workflows">
+          <regua-enrollment-badge :summary="enrollmentSummary" />
         </woot-feature-toggle>
       </div>
       
@@ -138,6 +141,7 @@ import CardLabels from './conversationCardComponents/CardLabels.vue';
 import PriorityMark from './PriorityMark.vue';
 import SLACardLabel from './components/SLACardLabel.vue';
 import KanbanStageIndicator from './KanbanStageIndicator.vue';
+import ReguaEnrollmentBadge from './regua/ReguaEnrollmentBadge.vue';
 
 export default {
   components: {
@@ -150,6 +154,7 @@ export default {
     PriorityMark,
     SLACardLabel,
     KanbanStageIndicator,
+    ReguaEnrollmentBadge,
   },
   mixins: [inboxMixin, conversationMixin],
   props: {
@@ -192,6 +197,10 @@ export default {
     enableContextMenu: {
       type: Boolean,
       default: false,
+    },
+    enrollmentSummary: {
+      type: Object,
+      default: null,
     },
   },
   data() {

@@ -13,6 +13,7 @@ const reports = accountId => ({
     'inbox_reports',
     'team_reports',
     'sla_reports',
+    'workflow_reports',
   ],
   menuItems: [
     {
@@ -21,6 +22,13 @@ const reports = accountId => ({
       hasSubMenu: false,
       toState: frontendURL(`accounts/${accountId}/reports/overview`),
       toStateName: 'account_overview_reports',
+    },
+    {
+      icon: 'send-clock',
+      label: 'REPORTS_WORKFLOWS',
+      hasSubMenu: false,
+      toState: frontendURL(`accounts/${accountId}/reports/workflows`),
+      toStateName: 'workflow_reports',
     },
     {
       icon: 'chat',

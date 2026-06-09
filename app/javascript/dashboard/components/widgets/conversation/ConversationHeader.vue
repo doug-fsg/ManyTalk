@@ -71,6 +71,10 @@
         :class="{ 'justify-end': isContactPanelOpen }"
       >
         <SLA-card-label v-if="hasSlaPolicyId" :chat="chat" show-extended-info />
+        <regua-relacionamento
+          v-if="isWorkflowsFeatureEnabled"
+          :conversation-id="currentChat.id"
+        />
         <linear
           v-if="isLinearIntegrationEnabled && isLinearFeatureEnabled"
           :conversation-id="currentChat.id"
@@ -95,6 +99,7 @@ import { conversationListPageURL } from 'dashboard/helper/URLHelper';
 import { snoozedReopenTime } from 'dashboard/helper/snoozeHelpers';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import Linear from './linear/index.vue';
+import ReguaRelacionamento from './regua/index.vue';
 
 export default {
   components: {
@@ -104,6 +109,7 @@ export default {
     Thumbnail,
     SLACardLabel,
     Linear,
+    ReguaRelacionamento,
   },
   mixins: [inboxMixin, agentMixin, keyboardEventListenerMixins],
   props: {
@@ -197,6 +203,12 @@ export default {
       return this.isFeatureEnabledonAccount(
         this.accountId,
         FEATURE_FLAGS.LINEAR
+      );
+    },
+    isWorkflowsFeatureEnabled() {
+      return this.isFeatureEnabledonAccount(
+        this.accountId,
+        FEATURE_FLAGS.WORKFLOWS
       );
     },
   },

@@ -76,7 +76,13 @@ export default {
     },
     eventName(newVal, oldVal) {
       if (!this.isReady || !newVal || newVal === oldVal || this.eventName === null) return;
-      this.localConditions = JSON.parse(JSON.stringify(getDefaultConditions(newVal)));
+      if (newVal === 'manual' || newVal === 'contact_kanban_stage_changed') {
+        this.localConditions = [];
+      } else {
+        this.localConditions = JSON.parse(
+          JSON.stringify(getDefaultConditions(newVal))
+        );
+      }
       this.emitConditions();
     },
   },

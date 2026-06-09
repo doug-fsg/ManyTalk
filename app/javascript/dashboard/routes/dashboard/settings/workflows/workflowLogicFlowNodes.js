@@ -1,20 +1,25 @@
 import { HtmlNode, HtmlNodeModel } from '@logicflow/core';
+import { WORKFLOW_CANVAS_GRID_SIZE } from './constants';
 
 const NODE_META = {
   trigger: {
     title: 'Gatilho',
     color: '#2563EB',
-    iconPath:
-      'M13 10V3L4 14h7v7l9-11h-7z',
+    iconPath: 'M13 10V3L4 14h7v7l9-11h-7z',
   },
   wait: {
     title: 'Espera',
-    color: '#7C3AED',
+    color: '#0D9488',
+    iconPath: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+  },
+  wait_for_reply: {
+    title: 'Aguardar resposta',
+    color: '#0D9488',
     iconPath:
-      'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+      'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z M8 12h.01M12 12h.01M16 12h.01',
   },
   condition: {
-    title: 'Condição',
+    title: 'Se (IF)',
     color: '#D97706',
     iconPath:
       'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
@@ -22,16 +27,101 @@ const NODE_META = {
   action: {
     title: 'Ação',
     color: '#059669',
-    iconPath:
-      'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+    iconPath: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
   },
+  ai_conversation_analysis: {
+    title: 'Avaliar Conversa',
+    color: '#7C3AED',
+    iconPath:
+      'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.847a4.5 4.5 0 003.09 3.09L15.75 12l-2.847.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z',
+  },
+  ai_outreach: {
+    title: 'Chamar cliente',
+    color: '#7C3AED',
+    iconPath:
+      'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.847a4.5 4.5 0 003.09 3.09L15.75 12l-2.847.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z',
+  },
+};
+
+export const getWorkflowNodeVisual = type => {
+  const meta = NODE_META[type] || NODE_META.action;
+  return { bg: meta.color, icon: meta.iconPath, title: meta.title };
 };
 
 export const WORKFLOW_LF_NODE_TYPE = 'workflow-card';
 
-/** Anchor ids: `${nodeId}_in` (left) and `${nodeId}_out` (right) — only these may be used for edges. */
+const AI_OBJECTIVE_SHORT = {
+  reengagement: 'Reengajar',
+  follow_up: 'Cobrar retorno',
+  reminder: 'Lembrete',
+  appointment: 'Agendamento',
+  payment: 'Cobrança',
+};
+
+const AI_TONE_SHORT = {
+  friendly: 'Amigável',
+  professional: 'Profissional',
+  sales: 'Vendas',
+  support: 'Suporte',
+};
+
+/** Compact n8n-like card — levemente retangular */
+export const WORKFLOW_NODE_WIDTH = 128;
+export const WORKFLOW_NODE_HEIGHT = 84;
+export const WORKFLOW_BRANCH_NODE_HEIGHT = 84;
+
+export const isWorkflowCanvasDark = () =>
+  document.body.classList.contains('dark') ||
+  document.documentElement.classList.contains('dark');
+
+const workflowNodeHeight = isBranch =>
+  isBranch ? WORKFLOW_BRANCH_NODE_HEIGHT : WORKFLOW_NODE_HEIGHT;
+
+export const BRANCH_NODE_TYPES = ['condition', 'wait_for_reply'];
+
+export const isBranchNodeType = type => BRANCH_NODE_TYPES.includes(type);
+
 export const workflowAnchorInId = nodeId => `${nodeId}_in`;
 export const workflowAnchorOutId = nodeId => `${nodeId}_out`;
+export const workflowAnchorOutTrueId = nodeId => `${nodeId}_out_true`;
+export const workflowAnchorOutFalseId = nodeId => `${nodeId}_out_false`;
+
+/** Maps graph sourceHandle to LogicFlow source anchor id. */
+export const sourceHandleToAnchorId = (nodeId, sourceHandle, nodeType) => {
+  if (!isBranchNodeType(nodeType)) {
+    return workflowAnchorOutId(nodeId);
+  }
+  const handle = String(sourceHandle || '');
+  if (nodeType === 'wait_for_reply') {
+    if (handle === 'replied') return workflowAnchorOutTrueId(nodeId);
+    if (handle === 'timeout') return workflowAnchorOutFalseId(nodeId);
+  }
+  if (handle === 'true' || handle === 'replied') return workflowAnchorOutTrueId(nodeId);
+  if (handle === 'false' || handle === 'timeout') return workflowAnchorOutFalseId(nodeId);
+  return workflowAnchorOutTrueId(nodeId);
+};
+
+/** Maps LogicFlow source anchor id back to graph sourceHandle. */
+export const anchorIdToSourceHandle = (anchorId, nodeType) => {
+  const id = String(anchorId || '');
+  if (id.endsWith('_out_true')) {
+    return nodeType === 'wait_for_reply' ? 'replied' : 'true';
+  }
+  if (id.endsWith('_out_false')) {
+    return nodeType === 'wait_for_reply' ? 'timeout' : 'false';
+  }
+  return undefined;
+};
+
+export const sourceHandleLabel = (sourceHandle, nodeType) => {
+  if (nodeType === 'wait_for_reply') {
+    if (sourceHandle === 'replied') return 'Respondeu';
+    if (sourceHandle === 'timeout') return 'Sem resposta';
+  }
+  if (sourceHandle === 'true') return 'Então';
+  if (sourceHandle === 'false') return 'Senão';
+  return '';
+};
 
 const escapeHtml = value =>
   String(value || '')
@@ -42,19 +132,40 @@ const escapeHtml = value =>
 
 export const workflowNodeSubtitle = properties => {
   const data = properties || {};
+  if (data.label) return data.label;
   const type = data.workflowNodeType;
   switch (type) {
     case 'trigger':
       return data.event_name || '—';
     case 'wait':
-      return (data.duration || '?') + ' ' + (data.unit || '');
+      return `${data.duration || '?'} ${data.unit || ''}`;
+    case 'wait_for_reply':
+      return data.label || `${data.duration || '?'} ${data.unit || ''}`;
     case 'condition': {
       const list = data.conditions || [];
-      if (!list.length) return 'Sem filtros (sempre Sim)';
-      return list.length + ' filtro(s)';
+      if (!list.length) return 'Sem filtros (sempre Então)';
+      return `${list.length} filtro(s)`;
     }
     case 'action':
       return data.action_name || '—';
+    case 'ai_outreach': {
+      const obj = AI_OBJECTIVE_SHORT[data.objective_preset] || 'IA';
+      const tone = AI_TONE_SHORT[data.tone_preset] || '';
+      return tone ? `${obj} · ${tone}` : obj;
+    }
+    case 'ai_conversation_analysis': {
+      const type = (data.analysis_types && data.analysis_types[0]) || 'full_analysis';
+      const dest = data.output_destination === 'whatsapp_external' ? 'WhatsApp' : 'Nota privada';
+      const TYPE_LABELS = {
+        full_analysis: 'Completa',
+        executive_summary: 'Resumo',
+        service_quality: 'Qualidade',
+        sales_opportunities: 'Oportunidades',
+        customer_sentiment: 'Sentimento',
+        next_action: 'Próx. ação',
+      };
+      return `${TYPE_LABELS[type] || type} · ${dest}`;
+    }
     default:
       return type || '';
   }
@@ -73,27 +184,40 @@ class WorkflowCardModel extends HtmlNodeModel {
       data.text = '';
     }
     super.initNodeData(data);
-    this.width = 240;
-    this.height = 72;
+    this.width = WORKFLOW_NODE_WIDTH;
+    this.height = workflowNodeHeight(this.isBranchNode());
     if (this.text && typeof this.text === 'object') {
       this.text.editable = false;
       this.text.value = '';
     }
   }
 
-  setAttributes() {
-    this.width = 240;
-    this.height = 72;
+  isBranchNode() {
+    const wt = this.properties && this.properties.workflowNodeType;
+    return isBranchNodeType(wt);
   }
 
-  /** Only left (in) and right (out) anchors — flow left-to-right. Coordinates must be absolute (see HtmlNodeModel in @logicflow/core). */
+  setAttributes() {
+    this.width = WORKFLOW_NODE_WIDTH;
+    this.height = workflowNodeHeight(this.isBranchNode());
+  }
+
   getDefaultAnchor() {
-    const { x, y, width } = this;
+    const { x, y, width, height } = this;
     const w = width;
-    return [
-      { x: x - w / 2, y, id: `${this.id}_in`, name: 'in' },
-      { x: x + w / 2, y, id: `${this.id}_out`, name: 'out' },
-    ];
+    const anchors = [{ x: x - w / 2, y, id: `${this.id}_in`, name: 'in' }];
+
+    if (this.isBranchNode()) {
+      const offsetY = height / 4;
+      anchors.push(
+        { x: x + w / 2, y: y - offsetY, id: `${this.id}_out_true`, name: 'out_true' },
+        { x: x + w / 2, y: y + offsetY, id: `${this.id}_out_false`, name: 'out_false' }
+      );
+    } else {
+      anchors.push({ x: x + w / 2, y, id: `${this.id}_out`, name: 'out' });
+    }
+
+    return anchors;
   }
 
   isAllowConnectedAsTarget(source, sourceAnchor, targetAnchor) {
@@ -106,13 +230,15 @@ class WorkflowCardModel extends HtmlNodeModel {
   }
 
   isAllowConnectedAsSource(target, sourceAnchor, targetAnchor) {
-    if (sourceAnchor && sourceAnchor.id && !String(sourceAnchor.id).endsWith('_out')) {
-      return false;
-    }
-    return true;
+    if (!sourceAnchor || !sourceAnchor.id) return true;
+    const id = String(sourceAnchor.id);
+    return (
+      id.endsWith('_out') ||
+      id.endsWith('_out_true') ||
+      id.endsWith('_out_false')
+    );
   }
 
-  // Make the SVG background rect fully transparent at all states
   getNodeStyle() {
     return { ...TRANSPARENT };
   }
@@ -136,36 +262,21 @@ class WorkflowCardView extends HtmlNode {
     const type = properties.workflowNodeType || 'action';
     const meta = NODE_META[type] || NODE_META.action;
     const subtitle = workflowNodeSubtitle(properties);
+    const invalidClass = properties.isInvalid ? ' is-invalid' : '';
     const selected = this.props.model.isSelected ? ' is-selected' : '';
+    const themeClass = isWorkflowCanvasDark() ? ' is-dark' : '';
+    const branchClass = isBranchNodeType(type) ? ' workflow-lf-card--branch' : '';
 
     rootEl.innerHTML =
-      '<div class="workflow-lf-card workflow-lf-card--' +
-      escapeHtml(type) +
-      selected +
-      '">' +
-      '<div class="workflow-lf-card__stripe" style="background:' +
-      meta.color +
-      '"></div>' +
-      '<div class="workflow-lf-card__body">' +
-      '<div class="workflow-lf-card__icon" style="background:' +
-      meta.color +
-      '">' +
+      `<div class="workflow-lf-card workflow-lf-card--n8n workflow-lf-card--${escapeHtml(type)}${branchClass}${selected}${invalidClass}${themeClass}">` +
+      '<div class="workflow-lf-card__content">' +
+      `<div class="workflow-lf-card__icon" style="background:${meta.color}">` +
       '<svg width="16" height="16" fill="none" stroke="white" viewBox="0 0 24 24">' +
-      '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="' +
-      meta.iconPath +
-      '"/>' +
-      '</svg>' +
-      '</div>' +
-      '<div class="workflow-lf-card__text">' +
-      '<div class="workflow-lf-card__title">' +
-      escapeHtml(meta.title) +
-      '</div>' +
-      '<div class="workflow-lf-card__subtitle">' +
-      escapeHtml(subtitle) +
-      '</div>' +
-      '</div>' +
-      '</div>' +
-      '</div>';
+      `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${meta.iconPath}"/>` +
+      '</svg></div>' +
+      `<div class="workflow-lf-card__title">${escapeHtml(meta.title)}</div>` +
+      `<div class="workflow-lf-card__subtitle">${escapeHtml(subtitle)}</div>` +
+      '</div></div>';
   }
 
   shouldUpdate() {
@@ -173,12 +284,18 @@ class WorkflowCardView extends HtmlNode {
     const type = properties.workflowNodeType;
     const key = [
       type,
+      properties.label,
       properties.event_name,
       properties.duration,
       properties.unit,
       properties.action_name,
+      properties.objective_preset,
+      properties.tone_preset,
+      (properties.conditions || []).length,
       (properties.action_params || []).join('\0'),
+      properties.isInvalid,
       isSelected,
+      isWorkflowCanvasDark(),
     ].join('|');
     if (this._renderKey === key) return false;
     this._renderKey = key;
@@ -200,36 +317,34 @@ const transparentShape = {
   strokeWidth: 0,
 };
 
-export const getLogicFlowTheme = isDark => {
-  const base = {
-    rect: { ...transparentShape },
-    circle: { ...transparentShape },
-    polygon: { ...transparentShape },
-    ellipse: { ...transparentShape },
-    nodeText: { display: 'none' },
-    edge: {
-      stroke: isDark ? '#64748b' : '#94a3b8',
-      strokeWidth: 2,
-    },
-    anchor: {
-      stroke: isDark ? '#94a3b8' : '#64748b',
-      fill: isDark ? '#1e293b' : '#ffffff',
-      r: 4,
-    },
-    outline: {
-      fill: 'none',
-      stroke: '#6366f1',
-      strokeWidth: 2,
-    },
-    grid: {
-      size: 20,
-      stroke: isDark ? '#334155' : '#e2e8f0',
-      strokeWidth: 1,
-    },
-    background: {
-      backgroundColor: isDark ? '#0f172a' : '#f8fafc',
-    },
-  };
-
-  return base;
-};
+export const getLogicFlowTheme = isDark => ({
+  rect: { ...transparentShape },
+  circle: { ...transparentShape },
+  polygon: { ...transparentShape },
+  ellipse: { ...transparentShape },
+  nodeText: { display: 'none' },
+  edge: {
+    stroke: isDark ? 'rgba(226, 232, 240, 0.38)' : '#c0c5ce',
+    strokeWidth: 2,
+    hoverStroke: isDark ? 'rgba(248, 250, 252, 0.55)' : '#94a3b8',
+    selectedStroke: isDark ? 'rgba(255, 255, 255, 0.65)' : '#6366f1',
+  },
+  anchor: {
+    stroke: isDark ? '#64748b' : '#cbd5e1',
+    fill: isDark ? '#1e293b' : '#ffffff',
+    r: 5,
+  },
+  outline: {
+    fill: 'none',
+    stroke: '#6366f1',
+    strokeWidth: 2,
+  },
+  grid: {
+    size: WORKFLOW_CANVAS_GRID_SIZE,
+    stroke: isDark ? 'rgba(148, 163, 184, 0.05)' : 'rgba(148, 163, 184, 0.04)',
+    strokeWidth: 1,
+  },
+  background: {
+    backgroundColor: isDark ? '#0f172a' : '#f4f6f8',
+  },
+});

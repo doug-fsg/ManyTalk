@@ -29,6 +29,22 @@ class WorkflowPolicy < ApplicationPolicy
     account_member? && workflows_enabled?
   end
 
+  def test_external_whatsapp?
+    account_member? && workflows_enabled?
+  end
+
+  def templates?
+    create?
+  end
+
+  def from_template?
+    create?
+  end
+
+  def validate?
+    create?
+  end
+
   private
 
   def workflows_enabled?

@@ -10,6 +10,7 @@ const CsatResponses = () => import('./CsatResponses.vue');
 const BotReports = () => import('./BotReports.vue');
 const LiveReports = () => import('./LiveReports.vue');
 const SLAReports = () => import('./SLAReports.vue');
+const WorkflowReports = () => import('./WorkflowReports.vue');
 
 export default {
   routes: [
@@ -165,6 +166,25 @@ export default {
             permissions: ['administrator', 'report_manage'],
           },
           component: TeamReports,
+        },
+      ],
+    },
+    {
+      path: frontendURL('accounts/:accountId/reports'),
+      component: SettingsContent,
+      props: {
+        headerTitle: 'WORKFLOW_REPORTS.HEADER',
+        icon: 'send-clock',
+        keepAlive: false,
+      },
+      children: [
+        {
+          path: 'workflows',
+          name: 'workflow_reports',
+          meta: {
+            permissions: ['administrator', 'agent'],
+          },
+          component: WorkflowReports,
         },
       ],
     },
