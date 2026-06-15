@@ -228,4 +228,22 @@ export default {
     @apply mb-0;
   }
 }
+
+.resolve-actions {
+  :deep(.button-group .button) {
+    @apply transition-colors duration-200 ease-smooth;
+
+    &.success:hover:not(:disabled):not(.disabled) {
+      @apply bg-[#3abb40] dark:bg-[#3abb40];
+    }
+
+    &.warning:hover:not(:disabled):not(.disabled) {
+      @apply bg-[#f0b82e] dark:bg-[#f0b82e];
+    }
+
+    &.primary:hover:not(:disabled):not(.disabled) {
+      @apply bg-woot-600 dark:bg-woot-600;
+    }
+  }
+}
 </style>

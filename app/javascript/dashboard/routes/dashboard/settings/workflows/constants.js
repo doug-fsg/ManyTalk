@@ -116,6 +116,7 @@ export const WORKFLOW_TRIGGER_EVENTS = [
   ...AUTOMATION_RULE_EVENTS,
   { key: 'manual', value: 'Início manual (pela conversa)' },
   { key: 'contact_kanban_stage_changed', value: 'Estágio do CRM alterado' },
+  { key: 'contact_kanban_stage_idle', value: 'Parado no estágio do CRM (sem atividade)' },
 ];
 
 export const WORKFLOW_ACTION_TYPES = [
@@ -252,7 +253,7 @@ export const AI_ANALYSIS_TYPES = [
 ];
 
 export const AI_ANALYSIS_DEFAULTS = {
-  analysis_types: ['full_analysis'],
+  analysis_types: ['executive_summary'],
   output_destination: 'private_note',
   note_prefix: '',
   whatsapp_inbox_id: '',
@@ -284,8 +285,13 @@ export const DEFAULT_WORKFLOW_GRAPH = {
   ],
   edges: [],
   settings: {
-    cancel_on_contact_reply: true,
+    cancel_on_contact_reply: false,
+    pause_on_contact_reply: true,
     cancel_on_conversation_resolved: true,
+    allow_manual_start_only: false,
+    enroll_latest_conversation_only: true,
+    enrollment_scope: 'contact',
+    respect_business_hours: true,
   },
 };
 

@@ -134,9 +134,36 @@ module Workflows
 
     def validate_action_node(data, node)
       name = data['action_name']
-      return if Constants::ALLOWED_ACTION_NAMES.include?(name)
+      unless Constants::ALLOWED_ACTION_NAMES.include?(name)
+        add_error("Invalid action: #{name}", node_id: node['id'])
+        return
+      end
 
-      add_error("Invalid action: #{name}", node_id: node['id'])
+      validate_action_params(name, data, node)
+    end
+
+    def validate_action_params(name, data, node)
+      case name
+      when 'send_whatsapp_external'
+        params = data['action_params'] || []
+        add_error('WhatsApp action requires an inbox', node_id: node['id']) if params[0].blank?
+        if params[1].blank?
+          add_error('WhatsApp action requires a phone number', node_id: node['id'])
+        elsif !Workflows::PhoneNormalizer.valid?(params[1])
+          add_error('WhatsApp action phone number is invalid', node_id: node['id'])
+        end
+        validate_external_whatsapp_inbox(params[0], node) if params[0].present?
+      end
+    end
+
+    def validate_external_whatsapp_inbox(inbox_id, node)
+      inbox = account.inboxes.find_by(id: inbox_id)
+      add_error('WhatsApp action inbox not found', node_id: node['id']) if inbox.blank?
+      return if inbox.blank?
+
+      return if inbox.external_whatsapp_capable?
+
+      add_error('WhatsApp action requires a WhatsApp or WhatsApp Web (API) inbox', node_id: node['id'])
     end
 
     def validate_ai_outreach_node(data, node)
@@ -191,9 +218,13 @@ module Workflows
       if destination == 'whatsapp_external'
         if data['whatsapp_inbox_id'].blank?
           add_error('AI analysis whatsapp_external requires whatsapp_inbox_id', node_id: node['id'])
+        else
+          validate_external_whatsapp_inbox(data['whatsapp_inbox_id'], node)
         end
         if data['whatsapp_phone'].blank?
           add_error('AI analysis whatsapp_external requires whatsapp_phone', node_id: node['id'])
+        elsif !Workflows::PhoneNormalizer.valid?(data['whatsapp_phone'])
+          add_error('AI analysis whatsapp_external phone number is invalid', node_id: node['id'])
         end
       end
     end

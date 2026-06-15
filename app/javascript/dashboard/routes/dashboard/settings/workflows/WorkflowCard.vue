@@ -114,11 +114,18 @@ const toggle = () => {
         content: metricsTooltip,
         delay: { show: 200, hide: 0 },
       }"
-      class="inline-flex items-center gap-1.5 mb-4 tabular-nums text-slate-700 dark:text-slate-300 cursor-default"
+      class="flex items-center gap-3 mb-4 tabular-nums cursor-default"
     >
-      <span class="font-medium">{{ activeCount }}</span>
-      <span class="text-xs text-slate-400 dark:text-slate-500">
-        / {{ replyRate != null ? replyRate + '%' : '—' }}
+      <span class="inline-flex items-center gap-1 text-sm text-slate-700 dark:text-slate-300">
+        <fluent-icon icon="play-circle" size="14" class="text-slate-400 dark:text-slate-500" aria-hidden="true" />
+        <span class="font-medium">{{ activeCount }}</span>
+        <span class="text-xs text-slate-400 dark:text-slate-500">{{ $t('WORKFLOW.LIST.METRICS_LABEL_RUNNING') }}</span>
+      </span>
+      <span class="text-slate-200 dark:text-slate-700" aria-hidden="true">·</span>
+      <span class="inline-flex items-center gap-1 text-sm text-slate-700 dark:text-slate-300">
+        <fluent-icon icon="arrow-reply" size="14" class="text-slate-400 dark:text-slate-500" aria-hidden="true" />
+        <span class="font-medium">{{ replyRate != null ? replyRate + '%' : '—' }}</span>
+        <span class="text-xs text-slate-400 dark:text-slate-500">{{ $t('WORKFLOW.LIST.METRICS_LABEL_RATE') }}</span>
       </span>
     </div>
 

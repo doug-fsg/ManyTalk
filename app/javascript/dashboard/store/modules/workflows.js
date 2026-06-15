@@ -10,6 +10,7 @@ export const state = {
     isDeleting: false,
     isUpdating: false,
     isCloning: false,
+    fetchError: false,
   },
 };
 
@@ -20,17 +21,20 @@ export const getters = {
   getUIFlags(_state) {
     return _state.uiFlags;
   },
+  getWorkflowFetchError(_state) {
+    return _state.uiFlags.fetchError;
+  },
   getWorkflow: _state => id => _state.records.find(r => r.id === Number(id)),
 };
 
 export const actions = {
   get: async function getWorkflows({ commit }) {
-    commit(types.SET_WORKFLOW_UI_FLAG, { isFetching: true });
+    commit(types.SET_WORKFLOW_UI_FLAG, { isFetching: true, fetchError: false });
     try {
       const response = await WorkflowsAPI.get();
       commit(types.SET_WORKFLOWS, response.data.payload);
     } catch (error) {
-      // Ignore error
+      commit(types.SET_WORKFLOW_UI_FLAG, { fetchError: true });
     } finally {
       commit(types.SET_WORKFLOW_UI_FLAG, { isFetching: false });
     }
@@ -81,16 +85,17 @@ export const actions = {
       commit(types.SET_WORKFLOW_UI_FLAG, { isCloning: false });
     }
   },
-  toggleActive: async ({ commit, dispatch }, id) => {
+  toggleActive: async ({ commit }, id) => {
     commit(types.SET_WORKFLOW_UI_FLAG, { isUpdating: true });
     try {
       const response = await WorkflowsAPI.toggleActive(id);
       commit(types.EDIT_WORKFLOW, response.data.payload);
     } catch (error) {
-      throw error;
+      const apiError = error?.response?.data?.error;
+      const message = Array.isArray(apiError) ? apiError.join(', ') : apiError;
+      throw new Error(message || error?.message || 'Unknown error');
     } finally {
       commit(types.SET_WORKFLOW_UI_FLAG, { isUpdating: false });
-      await dispatch('get');
     }
   },
   getTemplates: async () => {

@@ -14,10 +14,16 @@ import WorkflowAiOutreachPanel from './WorkflowAiOutreachPanel.vue';
 import WorkflowAiAnalysisPanel from './WorkflowAiAnalysisPanel.vue';
 import KanbanStageSelect from 'dashboard/routes/dashboard/settings/macros/components/KanbanStageSelect.vue';
 import AutomationFileInput from 'dashboard/components/widgets/AutomationFileInput.vue';
+import {
+  listExternalWhatsappInboxes,
+  validateExternalWhatsappPhone,
+  normalizeExternalWhatsappPhone,
+} from './workflowWhatsappHelper';
 
 const props = defineProps({
   node: { type: Object, default: null },
   readOnly: { type: Boolean, default: false },
+  nodeErrors: { type: Array, default: () => [] },
 });
 
 const emit = defineEmits(['update-node']);
@@ -31,6 +37,7 @@ onMounted(async () => {
     store.dispatch('teams/get'),
     store.dispatch('labels/get'),
     store.dispatch('attributes/get'),
+    store.dispatch('inboxes/get'),
   ]);
 });
 
@@ -38,9 +45,15 @@ const agents = computed(() => store.getters['agents/getAgents'] || []);
 const teams = computed(() => store.getters['teams/getTeams'] || []);
 const labels = computed(() => store.getters['labels/getLabels'] || []);
 
-const whatsappInboxes = computed(() => {
-  const inboxes = store.getters['inboxes/getInboxes'] || [];
-  return inboxes.filter(inbox => inbox.channel_type === 'Channel::Whatsapp');
+const whatsappInboxes = computed(() =>
+  listExternalWhatsappInboxes(store.getters['inboxes/getInboxes'] || [])
+);
+
+const whatsappPhoneError = computed(() => {
+  const phone = (nodeProps.value.action_params || [])[1];
+  if (!phone) return null;
+  const result = validateExternalWhatsappPhone(phone);
+  return result.isValid ? null : result.messageKey;
 });
 
 const nodeType = computed(() => {
@@ -125,6 +138,12 @@ const onKanbanStageChange = value => {
 const updateWhatsappParam = (index, value) => {
   const params = [...(nodeProps.value.action_params || ['', '', ''])];
   params[index] = value;
+  emit('update-node', { action_params: params });
+};
+
+const normalizeWhatsappPhoneField = () => {
+  const params = [...(nodeProps.value.action_params || ['', '', ''])];
+  params[1] = normalizeExternalWhatsappPhone(params[1]);
   emit('update-node', { action_params: params });
 };
 
@@ -226,6 +245,24 @@ const labelClass =
     </div>
 
     <div v-if="node && nodeType" class="flex-1 overflow-y-auto p-4 space-y-5 min-w-0">
+      <div
+        v-if="nodeErrors.length"
+        class="flex items-start gap-2 -mt-1 mb-1 text-xs text-amber-800/90 dark:text-amber-300/90"
+        role="status"
+      >
+        <fluent-icon
+          icon="warning"
+          size="14"
+          class="flex-shrink-0 mt-0.5 text-amber-600 dark:text-amber-400"
+          aria-hidden="true"
+        />
+        <ul class="space-y-0.5 min-w-0">
+          <li v-for="(message, index) in nodeErrors" :key="index">
+            {{ message }}
+          </li>
+        </ul>
+      </div>
+
       <div>
           <label :class="labelClass">Nome da etapa</label>
           <input
@@ -398,7 +435,14 @@ const labelClass =
               :class="inputClass"
               :placeholder="$t('WORKFLOW.EDITOR.WHATSAPP_PHONE_PLACEHOLDER')"
               @input="updateWhatsappParam(1, $event.target.value)"
+              @blur="normalizeWhatsappPhoneField"
             />
+            <p
+              v-if="whatsappPhoneError"
+              class="text-xs text-amber-600 dark:text-amber-400 mt-1"
+            >
+              {{ $t(whatsappPhoneError) }}
+            </p>
           </div>
           <div>
             <label :class="labelClass">{{ $t('WORKFLOW.EDITOR.MESSAGE_LABEL') }}</label>

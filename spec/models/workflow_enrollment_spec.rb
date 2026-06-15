@@ -263,6 +263,65 @@ RSpec.describe WorkflowEnrollment, type: :model do
     end
   end
 
+  describe 'ReplyWatch' do
+    describe '.reply_baseline_for' do
+      it 'returns the timestamp of the last workflow outgoing message' do
+        msg = create(:message, conversation: conversation, message_type: :outgoing,
+                               content_attributes: { 'workflow_id' => workflow.id })
+
+        baseline = described_class.reply_baseline_for(conversation)
+        expect(baseline).to be_within(1.second).of(msg.created_at)
+      end
+
+      it 'returns Time.current when no workflow message exists' do
+        freeze_time do
+          baseline = described_class.reply_baseline_for(conversation)
+          expect(baseline).to eq(Time.current)
+        end
+      end
+    end
+
+    describe '#reply_baseline_time' do
+      it 'falls back to class method when baseline_at is not stored' do
+        enrollment = create(:workflow_enrollment, account: account, conversation: conversation, workflow: workflow)
+        allow(described_class).to receive(:reply_baseline_for).with(conversation).and_return(1.hour.ago)
+
+        expect(enrollment.reply_baseline_time).to be_within(1.second).of(1.hour.ago)
+      end
+    end
+
+    describe '#contact_replied_since_baseline?' do
+      let(:enrollment) do
+        create(:workflow_enrollment, account: account, conversation: conversation, workflow: workflow,
+                                     status: 'waiting', context: {
+                                       'reply_watch' => {
+                                         'node_id' => 'wfr_1',
+                                         'baseline_at' => 1.hour.ago.iso8601(6),
+                                         'deadline_at' => 1.hour.from_now.iso8601(6),
+                                         'wait_responder' => 'contact'
+                                       }
+                                     })
+      end
+
+      it 'returns true when contact replied after baseline' do
+        create(:message, conversation: conversation, message_type: :incoming, created_at: 30.minutes.ago)
+
+        expect(enrollment.contact_replied_since_baseline?).to be true
+      end
+
+      it 'returns false when only workflow messages exist after baseline' do
+        create(:message, conversation: conversation, message_type: :incoming,
+                       content_attributes: { 'workflow_id' => workflow.id }, created_at: 30.minutes.ago)
+
+        expect(enrollment.contact_replied_since_baseline?).to be false
+      end
+
+      it 'returns false when no messages exist after baseline' do
+        expect(enrollment.contact_replied_since_baseline?).to be false
+      end
+    end
+  end
+
   describe '.cancel_for_conversation!' do
     it 'cancels active enrollments for the conversation' do
       enrollment = create(:workflow_enrollment, account: account, conversation: conversation, workflow: workflow, status: 'active')

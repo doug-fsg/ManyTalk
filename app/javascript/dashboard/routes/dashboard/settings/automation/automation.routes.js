@@ -1,6 +1,7 @@
 import { frontendURL } from '../../../../helper/URLHelper';
 import {
   requireWorkflowsFeature,
+  isWorkflowsFeatureEnabled,
 } from '../../../../helper/workflowsFeatureGuard';
 
 const SettingsWrapper = () => import('../SettingsWrapper.vue');
@@ -28,7 +29,10 @@ export default {
           children: [
             {
               path: '',
-              redirect: 'workflows',
+              redirect: to =>
+                isWorkflowsFeatureEnabled(to.params.accountId)
+                  ? { path: 'workflows' }
+                  : { path: 'classic' },
             },
             {
               path: 'classic',

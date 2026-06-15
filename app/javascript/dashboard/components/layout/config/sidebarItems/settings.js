@@ -123,7 +123,7 @@ const settings = accountId => ({
         `accounts/${accountId}/settings/automation/list/workflows`
       ),
       toStateName: 'workflows_list',
-      featureFlag: FEATURE_FLAGS.AUTOMATIONS,
+      featureFlag: FEATURE_FLAGS.WORKFLOWS,
     },
     {
       icon: 'bot',

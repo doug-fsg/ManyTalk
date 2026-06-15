@@ -203,7 +203,7 @@ module Workflows
         data = node['data'] || {}
         action_name = data['action_name']
 
-        begin
+        success = begin
           Current.skip_workflow_triggers = true if action_name == 'change_kanban_stage'
           Workflows::ActionService.new(
             workflow,
@@ -214,6 +214,15 @@ module Workflows
         ensure
           Current.skip_workflow_triggers = nil
         end
+
+        return if success
+
+        execution = enrollment.workflow_step_executions.find_or_create_by!(node_id: node['id'])
+        execution.update!(
+          status: 'failed',
+          error_message: "Action #{action_name} failed. Check application logs for details.",
+          executed_at: Time.current
+        )
       end
 
       def execute_ai_outreach(workflow, enrollment, conversation, node)
@@ -373,7 +382,8 @@ module Workflows
         case node['type']
         when 'action'
           execute_action(workflow, enrollment, conversation, node)
-          mark_step_completed(enrollment, node['id'])
+          execution = enrollment.workflow_step_executions.find_by(node_id: node['id'])
+          mark_step_completed(enrollment, node['id']) unless execution&.status == 'failed'
           move_to_next(workflow, enrollment.reload, conversation, node['id'], depth: 0)
         when 'ai_outreach'
           execute_ai_outreach(workflow, enrollment, conversation, node)

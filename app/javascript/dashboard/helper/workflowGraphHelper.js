@@ -128,7 +128,31 @@ export const normalizeWorkflowGraph = graph => {
 
   applyLinearLayoutFromTrigger(normalized, shouldAutoLayout);
 
-  // Assign default sourceHandle for branch edges missing handles (legacy graphs)
+  // Coerce any sourceHandle stored as a LogicFlow text object { x, y, value } to its
+  // string value. This can happen when an older save went through with the text-object bug.
+  normalized.edges.forEach(edge => {
+    if (edge.sourceHandle && typeof edge.sourceHandle === 'object') {
+      edge.sourceHandle = edge.sourceHandle.value || undefined;
+    }
+  });
+
+  // Pass 1: Fix cross-type handle contamination (e.g. 'true'/'false' on wait_for_reply,
+  // or 'replied'/'timeout' on condition). Can happen when a node type changes or when
+  // an edge is deserialized with the wrong context. forEach iterates object references
+  // so mutating `edge` directly updates the array element in place.
+  normalized.edges.forEach(edge => {
+    const srcType = nodeTypeById(normalized.nodes, edge.source);
+    if (!isBranchNodeType(srcType) || !edge.sourceHandle) return;
+    if (srcType === 'wait_for_reply') {
+      if (edge.sourceHandle === 'true') edge.sourceHandle = 'replied';
+      else if (edge.sourceHandle === 'false') edge.sourceHandle = 'timeout';
+    } else if (srcType === 'condition') {
+      if (edge.sourceHandle === 'replied') edge.sourceHandle = 'true';
+      else if (edge.sourceHandle === 'timeout') edge.sourceHandle = 'false';
+    }
+  });
+
+  // Pass 2: Assign default sourceHandle for branch edges that are still missing handles
   const branchEdgesBySource = {};
   normalized.edges.forEach((edge, index) => {
     const srcType = nodeTypeById(normalized.nodes, edge.source);
@@ -229,14 +253,28 @@ export const logicFlowDataToGraph = (lfData, settings = {}) => {
   const lfEdges = coerceArray(lfData && lfData.edges);
   const edges = lfEdges.map(edge => {
     const srcType = nodeTypeMap[edge.sourceNodeId];
+    // LogicFlow stores edge text as { x, y, value } when the label has a position.
+    // Always extract the string value before using it as a sourceHandle.
+    const rawText = edge.text;
+    const textValue =
+      rawText && typeof rawText === 'object' ? rawText.value : rawText;
+
     let sourceHandle =
       anchorIdToSourceHandle(edge.sourceAnchorId, srcType) ||
-      edge.text ||
+      textValue ||
       undefined;
     if (sourceHandle === 'Respondeu') sourceHandle = 'replied';
     if (sourceHandle === 'Sem resposta') sourceHandle = 'timeout';
     if (sourceHandle === 'Então') sourceHandle = 'true';
     if (sourceHandle === 'Senão') sourceHandle = 'false';
+    // Correct cross-type handle contamination when srcType is known
+    if (srcType === 'wait_for_reply') {
+      if (sourceHandle === 'true') sourceHandle = 'replied';
+      else if (sourceHandle === 'false') sourceHandle = 'timeout';
+    } else if (srcType === 'condition') {
+      if (sourceHandle === 'replied') sourceHandle = 'true';
+      else if (sourceHandle === 'timeout') sourceHandle = 'false';
+    }
 
     return {
       id: edge.id,
@@ -277,9 +315,23 @@ export const extractInvalidNodeIds = errors => {
 };
 
 export const validationErrorMessages = errors =>
-  (errors || []).map(error =>
-    typeof error === 'string' ? error : error?.message || String(error)
-  );
+  normalizeValidationErrors(errors).map(item => item.message);
+
+export const normalizeValidationErrors = errors =>
+  (errors || []).map(error => {
+    if (typeof error === 'string') {
+      const nodeMatch = error.match(/Node ([\w-]+)/);
+      return {
+        message: error,
+        node_id: nodeMatch ? nodeMatch[1] : null,
+      };
+    }
+
+    return {
+      message: error?.message || String(error),
+      node_id: error?.node_id || null,
+    };
+  });
 
 export const exportGraphFromLogicFlow = (lf, fallbackGraph) => {
   if (!lf) return normalizeWorkflowGraph(fallbackGraph);

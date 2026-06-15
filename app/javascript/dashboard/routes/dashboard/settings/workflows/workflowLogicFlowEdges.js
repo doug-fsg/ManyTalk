@@ -1,6 +1,7 @@
-import { BezierEdge, BezierEdgeModel } from '@logicflow/core';
+import { BezierEdge, BezierEdgeModel, h } from '@logicflow/core';
 
 export const WORKFLOW_EDGE_TYPE = 'workflow-bezier';
+const EDGE_HIT_WIDTH = 28;
 
 class WorkflowBezierModel extends BezierEdgeModel {
   initEdgeData(data) {
@@ -15,7 +16,17 @@ class WorkflowBezierModel extends BezierEdgeModel {
   }
 }
 
-class WorkflowBezierView extends BezierEdge {}
+class WorkflowBezierView extends BezierEdge {
+  getAppendWidth() {
+    const { path } = this.props.model;
+    return h('path', {
+      d: path,
+      strokeWidth: EDGE_HIT_WIDTH,
+      stroke: 'transparent',
+      fill: 'none',
+    });
+  }
+}
 
 export const registerWorkflowEdges = lf => {
   lf.register({

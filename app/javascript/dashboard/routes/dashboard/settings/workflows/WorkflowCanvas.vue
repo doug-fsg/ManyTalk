@@ -37,6 +37,8 @@ import {
   configureWorkflowCanvasZoom,
   fitCanvasView,
   getCanvasZoomPercent,
+  getEdgeGraphMidpoint,
+  graphPointToOverlayPoint,
   resetCanvasZoom,
   zoomCanvasByStep,
 } from './workflowCanvasViewport';
@@ -220,7 +222,7 @@ export default {
       if (this.edgeToolbarHideTimer) clearTimeout(this.edgeToolbarHideTimer);
       this.edgeToolbarHideTimer = setTimeout(() => {
         if (!this.edgeToolbarHovering) this.edgeToolbar = null;
-      }, 120);
+      }, 320);
     },
 
     hideEdgeToolbar() {
@@ -235,19 +237,14 @@ export default {
     updateEdgeToolbarPosition(edgeId) {
       if (!this.lf || !this.$refs.canvasWrapper) return;
       const edgeModel = this.lf.getEdgeModelById(edgeId);
-      if (!edgeModel || !edgeModel.startPoint || !edgeModel.endPoint) return;
-
-      const gx = (edgeModel.startPoint.x + edgeModel.endPoint.x) / 2;
-      const gy = (edgeModel.startPoint.y + edgeModel.endPoint.y) / 2;
-      const [left, top] = this.lf.graphModel.transformModel.HtmlPointToCanvasPoint([
-        gx,
-        gy,
-      ]);
+      const graphPoint = getEdgeGraphMidpoint(edgeModel);
+      const overlay = graphPointToOverlayPoint(this.lf, graphPoint);
+      if (!overlay) return;
 
       this.edgeToolbar = {
         edgeId,
-        left,
-        top,
+        left: overlay.left,
+        top: overlay.top,
       };
     },
 
@@ -495,6 +492,9 @@ export default {
       const { clientWidth, clientHeight } = this.$refs.canvasHost;
       if (clientWidth > 0 && clientHeight > 0) {
         this.lf.resize(clientWidth, clientHeight);
+        if (this.edgeToolbar?.edgeId) {
+          this.updateEdgeToolbarPosition(this.edgeToolbar.edgeId);
+        }
       }
     },
 
@@ -505,10 +505,11 @@ export default {
       this.lf.render(data);
       this.$nextTick(() => {
         this.resizeCanvasNow();
-        this.suspendGraphSync = false;
-        this.emitGraphChangeNow();
+        const graph = exportGraphFromLogicFlow(this.lf, this.graph);
+        this.lastSyncedGraphSnapshot = workflowGraphSnapshot(graph);
         this.applyInvalidHighlights();
         this.zoomPercent = applyInitialCanvasViewport(this.lf);
+        this.suspendGraphSync = false;
       });
     },
 
@@ -518,7 +519,7 @@ export default {
     },
 
     applyInvalidHighlights() {
-      if (!this.lf || !this.lf.graphModel) return;
+      if (!this.lf || !this.lf.graphModel || this.readOnly) return;
       const invalidSet = new Set(this.invalidNodeIds || []);
       const nodes = this.lf.graphModel.nodes || [];
       nodes.forEach(nodeModel => {
@@ -648,6 +649,29 @@ export default {
       } else {
         this.emitGraphChangeNow();
       }
+    },
+
+    focusNode(nodeId) {
+      if (!this.lf || !nodeId) return;
+      const nodeData = this.lf.getNodeDataById
+        ? this.lf.getNodeDataById(nodeId)
+        : null;
+      if (!nodeData) return;
+
+      if (typeof this.lf.focusOn === 'function') {
+        this.lf.focusOn({ id: nodeId });
+      }
+      if (typeof this.lf.selectElementById === 'function') {
+        this.lf.selectElementById(nodeId);
+      }
+
+      this.selectedNode = nodeData;
+      this.$emit('node-selected', nodeData);
+    },
+
+    focusFirstInvalidNode(nodeIds) {
+      const firstId = (nodeIds || [])[0];
+      if (firstId) this.focusNode(firstId);
     },
   },
 };

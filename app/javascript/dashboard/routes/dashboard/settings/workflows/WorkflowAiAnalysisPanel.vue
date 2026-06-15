@@ -2,6 +2,10 @@
 import { computed } from 'vue';
 import { useStore } from 'dashboard/composables/store';
 import { AI_ANALYSIS_TYPES } from './constants';
+import {
+  listExternalWhatsappInboxes,
+  normalizeExternalWhatsappPhone,
+} from './workflowWhatsappHelper';
 
 const store = useStore();
 
@@ -12,10 +16,9 @@ const props = defineProps({
 
 const emit = defineEmits(['update-node']);
 
-const whatsappInboxes = computed(() => {
-  const inboxes = store.getters['inboxes/getInboxes'] || [];
-  return inboxes.filter(i => i.channel_type === 'Channel::Whatsapp');
-});
+const whatsappInboxes = computed(() =>
+  listExternalWhatsappInboxes(store.getters['inboxes/getInboxes'] || [])
+);
 
 const selectedType = computed(
   () => (props.nodeProps.analysis_types && props.nodeProps.analysis_types[0]) || 'full_analysis'
@@ -119,7 +122,7 @@ function update(key, value) {
           :disabled="readOnly"
           :class="inputClass"
           :placeholder="$t('WORKFLOW.EDITOR.WHATSAPP_PHONE_PLACEHOLDER')"
-          @input="update('whatsapp_phone', $event.target.value)"
+          @input="update('whatsapp_phone', normalizeExternalWhatsappPhone($event.target.value))"
         />
       </div>
     </template>

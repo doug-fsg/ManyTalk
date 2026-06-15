@@ -128,6 +128,14 @@ class Inbox < ApplicationRecord
     channel_type == 'Channel::Whatsapp'
   end
 
+  def whatsapp_web?
+    api? && channel.try(:additional_attributes)&.dig('source') == 'whatsapp_web'
+  end
+
+  def external_whatsapp_capable?
+    whatsapp? || whatsapp_web?
+  end
+
   def notifica_me?
     channel_type == 'Channel::NotificaMe'
   end

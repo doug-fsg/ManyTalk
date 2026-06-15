@@ -1,6 +1,6 @@
 class AsyncDispatcher < BaseDispatcher
   def dispatch(event_name, timestamp, data)
-    EventDispatcherJob.perform_later(event_name, timestamp, data)
+    EventDispatcherJob.perform_later(event_name, timestamp, Events::PayloadSerializer.dump(data))
   end
 
   def publish_event(event_name, timestamp, data)

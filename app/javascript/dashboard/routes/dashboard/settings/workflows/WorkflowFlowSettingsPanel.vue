@@ -39,7 +39,7 @@ const onPauseOnReplyChange = checked => {
     <label class="flex items-start gap-3 cursor-pointer">
       <input
         type="checkbox"
-        :checked="localSettings.cancel_on_contact_reply !== false"
+        :checked="localSettings.cancel_on_contact_reply === true"
         :disabled="readOnly || localSettings.pause_on_contact_reply !== false"
         class="mt-1"
         @change="updateSettings('cancel_on_contact_reply', $event.target.checked)"
@@ -119,5 +119,21 @@ const onPauseOnReplyChange = checked => {
         {{ $t('WORKFLOW.EDITOR.ENROLLMENT_SCOPE_CONTACT') }}
       </span>
     </label>
+
+    <label class="flex items-start gap-3 cursor-pointer">
+      <input
+        type="checkbox"
+        :checked="localSettings.enroll_latest_conversation_only !== false"
+        :disabled="readOnly"
+        class="mt-1"
+        @change="updateSettings('enroll_latest_conversation_only', $event.target.checked)"
+      />
+      <span class="text-sm text-slate-700 dark:text-slate-200">
+        {{ $t('WORKFLOW.EDITOR.ENROLL_LATEST_ONLY') }}
+      </span>
+    </label>
+    <p class="text-xs text-slate-400 ml-7">
+      {{ $t('WORKFLOW.EDITOR.ENROLL_LATEST_ONLY_HINT') }}
+    </p>
   </div>
 </template>

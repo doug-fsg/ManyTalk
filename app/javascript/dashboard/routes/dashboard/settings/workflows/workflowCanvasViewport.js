@@ -135,3 +135,35 @@ export const resetCanvasZoom = lf => {
   focusGraphCenter(lf);
   return getCanvasZoomPercent(lf);
 };
+
+/** Midpoint on a bezier edge path (graph coordinates). */
+export const getEdgeGraphMidpoint = edgeModel => {
+  if (!edgeModel) return null;
+
+  const points = edgeModel.pointsList;
+  if (Array.isArray(points) && points.length > 0) {
+    const mid = points[Math.floor(points.length / 2)];
+    if (mid && Number.isFinite(mid.x) && Number.isFinite(mid.y)) {
+      return { x: mid.x, y: mid.y };
+    }
+  }
+
+  if (!edgeModel.startPoint || !edgeModel.endPoint) return null;
+
+  return {
+    x: (edgeModel.startPoint.x + edgeModel.endPoint.x) / 2,
+    y: (edgeModel.startPoint.y + edgeModel.endPoint.y) / 2,
+  };
+};
+
+/** Graph/canvas coordinates → HTML overlay pixels (respects zoom + pan). */
+export const graphPointToOverlayPoint = (lf, point) => {
+  if (!lf?.graphModel?.transformModel || !point) return null;
+
+  const [left, top] = lf.graphModel.transformModel.CanvasPointToHtmlPoint([
+    point.x,
+    point.y,
+  ]);
+
+  return { left, top };
+};

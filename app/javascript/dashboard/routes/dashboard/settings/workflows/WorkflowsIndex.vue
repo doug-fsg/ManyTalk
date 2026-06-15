@@ -22,10 +22,11 @@ const showCreateModal = ref(false);
 
 const records = computed(() => getters['workflows/getWorkflows'].value);
 const uiFlags = computed(() => getters['workflows/getUIFlags'].value);
+const fetchError = computed(() => getters['workflows/getWorkflowFetchError'].value);
 
-onMounted(() => {
-  store.dispatch('workflows/get');
-});
+const loadWorkflows = () => store.dispatch('workflows/get');
+
+onMounted(loadWorkflows);
 
 const openNew = () => {
   showCreateModal.value = true;
@@ -43,8 +44,9 @@ const toggleWorkflow = async ({ id, active }) => {
   try {
     await store.dispatch('workflows/toggleActive', id);
     useAlert(t('WORKFLOW.TOGGLE.SUCCESS'));
-  } catch {
-    useAlert(t('WORKFLOW.TOGGLE.ERROR'));
+  } catch (error) {
+    const detail = error?.message;
+    useAlert(detail || t('WORKFLOW.TOGGLE.ERROR'));
   }
 };
 
@@ -105,7 +107,23 @@ const requestDeleteWorkflow = async workflow => {
     </template>
 
     <template #body>
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div
+        v-if="fetchError"
+        class="flex flex-col items-center gap-3 py-12 text-center"
+      >
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+          {{ $t('WORKFLOW.LIST.FETCH_ERROR') }}
+        </p>
+        <woot-button
+          variant="smooth"
+          color-scheme="secondary"
+          size="small"
+          @click="loadWorkflows"
+        >
+          {{ $t('WORKFLOW.EDITOR.RETRY') }}
+        </woot-button>
+      </div>
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         <WorkflowCard
           v-for="workflow in records"
           :key="workflow.id"

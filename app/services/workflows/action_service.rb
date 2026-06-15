@@ -13,8 +13,13 @@ module Workflows
     def perform_action(action_name, action_params)
       @conversation.reload
       send(action_name, action_params)
+      true
     rescue StandardError => e
       ChatwootExceptionTracker.new(e, account: @account).capture_exception
+      Rails.logger.error do
+        "[Workflow][Action] Failed workflow=#{@workflow.id} node=#{@node_id} action=#{action_name} error=#{e.message}"
+      end
+      false
     ensure
       Current.reset
     end
@@ -103,12 +108,16 @@ module Workflows
       raw_message = params[2] || ''
       content = Workflows::MessageInterpolator.new(@conversation).interpolate(raw_message)
 
-      Workflows::ExternalWhatsappNotifier.new(
+      result = Workflows::ExternalWhatsappNotifier.new(
         account: @account,
         inbox_id: inbox_id,
         phone_number: phone_number,
         message: content
       ).send!
+
+      return if result[:success]
+
+      raise "WhatsApp send failed: #{result[:error]}#{result[:detail] ? " (#{result[:detail]})" : ''}"
     end
 
     def change_kanban_stage(stage_params)

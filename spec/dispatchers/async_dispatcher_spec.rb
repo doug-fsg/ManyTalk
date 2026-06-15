@@ -9,7 +9,8 @@ describe AsyncDispatcher do
 
   describe '#dispatch' do
     it 'enqueue job to dispatch event' do
-      expect(EventDispatcherJob).to receive(:perform_later).with(event_name, timestamp, event_data).once
+      serialized = Events::PayloadSerializer.dump(event_data)
+      expect(EventDispatcherJob).to receive(:perform_later).with(event_name, timestamp, serialized).once
       dispatcher.dispatch(event_name, timestamp, event_data)
     end
   end

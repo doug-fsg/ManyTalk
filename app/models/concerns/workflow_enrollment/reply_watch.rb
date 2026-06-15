@@ -39,7 +39,7 @@ module WorkflowEnrollment::ReplyWatch
 
     conversation.messages.incoming
                 .where('created_at > ?', baseline)
-                .where.not("content_attributes ? 'workflow_id'")
+                .where("content_attributes ->> 'workflow_id' IS NULL")
                 .exists?
   end
 
@@ -51,7 +51,7 @@ module WorkflowEnrollment::ReplyWatch
                 .where(private: false)
                 .where('created_at > ?', baseline)
                 .where(sender_type: 'User')
-                .where.not("content_attributes ? 'workflow_id'")
+                .where("content_attributes ->> 'workflow_id' IS NULL")
                 .exists?
   end
 
@@ -90,7 +90,7 @@ module WorkflowEnrollment::ReplyWatch
     end
   end
 
-  class << self
+  class_methods do
     def reply_baseline_for(conversation)
       last_workflow_msg = conversation.messages.outgoing
                                       .where("content_attributes ->> 'workflow_id' IS NOT NULL")

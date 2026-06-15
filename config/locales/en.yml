@@ -283,6 +283,10 @@ en:
      inbox_name: Inbox
      inbox_type: Inbox Type
     button: Open conversation
+  workflows:
+    clone_suffix: "(copy)"
+    errors:
+      deactivate_to_edit: "Deactivate the flow to edit the diagram."
   time_units:
     days:
       one: "%{count} day"

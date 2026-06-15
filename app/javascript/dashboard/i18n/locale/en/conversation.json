@@ -11,7 +11,7 @@
     "NO_INBOX_1": "Hola! Looks like you haven't added any inboxes yet.",
     "NO_INBOX_2": " to get started",
     "NO_INBOX_AGENT": "Uh Oh! Looks like you are not part of any inbox. Please contact your administrator",
-    "SEARCH_MESSAGES": "Search for messages in conversations",
+    "SEARCH_MESSAGES": "Search for messages or contacts",
     "EMPTY_STATE": {
       "CMD_BAR": "to open command menu",
       "KEYBOARD_SHORTCUTS": "to view keyboard shortcuts"

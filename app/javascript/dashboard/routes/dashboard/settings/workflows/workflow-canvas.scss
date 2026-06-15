@@ -18,12 +18,13 @@
   stroke: none !important;
 }
 
-/* Área de hit da aresta (append) — nunca visível; antes o CSS pintava todos os path */
+/* Área de hit da aresta — invisível, porém larga (~28px) para facilitar hover */
 .workflow-canvas-host .lf-edge-append path {
   stroke: transparent !important;
-  stroke-width: 0 !important;
+  stroke-width: 28px !important;
   fill: none !important;
-  opacity: 0 !important;
+  pointer-events: stroke !important;
+  cursor: pointer;
 }
 
 .workflow-canvas-host.workflow-canvas--dark .lf-background-area,
@@ -66,7 +67,7 @@
 
   &.is-invalid {
     border-color: #ef4444;
-    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+    box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.2);
   }
 }
 
@@ -89,7 +90,7 @@
 
   &.is-invalid {
     border-color: #f87171;
-    box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.35);
+    box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.28);
   }
 }
 

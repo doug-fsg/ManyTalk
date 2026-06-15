@@ -48,10 +48,28 @@ class Api::OneoffApiCampaignService
     labels = campaign.account.labels.where(id: ids).pluck(:title)
     return Contact.none if labels.blank?
 
-    campaign.account.contacts
-            .joins(:conversations)
-            .where('conversations.cached_label_list ~* ?', labels.join('|'))
-            .distinct
+    label_pattern = labels.map { |l| Regexp.escape(l) }.join('|')
+
+    conversation_contact_ids = campaign.account.contacts
+                                       .joins(:conversations)
+                                       .merge(campaign.account.conversations.tagged_with(labels, any: true))
+                                       .distinct
+                                       .pluck('contacts.id')
+
+    conversation_contact_ids |= campaign.account.contacts
+                                        .joins(:conversations)
+                                        .where('conversations.cached_label_list ~* ?', label_pattern)
+                                        .distinct
+                                        .pluck('contacts.id')
+
+    contact_label_ids = campaign.account.contacts
+                                .tagged_with(labels, any: true)
+                                .pluck(:id)
+
+    merged_ids = conversation_contact_ids | contact_label_ids
+    return Contact.none if merged_ids.empty?
+
+    campaign.account.contacts.where(id: merged_ids)
   end
 
   def count_total(label_relation, audience_contacts)

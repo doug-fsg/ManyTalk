@@ -6,9 +6,10 @@ module Workflows
 
     def perform
       deactivating = params.key?(:active) && !ActiveModel::Type::Boolean.new.cast(params[:active])
+      activating   = params.key?(:active) && ActiveModel::Type::Boolean.new.cast(params[:active]) && !workflow.active?
 
       if workflow.active? && graph_changed? && !deactivating
-        return failure(['Desative o fluxo para editar o diagrama'])
+        return failure([I18n.t('workflows.errors.deactivate_to_edit')])
       end
 
       attrs = {
@@ -24,6 +25,10 @@ module Workflows
         return failure(GraphValidationService.error_messages(validation[:errors])) unless validation[:valid]
 
         attrs[:graph] = graph
+      elsif activating
+        graph_to_validate = workflow.graph
+        validation = GraphValidationService.new(graph: graph_to_validate, account: workflow.account).perform
+        return failure(GraphValidationService.error_messages(validation[:errors])) unless validation[:valid]
       end
 
       ActiveRecord::Base.transaction do

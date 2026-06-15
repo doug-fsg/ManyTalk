@@ -16,13 +16,15 @@ import WorkflowsAPI from 'dashboard/api/workflows';
 import BackButton from 'dashboard/components/widgets/BackButton.vue';
 import WorkflowPropertiesPanel from './WorkflowPropertiesPanel.vue';
 import WorkflowFlowSettingsPanel from './WorkflowFlowSettingsPanel.vue';
+import WorkflowValidationBanner from './WorkflowValidationBanner.vue';
 import {
   emptyGraph,
   serializeGraphForApi,
   normalizeWorkflowGraph,
   extractInvalidNodeIds,
-  validationErrorMessages,
+  normalizeValidationErrors,
 } from 'dashboard/helper/workflowGraphHelper';
+import { humanizeValidationError } from 'dashboard/helper/workflowValidationMessages';
 
 const WorkflowCanvas = defineAsyncComponent(() => import('./WorkflowCanvas.vue'));
 
@@ -49,11 +51,39 @@ const isTogglingActive = ref(false);
 
 const workflowId = computed(() => route.params.workflowId);
 const isEdit = computed(() => Boolean(workflowId.value));
-const readOnlyGraph = computed(
-  () => isEdit.value && activeSaved.value === true && !isDirty.value
-);
+const syncActiveState = isActive => {
+  const active = Boolean(isActive);
+  workflow.value.active = active;
+  activeSaved.value = active;
+};
 
-const saveAndActivateDisabled = computed(() => validationErrors.value.length > 0);
+const seedActiveFromStore = () => {
+  if (!workflowId.value) return;
+  const cached = store.getters['workflows/getWorkflow'](Number(workflowId.value));
+  if (cached) syncActiveState(cached.active);
+};
+
+/** Flow is active on the server — diagram stays locked until deactivated. */
+const isFlowActive = computed(
+  () => isEdit.value && Boolean(activeSaved.value || workflow.value.active)
+);
+const readOnlyGraph = computed(() => isFlowActive.value);
+
+const validationErrorsByNodeId = computed(() => {
+  const map = {};
+  validationErrors.value.forEach(err => {
+    if (!err.node_id) return;
+    if (!map[err.node_id]) map[err.node_id] = [];
+    map[err.node_id].push(err.message);
+  });
+  return map;
+});
+
+const selectedNodeErrors = computed(() => {
+  if (!selectedNode.value?.id) return [];
+  const raw = validationErrorsByNodeId.value[selectedNode.value.id] || [];
+  return raw.map(message => humanizeValidationError(message, t));
+});
 
 const saveStatusIcon = computed(() => {
   if (isSaving.value) return 'saving';
@@ -73,20 +103,26 @@ const saveStatusLabel = computed(() => {
 const loadWorkflow = async () => {
   if (!workflowId.value) {
     workflow.value.graph = emptyGraph();
-    activeSaved.value = false;
+    syncActiveState(false);
     return;
   }
+
+  seedActiveFromStore();
   isLoading.value = true;
   loadError.value = null;
   try {
     const response = await WorkflowsAPI.show(workflowId.value);
+    const data = response.data?.payload ?? response.data;
+    const isActive = Boolean(data?.active);
     workflow.value = {
-      ...response.data,
-      graph: normalizeWorkflowGraph(response.data.graph || emptyGraph()),
+      ...data,
+      active: isActive,
+      graph: normalizeWorkflowGraph(data.graph || emptyGraph()),
     };
-    activeSaved.value = Boolean(response.data.active);
+    syncActiveState(isActive);
     graphRevision.value += 1;
     isDirty.value = false;
+    dismissValidationErrors();
   } catch {
     loadError.value = t('WORKFLOW.EDITOR.LOAD_ERROR');
   } finally {
@@ -110,6 +146,7 @@ const removeRouteGuard = router.beforeEach((to, from, next) => {
 });
 
 onMounted(() => {
+  seedActiveFromStore();
   loadWorkflow();
   window.addEventListener('beforeunload', handleBeforeUnload);
 });
@@ -148,20 +185,34 @@ const onWorkflowActiveInput = async value => {
       active: value,
     });
     workflow.value.active = Boolean(updated.active);
-    activeSaved.value = Boolean(updated.active);
+    syncActiveState(updated.active);
     useAlert(t('WORKFLOW.TOGGLE.SUCCESS'));
   } catch {
     workflow.value.active = previousActive;
+    syncActiveState(previousActive);
     useAlert(t('WORKFLOW.TOGGLE.ERROR'));
   } finally {
     isTogglingActive.value = false;
   }
 };
 const onGraphUpdate = graph => {
+  if (readOnlyGraph.value) return;
   workflow.value.graph = graph;
   markDirty();
+};
+
+const dismissValidationErrors = () => {
   validationErrors.value = [];
   invalidNodeIds.value = [];
+};
+
+const showValidationFailures = async errors => {
+  validationErrors.value = normalizeValidationErrors(errors);
+  invalidNodeIds.value = extractInvalidNodeIds(validationErrors.value);
+  await nextTick();
+  if (canvasRef.value?.focusFirstInvalidNode) {
+    canvasRef.value.focusFirstInvalidNode(invalidNodeIds.value);
+  }
 };
 const onNodeSelected = node => { selectedNode.value = node; };
 
@@ -202,52 +253,69 @@ const save = async (activate = false) => {
     return;
   }
 
+  const isActiveOnServer = isFlowActive.value;
+  const canUpdateGraph = !isActiveOnServer;
+
   isSaving.value = true;
   try {
-    if (canvasRef.value && canvasRef.value.flushGraphSync) {
+    if (canUpdateGraph && canvasRef.value?.flushGraphSync) {
       canvasRef.value.flushGraphSync();
     }
     const rawGraph =
-      canvasRef.value && canvasRef.value.getGraphForSave
+      canUpdateGraph && canvasRef.value?.getGraphForSave
         ? canvasRef.value.getGraphForSave()
         : workflow.value.graph;
-    const graph = serializeGraphForApi(rawGraph);
+    const graph = canUpdateGraph ? serializeGraphForApi(rawGraph) : null;
 
-    const validationResponse = await WorkflowsAPI.validate(graph);
-    const validationResult = validationResponse.data || {};
-    if (!validationResult.valid) {
-      validationErrors.value = validationErrorMessages(validationResult.errors);
-      invalidNodeIds.value = extractInvalidNodeIds(validationResult.errors);
-      useAlert(t('WORKFLOW.EDITOR.VALIDATION_FAILED'));
-      return;
+    if (canUpdateGraph) {
+      const validationResponse = await WorkflowsAPI.validate(graph);
+      const validationResult = validationResponse.data || {};
+      if (!validationResult.valid) {
+        await showValidationFailures(validationResult.errors);
+        return;
+      }
     }
 
     const payload = {
       name: trimmedName,
       description: workflow.value.description,
-      active: activate ? true : workflow.value.active,
-      graph,
     };
+    if (activate) {
+      payload.active = true;
+    } else if (!isActiveOnServer) {
+      payload.active = workflow.value.active;
+    }
+    if (canUpdateGraph) {
+      payload.graph = graph;
+    }
+
     if (isEdit.value) {
       const updated = await store.dispatch('workflows/update', {
         id: workflowId.value,
         ...payload,
       });
       workflow.value = { ...workflow.value, ...updated };
-      activeSaved.value = Boolean(updated.active);
+      syncActiveState(updated.active);
     } else {
+      payload.graph = graph;
+      payload.active = activate ? true : workflow.value.active;
       const created = await store.dispatch('workflows/create', payload);
       workflow.value = { ...workflow.value, ...created };
-      activeSaved.value = Boolean(created.active);
+      syncActiveState(created.active);
       router.replace({ name: 'workflows_edit', params: { workflowId: created.id } });
     }
     isDirty.value = false;
+    dismissValidationErrors();
     useAlert(t('WORKFLOW.EDITOR.SAVE_SUCCESS'));
   } catch (e) {
     const err = e && e.response && e.response.data && e.response.data.error;
-    validationErrors.value = Array.isArray(err) ? err : [err || t('WORKFLOW.EDITOR.SAVE_ERROR')];
-    invalidNodeIds.value = extractInvalidNodeIds(validationErrors.value);
-    useAlert(t('WORKFLOW.EDITOR.SAVE_ERROR'));
+    const messages = Array.isArray(err) ? err : [err || t('WORKFLOW.EDITOR.SAVE_ERROR')];
+    if (isActiveOnServer) {
+      useAlert(humanizeValidationError(messages[0], t) || t('WORKFLOW.EDITOR.SAVE_ERROR'));
+    } else {
+      await showValidationFailures(messages);
+      useAlert(t('WORKFLOW.EDITOR.SAVE_ERROR'));
+    }
   } finally {
     isSaving.value = false;
   }
@@ -411,39 +479,38 @@ const activeStatusLabel = computed(() =>
             {{ $t('WORKFLOW.EDITOR.SAVE') }}
           </woot-button>
           <woot-button
+            v-if="!isFlowActive"
             variant="smooth"
             color-scheme="primary"
             size="small"
             :is-loading="isSaving"
-            :disabled="saveAndActivateDisabled"
             @click="save(true)"
           >
             {{ $t('WORKFLOW.EDITOR.SAVE_AND_ACTIVATE') }}
           </woot-button>
         </div>
       </div>
-
-      <div
-        v-if="readOnlyGraph"
-        class="flex items-center gap-2 px-4 py-2 text-xs bg-amber-50 dark:bg-amber-900/20 border-t border-amber-200 dark:border-amber-700/40 text-amber-800 dark:text-amber-300"
-        role="status"
-      >
-        <fluent-icon icon="info" size="16" aria-hidden="true" />
-        {{ $t('WORKFLOW.EDITOR.ACTIVE_READONLY') }}
-      </div>
     </header>
 
-    <transition name="fade-down">
-      <div
-        v-if="validationErrors.length"
-        class="mx-4 mt-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
-        role="alert"
-      >
-        <ul class="text-xs text-red-700 dark:text-red-300 space-y-1">
-          <li v-for="(err, i) in validationErrors" :key="i">{{ err }}</li>
-        </ul>
-      </div>
-    </transition>
+    <div
+      v-if="isFlowActive"
+      class="flex-shrink-0 flex items-center gap-1.5 px-4 py-1.5 text-xs border-b border-amber-200/70 dark:border-amber-800/40 bg-amber-50/70 dark:bg-amber-950/25 text-amber-900/90 dark:text-amber-200/90"
+      role="status"
+    >
+      <fluent-icon
+        icon="info"
+        size="14"
+        class="text-amber-600 dark:text-amber-400 flex-shrink-0"
+        aria-hidden="true"
+      />
+      <span>{{ $t('WORKFLOW.EDITOR.ACTIVE_READONLY') }}</span>
+    </div>
+
+    <WorkflowValidationBanner
+      v-if="validationErrors.length"
+      :error-count="validationErrors.length"
+      @dismiss="dismissValidationErrors"
+    />
 
     <div
       v-if="loadError"
@@ -482,6 +549,7 @@ const activeStatusLabel = computed(() =>
           :key="selectedNode.id"
           :node="selectedNode"
           :read-only="readOnlyGraph"
+          :node-errors="selectedNodeErrors"
           @update-node="onUpdateNode"
         />
       </transition>

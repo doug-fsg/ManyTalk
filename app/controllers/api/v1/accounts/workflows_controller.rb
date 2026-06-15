@@ -73,7 +73,7 @@ class Api::V1::Accounts::WorkflowsController < Api::V1::Accounts::BaseController
   def clone
     source = Current.account.workflows.find(params[:id])
     @workflow = source.dup
-    @workflow.name = "#{source.name} (copy)"
+    @workflow.name = "#{source.name} #{I18n.t('workflows.clone_suffix')}"
     @workflow.active = false
     @workflow.created_by = current_user
     @workflow.updated_by = current_user
@@ -81,7 +81,15 @@ class Api::V1::Accounts::WorkflowsController < Api::V1::Accounts::BaseController
   end
 
   def toggle_active
-    @workflow.update!(active: !@workflow.active, updated_by: current_user)
+    activating = !@workflow.active
+    if activating
+      result = Workflows::GraphValidationService.new(graph: @workflow.graph, account: Current.account).perform
+      unless result[:valid]
+        errors = Workflows::GraphValidationService.error_messages(result[:errors])
+        return render json: { error: errors }, status: :unprocessable_entity
+      end
+    end
+    @workflow.update!(active: activating, updated_by: current_user)
     @workflow
   end
 
