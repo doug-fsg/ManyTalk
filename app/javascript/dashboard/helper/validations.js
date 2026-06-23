@@ -39,7 +39,8 @@ const validateSingleFilter = filter => {
   }
 
   if (
-    filter.filter_operator === 'days_before' &&
+    (filter.filter_operator === 'days_before' ||
+      filter.filter_operator === 'months_before') &&
     (parseInt(filter.values, 10) <= 0 || parseInt(filter.values, 10) >= 999)
   ) {
     return VALUE_MUST_BE_BETWEEN_1_AND_998;

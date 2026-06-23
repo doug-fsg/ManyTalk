@@ -29,6 +29,10 @@ class WorkflowPolicy < ApplicationPolicy
     account_member? && workflows_enabled?
   end
 
+  def dry_run?
+    show?
+  end
+
   def test_external_whatsapp?
     account_member? && workflows_enabled?
   end

@@ -11,6 +11,7 @@ import {
   sourceHandleToAnchorId,
   anchorIdToSourceHandle,
 } from 'dashboard/routes/dashboard/settings/workflows/workflowLogicFlowNodes';
+import { searchWorkflowIntents } from 'dashboard/routes/dashboard/settings/workflows/constants';
 
 describe('workflowGraphHelper branch anchors', () => {
   it('maps condition sourceHandle to dual anchors', () => {
@@ -166,6 +167,59 @@ describe('workflowGraphHelper validation helpers', () => {
       },
       { message: 'Graph must include nodes array', node_id: null },
     ]);
+  });
+
+  it('maps ai_wait_for_intent sourceHandle intent_detected to out_true anchor', () => {
+    expect(sourceHandleToAnchorId('n1', 'intent_detected', 'ai_wait_for_intent')).toBe('n1_out_true');
+    expect(sourceHandleToAnchorId('n1', 'timeout', 'ai_wait_for_intent')).toBe('n1_out_false');
+  });
+
+  it('maps ai_wait_for_intent anchors back to correct sourceHandle', () => {
+    expect(anchorIdToSourceHandle('n1_out_true', 'ai_wait_for_intent')).toBe('intent_detected');
+    expect(anchorIdToSourceHandle('n1_out_false', 'ai_wait_for_intent')).toBe('timeout');
+  });
+
+  it('round-trips ai_wait_for_intent edges through normalizeWorkflowGraph', () => {
+    const graph = normalizeWorkflowGraph({
+      nodes: [
+        { id: 'trigger_1', type: 'trigger', x: 0, y: 0, data: { event_name: 'manual' } },
+        { id: 'intent_1', type: 'ai_wait_for_intent', x: 200, y: 0, data: { intent_key: 'quote_request', duration: 30, unit: 'minutes' } },
+        { id: 'a_detected', type: 'action', x: 400, y: 0, data: { action_name: 'send_message', action_params: ['ok'] } },
+        { id: 'a_timeout', type: 'action', x: 400, y: 120, data: { action_name: 'send_message', action_params: ['timeout'] } },
+      ],
+      edges: [
+        { source: 'trigger_1', target: 'intent_1' },
+        { source: 'intent_1', target: 'a_detected', sourceHandle: 'intent_detected' },
+        { source: 'intent_1', target: 'a_timeout', sourceHandle: 'timeout' },
+      ],
+    });
+
+    const detectedEdge = graph.edges.find(e => e.target === 'a_detected');
+    const timeoutEdge = graph.edges.find(e => e.target === 'a_timeout');
+    expect(detectedEdge.sourceHandle).toBe('intent_detected');
+    expect(timeoutEdge.sourceHandle).toBe('timeout');
+  });
+
+  it('coerces cross-type handles on ai_wait_for_intent nodes', () => {
+    const graph = normalizeWorkflowGraph({
+      nodes: [
+        { id: 'trigger_1', type: 'trigger', x: 0, y: 0, data: { event_name: 'manual' } },
+        { id: 'intent_1', type: 'ai_wait_for_intent', x: 200, y: 0, data: { intent_key: 'quote_request', duration: 30, unit: 'minutes' } },
+        { id: 'a1', type: 'action', x: 400, y: 0, data: {} },
+      ],
+      edges: [
+        { source: 'trigger_1', target: 'intent_1' },
+        { source: 'intent_1', target: 'a1', sourceHandle: 'true' },
+      ],
+    });
+    const edge = graph.edges.find(e => e.target === 'a1');
+    expect(edge.sourceHandle).toBe('intent_detected');
+  });
+
+  it('filters intents by search query', () => {
+    const results = searchWorkflowIntents('orçamento');
+    expect(results.some(i => i.key === 'quote_request')).toBe(true);
+    expect(results.some(i => i.key === 'technical_support')).toBe(false);
   });
 
   it('lays out template graphs without coordinates', () => {

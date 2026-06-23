@@ -146,9 +146,14 @@ export const normalizeWorkflowGraph = graph => {
     if (srcType === 'wait_for_reply') {
       if (edge.sourceHandle === 'true') edge.sourceHandle = 'replied';
       else if (edge.sourceHandle === 'false') edge.sourceHandle = 'timeout';
+    } else if (srcType === 'ai_wait_for_intent') {
+      if (edge.sourceHandle === 'true') edge.sourceHandle = 'intent_detected';
+      else if (edge.sourceHandle === 'false') edge.sourceHandle = 'timeout';
+      else if (edge.sourceHandle === 'replied') edge.sourceHandle = 'intent_detected';
     } else if (srcType === 'condition') {
       if (edge.sourceHandle === 'replied') edge.sourceHandle = 'true';
       else if (edge.sourceHandle === 'timeout') edge.sourceHandle = 'false';
+      else if (edge.sourceHandle === 'intent_detected') edge.sourceHandle = 'true';
     }
   });
 
@@ -166,6 +171,8 @@ export const normalizeWorkflowGraph = graph => {
       const srcType = nodeTypeById(normalized.nodes, normalized.edges[edgeIndex].source);
       if (srcType === 'wait_for_reply') {
         normalized.edges[edgeIndex].sourceHandle = i === 0 ? 'replied' : 'timeout';
+      } else if (srcType === 'ai_wait_for_intent') {
+        normalized.edges[edgeIndex].sourceHandle = i === 0 ? 'intent_detected' : 'timeout';
       } else {
         normalized.edges[edgeIndex].sourceHandle = i === 0 ? 'true' : 'false';
       }

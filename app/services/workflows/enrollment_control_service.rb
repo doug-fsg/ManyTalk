@@ -52,7 +52,7 @@ module Workflows
         conversation = enrollment.conversation
         current_node = workflow.find_node(enrollment.current_node_id)
 
-        if %w[wait wait_for_reply].include?(current_node&.dig('type'))
+        if %w[wait wait_for_reply ai_wait_for_intent].include?(current_node&.dig('type'))
           delay = if enrollment.resume_at && enrollment.resume_at > Time.current
                     enrollment.resume_at - Time.current
                   else
@@ -101,7 +101,7 @@ module Workflows
           paused_by: nil,
           pause_reason: nil,
           resume_at: nil,
-          context: (enrollment.context || {}).except('reply_watch')
+          context: (enrollment.context || {}).except('reply_watch', 'intent_watch')
         )
 
         conversation = enrollment.conversation
@@ -113,6 +113,14 @@ module Workflows
     end
 
     def handle_reply(enrollment, message = nil)
+      if enrollment.intent_watch_active?
+        return if message.present? && !enrollment.intent_matches_message?(message)
+        return if skip_intent_enqueue?(enrollment, message)
+
+        Workflows::IntentClassificationJob.perform_later(enrollment.id, message&.id)
+        return
+      end
+
       if enrollment.reply_watch_active?
         return if message.present? && !enrollment.reply_matches_message?(message)
 
@@ -127,6 +135,13 @@ module Workflows
 
     def handle_contact_reply(enrollment)
       handle_reply(enrollment, nil)
+    end
+
+    def skip_intent_enqueue?(enrollment, message)
+      return true if enrollment.intent_watch_classification_in_flight?
+      return true if message && enrollment.last_classified_message_id == message.id
+
+      false
     end
 
     def handle_contact_reply_side_effects(enrollment)

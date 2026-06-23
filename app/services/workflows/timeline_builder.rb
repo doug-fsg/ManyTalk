@@ -84,6 +84,9 @@ module Workflows
       if node_id == @enrollment.current_node_id && @enrollment.reply_watch_active?
         edges.find { |e| e['sourceHandle'] == 'replied' }&.dig('target') ||
           edges.find { |e| e['sourceHandle'] == 'timeout' }&.dig('target')
+      elsif node_id == @enrollment.current_node_id && @enrollment.intent_watch_active?
+        edges.find { |e| e['sourceHandle'] == 'intent_detected' }&.dig('target') ||
+          edges.find { |e| e['sourceHandle'] == 'timeout' }&.dig('target')
       else
         edges.find do |edge|
           target = edge['target']
@@ -125,7 +128,8 @@ module Workflows
         status: status,
         executed_at: execution&.executed_at,
         scheduled_at: scheduled_at_for(node_id, execution, status),
-        branch: branch_hint(node_id, status)
+        branch: branch_hint(node_id, status),
+        error_message: status == 'failed' ? execution&.error_message : nil
       }
     end
 
@@ -164,11 +168,15 @@ module Workflows
       reply_watch = (@enrollment.context || {})['reply_watch']
       return Time.zone.parse(reply_watch['deadline_at']) if node_id == reply_watch&.dig('node_id') && status == 'running'
 
+      intent_watch = (@enrollment.context || {})['intent_watch']
+      return Time.zone.parse(intent_watch['deadline_at']) if node_id == intent_watch&.dig('node_id') && status == 'running'
+
       nil
     end
 
     def branch_hint(node_id, status)
       return 'awaiting' if node_id == @enrollment.current_node_id && @enrollment.reply_watch_active? && status == 'running'
+      return 'awaiting' if node_id == @enrollment.current_node_id && @enrollment.intent_watch_active? && status == 'running'
 
       nil
     end

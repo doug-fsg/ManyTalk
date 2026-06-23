@@ -26,6 +26,14 @@ class WorkflowsAPI extends ApiClient {
     return axios.post(`${this.url}/${workflowId}/toggle_active`);
   }
 
+  dryRun(workflowId, { conversationId = null, decisions = [], autoSkipWaits = false } = {}) {
+    return axios.post(`${this.url}/${workflowId}/dry_run`, {
+      conversation_id: conversationId,
+      decisions,
+      auto_skip_waits: autoSkipWaits,
+    });
+  }
+
   testExternalWhatsapp({ inboxId, phoneNumber, message }) {
     return axios.post(`${this.url}/test_external_whatsapp`, {
       inbox_id: inboxId,

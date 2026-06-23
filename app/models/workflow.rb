@@ -78,4 +78,15 @@ class Workflow < ApplicationRecord
            end
     edge&.dig('target')
   end
+
+  def conflicting_automation_names
+    event = trigger_event_name
+    return [] if event.blank?
+
+    account.automation_rules
+           .active
+           .where(event_name: event)
+           .limit(10)
+           .pluck(:name)
+  end
 end

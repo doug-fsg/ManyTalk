@@ -17,6 +17,7 @@ import BackButton from 'dashboard/components/widgets/BackButton.vue';
 import WorkflowPropertiesPanel from './WorkflowPropertiesPanel.vue';
 import WorkflowFlowSettingsPanel from './WorkflowFlowSettingsPanel.vue';
 import WorkflowValidationBanner from './WorkflowValidationBanner.vue';
+import WorkflowSimulateModal from './WorkflowSimulateModal.vue';
 import {
   emptyGraph,
   serializeGraphForApi,
@@ -25,6 +26,7 @@ import {
   normalizeValidationErrors,
 } from 'dashboard/helper/workflowGraphHelper';
 import { humanizeValidationError } from 'dashboard/helper/workflowValidationMessages';
+import { ensureWorkflowEditorBootstrapped } from './useWorkflowEditorBootstrap';
 
 const WorkflowCanvas = defineAsyncComponent(() => import('./WorkflowCanvas.vue'));
 
@@ -47,6 +49,7 @@ const nameError = ref(false);
 const canvasRef = ref(null);
 const graphRevision = ref(0);
 const showFlowSettings = ref(false);
+const showSimulate = ref(false);
 const isTogglingActive = ref(false);
 
 const workflowId = computed(() => route.params.workflowId);
@@ -146,6 +149,7 @@ const removeRouteGuard = router.beforeEach((to, from, next) => {
 });
 
 onMounted(() => {
+  ensureWorkflowEditorBootstrapped(store);
   seedActiveFromStore();
   loadWorkflow();
   window.addEventListener('beforeunload', handleBeforeUnload);
@@ -236,6 +240,10 @@ const openFlowSettings = () => {
 
 const closeFlowSettings = () => {
   showFlowSettings.value = false;
+};
+
+const openSimulate = () => {
+  showSimulate.value = true;
 };
 
 const save = async (activate = false) => {
@@ -460,6 +468,17 @@ const activeStatusLabel = computed(() =>
 
         <div class="flex items-center gap-2 shrink-0">
           <woot-button
+            v-if="isEdit"
+            v-tooltip="$t('WORKFLOW.SIMULATE.TOOLTIP')"
+            variant="clear"
+            color-scheme="secondary"
+            size="small"
+            icon="play-circle"
+            :aria-label="$t('WORKFLOW.SIMULATE.TOOLTIP')"
+            @click="openSimulate"
+          />
+
+          <woot-button
             v-tooltip="$t('WORKFLOW.EDITOR.FLOW_SETTINGS')"
             variant="clear"
             color-scheme="secondary"
@@ -574,6 +593,12 @@ const activeStatusLabel = computed(() =>
         </div>
       </div>
     </woot-modal>
+
+    <WorkflowSimulateModal
+      :show="showSimulate"
+      :workflow-id="workflowId"
+      @close="showSimulate = false"
+    />
   </div>
 </template>
 

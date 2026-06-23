@@ -103,10 +103,13 @@ module Workflows
     end
 
     def send_whatsapp_external(params)
-      inbox_id = params[0]
+      inbox_id = params[0].to_i
       phone_number = params[1]
       raw_message = params[2] || ''
+      return false if inbox_id.zero? || phone_number.blank?
+
       content = Workflows::MessageInterpolator.new(@conversation).interpolate(raw_message)
+      return false if content.to_s.strip.blank?
 
       result = Workflows::ExternalWhatsappNotifier.new(
         account: @account,

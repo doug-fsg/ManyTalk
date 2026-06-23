@@ -3,7 +3,7 @@
 module WorkflowEnrollment::Lifecycle
   extend ActiveSupport::Concern
 
-  PAUSE_REASONS = %w[manual contact_replied conversation_resolved].freeze
+  PAUSE_REASONS = %w[manual contact_replied conversation_resolved agent_replied label_applied].freeze
 
   included do
     belongs_to :paused_by, class_name: 'User', optional: true

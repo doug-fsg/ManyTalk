@@ -27,9 +27,9 @@
 #
 # Indexes
 #
-#  idx_we_in_progress_by_account                                 (account_id,status) WHERE ((status)::text = ANY ((ARRAY['active'::character varying, 'waiting'::character varying, 'paused'::character varying])::text[]))
+#  idx_we_in_progress_by_account                                 (account_id,status) WHERE ((status)::text = ANY (ARRAY[('active'::character varying)::text, ('waiting'::character varying)::text, ('paused'::character varying)::text]))
 #  index_we_on_account_id_and_contact_id                         (account_id,contact_id)
-#  index_we_unique_active_contact_scope                          (workflow_id,contact_id) UNIQUE WHERE (((status)::text = ANY ((ARRAY['active'::character varying, 'waiting'::character varying, 'paused'::character varying])::text[])) AND ((enrollment_scope)::text = 'contact'::text))
+#  index_we_unique_active_contact_scope                          (workflow_id,contact_id) UNIQUE WHERE (((status)::text = ANY (ARRAY[('active'::character varying)::text, ('waiting'::character varying)::text, ('paused'::character varying)::text])) AND ((enrollment_scope)::text = 'contact'::text))
 #  index_workflow_enrollments_on_account_id                      (account_id)
 #  index_workflow_enrollments_on_account_id_and_conversation_id  (account_id,conversation_id)
 #  index_workflow_enrollments_on_contact_id                      (contact_id)
@@ -48,6 +48,8 @@
 class WorkflowEnrollment < ApplicationRecord
   include WorkflowEnrollment::Lifecycle
   include WorkflowEnrollment::ReplyWatch
+  include WorkflowEnrollment::IntentWatch
+  include WorkflowEnrollment::WatchContext
 
   STATUSES = %w[active waiting paused completed cancelled].freeze
 
@@ -92,7 +94,7 @@ class WorkflowEnrollment < ApplicationRecord
         status: 'cancelled',
         cancel_reason: reason,
         cancelled_at: Time.current,
-        context: (context || {}).except('reply_watch')
+        context: (context || {}).except('reply_watch', 'intent_watch')
       )
       workflow_step_executions.where(status: 'scheduled').update_all(status: 'skipped', updated_at: Time.current)
     end
@@ -104,7 +106,7 @@ class WorkflowEnrollment < ApplicationRecord
         status: 'completed',
         completed_at: Time.current,
         current_node_id: nil,
-        context: (context || {}).except('reply_watch')
+        context: (context || {}).except('reply_watch', 'intent_watch')
       )
     end
   end
@@ -149,8 +151,30 @@ class WorkflowEnrollment < ApplicationRecord
         settings['cancel_on_contact_reply'] != false
       when 'conversation_resolved'
         settings['cancel_on_conversation_resolved'] != false
+      when 'agent_replied'
+        settings['cancel_on_agent_reply'] == true
       else
         true
+      end
+    end
+
+    def cancel_for_agent_reply!(conversation)
+      in_progress.where(conversation_id: conversation.id).find_each do |enrollment|
+        next unless cancel_enabled?(enrollment.workflow, 'agent_replied')
+
+        enrollment.cancel!('agent_replied')
+      end
+    end
+
+    def cancel_for_labels!(conversation, labels)
+      return if labels.blank?
+
+      in_progress.where(conversation_id: conversation.id).find_each do |enrollment|
+        cancel_labels = Array(enrollment.workflow.settings['cancel_on_labels'])
+        next if cancel_labels.blank?
+        next unless (cancel_labels & labels.map(&:to_s)).any?
+
+        enrollment.cancel!('label_applied')
       end
     end
   end

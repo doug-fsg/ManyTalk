@@ -27,7 +27,8 @@
       "is_not_present": "Is not present",
       "is_greater_than": "Is greater than",
       "is_less_than": "Is lesser than",
-      "days_before": "Is x days before",
+      "days_before": "Is x days ago",
+      "months_before": "Is x months ago",
       "starts_with": "Starts with"
     },
     "ATTRIBUTE_LABELS": {

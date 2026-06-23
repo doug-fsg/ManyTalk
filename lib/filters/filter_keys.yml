@@ -113,6 +113,7 @@ conversations:
       - "is_greater_than"
       - "is_less_than"
       - "days_before"
+      - "months_before"
   last_activity_at:
     attribute_type: "standard"
     data_type: "date"
@@ -120,6 +121,7 @@ conversations:
       - "is_greater_than"
       - "is_less_than"
       - "days_before"
+      - "months_before"
   mail_subject:
     attribute_type: "additional_attributes"
     data_type: "text"
@@ -202,6 +204,7 @@ contacts:
       - "is_greater_than"
       - "is_less_than"
       - "days_before"
+      - "months_before"
   last_activity_at:
     attribute_type: "standard"
     data_type: "date"
@@ -209,6 +212,7 @@ contacts:
       - "is_greater_than"
       - "is_less_than"
       - "days_before"
+      - "months_before"
   blocked:
     attribute_type: "standard"
     data_type: "boolean"

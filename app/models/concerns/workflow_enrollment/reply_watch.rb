@@ -15,8 +15,9 @@ module WorkflowEnrollment::ReplyWatch
   end
 
   def set_reply_watch!(node_id:, baseline_at:, deadline_at:, wait_responder: 'contact')
+    # Mutual exclusivity: clearing intent_watch prevents both watches from coexisting.
     update!(
-      context: (context || {}).merge(
+      context: (context || {}).except('intent_watch').merge(
         'reply_watch' => {
           'node_id' => node_id,
           'baseline_at' => baseline_at.iso8601(6),

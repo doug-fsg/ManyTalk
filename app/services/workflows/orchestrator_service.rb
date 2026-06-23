@@ -44,6 +44,8 @@ module Workflows
               resume_after_wait(workflow, enrollment, conversation, node)
             when 'wait_for_reply'
               resume_after_reply_timeout(workflow, enrollment, conversation, node)
+            when 'ai_wait_for_intent'
+              resume_after_intent_timeout(workflow, enrollment, conversation, node)
             else
               process_node(workflow, enrollment, conversation, node)
             end
@@ -51,6 +53,37 @@ module Workflows
             process_node(workflow, enrollment, conversation, node)
           end
         end
+      end
+
+      def on_intent_detected(enrollment)
+        return unless enrollment.intent_watch_active?
+
+        workflow = enrollment.workflow
+        conversation = enrollment.conversation
+
+        enrollment.with_lock do
+          enrollment.reload
+          return unless enrollment.intent_watch_active?
+
+          node_id = enrollment.intent_watch['node_id']
+          node = workflow.find_node(node_id)
+          return if node.blank?
+
+          JobScheduler.cancel_pending!(enrollment)
+          mark_step_completed(enrollment, node_id)
+          enrollment.clear_intent_watch!
+          enrollment.update!(status: 'active')
+
+          next_id = workflow.next_node_id(node_id, source_handle: 'intent_detected')
+          if next_id.blank?
+            complete_enrollment(enrollment)
+          else
+            enrollment.update!(current_node_id: next_id)
+            advance_from(workflow, enrollment, conversation, next_id, depth: 0)
+          end
+        end
+
+        EnrollmentBroadcaster.updated(enrollment.reload)
       end
 
       def on_contact_reply(enrollment)
@@ -156,10 +189,48 @@ module Workflows
 
       def active_enrollment_exists?(workflow, conversation)
         if workflow.settings['enrollment_scope'] == 'conversation'
-          return WorkflowEnrollment.in_progress.exists?(workflow_id: workflow.id, conversation_id: conversation.id)
+          return true if WorkflowEnrollment.in_progress.exists?(workflow_id: workflow.id, conversation_id: conversation.id)
+        else
+          return true if WorkflowEnrollment.in_progress.exists?(workflow_id: workflow.id, contact_id: conversation.contact_id)
         end
 
-        WorkflowEnrollment.in_progress.exists?(workflow_id: workflow.id, contact_id: conversation.contact_id)
+        reenrollment_blocked?(workflow, conversation.contact_id)
+      end
+
+      def reenrollment_blocked?(workflow, contact_id)
+        return false if contact_id.blank?
+
+        past = WorkflowEnrollment.where(workflow_id: workflow.id, contact_id: contact_id)
+                                 .where(status: %w[completed cancelled])
+
+        return false unless past.exists?
+
+        # No past finished enrollment → no block
+        return true unless workflow.settings['allow_reenrollment'] == true
+
+        # Re-enrollment allowed — check optional limits
+        settings = workflow.settings
+
+        # Block re-entry after cancel if reenrollment_on_cancel is false
+        if settings['reenrollment_on_cancel'] == false
+          return true if past.exists?(status: 'cancelled')
+        end
+
+        # Enforce minimum interval
+        min_days = settings['reenrollment_min_interval_days'].to_i
+        if min_days > 0
+          last = past.order(updated_at: :desc).first
+          return true if last && last.updated_at > min_days.days.ago
+        end
+
+        # Enforce max total enrollments
+        max_total = settings['max_enrollments_per_contact'].to_i
+        if max_total > 0
+          total = WorkflowEnrollment.where(workflow_id: workflow.id, contact_id: contact_id).count
+          return true if total >= max_total
+        end
+
+        false
       end
 
       def skip_enrollment_for_older_conversation?(workflow, conversation)
@@ -192,6 +263,8 @@ module Workflows
           schedule_wait(workflow, enrollment, node)
         when 'wait_for_reply'
           schedule_reply_watch(workflow, enrollment, conversation, node)
+        when 'ai_wait_for_intent'
+          schedule_intent_watch(workflow, enrollment, conversation, node)
         when 'condition'
           handle_condition(workflow, enrollment, conversation, node, depth: depth)
         else
@@ -397,6 +470,8 @@ module Workflows
           schedule_wait(workflow, enrollment, node)
         when 'wait_for_reply'
           schedule_reply_watch(workflow, enrollment, conversation, node)
+        when 'ai_wait_for_intent'
+          schedule_intent_watch(workflow, enrollment, conversation, node)
         when 'condition'
           handle_condition(workflow, enrollment, conversation, node, depth: 0)
         when 'trigger'
@@ -420,6 +495,78 @@ module Workflows
         mark_step_completed(enrollment, node['id'])
         enrollment.update!(status: 'active')
         move_to_next(workflow, enrollment, conversation, node['id'], depth: 0)
+      end
+
+      def schedule_intent_watch(workflow, enrollment, conversation, node)
+        data = node['data'] || {}
+        base_delay = wait_duration(data)
+        baseline_at = Time.current
+        deadline_at = apply_business_hours(workflow, conversation, baseline_at + base_delay)
+        wait_delay = [deadline_at - baseline_at, 1.second].max
+
+        execution = enrollment.workflow_step_executions.find_or_initialize_by(node_id: node['id'])
+        return if execution.status == 'completed'
+
+        enrollment.reload
+        if execution.persisted? && execution.status == 'scheduled' && enrollment.waiting? &&
+           enrollment.current_node_id == node['id'] && enrollment.intent_watch_active?
+          return
+        end
+
+        intent_key = data['intent_key'].to_s
+        return if intent_key.blank?
+
+        intent_description = data['intent_description'].to_s.presence
+
+        ActiveRecord::Base.transaction do
+          enrollment.set_intent_watch!(
+            node_id: node['id'],
+            baseline_at: baseline_at,
+            deadline_at: deadline_at,
+            intent_key: intent_key,
+            intent_description: intent_description
+          )
+          enrollment.update!(
+            status: 'waiting',
+            current_node_id: node['id'],
+            resume_at: deadline_at
+          )
+          execution.update!(
+            status: 'scheduled',
+            scheduled_at: deadline_at,
+            job_id: nil
+          )
+        end
+
+        job = Workflows::StepJob.set(wait: wait_delay).perform_later(enrollment.id, node['id'])
+        execution.update!(job_id: job&.provider_job_id)
+      end
+
+      def resume_after_intent_timeout(workflow, enrollment, conversation, node)
+        return unless enrollment.intent_watch_active?
+
+        if enrollment.intent_watch_classification_in_flight?
+          max_retries = 5
+          retry_count = (enrollment.intent_watch['timeout_retry_count'] || 0).to_i
+          if retry_count < max_retries
+            updated_watch = enrollment.intent_watch.merge('timeout_retry_count' => retry_count + 1)
+            enrollment.update!(context: (enrollment.context || {}).merge('intent_watch' => updated_watch))
+            Workflows::StepJob.set(wait: 1.second).perform_later(enrollment.id, node['id'])
+            return
+          end
+        end
+
+        mark_step_completed(enrollment, node['id'])
+        enrollment.clear_intent_watch!
+        enrollment.update!(status: 'active')
+
+        next_id = workflow.next_node_id(node['id'], source_handle: 'timeout')
+        if next_id.blank?
+          complete_enrollment(enrollment)
+        else
+          enrollment.update!(current_node_id: next_id)
+          advance_from(workflow, enrollment, conversation, next_id, depth: 0)
+        end
       end
 
       def resume_after_reply_timeout(workflow, enrollment, conversation, node)

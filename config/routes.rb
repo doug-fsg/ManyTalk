@@ -85,6 +85,7 @@ Rails.application.routes.draw do
             member do
               post :clone
               post :toggle_active
+              post :dry_run
             end
             resources :enrollments, only: [:index], controller: 'workflow_enrollments'
           end

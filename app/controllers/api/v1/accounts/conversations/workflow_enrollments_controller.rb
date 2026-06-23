@@ -123,7 +123,8 @@ class Api::V1::Accounts::Conversations::WorkflowEnrollmentsController < Api::V1:
       started_by: user_payload(enrollment.started_by),
       paused_by: user_payload(enrollment.paused_by),
       available_stages: available_stages(workflow),
-      reply_watch: reply_watch_payload(enrollment)
+      reply_watch: reply_watch_payload(enrollment),
+      intent_watch: intent_watch_payload(enrollment)
     }
   end
 
@@ -135,6 +136,19 @@ class Api::V1::Accounts::Conversations::WorkflowEnrollmentsController < Api::V1:
       node_id: reply_watch['node_id'],
       deadline_at: reply_watch['deadline_at'],
       baseline_at: reply_watch['baseline_at']
+    }
+  end
+
+  def intent_watch_payload(enrollment)
+    intent_watch = (enrollment.context || {})['intent_watch']
+    return nil if intent_watch.blank?
+
+    {
+      node_id: intent_watch['node_id'],
+      intent_key: intent_watch['intent_key'],
+      deadline_at: intent_watch['deadline_at'],
+      baseline_at: intent_watch['baseline_at'],
+      last_classification: intent_watch['last_classification']
     }
   end
 

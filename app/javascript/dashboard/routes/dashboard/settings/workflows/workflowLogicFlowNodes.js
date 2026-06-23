@@ -1,5 +1,5 @@
 import { HtmlNode, HtmlNodeModel } from '@logicflow/core';
-import { WORKFLOW_CANVAS_GRID_SIZE } from './constants';
+import { WORKFLOW_CANVAS_GRID_SIZE, findWorkflowIntentByKey } from './constants';
 
 const NODE_META = {
   trigger: {
@@ -41,6 +41,12 @@ const NODE_META = {
     iconPath:
       'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.847a4.5 4.5 0 003.09 3.09L15.75 12l-2.847.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z',
   },
+  ai_wait_for_intent: {
+    title: 'Aguardar intenção',
+    color: '#7C3AED',
+    iconPath:
+      'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.847a4.5 4.5 0 003.09 3.09L15.75 12l-2.847.813a4.5 4.5 0 00-3.09 3.09zM12 8v4l3 3',
+  },
 };
 
 export const getWorkflowNodeVisual = type => {
@@ -70,14 +76,21 @@ export const WORKFLOW_NODE_WIDTH = 128;
 export const WORKFLOW_NODE_HEIGHT = 84;
 export const WORKFLOW_BRANCH_NODE_HEIGHT = 84;
 
-export const isWorkflowCanvasDark = () =>
-  document.body.classList.contains('dark') ||
-  document.documentElement.classList.contains('dark');
+let workflowCanvasDarkMode =
+  typeof document !== 'undefined' &&
+  (document.body.classList.contains('dark') ||
+    document.documentElement.classList.contains('dark'));
+
+export const setWorkflowCanvasDarkMode = isDark => {
+  workflowCanvasDarkMode = Boolean(isDark);
+};
+
+export const isWorkflowCanvasDark = () => workflowCanvasDarkMode;
 
 const workflowNodeHeight = isBranch =>
   isBranch ? WORKFLOW_BRANCH_NODE_HEIGHT : WORKFLOW_NODE_HEIGHT;
 
-export const BRANCH_NODE_TYPES = ['condition', 'wait_for_reply'];
+export const BRANCH_NODE_TYPES = ['condition', 'wait_for_reply', 'ai_wait_for_intent'];
 
 export const isBranchNodeType = type => BRANCH_NODE_TYPES.includes(type);
 
@@ -96,7 +109,11 @@ export const sourceHandleToAnchorId = (nodeId, sourceHandle, nodeType) => {
     if (handle === 'replied') return workflowAnchorOutTrueId(nodeId);
     if (handle === 'timeout') return workflowAnchorOutFalseId(nodeId);
   }
-  if (handle === 'true' || handle === 'replied') return workflowAnchorOutTrueId(nodeId);
+  if (nodeType === 'ai_wait_for_intent') {
+    if (handle === 'intent_detected') return workflowAnchorOutTrueId(nodeId);
+    if (handle === 'timeout') return workflowAnchorOutFalseId(nodeId);
+  }
+  if (handle === 'true' || handle === 'replied' || handle === 'intent_detected') return workflowAnchorOutTrueId(nodeId);
   if (handle === 'false' || handle === 'timeout') return workflowAnchorOutFalseId(nodeId);
   return workflowAnchorOutTrueId(nodeId);
 };
@@ -105,10 +122,12 @@ export const sourceHandleToAnchorId = (nodeId, sourceHandle, nodeType) => {
 export const anchorIdToSourceHandle = (anchorId, nodeType) => {
   const id = String(anchorId || '');
   if (id.endsWith('_out_true')) {
-    return nodeType === 'wait_for_reply' ? 'replied' : 'true';
+    if (nodeType === 'wait_for_reply') return 'replied';
+    if (nodeType === 'ai_wait_for_intent') return 'intent_detected';
+    return 'true';
   }
   if (id.endsWith('_out_false')) {
-    return nodeType === 'wait_for_reply' ? 'timeout' : 'false';
+    return nodeType === 'wait_for_reply' || nodeType === 'ai_wait_for_intent' ? 'timeout' : 'false';
   }
   return undefined;
 };
@@ -117,6 +136,10 @@ export const sourceHandleLabel = (sourceHandle, nodeType) => {
   if (nodeType === 'wait_for_reply') {
     if (sourceHandle === 'replied') return 'Respondeu';
     if (sourceHandle === 'timeout') return 'Sem resposta';
+  }
+  if (nodeType === 'ai_wait_for_intent') {
+    if (sourceHandle === 'intent_detected') return 'Detectada';
+    if (sourceHandle === 'timeout') return 'Prazo';
   }
   if (sourceHandle === 'true') return 'Então';
   if (sourceHandle === 'false') return 'Senão';
@@ -165,6 +188,13 @@ export const workflowNodeSubtitle = properties => {
         next_action: 'Próx. ação',
       };
       return `${TYPE_LABELS[type] || type} · ${dest}`;
+    }
+    case 'ai_wait_for_intent': {
+      const label = data.intent_key
+        ? findWorkflowIntentByKey(data.intent_key)?.label
+        : null;
+      const intentPart = label || (data.intent_key ? data.intent_key : '—');
+      return `${intentPart} · ${data.duration || '?'}${data.unit ? data.unit[0] : ''}`;
     }
     default:
       return type || '';
@@ -291,6 +321,7 @@ class WorkflowCardView extends HtmlNode {
       properties.action_name,
       properties.objective_preset,
       properties.tone_preset,
+      properties.intent_key,
       (properties.conditions || []).length,
       (properties.action_params || []).join('\0'),
       properties.isInvalid,

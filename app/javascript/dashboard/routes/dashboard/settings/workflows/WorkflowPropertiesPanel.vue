@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref } from 'vue';
 import { useStore } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
 import { useI18n } from 'dashboard/composables/useI18n';
@@ -12,6 +12,7 @@ import {
 import WorkflowConditionsEditor from './WorkflowConditionsEditor.vue';
 import WorkflowAiOutreachPanel from './WorkflowAiOutreachPanel.vue';
 import WorkflowAiAnalysisPanel from './WorkflowAiAnalysisPanel.vue';
+import WorkflowAiWaitForIntentPanel from './WorkflowAiWaitForIntentPanel.vue';
 import KanbanStageSelect from 'dashboard/routes/dashboard/settings/macros/components/KanbanStageSelect.vue';
 import AutomationFileInput from 'dashboard/components/widgets/AutomationFileInput.vue';
 import {
@@ -30,16 +31,6 @@ const emit = defineEmits(['update-node']);
 const { t } = useI18n();
 const store = useStore();
 const isTestingWhatsapp = ref(false);
-
-onMounted(async () => {
-  await Promise.all([
-    store.dispatch('agents/get'),
-    store.dispatch('teams/get'),
-    store.dispatch('labels/get'),
-    store.dispatch('attributes/get'),
-    store.dispatch('inboxes/get'),
-  ]);
-});
 
 const agents = computed(() => store.getters['agents/getAgents'] || []);
 const teams = computed(() => store.getters['teams/getTeams'] || []);
@@ -166,8 +157,11 @@ const testWhatsappExternal = async () => {
       message: message || t('WORKFLOW.EDITOR.MESSAGE_PLACEHOLDER'),
     });
     useAlert(t('WORKFLOW.EDITOR.WHATSAPP_TEST_SUCCESS'));
-  } catch {
-    useAlert(t('WORKFLOW.EDITOR.WHATSAPP_TEST_ERROR'));
+  } catch (err) {
+    const apiError = err?.response?.data?.error;
+    const detail = err?.response?.data?.detail;
+    const msg = detail || apiError;
+    useAlert(msg ? `${t('WORKFLOW.EDITOR.WHATSAPP_TEST_ERROR')} (${msg})` : t('WORKFLOW.EDITOR.WHATSAPP_TEST_ERROR'));
   } finally {
     isTestingWhatsapp.value = false;
   }
@@ -199,25 +193,35 @@ const NODE_META_BASE = {
       'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.847a4.5 4.5 0 003.09 3.09L15.75 12l-2.847.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z',
     labelKey: 'WORKFLOW.EDITOR.NODE_CONVERSATION_ANALYSIS',
   },
+  ai_wait_for_intent: {
+    color: '#7C3AED',
+    icon: 'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.847a4.5 4.5 0 003.09 3.09L15.75 12l-2.847.813a4.5 4.5 0 00-3.09 3.09zM12 8v4l3 3',
+    labelKey: 'WORKFLOW.EDITOR.NODE_AI_WAIT_FOR_INTENT',
+  },
 };
 
-const currentMeta = computed(() => {
-  const base = NODE_META_BASE[nodeType.value];
-  if (!base) return null;
-  return { ...base, label: t(base.labelKey) };
+const currentMeta = computed(() => NODE_META_BASE[nodeType.value] || null);
+
+const stepLabelPlaceholder = computed(() => {
+  const meta = NODE_META_BASE[nodeType.value];
+  return meta ? t(meta.labelKey) : t('WORKFLOW.EDITOR.STEP_LABEL_PLACEHOLDER');
 });
+
+const workflowStepLabelInputId = 'workflow-node-step-label';
 
 const inputClass =
   'w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-woot-500/30 disabled:opacity-50';
 const labelClass =
   'block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5';
+const stepLabelTitleClass =
+  'reset-base w-full m-0 h-auto px-2 py-1 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 bg-transparent border-0 placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:bg-slate-50 dark:focus-visible:bg-slate-700 focus-visible:ring-2 focus-visible:ring-woot-500 transition-colors duration-200 ease-smooth disabled:opacity-50';
 </script>
 
 <template>
     <div
-      class="w-full max-w-md shrink-0 flex flex-col bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 overflow-hidden min-w-0 sm:min-w-[22rem] sm:w-96"
+      class="w-full max-w-md shrink-0 flex flex-col bg-white dark:bg-slate-900 border-l border-slate-50 dark:border-slate-800/50 overflow-hidden min-w-0 sm:min-w-[22rem] sm:w-96"
     >
-    <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+    <div class="px-3 py-2.5 border-b border-slate-50 dark:border-slate-800/50">
       <template v-if="node && currentMeta">
         <div class="flex items-center gap-2.5">
           <span
@@ -228,9 +232,22 @@ const labelClass =
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="currentMeta.icon" />
             </svg>
           </span>
-          <div>
-            <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">{{ currentMeta.label }}</p>
-            <p class="text-xs text-slate-500 dark:text-slate-400">{{ $t('WORKFLOW.EDITOR.NODE_SETTINGS') }}</p>
+          <div class="min-w-0 flex-1">
+            <label :for="workflowStepLabelInputId" class="sr-only">
+              {{ stepLabelPlaceholder }}
+            </label>
+            <input
+              :id="workflowStepLabelInputId"
+              type="text"
+              :value="nodeProps.label || ''"
+              :disabled="readOnly"
+              :class="stepLabelTitleClass"
+              :placeholder="stepLabelPlaceholder"
+              autocomplete="off"
+              spellcheck="false"
+              :title="t('WORKFLOW.EDITOR.STEP_LABEL_HINT')"
+              @input="updateProp('label', $event.target.value)"
+            />
           </div>
         </div>
       </template>
@@ -262,19 +279,6 @@ const labelClass =
           </li>
         </ul>
       </div>
-
-      <div>
-          <label :class="labelClass">Nome da etapa</label>
-          <input
-            type="text"
-            :value="nodeProps.label || ''"
-            :disabled="readOnly"
-            :class="inputClass"
-            placeholder="Ex: Follow-up 1 — 6h"
-            @input="updateProp('label', $event.target.value)"
-          />
-          <p class="text-xs text-slate-400 mt-1">Exibido ao atendente no painel da conversa</p>
-        </div>
 
       <template v-if="nodeType === 'trigger'">
         <div>
@@ -582,6 +586,14 @@ const labelClass =
 
       <template v-if="nodeType === 'ai_conversation_analysis'">
         <WorkflowAiAnalysisPanel
+          :node-props="nodeProps"
+          :read-only="readOnly"
+          @update-node="patch => emit('update-node', patch)"
+        />
+      </template>
+
+      <template v-if="nodeType === 'ai_wait_for_intent'">
+        <WorkflowAiWaitForIntentPanel
           :node-props="nodeProps"
           :read-only="readOnly"
           @update-node="patch => emit('update-node', patch)"

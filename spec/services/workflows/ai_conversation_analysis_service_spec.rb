@@ -4,7 +4,10 @@ require 'rails_helper'
 
 RSpec.describe Workflows::AiConversationAnalysisService do
   let(:account) { create(:account) }
-  let(:channel_api) { create(:channel_api, account: account, webhook_url: 'https://n8n.example.com/webhook/analysis') }
+  let(:channel_api) do
+    create(:channel_api, account: account, webhook_url: 'https://n8n.example.com/webhook/analysis',
+                       additional_attributes: { 'source' => 'whatsapp_web' })
+  end
   let(:inbox) { channel_api.inbox }
   let(:contact) { create(:contact, account: account, name: 'Maria Silva') }
   let(:contact_inbox) { create(:contact_inbox, contact: contact, inbox: inbox) }
@@ -98,18 +101,24 @@ RSpec.describe Workflows::AiConversationAnalysisService do
     context 'when whatsapp_external destination' do
       before do
         node['data']['output_destination'] = 'whatsapp_external'
-        node['data']['whatsapp_inbox_id'] = 42
+        node['data']['whatsapp_inbox_id'] = inbox.id
         node['data']['whatsapp_phone'] = '5511999999999'
+        allow(ENV).to receive(:fetch).and_call_original
+        allow(ENV).to receive(:fetch).with('WEBHOOK_URL', nil).and_return('https://bridge.example/webhook')
+        allow(ENV).to receive(:fetch).with('WEBHOOKS_TRIGGER_TIMEOUT', '15').to_i).and_return(5)
       end
 
-      it 'includes whatsapp params in output' do
-        expect(WebhookJob).to receive(:perform_later) do |_url, payload, _type|
-          expect(payload[:output][:destination]).to eq('whatsapp_external')
-          expect(payload[:output][:whatsapp_inbox_id]).to eq(42)
-          expect(payload[:output][:whatsapp_phone]).to eq('5511999999999')
-        end
+      it 'sends analysis text via ExternalWhatsappNotifier without analysis webhook' do
+        create(:message, conversation: conversation, account: account, inbox: inbox,
+                         content: 'Preciso de ajuda', message_type: :incoming)
 
-        service.perform!
+        response = instance_double(RestClient::Response, code: 200, body: 'ok')
+        expect(RestClient::Request).to receive(:execute).and_return(response)
+        expect(WebhookJob).not_to receive(:perform_later)
+
+        result = service.perform!
+        expect(result[:success]).to be true
+        expect(result[:delivery]).to eq('webhook')
       end
     end
 

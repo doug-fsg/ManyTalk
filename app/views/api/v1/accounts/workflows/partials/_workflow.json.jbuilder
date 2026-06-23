@@ -15,3 +15,4 @@ if local_assigns[:metrics]
     json.reply_rate_30d metrics[:reply_rate_30d]
   end
 end
+json.conflicting_automations workflow.conflicting_automation_names

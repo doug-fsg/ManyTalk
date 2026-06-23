@@ -1077,11 +1077,11 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_05_120100) do
     t.string "enrollment_scope", default: "contact", null: false
     t.index ["account_id", "contact_id"], name: "index_we_on_account_id_and_contact_id"
     t.index ["account_id", "conversation_id"], name: "index_workflow_enrollments_on_account_id_and_conversation_id"
-    t.index ["account_id", "status"], name: "idx_we_in_progress_by_account", where: "((status)::text = ANY ((ARRAY['active'::character varying, 'waiting'::character varying, 'paused'::character varying])::text[]))"
+    t.index ["account_id", "status"], name: "idx_we_in_progress_by_account", where: "((status)::text = ANY (ARRAY[('active'::character varying)::text, ('waiting'::character varying)::text, ('paused'::character varying)::text]))"
     t.index ["account_id"], name: "index_workflow_enrollments_on_account_id"
     t.index ["contact_id"], name: "index_workflow_enrollments_on_contact_id"
     t.index ["conversation_id"], name: "index_workflow_enrollments_on_conversation_id"
-    t.index ["workflow_id", "contact_id"], name: "index_we_unique_active_contact_scope", unique: true, where: "(((status)::text = ANY ((ARRAY['active'::character varying, 'waiting'::character varying, 'paused'::character varying])::text[])) AND ((enrollment_scope)::text = 'contact'::text))"
+    t.index ["workflow_id", "contact_id"], name: "index_we_unique_active_contact_scope", unique: true, where: "(((status)::text = ANY (ARRAY[('active'::character varying)::text, ('waiting'::character varying)::text, ('paused'::character varying)::text])) AND ((enrollment_scope)::text = 'contact'::text))"
     t.index ["workflow_id", "conversation_id"], name: "index_workflow_enrollments_unique_active", unique: true, where: "((status)::text = ANY (ARRAY[('active'::character varying)::text, ('waiting'::character varying)::text, ('paused'::character varying)::text]))"
     t.index ["workflow_id"], name: "index_workflow_enrollments_on_workflow_id"
   end

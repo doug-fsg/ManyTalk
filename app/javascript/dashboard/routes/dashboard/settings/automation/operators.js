@@ -89,6 +89,25 @@ export const OPERATOR_TYPES_5 = [
   },
 ];
 
+export const OPERATOR_TYPES_DATE = [
+  ...OPERATOR_TYPES_4,
+  {
+    value: 'days_before',
+    label: 'Is x days before',
+  },
+  {
+    value: 'months_before',
+    label: 'Is x months before',
+  },
+];
+
+export const REPLY_CONDITION_OPERATORS = [
+  {
+    value: 'equal_to',
+    label: 'Equal to',
+  },
+];
+
 export const OPERATOR_TYPES_6 = [
   {
     value: 'equal_to',

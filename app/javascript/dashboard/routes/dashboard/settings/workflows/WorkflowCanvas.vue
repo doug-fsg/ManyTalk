@@ -10,7 +10,7 @@ import {
   nextNodeId,
   workflowGraphSnapshot,
 } from 'dashboard/helper/workflowGraphHelper';
-import { WORKFLOW_CANVAS_GRID_SIZE, WORKFLOW_NODE_PALETTE, AI_OUTREACH_DEFAULTS, AI_ANALYSIS_DEFAULTS } from './constants';
+import { WORKFLOW_CANVAS_GRID_SIZE, WORKFLOW_NODE_PALETTE, AI_OUTREACH_DEFAULTS, AI_ANALYSIS_DEFAULTS, AI_WAIT_FOR_INTENT_DEFAULTS } from './constants';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import { mapGetters } from 'vuex';
 import WorkflowAiUpsellModal from './WorkflowAiUpsellModal.vue';
@@ -26,6 +26,7 @@ import {
   workflowAnchorOutTrueId,
   workflowAnchorOutFalseId,
   isWorkflowCanvasDark,
+  setWorkflowCanvasDarkMode,
   getWorkflowNodeVisual,
 } from './workflowLogicFlowNodes';
 import {
@@ -105,7 +106,8 @@ export default {
     graphRevision() {
       this.renderGraph();
     },
-    isDarkMode() {
+    isDarkMode(val) {
+      setWorkflowCanvasDarkMode(val);
       this.applyTheme();
       this.rerenderNodesForTheme();
     },
@@ -120,6 +122,7 @@ export default {
     },
   },
   mounted() {
+    setWorkflowCanvasDarkMode(this.isDarkMode);
     this.themeObserver = new MutationObserver(() => {
       const dark = isWorkflowCanvasDark();
       if (dark !== this.isDarkMode) {
@@ -587,13 +590,13 @@ export default {
         wait_for_reply: {
           duration: 24,
           unit: 'hours',
-          label: 'Aguardar resposta',
           wait_responder: 'contact',
         },
         condition: { conditions: [] },
         action: { action_name: 'send_message', action_params: [''] },
         ai_outreach: { ...AI_OUTREACH_DEFAULTS },
         ai_conversation_analysis: { ...AI_ANALYSIS_DEFAULTS },
+        ai_wait_for_intent: { ...AI_WAIT_FOR_INTENT_DEFAULTS },
       };
       return defaults[type] || {};
     },
@@ -614,7 +617,7 @@ export default {
         ...(freshData || this.selectedNode),
         properties: merged,
       };
-      this.emitGraphChangeNow();
+      this.debouncedEmitGraphChange();
     },
 
     paletteItemTitle(item) {
@@ -683,77 +686,86 @@ export default {
     class="workflow-canvas-host flex flex-1 min-h-0 overflow-hidden"
     :class="canvasHostClass"
   >
-    <!-- Paleta -->
-    <transition name="palette">
-      <div
+    <!-- Paleta (visual alinhado ao sidebar secundário do app) -->
+    <transition name="workflow-palette">
+      <aside
         v-if="!readOnly && !paletteCollapsed"
-        class="w-52 flex-shrink-0 flex flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-y-auto"
+        class="workflow-palette flex-shrink-0 flex flex-col h-full overflow-y-auto w-48 bg-white dark:bg-slate-900 border-r border-slate-50 dark:border-slate-800/50 text-sm px-2 pb-4"
+        :aria-label="$t('WORKFLOW.EDITOR.PALETTE_TITLE')"
       >
-        <div class="flex items-center justify-between px-3 py-2.5 border-b border-slate-200 dark:border-slate-700">
-          <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+        <div class="flex items-center justify-between gap-1 px-1 pt-2 pb-1">
+          <span class="text-xs font-semibold text-slate-600 dark:text-slate-300 truncate">
             {{ $t('WORKFLOW.EDITOR.PALETTE_TITLE') }}
           </span>
           <button
             type="button"
-            class="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            class="flex-shrink-0 p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-25 dark:hover:bg-slate-800 transition-all duration-200 ease-smooth cursor-pointer"
+            :title="$t('WORKFLOW.EDITOR.PALETTE_COLLAPSE')"
+            :aria-label="$t('WORKFLOW.EDITOR.PALETTE_COLLAPSE')"
             @click="paletteCollapsed = true"
           >
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
         </div>
 
-        <div class="flex-1 p-2 space-y-3">
-          <div v-for="(items, group) in paletteGroups" :key="group">
-            <p class="px-2 mb-1 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+        <div class="flex-1 min-h-0">
+          <div v-for="(items, group) in paletteGroups" :key="group" class="mt-1">
+            <p class="px-2 pt-1.5 pb-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
               {{ group }}
             </p>
-            <button
-              v-for="item in items"
-              :key="item.type"
-              type="button"
-              draggable="true"
-              class="flex items-center gap-2.5 w-full px-3 py-2.5 mb-1 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-150 cursor-grab active:cursor-grabbing min-h-[44px]"
-              :title="paletteItemTitle(item)"
-              @click="addNode(item)"
-              @dragstart="onPaletteDragStart(item, $event)"
-              @dragend="dragPaletteType = null"
-            >
-              <span
-                class="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0"
-                :style="{ background: nodeColor(item.type).bg }"
+            <transition-group name="menu-list" tag="ul" class="list-none m-0 p-0">
+              <li
+                v-for="item in items"
+                :key="item.type"
+                class="my-0.5"
               >
-                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    :d="nodeColor(item.type).icon" />
-                </svg>
-              </span>
-              {{ item.label }}
-            </button>
+                <button
+                  type="button"
+                  draggable="true"
+                  class="workflow-palette-item flex items-center gap-2 w-full p-2 rounded-xl text-sm font-medium leading-4 text-slate-700 dark:text-slate-100 hover:bg-slate-25 dark:hover:bg-slate-800 transition-all duration-200 ease-smooth cursor-grab active:cursor-grabbing"
+                  :title="paletteItemTitle(item)"
+                  @click="addNode(item)"
+                  @dragstart="onPaletteDragStart(item, $event)"
+                  @dragend="dragPaletteType = null"
+                >
+                  <span
+                    class="inline-flex items-center justify-center w-5 h-5 rounded-md flex-shrink-0"
+                    :style="{ background: nodeColor(item.type).bg }"
+                  >
+                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        :d="nodeColor(item.type).icon" />
+                    </svg>
+                  </span>
+                  <span class="truncate text-left">{{ item.label }}</span>
+                </button>
+              </li>
+            </transition-group>
           </div>
 
-          <div v-if="!isAiFeatureEnabled">
-            <p class="px-2 mb-1 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+          <div v-if="!isAiFeatureEnabled" class="mt-1">
+            <p class="px-2 pt-1.5 pb-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
               {{ $t('WORKFLOW.EDITOR.AI_UPSELL.PALETTE_GROUP') }}
             </p>
             <button
               type="button"
-              class="flex items-center gap-2.5 w-full px-3 py-2.5 mb-1 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 border border-dashed border-violet-300 dark:border-violet-700 hover:bg-violet-50 dark:hover:bg-violet-950/30 transition-colors duration-150 cursor-pointer min-h-[44px]"
+              class="workflow-palette-item flex items-center gap-2 w-full p-2 rounded-xl text-sm font-medium leading-4 text-slate-700 dark:text-slate-100 hover:bg-violet-50/70 dark:hover:bg-violet-950/20 border border-dashed border-violet-200/80 dark:border-violet-800/50 transition-all duration-200 ease-smooth cursor-pointer"
               :title="$t('WORKFLOW.EDITOR.AI_UPSELL.PALETTE_TITLE')"
               @click="showAiUpsellModal = true"
             >
               <span
-                class="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 bg-violet-600/90"
+                class="inline-flex items-center justify-center w-5 h-5 rounded-md flex-shrink-0 bg-violet-500/90"
               >
-                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     :d="nodeColor('ai_outreach').icon" />
                 </svg>
               </span>
               <span class="flex flex-col items-start gap-0.5 min-w-0 text-left">
-                <span>{{ $t('WORKFLOW.EDITOR.NODE_CALL_CLIENT') }}</span>
-                <span class="text-[11px] font-normal text-violet-600 dark:text-violet-300">
+                <span class="truncate">{{ $t('WORKFLOW.EDITOR.NODE_CALL_CLIENT') }}</span>
+                <span class="text-[10px] font-normal text-violet-600/90 dark:text-violet-300/90">
                   {{ $t('WORKFLOW.EDITOR.AI_UPSELL.PALETTE_BADGE') }}
                 </span>
               </span>
@@ -761,18 +773,18 @@ export default {
           </div>
         </div>
 
-        <div class="p-3 border-t border-slate-200 dark:border-slate-700">
-          <p class="text-xs text-slate-500 dark:text-slate-400 text-center">
-            {{ $t('WORKFLOW.EDITOR.PALETTE_HINT') }}
-          </p>
-        </div>
-      </div>
+        <p class="px-2 pt-2 text-[11px] leading-relaxed text-slate-400 dark:text-slate-500 text-center">
+          {{ $t('WORKFLOW.EDITOR.PALETTE_HINT') }}
+        </p>
+      </aside>
     </transition>
 
     <button
       v-if="!readOnly && paletteCollapsed"
       type="button"
-      class="w-8 flex-shrink-0 flex items-center justify-center bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+      class="workflow-palette-rail flex-shrink-0 flex items-center justify-center w-7 h-full bg-white dark:bg-slate-900 border-r border-slate-50 dark:border-slate-800/50 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-25 dark:hover:bg-slate-800/60 transition-all duration-200 ease-smooth cursor-pointer"
+      :title="$t('WORKFLOW.EDITOR.PALETTE_EXPAND')"
+      :aria-label="$t('WORKFLOW.EDITOR.PALETTE_EXPAND')"
       @click="paletteCollapsed = false"
     >
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -891,25 +903,41 @@ export default {
 </template>
 
 <style scoped>
-.palette-enter-active,
-.palette-leave-active {
-  transition: width 0.2s ease, opacity 0.15s ease;
+.workflow-palette-item:active {
+  transform: scale(0.985);
+}
+
+.workflow-palette-enter-active,
+.workflow-palette-leave-active {
+  transition:
+    width 0.25s var(--ease-out-cubic, cubic-bezier(0.33, 1, 0.68, 1)),
+    opacity 0.2s var(--ease-out-cubic, cubic-bezier(0.33, 1, 0.68, 1)),
+    transform 0.2s var(--ease-out-cubic, cubic-bezier(0.33, 1, 0.68, 1));
   overflow: hidden;
 }
-.palette-enter,
-.palette-leave-to {
+
+.workflow-palette-enter,
+.workflow-palette-leave-to {
   width: 0;
   opacity: 0;
+  transform: translateX(-0.375rem);
 }
-.palette-enter-to,
-.palette-leave {
-  width: 13rem;
+
+.workflow-palette-enter-to,
+.workflow-palette-leave {
+  width: 12rem;
   opacity: 1;
+  transform: translateX(0);
 }
+
 @media (prefers-reduced-motion: reduce) {
-  .palette-enter-active,
-  .palette-leave-active {
+  .workflow-palette-enter-active,
+  .workflow-palette-leave-active {
     transition: none;
+  }
+
+  .workflow-palette-item:active {
+    transform: none;
   }
 }
 </style>

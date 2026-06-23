@@ -2,7 +2,7 @@
 
 class Api::V1::Accounts::WorkflowsController < Api::V1::Accounts::BaseController
   before_action :check_authorization
-  before_action :fetch_workflow, only: [:show, :update, :destroy, :clone, :toggle_active]
+  before_action :fetch_workflow, only: [:show, :update, :destroy, :clone, :toggle_active, :dry_run]
 
   def index
     @workflows = Current.account.workflows.order(updated_at: :desc)
@@ -93,6 +93,23 @@ class Api::V1::Accounts::WorkflowsController < Api::V1::Accounts::BaseController
     @workflow
   end
 
+  def dry_run
+    conversation = nil
+    if params[:conversation_id].present?
+      conversation = Current.account.conversations.find_by(id: params[:conversation_id])
+      return render json: { error: 'conversation_not_found' }, status: :not_found if conversation.blank?
+    end
+
+    result = Workflows::DryRunService.new(
+      workflow: @workflow,
+      conversation: conversation,
+      decisions: dry_run_decisions_param,
+      auto_skip_waits: ActiveModel::Type::Boolean.new.cast(params[:auto_skip_waits])
+    ).perform
+
+    render json: result
+  end
+
   def test_external_whatsapp
     result = Workflows::ExternalWhatsappNotifier.new(
       account: Current.account,
@@ -102,7 +119,7 @@ class Api::V1::Accounts::WorkflowsController < Api::V1::Accounts::BaseController
     ).send!
 
     if result[:success]
-      render json: { success: true, message_id: result[:message_id] }
+      render json: { success: true, message_id: result[:message_id], delivery: result[:delivery] }
     else
       render json: { error: result[:error], detail: result[:detail] }, status: :unprocessable_entity
     end
@@ -125,5 +142,15 @@ class Api::V1::Accounts::WorkflowsController < Api::V1::Accounts::BaseController
 
   def fetch_workflow
     @workflow = Current.account.workflows.find(params[:id])
+  end
+
+  def dry_run_decisions_param
+    Array(params[:decisions]).map do |entry|
+      if entry.respond_to?(:permit)
+        entry.permit(:node_id, :branch).to_h
+      else
+        entry.to_h.slice('node_id', 'branch')
+      end
+    end
   end
 end

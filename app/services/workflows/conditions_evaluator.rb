@@ -15,7 +15,7 @@ module Workflows
         return kanban_conditions_match? && non_kanban_conditions_match? && reply_conditions_match?
       end
 
-      reply_conditions_match? && standard_match?
+      reply_conditions_match? && kanban_midflow_match? && standard_match?
     rescue StandardError => e
       Rails.logger.error "Workflows::ConditionsEvaluator error: #{e.message}"
       false
@@ -45,6 +45,13 @@ module Workflows
       kanban_conditions.all? { |condition| evaluate_kanban_condition(condition) }
     end
 
+    def kanban_midflow_match?
+      return true if kanban_conditions.empty?
+      return true if kanban_trigger_context?
+
+      kanban_conditions.all? { |condition| evaluate_kanban_midflow_condition(condition) }
+    end
+
     def non_kanban_conditions_match?
       return true if non_kanban_conditions.empty?
 
@@ -69,12 +76,29 @@ module Workflows
     end
 
     def evaluate_reply_condition(condition)
-      replied = enrollment.contact_replied_since_baseline?
+      replied = contact_replied_since_baseline?
+      operator = condition['filter_operator']
+      values = Array(condition['values'])
+
+      if operator == 'is_present' || values.empty?
+        case condition['attribute_key']
+        when 'contact_replied_since_baseline'
+          return replied
+        when 'contact_not_replied_since_baseline'
+          return !replied
+        else
+          return false
+        end
+      end
+
+      expected = ActiveModel::Type::Boolean.new.cast(values.first)
+      return false unless operator == 'equal_to'
+
       case condition['attribute_key']
       when 'contact_replied_since_baseline'
-        replied
+        replied == expected
       when 'contact_not_replied_since_baseline'
-        !replied
+        !replied == expected
       else
         false
       end
@@ -89,8 +113,35 @@ module Workflows
       ::AutomationRules::ConditionsFilterService.new(
         rule,
         conversation,
-        { message: message, changed_attributes: changed_attributes }.compact
+        {
+          message: message,
+          changed_attributes: changed_attributes,
+          skip_validation: true
+        }.compact
       ).perform.present?
+    end
+
+    def contact_replied_since_baseline?
+      @contact_replied_since_baseline ||= enrollment.contact_replied_since_baseline?
+    end
+
+    def contact_pipeline_positions_by_pipeline
+      @contact_pipeline_positions_by_pipeline ||= begin
+        contact = conversation.contact
+        if contact.blank?
+          {}
+        else
+          contact.contact_pipeline_positions.index_by(&:pipeline_id)
+        end
+      end
+    end
+
+    def kanban_stage_for_pipeline(pipeline_id)
+      contact_pipeline_positions_by_pipeline[pipeline_id.to_i]&.stage_id
+    end
+
+    def contact_in_pipeline?(pipeline_id)
+      kanban_stage_for_pipeline(pipeline_id).present?
     end
 
     def evaluate_kanban_condition(condition)
@@ -107,6 +158,40 @@ module Workflows
                  return false
                end
 
+      compare_kanban_values(operator, expected, actual)
+    end
+
+    def evaluate_kanban_midflow_condition(condition)
+      contact = conversation.contact
+      return false if contact.blank?
+
+      key = condition['attribute_key']
+      operator = condition['filter_operator']
+      expected = Array(condition['values']).map(&:to_s)
+
+      case key
+      when 'kanban_pipeline_id'
+        in_expected = expected.any? { |pipeline_id| contact_in_pipeline?(pipeline_id) }
+        case operator
+        when 'equal_to', 'is_present'
+          in_expected
+        when 'not_equal_to', 'is_not_present'
+          !in_expected
+        else
+          false
+        end
+      when 'kanban_stage_id'
+        pipeline_id = pipeline_id_from_conditions
+        return false if pipeline_id.blank?
+
+        actual = kanban_stage_for_pipeline(pipeline_id).to_s
+        compare_kanban_values(operator, expected, actual)
+      else
+        false
+      end
+    end
+
+    def compare_kanban_values(operator, expected, actual)
       case operator
       when 'equal_to'
         expected.include?(actual)
@@ -115,6 +200,13 @@ module Workflows
       else
         false
       end
+    end
+
+    def pipeline_id_from_conditions
+      pipeline_cond = conditions.find { |c| c['attribute_key'] == 'kanban_pipeline_id' }
+      return nil if pipeline_cond.blank?
+
+      Array(pipeline_cond['values']).first
     end
 
     def extract_changed_value(attr)

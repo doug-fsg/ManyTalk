@@ -88,6 +88,8 @@ module Workflows
         validate_ai_outreach_node(data, node)
       when 'ai_conversation_analysis'
         validate_ai_conversation_analysis_node(data, node)
+      when 'ai_wait_for_intent'
+        validate_ai_wait_for_intent_node(data, node)
       end
     end
 
@@ -152,6 +154,7 @@ module Workflows
         elsif !Workflows::PhoneNormalizer.valid?(params[1])
           add_error('WhatsApp action phone number is invalid', node_id: node['id'])
         end
+        add_error('WhatsApp action requires a message', node_id: node['id']) if params[2].blank?
         validate_external_whatsapp_inbox(params[0], node) if params[0].present?
       end
     end
@@ -229,6 +232,35 @@ module Workflows
       end
     end
 
+    def validate_ai_wait_for_intent_node(data, node)
+      unless account&.feature_enabled?('inteligencia_artificial')
+        add_error('AI wait for intent requires the inteligencia_artificial feature', node_id: node['id'])
+        return
+      end
+
+      validate_wait_duration(data, node)
+
+      intent_key = data['intent_key'].to_s
+      if intent_key.blank?
+        add_error('AI wait for intent requires an intent selection', node_id: node['id'])
+        return
+      end
+
+      valid_keys = Constants::AI_INTENT_CATALOG.map { |i| i[:key] }
+      unless valid_keys.include?(intent_key)
+        add_error("Invalid intent_key: #{intent_key}", node_id: node['id'])
+        return
+      end
+
+      description = data['intent_description'].to_s
+      return if description.length <= Constants::MAX_INTENT_DESCRIPTION_LENGTH
+
+      add_error(
+        "Intent description exceeds maximum length of #{Constants::MAX_INTENT_DESCRIPTION_LENGTH} characters",
+        node_id: node['id']
+      )
+    end
+
     def validate_edges
       node_ids = nodes.map { |n| n['id'] }
       edges.each do |edge|
@@ -261,6 +293,11 @@ module Workflows
         handle = edge['sourceHandle']
         unless Constants::REPLY_WATCH_SOURCE_HANDLES.include?(handle)
           add_error('Wait for reply edges must use sourceHandle replied or timeout', node_id: source_node['id'])
+        end
+      when 'ai_wait_for_intent'
+        handle = edge['sourceHandle']
+        unless Constants::INTENT_WATCH_SOURCE_HANDLES.include?(handle)
+          add_error('AI wait for intent edges must use sourceHandle intent_detected or timeout', node_id: source_node['id'])
         end
       end
     end
@@ -332,7 +369,7 @@ module Workflows
         add_error("Maximum #{Constants::MAX_SEND_MESSAGE_ACTIONS} send_message actions allowed")
       end
 
-      wait_count = nodes.count { |n| %w[wait wait_for_reply].include?(n['type']) }
+      wait_count = nodes.count { |n| %w[wait wait_for_reply ai_wait_for_intent].include?(n['type']) }
       add_error("Maximum #{Constants::MAX_WAIT_NODES} wait nodes allowed") if wait_count > Constants::MAX_WAIT_NODES
     end
   end

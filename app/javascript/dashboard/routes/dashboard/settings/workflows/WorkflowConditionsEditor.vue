@@ -1,5 +1,6 @@
 <script>
 import { mapGetters } from 'vuex';
+import debounce from 'lodash/debounce';
 import FilterInputBox from 'dashboard/components/widgets/FilterInput/Index.vue';
 import { useAutomation } from 'dashboard/composables/useAutomation';
 import {
@@ -10,12 +11,16 @@ import {
   getDefaultConditions,
   generateCustomAttributeTypes,
   generateCustomAttributes,
+  isACustomAttribute,
 } from 'dashboard/helper/automationHelper';
+import { OPERATOR_TYPES_1 } from '../automation/operators';
 import { serializeWorkflowConditions } from 'dashboard/helper/workflowConditionHelper';
 import {
-  buildWorkflowAutomationTypes,
+  getWorkflowAutomationTypes,
   WORKFLOW_FLOW_EVENT_KEY,
+  WORKFLOW_REPLY_CONDITION_KEYS,
 } from './constants';
+import { ensureWorkflowEditorBootstrapped } from './useWorkflowEditorBootstrap';
 
 export default {
   name: 'WorkflowConditionsEditor',
@@ -44,12 +49,13 @@ export default {
   },
   data() {
     return {
-      automationTypes: buildWorkflowAutomationTypes(),
+      automationTypes: getWorkflowAutomationTypes(),
       allCustomAttributes: [],
       localConditions: [],
       mode: 'edit',
       isReady: false,
       isEmitting: false,
+      lastSyncedConditionsKey: '',
     };
   },
   computed: {
@@ -65,12 +71,19 @@ export default {
     filterAttributesForContext() {
       return getAttributes(this.automationTypes, this.contextEvent);
     },
+    replyBooleanOptions() {
+      return [
+        { id: true, name: this.$t('WORKFLOW.EDITOR.CONDITION_YES') },
+        { id: false, name: this.$t('WORKFLOW.EDITOR.CONDITION_NO') },
+      ];
+    },
   },
   watch: {
     conditions: {
-      deep: true,
-      handler() {
+      handler(nextConditions) {
         if (!this.isReady || this.isEmitting) return;
+        const key = JSON.stringify(nextConditions || []);
+        if (key === this.lastSyncedConditionsKey) return;
         this.syncLocalFromProps();
       },
     },
@@ -86,29 +99,74 @@ export default {
       this.emitConditions();
     },
   },
+  created() {
+    this.debouncedEmitConditions = debounce(this.emitConditionsNow, 250);
+  },
+  beforeUnmount() {
+    if (this.debouncedEmitConditions?.cancel) {
+      this.debouncedEmitConditions.cancel();
+    }
+  },
   async mounted() {
-    await Promise.all([
-      this.$store.dispatch('inboxes/get'),
-      this.$store.dispatch('agents/get'),
-      this.$store.dispatch('contacts/get'),
-      this.$store.dispatch('teams/get'),
-      this.$store.dispatch('labels/get'),
-      this.$store.dispatch('campaigns/get'),
-    ]);
+    await ensureWorkflowEditorBootstrapped(this.$store);
     this.allCustomAttributes = this.$store.getters['attributes/getAttributes'];
-    this.manifestCustomAttributes(this.automationTypes);
-    this.addCustomAttributesToFlowEvent();
+    this.ensureAutomationTypesExtended();
     this.syncLocalFromProps();
     this.isReady = true;
   },
   methods: {
+    ensureAutomationTypesExtended() {
+      if (this.automationTypes._flowCatalogExtended) return;
+      this.manifestCustomAttributes(this.automationTypes);
+      this.addCustomAttributesToFlowEvent();
+      this.addKanbanAttributesToFlowEvent();
+      this.automationTypes._flowCatalogExtended = true;
+    },
+    findCustomAttribute(key) {
+      return isACustomAttribute(this.allCustomAttributes, key);
+    },
+    isReplyConditionKey(key) {
+      return WORKFLOW_REPLY_CONDITION_KEYS.includes(key);
+    },
+    addKanbanAttributesToFlowEvent() {
+      const kanbanRaw = (this.allCustomAttributes || []).filter(
+        attr =>
+          attr.attribute_model === 'contact_attribute' && attr.is_kanban === true
+      );
+      if (!kanbanRaw.length) return;
+
+      const flowConditions = this.automationTypes[WORKFLOW_FLOW_EVENT_KEY].conditions;
+      const existingKeys = new Set(flowConditions.map(c => c.key));
+      const kanbanEntries = [];
+
+      if (!existingKeys.has('workflow_kanban_header')) {
+        kanbanEntries.push({
+          key: 'workflow_kanban_header',
+          name: this.$t('CONTACT_PANEL.KANBAN_STAGE') || 'Etapa do Kanban',
+          disabled: true,
+        });
+      }
+
+      kanbanRaw.forEach(attr => {
+        if (existingKeys.has(attr.attribute_key)) return;
+        kanbanEntries.push({
+          key: attr.attribute_key,
+          name: attr.attribute_display_name,
+          inputType: 'kanban_stage_select',
+          filterOperators: OPERATOR_TYPES_1,
+          customAttributeType: 'contact_attribute',
+        });
+      });
+
+      flowConditions.push(...kanbanEntries);
+    },
     addCustomAttributesToFlowEvent() {
       const conversationRaw = this.$store.getters['attributes/getAttributesByModel'](
         'conversation_attribute'
       );
       const contactRaw = this.$store.getters['attributes/getAttributesByModel'](
         'contact_attribute'
-      );
+      ).filter(attr => !attr.is_kanban);
       const conversationTypes = generateCustomAttributeTypes(
         conversationRaw,
         'conversation_attribute'
@@ -124,6 +182,7 @@ export default {
     },
     syncLocalFromProps() {
       const base = Array.isArray(this.conditions) ? this.conditions : [];
+      this.lastSyncedConditionsKey = JSON.stringify(base);
       if (base.length === 0) {
         this.localConditions = [];
         return;
@@ -138,17 +197,42 @@ export default {
         this.automationTypes,
         []
       );
-      this.localConditions = formatted.conditions;
+      this.localConditions = formatted.conditions.map(condition => {
+        if (!this.isReplyConditionKey(condition.attribute_key)) return condition;
+        if (condition.filter_operator === 'is_present') {
+          return {
+            ...condition,
+            filter_operator: 'equal_to',
+            values: this.replyBooleanOptions.filter(o => o.id === true),
+          };
+        }
+        if (
+          condition.values === '' ||
+          condition.values == null ||
+          (Array.isArray(condition.values) && condition.values.length === 0)
+        ) {
+          return {
+            ...condition,
+            filter_operator: 'equal_to',
+            values: this.replyBooleanOptions.filter(o => o.id === true),
+          };
+        }
+        return condition;
+      });
     },
-    emitConditions() {
+    emitConditionsNow() {
       this.isEmitting = true;
       const payload = serializeWorkflowConditions(this.localConditions, {
         dropEmpty: false,
       });
+      this.lastSyncedConditionsKey = JSON.stringify(payload);
       this.$emit('update:conditions', payload);
       this.$nextTick(() => {
         this.isEmitting = false;
       });
+    },
+    emitConditions() {
+      this.debouncedEmitConditions();
     },
     onConditionInput() {
       this.emitConditions();
@@ -178,6 +262,39 @@ export default {
       );
       this.localConditions = stub.conditions;
       this.emitConditions();
+    },
+    getInputTypeForCondition(condition) {
+      if (!condition) return 'plain_text';
+      const key = condition.attribute_key;
+      const op = condition.filter_operator;
+      if (key === 'created_at' || key === 'last_activity_at') {
+        if (op === 'days_before' || op === 'months_before') return 'plain_text';
+      }
+      const customAttribute = this.findCustomAttribute(key);
+      if (customAttribute && customAttribute.is_kanban) return 'kanban_stage_select';
+      if (this.isReplyConditionKey(key)) return 'search_select';
+      return getInputType(
+        this.allCustomAttributes,
+        this.automationTypes,
+        this.automationStub,
+        key
+      );
+    },
+    getReplyBooleanOptions() {
+      return this.replyBooleanOptions;
+    },
+    getDropdownValuesForCondition(condition) {
+      if (!condition) return [];
+      const key = condition.attribute_key;
+      if (this.isReplyConditionKey(key)) return this.replyBooleanOptions;
+      const customAttribute = this.findCustomAttribute(key);
+      if (customAttribute && customAttribute.is_kanban) {
+        return (customAttribute.attribute_values || []).map(stage => ({
+          id: stage,
+          name: stage,
+        }));
+      }
+      return this.getConditionDropdownValues(key);
     },
     getInputTypeForKey(key) {
       return getInputType(
@@ -220,9 +337,9 @@ export default {
           v-model="localConditions[i]"
           layout="stacked"
           :filter-attributes="filterAttributesForContext"
-          :input-type="getInputTypeForKey(localConditions[i].attribute_key)"
+          :input-type="getInputTypeForCondition(localConditions[i])"
           :operators="getOperatorsForKey(localConditions[i].attribute_key)"
-          :dropdown-values="getConditionDropdownValues(localConditions[i].attribute_key)"
+          :dropdown-values="getDropdownValuesForCondition(localConditions[i])"
           :show-query-operator="i !== localConditions.length - 1"
           :custom-attribute-type="getCustomAttributeTypeForKey(localConditions[i].attribute_key)"
           :disabled="readOnly"

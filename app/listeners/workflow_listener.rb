@@ -3,6 +3,7 @@
 class WorkflowListener < BaseListener
   def conversation_updated(event)
     dispatch_conversation(event, 'conversation_updated')
+    handle_label_changes(event)
   end
 
   def conversation_created(event)
@@ -39,6 +40,7 @@ class WorkflowListener < BaseListener
     )
 
     WorkflowEnrollment.handle_reply!(conversation, message)
+    WorkflowEnrollment.cancel_for_agent_reply!(conversation) if message.outgoing?
   end
 
   private
@@ -54,6 +56,15 @@ class WorkflowListener < BaseListener
       nil,
       event.data[:changed_attributes]
     )
+  end
+
+  def handle_label_changes(event)
+    changed = event.data[:changed_attributes] || {}
+    return unless changed.key?('labels')
+
+    conversation = event.data[:conversation]
+    current_labels = changed.dig('labels', 1) || conversation.label_list
+    WorkflowEnrollment.cancel_for_labels!(conversation, current_labels)
   end
 
   def performed_by_workflow?(event)

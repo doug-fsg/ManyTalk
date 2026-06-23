@@ -3,6 +3,12 @@ require 'json'
 class AutomationRules::ConditionsFilterService < FilterService
   ATTRIBUTE_MODEL = 'contact_attribute'.freeze
 
+  def self.filter_keys
+    @filter_keys ||= YAML.safe_load(
+      File.read(Rails.root.join('lib/filters/filter_keys.yml'))
+    )
+  end
+
   def initialize(rule, conversation = nil, options = {})
     super([], nil)
     # assign rule, conversation and account to instance variables
@@ -10,9 +16,7 @@ class AutomationRules::ConditionsFilterService < FilterService
     @conversation = conversation
     @account = conversation.account
 
-    # setup filters from json file
-    file = File.read('./lib/filters/filter_keys.yml')
-    @filters = YAML.safe_load(file)
+    @filters = self.class.filter_keys
 
     @conversation_filters = @filters['conversations']
     @contact_filters = @filters['contacts']
@@ -20,6 +24,7 @@ class AutomationRules::ConditionsFilterService < FilterService
 
     @options = options
     @changed_attributes = options[:changed_attributes]
+    @skip_validation = options[:skip_validation]
   end
 
   def perform
@@ -44,6 +49,8 @@ class AutomationRules::ConditionsFilterService < FilterService
   end
 
   def rule_valid?
+    return true if @skip_validation
+
     is_valid = AutomationRules::ConditionValidationService.new(@rule).perform
     Rails.logger.info "Automation rule condition validation failed for rule id: #{@rule.id}" unless is_valid
     @rule.authorization_error! unless is_valid
@@ -163,10 +170,17 @@ class AutomationRules::ConditionsFilterService < FilterService
   def base_relation
     records = Conversation.where(id: @conversation.id).joins(
       'LEFT OUTER JOIN contacts on conversations.contact_id = contacts.id'
-    ).joins(
+    )
+    return records unless message_conditions?
+
+    records = records.joins(
       'LEFT OUTER JOIN messages on messages.conversation_id = conversations.id'
     )
     records = records.where(messages: { id: @options[:message].id }) if @options[:message].present?
     records
+  end
+
+  def message_conditions?
+    @rule.conditions.any? { |condition| @message_filters.key?(condition['attribute_key']) }
   end
 end

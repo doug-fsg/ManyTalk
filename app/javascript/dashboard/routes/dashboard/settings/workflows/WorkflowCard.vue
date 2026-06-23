@@ -21,6 +21,13 @@ const activeCount = computed(() => props.workflow.metrics?.active_count ?? 0);
 
 const replyRate = computed(() => props.workflow.metrics?.reply_rate_30d ?? null);
 
+const conflictingAutomations = computed(
+  () => props.workflow.conflicting_automations ?? []
+);
+const hasConflicts = computed(
+  () => conflictingAutomations.value.length > 0 && props.workflow.active
+);
+
 const metricsTooltip = computed(() => {
   const running = t('WORKFLOW.LIST.METRICS_ACTIVE', {
     count: activeCount.value,
@@ -107,6 +114,16 @@ const toggle = () => {
       >
         {{ triggerLabel }}
       </span>
+    </div>
+
+    <div
+      v-if="hasConflicts"
+      class="flex items-start gap-2 mb-3 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800/50 dark:bg-amber-950/30 px-3 py-2"
+    >
+      <fluent-icon icon="warning" size="14" class="text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
+      <p class="text-xs text-amber-700 dark:text-amber-300 leading-snug">
+        {{ $t('WORKFLOW.LIST.CONFLICT_WARNING', { names: conflictingAutomations.join(', ') }) }}
+      </p>
     </div>
 
     <div

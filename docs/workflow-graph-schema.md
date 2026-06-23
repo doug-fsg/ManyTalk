@@ -115,6 +115,91 @@ When an enrollment enters `wait_for_reply`, the server stores:
 - Incoming contact messages after `baseline_at` (excluding workflow-generated messages) trigger the `replied` branch instead of pausing the enrollment.
 - When the deadline passes without a reply, the `timeout` branch runs.
 
+## Node type: `ai_wait_for_intent`
+
+Waits for the customer to express a specific pre-defined intent. Two branches: `intent_detected` (match) and `timeout` (deadline expired without match).
+
+### Node data
+
+| field | type | required | description |
+|-------|------|----------|-------------|
+| `intent_key` | string | yes | One of the catalog keys: `menu_request`, `schedule_visit`, `payment_confirmed` |
+| `duration` | integer | yes | Number of time units |
+| `unit` | string | yes | `minutes`, `hours`, or `days` |
+
+### Edges
+
+- `sourceHandle: "intent_detected"` — customer message matched the intent
+- `sourceHandle: "timeout"` — deadline passed without a match
+
+### `intent_watch` context
+
+While waiting, `context.intent_watch` holds:
+
+```json
+{
+  "intent_watch": {
+    "node_id": "intent_1",
+    "intent_key": "menu_request",
+    "baseline_at": "...",
+    "deadline_at": "...",
+    "classification_in_flight": false,
+    "seen_normalized": ["oi"],
+    "last_classification": {
+      "message_id": 456,
+      "matched": false,
+      "skipped": true,
+      "reason": "emoji_only",
+      "at": "..."
+    }
+  }
+}
+```
+
+### AI webhook contract
+
+**Request** (POST to `WORKFLOW_AI_INTENT_WEBHOOK_URL`, timeout 5s):
+
+```json
+{
+  "event": "workflow.ai_wait_for_intent",
+  "intent_key": "menu_request",
+  "intent": { "key": "...", "label": "...", "description": "...", "examples": ["..."] },
+  "workflow_id": 1,
+  "workflow_node_id": "intent_1",
+  "enrollment_id": 42,
+  "deadline_at": "...",
+  "message": { "id": 456, "content": "...", "message_type": "incoming", "created_at": "..." },
+  "context": { "recent_messages": [{ "content": "...", "message_type": "incoming" }] }
+}
+```
+
+**Response** (HTTP 200):
+
+```json
+{ "matched": true }
+```
+
+Timeout, HTTP error, or missing `matched` → treated as `{ "matched": false }` (enrollment keeps waiting).
+
+### Environment variable
+
+```
+WORKFLOW_AI_INTENT_WEBHOOK_URL=https://your-server/webhook/intent
+```
+
+Required. Nodes with this type will silently skip classification if the variable is not set.
+
+### Pre-filter (layer 1 — structural signals only)
+
+Messages matching any of the following are skipped without calling the AI:
+- Empty or whitespace-only
+- Emoji-only
+- Punctuation only (`???`, `!!!`, `...`)
+- Identical repetition (same normalized content already classified in this watch)
+
+First occurrence of any message (including short ones like "oi") always reaches the classifier.
+
 ## Validation rules
 
 - Exactly one `trigger` node
@@ -122,8 +207,10 @@ When an enrollment enters `wait_for_reply`, the server stores:
 - All nodes except trigger reachable from trigger
 - `condition` edges use `sourceHandle`: `true` or `false`
 - `wait_for_reply` edges use `sourceHandle`: `replied` or `timeout`
+- `ai_wait_for_intent` edges use `sourceHandle`: `intent_detected` or `timeout`
 - `action_name` must be in server allowlist
-- Combined count of `wait` and `wait_for_reply` nodes ≤ 10
+- Combined count of `wait`, `wait_for_reply`, and `ai_wait_for_intent` nodes ≤ 10
+- `ai_wait_for_intent` requires `inteligencia_artificial` feature flag
 
 ## Settings
 
