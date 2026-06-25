@@ -16,6 +16,7 @@ properties:
         "conversation_updated",
         "contact_created",
         "contact_updated",
+        "contact_kanban_stage_changed",
         "message_created",
         "message_updated",
         "webwidget_triggered"

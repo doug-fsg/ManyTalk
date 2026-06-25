@@ -35,13 +35,14 @@ describe('GoogleOAuthButton.vue', () => {
     const googleAuthUrl = new URL(wrapper.vm.getGoogleAuthUrl());
     const params = googleAuthUrl.searchParams;
     expect(googleAuthUrl.origin).toBe('https://accounts.google.com');
-    expect(googleAuthUrl.pathname).toBe('/o/oauth2/auth/oauthchooseaccount');
+    expect(googleAuthUrl.pathname).toBe('/o/oauth2/v2/auth');
     expect(params.get('client_id')).toBe('clientId');
     expect(params.get('redirect_uri')).toBe(
       'http://localhost:3000/test-callback'
     );
     expect(params.get('response_type')).toBe('code');
-    expect(params.get('scope')).toBe('email profile');
+    expect(params.get('scope')).toBe('openid email profile');
+    expect(params.get('prompt')).toBe('select_account');
 
     expect(wrapper.findComponent({ ref: 'divider' }).exists()).toBe(true);
   });

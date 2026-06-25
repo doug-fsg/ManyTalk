@@ -15,6 +15,7 @@ const SUPPORTED_WEBHOOK_EVENTS = [
   'webwidget_triggered',
   'contact_created',
   'contact_updated',
+  'contact_kanban_stage_changed',
 ];
 
 export default {

@@ -70,6 +70,30 @@ class WebhookListener < BaseListener
     deliver_account_webhooks(payload, account)
   end
 
+  def contact_kanban_stage_changed(event)
+    contact, account = extract_contact_and_account(event)
+    return if contact.blank?
+
+    payload = {
+      event: __method__.to_s,
+      contact: contact.webhook_data,
+      pipeline: {
+        id: event.data[:pipeline_id],
+        name: event.data[:pipeline_name]
+      },
+      pipeline_position: {
+        id: event.data[:pipeline_position_id],
+        stage_id: event.data[:stage_id],
+        previous_stage_id: event.data[:previous_stage_id],
+        position: event.data[:position],
+        entered_at: event.data[:entered_at],
+        assignee_id: event.data[:assignee_id],
+        deal_value: event.data[:deal_value]
+      }.compact
+    }
+    deliver_account_webhooks(payload, account)
+  end
+
   def inbox_created(event)
     inbox, account = extract_inbox_and_account(event)
     inbox_webhook_data = Inbox::EventDataPresenter.new(inbox).push_data

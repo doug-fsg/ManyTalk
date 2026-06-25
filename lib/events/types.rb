@@ -39,6 +39,7 @@ module Events::Types
   # contact events
   CONTACT_CREATED = 'contact.created'
   CONTACT_UPDATED = 'contact.updated'
+  CONTACT_KANBAN_STAGE_CHANGED = 'contact.kanban_stage_changed'
   CONTACT_MERGED = 'contact.merged'
   CONTACT_DELETED = 'contact.deleted'
 

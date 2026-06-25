@@ -48,6 +48,7 @@ class ContactPipelinePosition < ApplicationRecord
   # Isso garante sincronização em tempo real entre chat, Kanban, macros e automações
   after_commit :dispatch_contact_updated_event, on: [:create, :update, :destroy]
   after_commit :enqueue_kanban_workflow_if_needed, on: [:create, :update]
+  after_commit :dispatch_kanban_stage_changed_webhook, on: [:create, :update]
   
   # Auto-atribuir dono ao criar card
   before_create :auto_assign_owner_if_new
@@ -180,6 +181,31 @@ class ContactPipelinePosition < ApplicationRecord
     )
   rescue StandardError => e
     Rails.logger.error("Error enqueuing kanban workflow job: #{e.class.name} - #{e.message}")
+  end
+
+  def dispatch_kanban_stage_changed_webhook
+    return unless saved_change_to_stage_id? || previously_new_record?
+    return unless contact.present?
+    return unless pipeline&.is_kanban?
+
+    previous_stage_id = saved_change_to_stage_id? ? saved_change_to_stage_id[0] : nil
+
+    Rails.configuration.dispatcher.dispatch(
+      CONTACT_KANBAN_STAGE_CHANGED,
+      Time.zone.now,
+      contact: contact.reload,
+      pipeline_id: pipeline_id,
+      pipeline_name: pipeline.attribute_display_name,
+      pipeline_position_id: id,
+      stage_id: stage_id,
+      previous_stage_id: previous_stage_id,
+      position: position,
+      entered_at: entered_at&.iso8601,
+      assignee_id: assignee_id,
+      deal_value: deal_value&.to_f
+    )
+  rescue StandardError => e
+    Rails.logger.error("Error dispatching kanban stage changed webhook: #{e.class.name} - #{e.message}")
   end
 
   def dispatch_contact_updated_event

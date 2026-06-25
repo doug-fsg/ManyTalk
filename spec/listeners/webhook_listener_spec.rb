@@ -220,6 +220,69 @@ describe WebhookListener do
     end
   end
 
+  describe '#contact_kanban_stage_changed' do
+    let(:event_name) { :'contact.kanban_stage_changed' }
+    let(:pipeline) { create(:custom_attribute_definition, :kanban, account: account) }
+    let(:position) do
+      create(:contact_pipeline_position, contact: contact, pipeline: pipeline, stage_id: 'Estágio 2')
+    end
+    let(:kanban_event) do
+      Events::Base.new(
+        event_name,
+        Time.zone.now,
+        contact: contact,
+        pipeline_id: pipeline.id,
+        pipeline_name: pipeline.attribute_display_name,
+        pipeline_position_id: position.id,
+        stage_id: 'Estágio 2',
+        previous_stage_id: 'Estágio 1',
+        position: 0,
+        entered_at: position.entered_at&.iso8601,
+        assignee_id: nil,
+        deal_value: nil
+      )
+    end
+
+    context 'when webhook is not configured' do
+      it 'does not trigger webhook' do
+        expect(WebhookJob).to receive(:perform_later).exactly(0).times
+        listener.contact_kanban_stage_changed(kanban_event)
+      end
+    end
+
+    context 'when webhook is configured and event is subscribed' do
+      it 'triggers the webhook event' do
+        webhook = create(:webhook, account: account, subscriptions: ['contact_kanban_stage_changed'])
+        expected_payload = {
+          event: 'contact_kanban_stage_changed',
+          contact: contact.webhook_data,
+          pipeline: {
+            id: pipeline.id,
+            name: pipeline.attribute_display_name
+          },
+          pipeline_position: {
+            id: position.id,
+            stage_id: 'Estágio 2',
+            previous_stage_id: 'Estágio 1',
+            position: 0,
+            entered_at: position.entered_at&.iso8601
+          }
+        }
+
+        expect(WebhookJob).to receive(:perform_later).with(webhook.url, expected_payload).once
+        listener.contact_kanban_stage_changed(kanban_event)
+      end
+    end
+
+    context 'when webhook is configured and event is not subscribed' do
+      it 'does not trigger the webhook event' do
+        create(:webhook, account: account, subscriptions: ['contact_created'])
+        expect(WebhookJob).not_to receive(:perform_later)
+        listener.contact_kanban_stage_changed(kanban_event)
+      end
+    end
+  end
+
   describe '#inbox_created' do
     let(:event_name) { :'inbox.created' }
     let!(:inbox_created_event) { Events::Base.new(event_name, Time.zone.now, inbox: inbox) }

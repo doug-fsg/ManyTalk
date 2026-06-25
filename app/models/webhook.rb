@@ -26,7 +26,8 @@ class Webhook < ApplicationRecord
   enum webhook_type: { account_type: 0, inbox_type: 1 }
 
   ALLOWED_WEBHOOK_EVENTS = %w[conversation_status_changed conversation_updated conversation_created contact_created contact_updated
-                              message_created message_updated webwidget_triggered inbox_created inbox_updated].freeze
+                              contact_kanban_stage_changed message_created message_updated webwidget_triggered inbox_created
+                              inbox_updated].freeze
 
   private
 

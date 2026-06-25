@@ -70,6 +70,7 @@ module Events
       Events::Types::CONVERSATION_MENTIONED => :conversation,
       Events::Types::CONTACT_CREATED => :contact,
       Events::Types::CONTACT_UPDATED => :contact,
+      Events::Types::CONTACT_KANBAN_STAGE_CHANGED => :contact,
       Events::Types::CONTACT_MERGED => :contact,
       Events::Types::CONTACT_DELETED => :contact,
       Events::Types::INBOX_CREATED => :inbox,

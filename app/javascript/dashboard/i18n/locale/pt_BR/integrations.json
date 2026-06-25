@@ -1,6 +1,6 @@
 {
   "INTEGRATION_SETTINGS": {
-    "HEADER": "Integrations",
+    "HEADER": "Integrações",
     "DESCRIPTION": "O ManyTalks integra-se com diversas ferramentas e serviços para melhorar a eficiência da sua equipe. Explore a lista abaixo para configurar seus aplicativos favoritos.",
     "LEARN_MORE": "Saiba mais sobre integrações",
     "LOADING": "Buscando integrações",
@@ -8,19 +8,20 @@
       "SUBSCRIBED_EVENTS": "Eventos Inscritos",
       "FORM": { 
         "CANCEL": "Cancelar",
-        "DESC": "Webhook Os eventos fornecem informações em tempo real sobre o que está acontecendo na sua conta do ManyTalks. Digite um URL válido para configurar um retorno de chamada.",
+        "DESC": "Os eventos de webhook fornecem informações em tempo real sobre o que está acontecendo na sua conta do ManyTalks. Digite uma URL válida para configurar um retorno de chamada.",
         "SUBSCRIPTIONS": {
           "LABEL": "Eventos",
           "EVENTS": {
-            "CONVERSATION_CREATED": "Conversation Created",
-            "CONVERSATION_STATUS_CHANGED": "Conversation Status Changed",
-            "CONVERSATION_UPDATED": "Conversation Updated",
-            "CONVERSATION_RESOLVED": "Conversation Resolved",
-            "MESSAGE_CREATED": "Message created",
-            "MESSAGE_UPDATED": "Message updated",
-            "WEBWIDGET_TRIGGERED": "Live chat widget opened by the user",
-            "CONTACT_CREATED": "Contact created",
-            "CONTACT_UPDATED": "Contact updated"
+            "CONVERSATION_CREATED": "Conversa criada",
+            "CONVERSATION_STATUS_CHANGED": "Status da conversa alterado",
+            "CONVERSATION_UPDATED": "Conversa atualizada",
+            "CONVERSATION_RESOLVED": "Conversa resolvida",
+            "MESSAGE_CREATED": "Mensagem criada",
+            "MESSAGE_UPDATED": "Mensagem atualizada",
+            "WEBWIDGET_TRIGGERED": "Widget de chat aberto pelo usuário",
+            "CONTACT_CREATED": "Contato criado",
+            "CONTACT_UPDATED": "Contato atualizado",
+            "CONTACT_KANBAN_STAGE_CHANGED": "Etapa do Kanban alterada"
           }
         },
         "END_POINT": {
@@ -42,7 +43,7 @@
         "404": "Não há webhooks configurados para esta conta.",
         "TITLE": "Gerenciar webhooks",
         "TABLE_HEADER": [
-          "Webhook URL (endpoint)",
+          "URL do webhook (endpoint)",
           "Ações"
         ]
       },
@@ -51,7 +52,7 @@
         "TITLE": "Editar webhook",
         "API": {
           "SUCCESS_MESSAGE": "Configuração de Webhook atualizada com sucesso",
-          "ERROR_MESSAGE": "Não foi possível conectar ao servidor Woot, por favor tente novamente mais tarde"
+          "ERROR_MESSAGE": "Não foi possível conectar ao servidor, por favor tente novamente mais tarde"
         }
       },
       "ADD": {
@@ -59,14 +60,14 @@
         "TITLE": "Adicionar novo webhook",
         "API": {
           "SUCCESS_MESSAGE": "Configuração de Webhook adicionada com sucesso",
-          "ERROR_MESSAGE": "Não foi possível conectar ao servidor Woot, por favor tente novamente mais tarde"
+          "ERROR_MESSAGE": "Não foi possível conectar ao servidor, por favor tente novamente mais tarde"
         }
       },
       "DELETE": {
         "BUTTON_TEXT": "Excluir",
         "API": {
           "SUCCESS_MESSAGE": "Webhook excluído com sucesso",
-          "ERROR_MESSAGE": "Não foi possível conectar ao servidor Woot, por favor tente novamente mais tarde"
+          "ERROR_MESSAGE": "Não foi possível conectar ao servidor, por favor tente novamente mais tarde"
         },
         "CONFIRM": {
           "TITLE": "Confirmar exclusão",
@@ -173,7 +174,7 @@
       "HEADER_BTN_TXT": "Adicionar um novo app da dashboard",
       "SIDEBAR_TXT": "<p><b>Dashboard Apps</b></p><p>Dashboard Apps permite que as organizações incorporem um aplicativo dentro da dashboard do ManyTalks para fornecer o contexto para atendentes de suporte ao cliente. Este recurso permite-lhe criar uma aplicação independente e incorporá-la dentro da dashboard para fornecer informações do usuário, seus pedidos ou seu histórico de pagamentos anteriores.</p><p>Quando você incorpora seu aplicativo usando a dashboard do ManyTalks, sua aplicação irá obter o contexto da conversa e entrar em contato como um evento de janela. Implementar um ouvinte para o evento de mensagem em sua página receber o contexto.</p><p>Para adicionar um novo aplicativo da dashboard, clique no botão 'Adicionar um novo aplicativo da dashboard'.</p>",
       "DESCRIPTION": "Aplicativos da dashboard permitem que organizações incorporem um aplicativo dentro do painel para fornecer o contexto para atendentes de suporte ao cliente. Este recurso permite que você crie uma aplicação independente e incorpore para fornecer informações de usuário, seus pedidos ou seu histórico de pagamentos anteriores.",
-      "LEARN_MORE": "Learn more about Dashboard Apps",
+      "LEARN_MORE": "Saiba mais sobre apps da dashboard",
       "LIST": {
         "404": "Ainda não há aplicativos da dashboard nesta conta",
         "LOADING": "Buscando aplicativos da dashboard...",
@@ -216,84 +217,84 @@
       }
     },
     "LINEAR": {
-      "ADD_OR_LINK_BUTTON": "Create/Link Linear Issue",
-      "LOADING": "Fetching linear issues...",
-      "LOADING_ERROR": "There was an error fetching the linear issues, please try again",
-      "CREATE": "Create",
+      "ADD_OR_LINK_BUTTON": "Criar/vincular issue do Linear",
+      "LOADING": "Buscando issues do Linear...",
+      "LOADING_ERROR": "Erro ao buscar issues do Linear, tente novamente",
+      "CREATE": "Criar",
       "LINK": {
-        "SEARCH": "Search issues",
-        "SELECT": "Select issue",
-        "TITLE": "Link",
-        "EMPTY_LIST": "No linear issues found",
-        "LOADING": "Loading",
-        "ERROR": "There was an error fetching the linear issues, please try again",
-        "LINK_SUCCESS": "Issue linked successfully",
-        "LINK_ERROR": "There was an error linking the issue, please try again",
-        "LINK_TITLE": "Conversation (#%{conversationId}) with %{name}"
+        "SEARCH": "Buscar issues",
+        "SELECT": "Selecionar issue",
+        "TITLE": "Vincular",
+        "EMPTY_LIST": "Nenhuma issue do Linear encontrada",
+        "LOADING": "Carregando",
+        "ERROR": "Erro ao buscar issues do Linear, tente novamente",
+        "LINK_SUCCESS": "Issue vinculada com sucesso",
+        "LINK_ERROR": "Erro ao vincular a issue, tente novamente",
+        "LINK_TITLE": "Conversa (#%{conversationId}) com %{name}"
       },
       "ADD_OR_LINK": {
-        "TITLE": "Create/link linear issue",
-        "DESCRIPTION": "Create Linear issues from conversations, or link existing ones for seamless tracking.",
+        "TITLE": "Criar/vincular issue do Linear",
+        "DESCRIPTION": "Crie issues do Linear a partir de conversas ou vincule issues existentes para acompanhamento integrado.",
         "FORM": {
           "TITLE": {
-            "LABEL": "Title",
-            "PLACEHOLDER": "Enter title",
-            "REQUIRED_ERROR": "Title is required"
+            "LABEL": "Título",
+            "PLACEHOLDER": "Digite o título",
+            "REQUIRED_ERROR": "O título é obrigatório"
           },
           "DESCRIPTION": {
-            "LABEL": "Description",
-            "PLACEHOLDER": "Enter description"
+            "LABEL": "Descrição",
+            "PLACEHOLDER": "Digite a descrição"
           },
           "TEAM": {
-            "LABEL": "Team",
-            "PLACEHOLDER": "Select team",
-            "SEARCH": "Search team",
-            "REQUIRED_ERROR": "Team is required"
+            "LABEL": "Equipe",
+            "PLACEHOLDER": "Selecione a equipe",
+            "SEARCH": "Buscar equipe",
+            "REQUIRED_ERROR": "A equipe é obrigatória"
           },
           "ASSIGNEE": {
-            "LABEL": "Assignee",
-            "PLACEHOLDER": "Select assignee",
-            "SEARCH": "Search assignee"
+            "LABEL": "Responsável",
+            "PLACEHOLDER": "Selecione o responsável",
+            "SEARCH": "Buscar responsável"
           },
           "PRIORITY": {
-            "LABEL": "Priority",
-            "PLACEHOLDER": "Select priority",
-            "SEARCH": "Search priority"
+            "LABEL": "Prioridade",
+            "PLACEHOLDER": "Selecione a prioridade",
+            "SEARCH": "Buscar prioridade"
           },
           "LABEL": {
-            "LABEL": "Label",
-            "PLACEHOLDER": "Select label",
-            "SEARCH": "Search label"
+            "LABEL": "Etiqueta",
+            "PLACEHOLDER": "Selecione a etiqueta",
+            "SEARCH": "Buscar etiqueta"
           },
           "STATUS": {
             "LABEL": "Status",
-            "PLACEHOLDER": "Select status",
-            "SEARCH": "Search status"
+            "PLACEHOLDER": "Selecione o status",
+            "SEARCH": "Buscar status"
           },
           "PROJECT": {
-            "LABEL": "Project",
-            "PLACEHOLDER": "Select project",
-            "SEARCH": "Search project"
+            "LABEL": "Projeto",
+            "PLACEHOLDER": "Selecione o projeto",
+            "SEARCH": "Buscar projeto"
           }
         },
-        "CREATE": "Create",
-        "CANCEL": "Cancel",
-        "CREATE_SUCCESS": "Issue created successfully",
-        "CREATE_ERROR": "There was an error creating the issue, please try again",
-        "LOADING_TEAM_ERROR": "There was an error fetching the teams, please try again",
-        "LOADING_TEAM_ENTITIES_ERROR": "There was an error fetching the team entities, please try again"
+        "CREATE": "Criar",
+        "CANCEL": "Cancelar",
+        "CREATE_SUCCESS": "Issue criada com sucesso",
+        "CREATE_ERROR": "Erro ao criar a issue, tente novamente",
+        "LOADING_TEAM_ERROR": "Erro ao buscar equipes, tente novamente",
+        "LOADING_TEAM_ENTITIES_ERROR": "Erro ao buscar entidades da equipe, tente novamente"
       },
       "ISSUE": {
         "STATUS": "Status",
-        "PRIORITY": "Priority",
-        "ASSIGNEE": "Assignee",
-        "LABELS": "Labels",
-        "CREATED_AT": "Created at %{createdAt}"
+        "PRIORITY": "Prioridade",
+        "ASSIGNEE": "Responsável",
+        "LABELS": "Etiquetas",
+        "CREATED_AT": "Criada em %{createdAt}"
       },
       "UNLINK": {
-        "TITLE": "Unlink",
-        "SUCCESS": "Issue unlinked successfully",
-        "ERROR": "There was an error unlinking the issue, please try again"
+        "TITLE": "Desvincular",
+        "SUCCESS": "Issue desvinculada com sucesso",
+        "ERROR": "Erro ao desvincular a issue, tente novamente"
       }
     }
   }

@@ -37,22 +37,23 @@ export default {
       // Creating the URL manually because the devise-token-auth with
       // omniauth has a standing issue on redirecting the post request
       // https://github.com/lynndylanhurley/devise_token_auth/issues/1466
-      const baseUrl =
-        'https://accounts.google.com/o/oauth2/auth/oauthchooseaccount';
+      const baseUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
       const clientId = window.chatwootConfig.googleOAuthClientId;
       const redirectUri = window.chatwootConfig.googleOAuthCallbackUrl;
       const responseType = 'code';
-      const scope = 'email profile';
+      const scope = 'openid email profile';
 
-      // Build the query string
+      // URLSearchParams encodes spaces as '+' which Google treats as a literal plus sign
       const queryString = new URLSearchParams({
         client_id: clientId,
         redirect_uri: redirectUri,
         response_type: responseType,
         scope: scope,
-      }).toString();
+        prompt: 'select_account',
+      })
+        .toString()
+        .replace(/\+/g, '%20');
 
-      // Construct the full URL
       return `${baseUrl}?${queryString}`;
     },
   },

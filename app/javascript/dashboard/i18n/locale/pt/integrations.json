@@ -19,8 +19,9 @@
             "MESSAGE_CREATED": "Message created",
             "MESSAGE_UPDATED": "Message updated",
             "WEBWIDGET_TRIGGERED": "Live chat widget opened by the user",
-            "CONTACT_CREATED": "Contact created",
-            "CONTACT_UPDATED": "Contact updated"
+            "CONTACT_CREATED": "Contacto criado",
+            "CONTACT_UPDATED": "Contacto atualizado",
+            "CONTACT_KANBAN_STAGE_CHANGED": "Etapa do Kanban alterada"
           }
         },
         "END_POINT": {
