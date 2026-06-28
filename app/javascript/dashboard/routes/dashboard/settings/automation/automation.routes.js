@@ -3,11 +3,14 @@ import {
   requireWorkflowsFeature,
   isWorkflowsFeatureEnabled,
 } from '../../../../helper/workflowsFeatureGuard';
+import { requireFormsAccess } from '../../../../helper/formsFeatureGuard';
 
 const SettingsWrapper = () => import('../SettingsWrapper.vue');
 const AutomationHub = () => import('./AutomationHub.vue');
 const Automation = () => import('./Index.vue');
 const WorkflowsIndex = () => import('../workflows/WorkflowsIndex.vue');
+const FormsIndex = () => import('../forms/FormsIndex.vue');
+const FormDetail = () => import('../forms/FormDetail.vue');
 const WorkflowEditorWrapper = () => import('../workflows/WorkflowEditorWrapper.vue');
 const WorkflowEditor = () => import('../workflows/WorkflowEditor.vue');
 
@@ -49,6 +52,24 @@ export default {
               beforeEnter: requireWorkflowsFeature,
               meta: {
                 permissions: agentPermissions,
+              },
+            },
+            {
+              path: 'forms',
+              name: 'forms_list',
+              component: FormsIndex,
+              beforeEnter: requireFormsAccess,
+              meta: {
+                permissions: ['administrator'],
+              },
+            },
+            {
+              path: 'forms/:formId',
+              name: 'forms_show',
+              component: FormDetail,
+              beforeEnter: requireFormsAccess,
+              meta: {
+                permissions: ['administrator'],
               },
             },
           ],

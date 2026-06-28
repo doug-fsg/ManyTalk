@@ -58,4 +58,7 @@ module Events::Types
 
   # workflow events
   WORKFLOW_ENROLLMENT_UPDATED = 'workflow_enrollment.updated'
+
+  # form events
+  FORM_SUBMITTED = 'form.submitted'
 end

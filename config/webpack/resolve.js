@@ -7,6 +7,7 @@ const resolve = {
     dashboard: path.resolve('./app/javascript/dashboard'),
     widget: path.resolve('./app/javascript/widget'),
     survey: path.resolve('./app/javascript/survey'),
+    publicForm: path.resolve('./app/javascript/publicForm'),
     assets: path.resolve('./app/javascript/dashboard/assets'),
     components: path.resolve('./app/javascript/dashboard/components'),
     helpers: path.resolve('./app/javascript/shared/helpers'),

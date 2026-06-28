@@ -11,6 +11,7 @@ import auth from './modules/auth';
 import auditlogs from './modules/auditlogs';
 import automations from './modules/automations';
 import workflows from './modules/workflows';
+import accountForms from './modules/accountForms';
 import bulkActions from './modules/bulkActions';
 import campaigns from './modules/campaigns';
 import cannedResponse from './modules/cannedResponse';
@@ -63,6 +64,7 @@ export default new Vuex.Store({
     auth,
     automations,
     workflows,
+    accountForms,
     auditlogs,
     bulkActions,
     campaigns,

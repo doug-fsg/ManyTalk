@@ -29,12 +29,14 @@ const isWorkflowsEnabled = computed(() =>
 );
 
 const activeTab = computed(() => {
-  if (
-    isWorkflowsEnabled.value &&
-    (route.name === 'workflows_list' ||
-      route.name === 'workflows_new' ||
-      route.name === 'workflows_edit')
-  ) {
+  const isWorkflowsRoute =
+    route.name === 'workflows_list' ||
+    route.name === 'workflows_new' ||
+    route.name === 'workflows_edit' ||
+    route.name === 'forms_list' ||
+    route.name === 'forms_show';
+
+  if (isWorkflowsEnabled.value && isWorkflowsRoute) {
     return 'workflows';
   }
   return 'automations';
@@ -47,9 +49,11 @@ const badgeStyle = ref({ left: '2px', width: '0px' });
 
 const switchTab = tab => {
   if (tab === 'workflows' && !isWorkflowsEnabled.value) return;
-  router.push({
-    name: tab === 'workflows' ? 'workflows_list' : 'automation_list',
-  });
+  router
+    .push({ name: tab === 'workflows' ? 'workflows_list' : 'automation_list' })
+    .catch(err => {
+      if (err && err.name !== 'NavigationDuplicated') throw err;
+    });
 };
 
 const updateBadgePosition = () => {
@@ -178,6 +182,8 @@ onBeforeUnmount(() => {
       {{ $t('WORKFLOW.BANNER.ADMIN_ONLY_AUTOMATIONS') }}
     </div>
 
-    <router-view />
+    <div class="flex-1 min-h-0 overflow-auto">
+      <router-view />
+    </div>
   </div>
 </template>

@@ -11,6 +11,7 @@ module.exports = {
     './app/javascript/portal/**/*.vue',
     './app/javascript/shared/**/*.vue',
     './app/javascript/survey/**/*.vue',
+    './app/javascript/publicForm/**/*.vue',
     './app/views/**/*.html.erb',
   ],
   theme: {

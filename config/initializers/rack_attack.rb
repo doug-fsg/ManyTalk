@@ -154,6 +154,14 @@ class Rack::Attack
     match_data[:account_id] if match_data.present?
   end
 
+  throttle('public/api/v1/account_forms/submit/ip', limit: 5, period: 1.minute) do |req|
+    req.ip if req.post? && req.path.match?(%r{/public/api/v1/account_forms/\d+/[^/]+/submit})
+  end
+
+  throttle('public/api/v1/account_forms/show/ip', limit: 30, period: 1.minute) do |req|
+    req.ip if req.get? && req.path.match?(%r{/public/api/v1/account_forms/\d+/[^/]+\z})
+  end
+
   ## ----------------------------------------------- ##
 end
 

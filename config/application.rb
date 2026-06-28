@@ -57,6 +57,8 @@ module Chatwoot
     config.action_dispatch.default_headers = {
       'X-Frame-Options' => 'ALLOWALL'
     }
+
+    config.paths.add 'config/routes', glob: '**/*.rb'
   end
 
   def self.config

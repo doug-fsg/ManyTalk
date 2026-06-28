@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_06_05_120100) do
+ActiveRecord::Schema[7.0].define(version: 2026_06_25_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -25,6 +25,27 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_05_120100) do
     t.datetime "updated_at", null: false
     t.index ["owner_type", "owner_id"], name: "index_access_tokens_on_owner_type_and_owner_id"
     t.index ["token"], name: "index_access_tokens_on_token", unique: true
+  end
+
+  create_table "account_forms", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.integer "status", default: 0, null: false
+    t.jsonb "definition", default: {}, null: false
+    t.jsonb "branding", default: {}, null: false
+    t.jsonb "settings", default: {}, null: false
+    t.bigint "created_by_id"
+    t.bigint "updated_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "form_submissions_count", default: 0, null: false
+    t.index ["account_id", "slug"], name: "index_account_forms_on_account_id_and_slug", unique: true
+    t.index ["account_id", "status"], name: "index_account_forms_on_account_id_and_status"
+    t.index ["account_id"], name: "index_account_forms_on_account_id"
+    t.index ["created_by_id"], name: "index_account_forms_on_created_by_id"
+    t.index ["form_submissions_count"], name: "index_account_forms_on_form_submissions_count"
+    t.index ["updated_by_id"], name: "index_account_forms_on_updated_by_id"
   end
 
   create_table "account_users", force: :cascade do |t|
@@ -655,6 +676,24 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_05_120100) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "form_submissions", force: :cascade do |t|
+    t.bigint "account_form_id", null: false
+    t.bigint "account_id", null: false
+    t.bigint "contact_id"
+    t.bigint "conversation_id"
+    t.jsonb "payload", default: {}, null: false
+    t.jsonb "utm", default: {}, null: false
+    t.string "ip_address"
+    t.string "user_agent"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_form_id", "created_at"], name: "index_form_submissions_on_account_form_id_and_created_at"
+    t.index ["account_form_id"], name: "index_form_submissions_on_account_form_id"
+    t.index ["account_id"], name: "index_form_submissions_on_account_id"
+    t.index ["contact_id"], name: "index_form_submissions_on_contact_id"
+    t.index ["conversation_id"], name: "index_form_submissions_on_conversation_id"
+  end
+
   create_table "inbox_members", id: :serial, force: :cascade do |t|
     t.integer "user_id", null: false
     t.integer "inbox_id", null: false
@@ -1135,6 +1174,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_05_120100) do
     t.index ["inbox_id"], name: "index_working_hours_on_inbox_id"
   end
 
+  add_foreign_key "account_forms", "accounts"
+  add_foreign_key "account_forms", "users", column: "created_by_id"
+  add_foreign_key "account_forms", "users", column: "updated_by_id"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "activities", "accounts"
@@ -1149,6 +1191,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_05_120100) do
   add_foreign_key "contact_pipeline_positions", "contacts"
   add_foreign_key "contact_pipeline_positions", "custom_attribute_definitions", column: "pipeline_id"
   add_foreign_key "contact_pipeline_positions", "users", column: "assignee_id"
+  add_foreign_key "form_submissions", "account_forms"
+  add_foreign_key "form_submissions", "accounts"
+  add_foreign_key "form_submissions", "contacts", on_delete: :nullify
+  add_foreign_key "form_submissions", "conversations"
   add_foreign_key "inboxes", "portals"
   add_foreign_key "workflow_enrollments", "accounts"
   add_foreign_key "workflow_enrollments", "conversations"

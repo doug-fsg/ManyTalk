@@ -12,6 +12,7 @@ class AsyncDispatcher < BaseDispatcher
     [
       AutomationRuleListener.instance,
       WorkflowListener.instance,
+      AccountFormsListener.instance,
       CampaignListener.instance,
       CsatSurveyListener.instance,
       HookListener.instance,

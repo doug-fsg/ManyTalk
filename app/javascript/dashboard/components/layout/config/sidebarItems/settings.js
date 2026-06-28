@@ -11,6 +11,8 @@ const settings = accountId => ({
     'workflows_list',
     'workflows_new',
     'workflows_edit',
+    'forms_list',
+    'forms_show',
     'auditlogs_list',
     'billing_settings_index',
     'canned_list',

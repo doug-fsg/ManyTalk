@@ -283,6 +283,18 @@ en:
      inbox_name: Inbox
      inbox_type: Inbox Type
     button: Open conversation
+  account_forms:
+    public:
+      paused: This form is temporarily unavailable.
+      not_found: Form not found.
+    errors:
+      missing_name: Name is required.
+      missing_email: Email is required.
+      missing_phone_number: Phone number is required.
+      invalid_email: Please enter a valid email address.
+      invalid_phone_number: Please enter a valid phone number with country code (e.g. +5511999999999).
+      form_unavailable: This form is not available.
+      submission_failed: Could not save your submission. Please try again.
   workflows:
     clone_suffix: "(copy)"
     errors:

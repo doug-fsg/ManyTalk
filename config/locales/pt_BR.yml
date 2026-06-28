@@ -262,6 +262,18 @@ pt_BR:
       inbox_name: Canal de Entrada
       inbox_type: Tipo de Canal de Entrada
     button: Abrir conversa
+  account_forms:
+    public:
+      paused: Este formulário está temporariamente indisponível.
+      not_found: Formulário não encontrado.
+    errors:
+      missing_name: O nome é obrigatório.
+      missing_email: O e-mail é obrigatório.
+      missing_phone_number: O telefone é obrigatório.
+      invalid_email: Informe um endereço de e-mail válido.
+      invalid_phone_number: Informe um telefone válido com código do país (ex. +5511999999999).
+      form_unavailable: Este formulário não está disponível.
+      submission_failed: Não foi possível salvar seu envio. Por favor, tente novamente.
   workflows:
     clone_suffix: "(cópia)"
     errors:
