@@ -1,3 +1,3 @@
 json.name @account_form.name
 json.branding @account_form.branding
-json.definition @account_form.definition
+json.definition AccountForms::DefinitionEnricher.call(@account_form)

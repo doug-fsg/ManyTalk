@@ -10,7 +10,65 @@
       "APPEARANCE": "Aparência",
       "APPEARANCE_TOOLTIP": "Visual e mensagens",
       "SUBMISSIONS": "Cadastros",
-      "SUBMISSIONS_TOOLTIP": "Respostas recebidas"
+      "SUBMISSIONS_TOOLTIP": "Respostas recebidas",
+      "EDITOR": "Editor",
+      "SETTINGS": "Configurações"
+    },
+    "EDITOR": {
+      "BREADCRUMB": "Formulários",
+      "LOADING": "Carregando...",
+      "NAV_LABEL": "Navegação",
+      "COPY_LINK_TOOLTIP": "Copiar link público",
+      "PUBLISH_TOOLTIP": "Publicar formulário",
+      "PAUSE_TOOLTIP": "Pausar formulário",
+      "MORE_OPTIONS": "Mais opções",
+      "OPEN_PUBLIC": "Abrir formulário",
+      "COPY_PUBLIC_LINK": "Copiar link público"
+    },
+    "SETTINGS_TAB": {
+      "VISUAL_IDENTITY": "Identidade visual",
+      "LOGO": "Logo",
+      "HEADER_SECTION": "Cabeçalho",
+      "BEHAVIOR_SECTION": "Comportamento"
+    },
+    "PALETTE": {
+      "TITLE": "Adicionar campo",
+      "HINT": "Clique para adicionar ao formulário.",
+      "ALL_ADDED": "Todos os campos disponíveis já foram adicionados.",
+      "NATIVE_FIELDS": "Campos padrão",
+      "CUSTOM_ATTRIBUTES": "Atributos personalizados",
+      "IN_FORM": "No formulário",
+      "MOBILE_TOGGLE": "Adicionar campo",
+      "ATTRIBUTE_FALLBACK": "Atributo"
+    },
+    "FIELD_LIST": {
+      "TITLE": "Campos do formulário",
+      "HINT": "Clique para editar · arraste para reordenar",
+      "EMPTY": "Nenhum campo adicionado",
+      "EMPTY_HINT": "Use a paleta à esquerda para adicionar campos.",
+      "DROP_HINT": "Use a paleta para adicionar campos"
+    },
+    "FIELD_CARD": {
+      "LABEL_PLACEHOLDER": "Nome do campo",
+      "LABEL_ARIA": "Label do campo {type}",
+      "NATIVE_FIELD": "Campo nativo",
+      "CUSTOM_ATTRIBUTE": "Atributo personalizado",
+      "NAME_FULL": "Nome completo",
+      "REQUIRED_TOOLTIP": "Campo obrigatório — clique para tornar opcional",
+      "OPTIONAL_TOOLTIP": "Campo opcional — clique para tornar obrigatório",
+      "REMOVE": "Remover campo"
+    },
+    "PREVIEW": {
+      "TITLE": "Pré-visualização",
+      "DESKTOP": "Desktop",
+      "MOBILE": "Mobile",
+      "DEFAULT_TITLE": "Formulário",
+      "SUBMIT": "Enviar"
+    },
+    "NATIVE": {
+      "NAME": "Nome",
+      "EMAIL": "E-mail",
+      "PHONE": "Telefone"
     },
     "STATUS": {
       "DRAFT": "Rascunho",
@@ -122,7 +180,26 @@
       "COPY_TOOLTIP": "Copiar código embed",
       "COPY_SUCCESS": "Código copiado!",
       "PREVIEW": "Ver",
-      "PREVIEW_TOOLTIP": "Pré-visualizar embed"
+      "PREVIEW_TOOLTIP": "Pré-visualizar embed",
+      "CLOSE": "Fechar"
+    },
+    "PUBLIC_FIELD": {
+      "SELECT_REQUIRED": "Selecione uma opção…",
+      "SELECT_OPTIONAL": "Opcional",
+      "NO_LIST_OPTIONS": "Nenhuma opção configurada para este campo.",
+      "PLACEHOLDER_PHONE": "(11) 99999-9999",
+      "PLACEHOLDER_EMAIL": "seu@email.com",
+      "PLACEHOLDER_NAME": "Seu nome completo",
+      "PLACEHOLDER_LINK": "https://exemplo.com",
+      "PLACEHOLDER_CURRENCY": "0,00",
+      "PLACEHOLDER_PERCENT": "0",
+      "PLACEHOLDER_NUMBER": "0"
+    },
+    "PUBLIC": {
+      "UNAVAILABLE": "Formulário indisponível.",
+      "SUBMIT": "Enviar",
+      "SUBMIT_SUCCESS": "Enviado com sucesso!",
+      "SUBMIT_ERROR": "Não foi possível enviar. Tente novamente."
     }
   }
 }

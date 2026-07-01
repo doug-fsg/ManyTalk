@@ -66,14 +66,20 @@ class Api::V1::Accounts::AccountFormsController < Api::V1::Accounts::BaseControl
   end
 
   def account_form_params
-    params.permit(
+    permitted = params.permit(
       :name, :slug,
       branding: {},
       settings: {},
       definition: {
-        fields: [:key, :type, :field, :label, :required, :attribute_key, :attribute_model]
+        fields: [:key, :type, :field, :label, :required, :attribute_key, :attribute_model, :attribute_display_type]
       }
     )
+
+    if permitted[:definition].present?
+      permitted[:definition] = AccountForms::DefinitionSanitizer.call(permitted[:definition])
+    end
+
+    permitted
   end
 
   def submission_page

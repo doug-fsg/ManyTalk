@@ -13,7 +13,7 @@ const emit = defineEmits(['close']);
 const { t } = useI18n();
 
 const embedSnippet = computed(() =>
-  `<iframe src="${props.publicUrl}" width="100%" height="600" frameborder="0" allow="clipboard-write" title="Formulário"></iframe>`
+  `<iframe src="${props.publicUrl}" width="100%" height="600" frameborder="0" allow="clipboard-write" title="${t('ACCOUNT_FORM.PREVIEW.DEFAULT_TITLE')}"></iframe>`
 );
 
 const copyEmbed = async () => {
@@ -34,7 +34,11 @@ const copyEmbed = async () => {
       <p class="text-sm font-medium text-slate-700 dark:text-slate-200">
         {{ $t('ACCOUNT_FORM.EMBED.TITLE') }}
       </p>
-      <FormIconButton icon="dismiss" tooltip="Fechar" @click="emit('close')" />
+      <FormIconButton
+        icon="dismiss"
+        :tooltip="$t('ACCOUNT_FORM.EMBED.CLOSE')"
+        @click="emit('close')"
+      />
     </div>
 
     <pre

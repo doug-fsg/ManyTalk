@@ -4,7 +4,6 @@ import { useRouter } from 'dashboard/composables/route';
 import { useI18n } from 'dashboard/composables/useI18n';
 import { useStore, useStoreGetters } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
-import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import ConfirmationModal from 'dashboard/components/widgets/modal/ConfirmationModal.vue';
 import WorkflowCreateModal from './WorkflowCreateModal.vue';
 import WorkflowCard from './WorkflowCard.vue';
@@ -29,27 +28,8 @@ const loadWorkflows = () => store.dispatch('workflows/get');
 
 onMounted(loadWorkflows);
 
-const isAdministrator = computed(
-  () => getters.getCurrentRole.value === 'administrator'
-);
-
-const isWorkflowsEnabled = computed(() =>
-  getters['accounts/isFeatureEnabledonAccount'].value(
-    getters.getCurrentAccountId.value,
-    FEATURE_FLAGS.WORKFLOWS
-  )
-);
-
-const showFormsButton = computed(
-  () => isAdministrator.value && isWorkflowsEnabled.value
-);
-
 const openNew = () => {
   showCreateModal.value = true;
-};
-
-const openForms = () => {
-  router.push({ name: 'forms_list' });
 };
 
 const openEdit = workflow =>
@@ -115,26 +95,13 @@ const requestDeleteWorkflow = async workflow => {
         feature-name=""
       >
         <template #actions>
-          <div class="flex items-center gap-2">
-            <woot-button
-              v-if="showFormsButton"
-              v-tooltip.top="$t('ACCOUNT_FORM.LIST.OPEN_FORMS_TOOLTIP')"
-              variant="smooth"
-              color-scheme="secondary"
-              class="rounded-md"
-              icon="clipboard"
-              @click="openForms"
-            >
-              {{ $t('ACCOUNT_FORM.LIST.OPEN_FORMS') }}
-            </woot-button>
-            <woot-button
-              class="button nice rounded-md"
-              icon="add-circle"
-              @click="openNew"
-            >
-              {{ $t('WORKFLOW.LIST.CREATE') }}
-            </woot-button>
-          </div>
+          <woot-button
+            class="button nice rounded-md"
+            icon="add-circle"
+            @click="openNew"
+          >
+            {{ $t('WORKFLOW.LIST.CREATE') }}
+          </woot-button>
         </template>
       </BaseSettingsHeader>
     </template>

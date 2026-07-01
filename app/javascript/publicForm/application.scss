@@ -17,3 +17,15 @@ body {
 .hidden {
   display: none !important;
 }
+
+.form-public-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: none;
+  cursor: pointer;
+}
+
+.form-public-select:invalid {
+  color: rgb(100 116 139);
+}

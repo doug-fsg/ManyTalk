@@ -148,6 +148,28 @@ RSpec.describe 'Custom Attribute Definitions API', type: :request do
         expect(custom_attribute_definition.reload.attribute_key).to eq('developer_id')
         expect(custom_attribute_definition.reload.attribute_model).to eq('conversation_attribute')
       end
+
+      it 'updates list attribute values sent as an array' do
+        list_attr = create(
+          :custom_attribute_definition,
+          account: account,
+          attribute_model: :contact_attribute,
+          attribute_display_type: :list,
+          attribute_values: ['Antigo']
+        )
+
+        patch "/api/v1/accounts/#{account.id}/custom_attribute_definitions/#{list_attr.id}",
+              headers: user.create_new_auth_token,
+              params: {
+                custom_attribute_definition: {
+                  attribute_values: ['Opção A', 'Opção B']
+                }
+              },
+              as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(list_attr.reload.attribute_values).to eq(['Opção A', 'Opção B'])
+      end
     end
   end
 

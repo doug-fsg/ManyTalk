@@ -28,15 +28,15 @@ const isWorkflowsEnabled = computed(() =>
   )
 );
 
-const activeTab = computed(() => {
-  const isWorkflowsRoute =
-    route.name === 'workflows_list' ||
-    route.name === 'workflows_new' ||
-    route.name === 'workflows_edit' ||
-    route.name === 'forms_list' ||
-    route.name === 'forms_show';
+const showFormsTab = computed(
+  () => isWorkflowsEnabled.value && isAdministrator.value
+);
 
-  if (isWorkflowsEnabled.value && isWorkflowsRoute) {
+const activeTab = computed(() => {
+  if (route.name === 'forms_list' || route.name === 'forms_show') {
+    return 'forms';
+  }
+  if (route.name === 'workflows_list') {
     return 'workflows';
   }
   return 'automations';
@@ -44,13 +44,21 @@ const activeTab = computed(() => {
 
 const viewToggleContainer = ref(null);
 const workflowsButton = ref(null);
-const automationsButton = ref(null);
-const badgeStyle = ref({ left: '2px', width: '0px' });
+const formsButton = ref(null);
+const badgeStyle = ref({ left: '2px', width: '0px', opacity: 1 });
 
 const switchTab = tab => {
   if (tab === 'workflows' && !isWorkflowsEnabled.value) return;
+  if (tab === 'forms' && !showFormsTab.value) return;
+
+  const routeNames = {
+    workflows: 'workflows_list',
+    forms: 'forms_list',
+    automations: 'automation_list',
+  };
+
   router
-    .push({ name: tab === 'workflows' ? 'workflows_list' : 'automation_list' })
+    .push({ name: routeNames[tab], params: { accountId: accountId.value } })
     .catch(err => {
       if (err && err.name !== 'NavigationDuplicated') throw err;
     });
@@ -58,12 +66,13 @@ const switchTab = tab => {
 
 const updateBadgePosition = () => {
   nextTick(() => {
-    if (!viewToggleContainer.value) return;
+    if (!viewToggleContainer.value || activeTab.value === 'automations') {
+      badgeStyle.value = { ...badgeStyle.value, opacity: 0 };
+      return;
+    }
 
     const activeButton =
-      activeTab.value === 'workflows'
-        ? workflowsButton.value
-        : automationsButton.value;
+      activeTab.value === 'forms' ? formsButton.value : workflowsButton.value;
 
     if (!activeButton) return;
 
@@ -73,11 +82,13 @@ const updateBadgePosition = () => {
     badgeStyle.value = {
       left: `${buttonRect.left - containerRect.left}px`,
       width: `${buttonRect.width}px`,
+      opacity: 1,
     };
   });
 };
 
 watch(activeTab, updateBadgePosition);
+watch(showFormsTab, updateBadgePosition);
 
 watch(
   [() => route.name, isWorkflowsEnabled],
@@ -108,8 +119,9 @@ onBeforeUnmount(() => {
   <div class="flex flex-col flex-1 overflow-hidden bg-white dark:bg-slate-900">
     <div
       v-if="isWorkflowsEnabled"
-      class="px-4 py-3 bg-white border-b border-slate-200 dark:bg-slate-900 dark:border-slate-700"
+      class="flex items-center justify-between gap-4 px-4 py-3 bg-white border-b border-slate-200 dark:bg-slate-900 dark:border-slate-700"
     >
+      <!-- Primary tabs: Fluxo de Atendimento + Formulários -->
       <div
         ref="viewToggleContainer"
         class="inline-flex items-center gap-0.5 bg-slate-100/60 rounded-lg p-0.5 dark:bg-slate-700/50 relative"
@@ -146,20 +158,36 @@ onBeforeUnmount(() => {
         </button>
 
         <button
-          ref="automationsButton"
+          v-if="showFormsTab"
+          ref="formsButton"
           type="button"
           :class="[
             'px-2.5 py-1.5 rounded-lg transition-colors duration-200 ease-smooth flex items-center gap-1.5 text-xs font-medium relative z-10',
-            activeTab === 'automations'
+            activeTab === 'forms'
               ? 'text-white'
               : 'text-slate-600 dark:text-slate-300',
           ]"
-          @click="switchTab('automations')"
+          @click="switchTab('forms')"
         >
-          <fluent-icon icon="automation" size="14" />
-          <span>{{ $t('AUTOMATION.TABS.CLASSIC') }}</span>
+          <fluent-icon icon="clipboard" size="14" />
+          <span>{{ $t('WORKFLOW.TABS.FORMS') }}</span>
         </button>
       </div>
+
+      <!-- Classic mode — secondary, top-right -->
+      <button
+        type="button"
+        class="shrink-0 text-xs transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:underline"
+        :class="
+          activeTab === 'automations'
+            ? 'text-slate-500 dark:text-slate-400 font-medium'
+            : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+        "
+        :aria-current="activeTab === 'automations' ? 'page' : undefined"
+        @click="switchTab('automations')"
+      >
+        {{ $t('AUTOMATION.TABS.CLASSIC') }}
+      </button>
     </div>
 
     <div
@@ -171,6 +199,7 @@ onBeforeUnmount(() => {
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
+        aria-hidden="true"
       >
         <path
           stroke-linecap="round"

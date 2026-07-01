@@ -3,6 +3,17 @@ class Api::V1::Accounts::CustomAttributeDefinitionsController < Api::V1::Account
   before_action :fetch_custom_attribute_definition, only: [:show, :update, :destroy]
   DEFAULT_ATTRIBUTE_MODEL = 'conversation_attribute'.freeze
 
+  BASE_PAYLOAD_KEYS = %i[
+    attribute_display_name
+    attribute_description
+    attribute_display_type
+    attribute_key
+    attribute_model
+    regex_pattern
+    regex_cue
+    is_kanban
+  ].freeze
+
   def index; end
 
   def show; end
@@ -17,19 +28,19 @@ class Api::V1::Accounts::CustomAttributeDefinitionsController < Api::V1::Account
     # Verificar se atendente está tentando modificar permissões
     permissions_param = params[:custom_attribute_definition]&.dig(:permissions) || params[:permissions]
     if permissions_param.present? && !Current.user.administrator?
-      render json: { 
-        error: 'Você não tem permissão para modificar permissões do pipeline' 
+      render json: {
+        error: 'Você não tem permissão para modificar permissões do pipeline'
       }, status: :forbidden
       return
     end
-    
+
     payload = permitted_payload
-    
+
     # Processar permissões se fornecidas (apenas para administradores)
     if permissions_param.present?
       process_permissions(permissions_param)
     end
-    
+
     @custom_attribute_definition.update!(payload)
   end
 
@@ -38,13 +49,13 @@ class Api::V1::Accounts::CustomAttributeDefinitionsController < Api::V1::Account
     if @custom_attribute_definition.is_kanban && !Current.user.administrator?
       permission = @custom_attribute_definition.user_permission(Current.user)
       unless permission == :admin
-        render json: { 
-          error: 'Você não tem permissão para excluir este pipeline' 
+        render json: {
+          error: 'Você não tem permissão para excluir este pipeline'
         }, status: :forbidden
         return
       end
     end
-    
+
     @custom_attribute_definition.destroy!
     head :no_content
   end
@@ -62,7 +73,7 @@ class Api::V1::Accounts::CustomAttributeDefinitionsController < Api::V1::Account
   def process_permissions(permissions_param)
     # Garantir que attribute_values seja um hash
     current_values = @custom_attribute_definition.attribute_values
-    
+
     if current_values.is_a?(Array)
       # Converter array legado para hash
       @custom_attribute_definition.attribute_values = {
@@ -77,51 +88,100 @@ class Api::V1::Accounts::CustomAttributeDefinitionsController < Api::V1::Account
     elsif !current_values.key?('permissions')
       @custom_attribute_definition.attribute_values['permissions'] = {}
     end
-    
+
     # Atualizar permissões
     @custom_attribute_definition.attribute_values['permissions'] = permissions_param.to_h
     @custom_attribute_definition.save!
   end
 
   def permitted_payload
-    payload = params.require(:custom_attribute_definition).permit(
-      :attribute_display_name,
-      :attribute_description,
-      :attribute_display_type,
-      :attribute_key,
-      :attribute_model,
-      :regex_pattern,
-      :regex_cue,
-      :is_kanban,
+    raw_values = params.dig(:custom_attribute_definition, :attribute_values)
+
+    payload = if kanban_attribute?
+                if raw_values.is_a?(Array)
+                  params.require(:custom_attribute_definition).permit(
+                    *BASE_PAYLOAD_KEYS,
+                    attribute_values: []
+                  )
+                else
+                  permit_kanban_payload
+                end
+              else
+                permit_standard_payload
+              end
+
+    normalize_kanban_attribute_values!(payload) if kanban_attribute?
+    payload
+  end
+
+  def permit_standard_payload
+    params.require(:custom_attribute_definition).permit(
+      *BASE_PAYLOAD_KEYS,
+      attribute_values: []
+    )
+  end
+
+  def permit_kanban_payload
+    params.require(:custom_attribute_definition).permit(
+      *BASE_PAYLOAD_KEYS,
       attribute_values: {}
     )
-    
-    # Processar attribute_values para Kanban
-    if payload[:attribute_values].is_a?(Hash) && @custom_attribute_definition&.is_kanban
-      # Formato esperado: { stages: { "nome": { color } }, permissions: {...} }
-      stages = payload[:attribute_values]['stages'] || payload[:attribute_values][:stages] || {}
-      permissions = payload[:attribute_values]['permissions'] || payload[:attribute_values][:permissions] || {}
-      
-      # Se stages vier como array, converter para objeto usando nome como chave
-      if stages.is_a?(Array)
-        stages_hash = {}
-        stages.each do |stage|
-          if stage.is_a?(Hash)
-            name = stage['name'] || stage[:name]
-            color = stage['color'] || stage[:color]
-            stages_hash[name] = { 'color' => color } if name
-          end
+  end
+
+  def kanban_attribute?
+    return @custom_attribute_definition.is_kanban if @custom_attribute_definition
+
+    ActiveModel::Type::Boolean.new.cast(
+      params.dig(:custom_attribute_definition, :is_kanban)
+    )
+  end
+
+  def normalize_kanban_attribute_values!(payload)
+    stages = payload[:attribute_values]
+    permissions = {}
+
+    if stages.is_a?(Array)
+      stages_hash = {}
+      stages.each do |stage|
+        if stage.is_a?(Hash)
+          name = stage['name'] || stage[:name]
+          color = stage['color'] || stage[:color]
+          stages_hash[name] = { 'color' => color } if name
+        elsif stage.present?
+          stages_hash[stage.to_s] = { 'color' => nil }
         end
-        stages = stages_hash
       end
-      
+
       payload[:attribute_values] = {
-        'stages' => stages,
+        'stages' => stages_hash,
         'permissions' => permissions
       }
+      return
     end
-    
-    payload
+
+    return unless stages.is_a?(Hash)
+
+    stages = payload[:attribute_values]['stages'] || payload[:attribute_values][:stages] || {}
+    permissions = payload[:attribute_values]['permissions'] || payload[:attribute_values][:permissions] || {}
+
+    if stages.is_a?(Array)
+      stages_hash = {}
+      stages.each do |stage|
+        if stage.is_a?(Hash)
+          name = stage['name'] || stage[:name]
+          color = stage['color'] || stage[:color]
+          stages_hash[name] = { 'color' => color } if name
+        elsif stage.present?
+          stages_hash[stage.to_s] = { 'color' => nil }
+        end
+      end
+      stages = stages_hash
+    end
+
+    payload[:attribute_values] = {
+      'stages' => stages,
+      'permissions' => permissions
+    }
   end
 
   def permitted_params

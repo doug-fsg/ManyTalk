@@ -28,6 +28,16 @@
           "LABEL": "Type",
           "PLACEHOLDER": "Please select a type",
           "ERROR": "Type is required",
+          "OPTIONS": {
+            "TEXT": "Text",
+            "NUMBER": "Number",
+            "CURRENCY": "Currency",
+            "PERCENT": "Percent",
+            "LINK": "Link",
+            "DATE": "Date",
+            "LIST": "List",
+            "CHECKBOX": "Checkbox"
+          },
           "LIST": {
             "LABEL": "List Values",
             "PLACEHOLDER": "Please enter value and press enter key",

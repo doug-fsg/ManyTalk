@@ -3,7 +3,7 @@ json.account_id account_form.account_id
 json.name account_form.name
 json.slug account_form.slug
 json.status account_form.status
-json.definition account_form.definition
+json.definition AccountForms::DefinitionEnricher.call(account_form)
 json.branding account_form.branding
 json.settings account_form.settings
 json.public_url account_form.public_url

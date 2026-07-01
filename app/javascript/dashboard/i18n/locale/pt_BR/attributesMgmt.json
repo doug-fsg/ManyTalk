@@ -30,6 +30,16 @@
           "LABEL": "Tipo",
           "PLACEHOLDER": "Selecione um tipo",
           "ERROR": "O tipo é obrigatório",
+          "OPTIONS": {
+            "TEXT": "Texto",
+            "NUMBER": "Número",
+            "CURRENCY": "Moeda",
+            "PERCENT": "Percentual",
+            "LINK": "Link",
+            "DATE": "Data",
+            "LIST": "Lista",
+            "CHECKBOX": "Checkbox"
+          },
           "LIST": {
             "LABEL": "Listar etapas",
             "PLACEHOLDER": "Por favor, digite o nome e pressione Enter",

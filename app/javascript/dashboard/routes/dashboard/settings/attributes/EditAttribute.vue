@@ -3,7 +3,10 @@ import { useVuelidate } from '@vuelidate/core';
 import { useAlert } from 'dashboard/composables';
 import { required, minLength } from 'vuelidate/lib/validators';
 import { getRegexp } from 'shared/helpers/Validators';
-import { ATTRIBUTE_TYPES } from './constants';
+import { ATTRIBUTE_TYPES, ATTRIBUTE_DISPLAY_TYPE_IDS } from './constants';
+import {
+  normalizeAttributeValues,
+} from 'shared/helpers/formFieldHelpers';
 export default {
   components: {},
   props: {
@@ -55,9 +58,8 @@ export default {
   },
   computed: {
     setAttributeListValue() {
-      return this.selectedAttribute.attribute_values.map(values => ({
-        name: values,
-      }));
+      return normalizeAttributeValues(this.selectedAttribute.attribute_values || [])
+        .map(name => ({ name }));
     },
     updatedAttributeListValues() {
       return this.values.map(item => item.name);
@@ -77,11 +79,7 @@ export default {
       }`;
     },
     selectedAttributeType() {
-      return this.types.find(
-        item =>
-          item.option.toLowerCase() ===
-          this.selectedAttribute.attribute_display_type
-      ).id;
+      return ATTRIBUTE_DISPLAY_TYPE_IDS[this.selectedAttribute.attribute_display_type] ?? 0;
     },
     keyErrorMessage() {
       if (!this.v$.attributeKey.isKey) {
@@ -136,16 +134,21 @@ export default {
         this.regexCue = null;
       }
       try {
-        await this.$store.dispatch('attributes/update', {
+        const payload = {
           id: this.selectedAttribute.id,
           attribute_description: this.description,
           attribute_display_name: this.displayName,
-          attribute_values: this.updatedAttributeListValues,
           regex_pattern: this.regexPattern
             ? new RegExp(this.regexPattern).toString()
             : null,
           regex_cue: this.regexCue,
-        });
+        };
+
+        if (this.isAttributeTypeList) {
+          payload.attribute_values = this.updatedAttributeListValues;
+        }
+
+        await this.$store.dispatch('attributes/update', payload);
         this.alertMessage = this.$t('ATTRIBUTES_MGMT.EDIT.API.SUCCESS_MESSAGE');
         this.onClose();
       } catch (error) {
@@ -208,7 +211,7 @@ export default {
           {{ $t('ATTRIBUTES_MGMT.ADD.FORM.TYPE.LABEL') }}
           <select v-model="attributeType" disabled>
             <option v-for="type in types" :key="type.id" :value="type.id">
-              {{ type.option }}
+              {{ $t(type.i18nKey) }}
             </option>
           </select>
           <span v-if="v$.attributeType.$error" class="message">

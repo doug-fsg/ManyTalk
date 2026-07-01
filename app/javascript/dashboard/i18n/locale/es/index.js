@@ -5,6 +5,7 @@ import attributesMgmt from './attributesMgmt.json';
 import auditLogs from './auditLogs.json';
 import automation from './automation.json';
 import workflow from '../en/workflow.json';
+import accountForm from '../en/accountForm.json';
 import bulkActions from './bulkActions.json';
 import campaign from './campaign.json';
 import cannedMgmt from './cannedMgmt.json';
@@ -43,6 +44,7 @@ export default {
   ...auditLogs,
   ...automation,
   ...workflow,
+  ...accountForm,
   ...bulkActions,
   ...campaign,
   ...cannedMgmt,

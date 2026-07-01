@@ -4,7 +4,7 @@
   import { mapGetters } from 'vuex';
   import { useAlert } from 'dashboard/composables';
   import { convertToAttributeSlug } from 'dashboard/helper/commons.js';
-  import { ATTRIBUTE_MODELS, ATTRIBUTE_TYPES } from './constants';
+  import { ATTRIBUTE_MODELS, ATTRIBUTE_TYPES, FORM_CONTACT_ATTRIBUTE_TYPES } from './constants';
   
   export default {
     props: {
@@ -17,6 +17,10 @@
       selectedAttributeModelTab: {
         type: Number,
         default: 0,
+      },
+      hideModelAndKey: {
+        type: Boolean,
+        default: false,
       },
     },
     setup() {
@@ -79,6 +83,9 @@
       },
       isRegexEnabled() {
         return this.regexEnabled;
+      },
+      availableTypes() {
+        return this.hideModelAndKey ? FORM_CONTACT_ATTRIBUTE_TYPES : this.types;
       },
     },
   
@@ -164,7 +171,7 @@
   
         <form class="flex w-full" @submit.prevent="addAttributes">
           <div class="w-full">
-            <label :class="{ error: v$.attributeModel.$error }">
+            <label v-if="!hideModelAndKey" :class="{ error: v$.attributeModel.$error }">
               {{ $t('ATTRIBUTES_MGMT.ADD.FORM.MODEL.LABEL') }}
               <select v-model="attributeModel">
                 <option v-for="model in models" :key="model.id" :value="model.id">
@@ -190,6 +197,7 @@
               @blur="v$.displayName.$touch"
             />
             <woot-input
+              v-if="!hideModelAndKey"
               v-model="attributeKey"
               :label="$t('ATTRIBUTES_MGMT.ADD.FORM.KEY.LABEL')"
               type="text"
@@ -214,8 +222,8 @@
             <label :class="{ error: v$.attributeType.$error }">
               {{ $t('ATTRIBUTES_MGMT.ADD.FORM.TYPE.LABEL') }}
               <select v-model="attributeType">
-                <option v-for="type in types" :key="type.id" :value="type.id">
-                  {{ type.option }}
+                <option v-for="type in availableTypes" :key="type.id" :value="type.id">
+                  {{ $t(type.i18nKey) }}
                 </option>
               </select>
               <span v-if="v$.attributeType.$error" class="message">

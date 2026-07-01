@@ -1,14 +1,10 @@
 import store from '../store';
-import { FEATURE_FLAGS } from '../featureFlags';
+import { isWorkflowsFeatureEnabled } from './workflowsFeatureGuard';
 
 export const requireFormsAccess = (to, from, next) => {
   const accountId = to.params.accountId;
-  const workflowsEnabled = store.getters['accounts/isFeatureEnabledonAccount'](
-    Number(accountId),
-    FEATURE_FLAGS.WORKFLOWS
-  );
 
-  if (!workflowsEnabled) {
+  if (!isWorkflowsFeatureEnabled(accountId)) {
     next({ name: 'automation_list', params: { accountId } });
     return;
   }

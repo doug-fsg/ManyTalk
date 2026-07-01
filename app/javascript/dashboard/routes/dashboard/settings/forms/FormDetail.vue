@@ -3,75 +3,202 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'dashboard/composables/route';
 import { useAlert } from 'dashboard/composables';
 import { useI18n } from 'dashboard/composables/useI18n';
+import { useStore, useStoreGetters } from 'dashboard/composables/store';
 import AccountFormsAPI from 'dashboard/api/accountForms';
+
+import FormEditorHeader from './FormEditorHeader.vue';
+import FormFieldPalette from './FormFieldPalette.vue';
 import FormFieldsEditor from './FormFieldsEditor.vue';
-import FormPublicPreview from './FormPublicPreview.vue';
-import FormIconButton from './FormIconButton.vue';
+import FormPreviewPanel from './FormPreviewPanel.vue';
 import FormLogoUpload from './FormLogoUpload.vue';
+import AddAttribute from '../attributes/AddAttribute.vue';
+import {
+  isFormSupportedAttribute,
+  enrichCustomField,
+} from 'shared/helpers/formFieldHelpers';
+
+// ── Router / i18n / Store ────────────────────────────────────────────────────
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+const store = useStore();
+const getters = useStoreGetters();
+
+// ── State ────────────────────────────────────────────────────────────────────
 
 const form = ref(null);
 const isLoading = ref(true);
 const isSaving = ref(false);
 const isUpdatingStatus = ref(false);
-const activeTab = ref('general');
+const activeTab = ref('editor');
 const submissions = ref([]);
 const submissionsMeta = ref({ page: 1, total_pages: 1, total_count: 0 });
 const isLoadingSubmissions = ref(false);
 const isExporting = ref(false);
+const selectedFieldIndex = ref(-1);
+const showAddAttributeModal = ref(false);
 
 const formId = computed(() => Number(route.params.formId));
 const accountId = computed(() => Number(route.params.accountId));
 
-const isPublished = computed(() => form.value && form.value.status === 'published');
+// ── Status helpers ────────────────────────────────────────────────────────────
+
+const isPublished = computed(() => form.value?.status === 'published');
 const isDraftOrPaused = computed(
   () => form.value && (form.value.status === 'draft' || form.value.status === 'paused')
 );
 
 const statusLabel = computed(() => {
   if (!form.value) return '';
-  const map = {
-    draft: t('ACCOUNT_FORM.STATUS.DRAFT'),
-    published: t('ACCOUNT_FORM.STATUS.PUBLISHED'),
-    paused: t('ACCOUNT_FORM.STATUS.PAUSED'),
-  };
-  return map[form.value.status] || form.value.status;
+  return (
+    { draft: t('ACCOUNT_FORM.STATUS.DRAFT'), published: t('ACCOUNT_FORM.STATUS.PUBLISHED'), paused: t('ACCOUNT_FORM.STATUS.PAUSED') }[form.value.status] ||
+    form.value.status
+  );
 });
 
 const statusClass = computed(() => {
   if (!form.value) return 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300';
-  const map = {
-    published: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-    paused: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-    draft: 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300',
-  };
-  return map[form.value.status] || 'bg-slate-100 text-slate-500';
+  return (
+    {
+      published: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+      paused: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+      draft: 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300',
+    }[form.value.status] || 'bg-slate-100 text-slate-500'
+  );
 });
 
 const publicUrl = computed(() => {
-  if (!form.value || !form.value.slug) return '';
-  return (
-    window.location.origin +
-    '/public/forms/' +
-    accountId.value +
-    '/' +
-    form.value.slug
-  );
+  if (!form.value?.slug) return '';
+  return `${window.location.origin}/public/forms/${accountId.value}/${form.value.slug}`;
 });
 
 const submissionsLabel = computed(() => {
   const count = submissionsMeta.value.total_count;
   if (!count) return t('ACCOUNT_FORM.SUBMISSIONS.EMPTY');
-  return t('ACCOUNT_FORM.LIST.SUBMISSIONS_TOOLTIP', { count: count });
+  return t('ACCOUNT_FORM.LIST.SUBMISSIONS_TOOLTIP', { count });
 });
 
-// ── API ──────────────────────────────────────────────────────────────────────
+// ── Field management (moved from FormFieldsEditor) ───────────────────────────
+
+const NATIVE_OPTIONS = computed(() => [
+  { key: 'name', field: 'name', label: t('ACCOUNT_FORM.NATIVE.NAME'), type: 'native' },
+  { key: 'email', field: 'email', label: t('ACCOUNT_FORM.NATIVE.EMAIL'), type: 'native' },
+  {
+    key: 'phone_number',
+    field: 'phone_number',
+    label: t('ACCOUNT_FORM.NATIVE.PHONE'),
+    type: 'native',
+  },
+]);
+
+const localFields = computed(() => form.value?.definition?.fields || []);
+
+const paletteCustomAttributes = computed(() =>
+  (getters['attributes/getAttributesByModel'].value('contact_attribute') || []).filter(
+    isFormSupportedAttribute
+  )
+);
+
+const usedCustomAttributeKeys = computed(() =>
+  localFields.value
+    .filter(f => f.type === 'custom_attribute')
+    .map(f => f.attribute_key)
+);
+
+const allContactAttributes = computed(
+  () => getters['attributes/getAttributesByModel'].value('contact_attribute') || []
+);
+
+const availableNative = computed(() =>
+  NATIVE_OPTIONS.value.filter(opt => !localFields.value.some(f => f.field === opt.field))
+);
+
+const setFields = newFields => {
+  if (!form.value) return;
+  form.value.definition = { ...form.value.definition, fields: [...newFields] };
+};
+
+const addNativeField = opt => {
+  setFields([
+    ...localFields.value,
+    { key: opt.key, type: 'native', field: opt.field, label: opt.label, required: false },
+  ]);
+  selectedFieldIndex.value = localFields.value.length - 1;
+};
+
+const addCustomAttribute = attr => {
+  setFields([
+    ...localFields.value,
+    {
+      key: `cf_${attr.attribute_key}`,
+      type: 'custom_attribute',
+      attribute_key: attr.attribute_key,
+      attribute_model: 'contact_attribute',
+      attribute_display_type: attr.attribute_display_type,
+      attribute_values: attr.attribute_values,
+      label: attr.attribute_display_name || attr.attribute_key,
+      required: false,
+    },
+  ]);
+  selectedFieldIndex.value = localFields.value.length - 1;
+};
+
+const removeField = index => {
+  const updated = localFields.value.filter((_, i) => i !== index);
+  setFields(updated);
+  if (selectedFieldIndex.value >= updated.length) {
+    selectedFieldIndex.value = updated.length - 1;
+  }
+};
+
+const toggleRequired = index => {
+  setFields(
+    localFields.value.map((f, i) => (i === index ? { ...f, required: !f.required } : f))
+  );
+};
+
+const updateFieldLabel = (index, label) => {
+  setFields(
+    localFields.value.map((f, i) => (i === index ? { ...f, label } : f))
+  );
+};
+
+const reorderFields = newOrder => {
+  setFields(newOrder);
+};
+
+const openCreateAttributeModal = () => {
+  showAddAttributeModal.value = true;
+};
+
+const closeCreateAttributeModal = () => {
+  showAddAttributeModal.value = false;
+};
+
+const onAttributeDeleted = attr => {
+  const updated = localFields.value.filter(f => f.attribute_key !== attr.attribute_key);
+  if (updated.length !== localFields.value.length) {
+    setFields(updated);
+  }
+};
+
+// ── API operations (unchanged from original) ─────────────────────────────────
 
 const goBack = () => {
   router.push({ name: 'forms_list', params: { accountId: accountId.value } });
+};
+
+const enrichFormDefinitionFields = () => {
+  if (!form.value?.definition?.fields?.length) return;
+
+  const attrs =
+    getters['attributes/getAttributesByModel'].value('contact_attribute') || [];
+
+  form.value.definition = {
+    ...form.value.definition,
+    fields: form.value.definition.fields.map(field => enrichCustomField(field, attrs)),
+  };
 };
 
 const fetchForm = async () => {
@@ -79,6 +206,7 @@ const fetchForm = async () => {
   try {
     const { data } = await AccountFormsAPI.show(formId.value);
     form.value = data;
+    enrichFormDefinitionFields();
   } catch {
     useAlert(t('ACCOUNT_FORM.LIST.FETCH_ERROR'));
     goBack();
@@ -98,6 +226,7 @@ const saveForm = async () => {
       definition: form.value.definition,
     });
     form.value = data;
+    enrichFormDefinitionFields();
     useAlert(t('ACCOUNT_FORM.DETAIL.SAVE_SUCCESS'));
   } catch {
     useAlert(t('ACCOUNT_FORM.DETAIL.SAVE_ERROR'));
@@ -133,12 +262,12 @@ const openPublic = () => {
 };
 
 const fetchSubmissions = async page => {
-  var p = page || 1;
+  const p = page || 1;
   isLoadingSubmissions.value = true;
   try {
     const { data } = await AccountFormsAPI.getSubmissions(formId.value, { page: p });
     submissions.value = data.payload || [];
-    var meta = data.meta || {};
+    const meta = data.meta || {};
     submissionsMeta.value = {
       page: meta.current_page || p,
       total_pages: meta.total_pages || 1,
@@ -159,7 +288,7 @@ const exportCsv = async () => {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'form-' + (form.value ? form.value.slug : formId.value) + '-submissions.csv';
+    link.download = `form-${form.value ? form.value.slug : formId.value}-submissions.csv`;
     link.click();
     window.URL.revokeObjectURL(url);
   } catch {
@@ -169,25 +298,12 @@ const exportCsv = async () => {
   }
 };
 
-const openContact = contactId => {
-  router.push({
-    name: 'contact_profile',
-    params: { accountId: accountId.value, contactId: contactId },
-  });
-};
-
-const updateDefinition = val => {
-  if (form.value) form.value.definition = val;
-};
-
-const submissionPayload = (row, key) => {
-  var payload = row.payload || {};
-  return payload[key] || '—';
-};
-
-const submissionContactId = row => (row.contact ? row.contact.id : null);
-
-const rowDate = row => new Date(row.created_at * 1000).toLocaleString();
+  const openContact = contactId => {
+    router.push({
+      name: 'contact_profile_dashboard',
+      params: { accountId: accountId.value, contactId },
+    });
+  };
 
 const switchTab = key => {
   activeTab.value = key;
@@ -196,255 +312,233 @@ const switchTab = key => {
   }
 };
 
-onMounted(fetchForm);
+// ── Helpers for submissions table ────────────────────────────────────────────
+
+const submissionPayload = (row, key) => (row.payload || {})[key] || '—';
+const submissionContactId = row => (row.contact ? row.contact.id : null);
+const rowDate = row => new Date(row.created_at * 1000).toLocaleString();
+
+// ── Lifecycle ────────────────────────────────────────────────────────────────
+
+onMounted(() => {
+  fetchForm();
+  const attrs = getters['attributes/getAttributesByModel'].value('contact_attribute');
+  if (!attrs || !attrs.length) {
+    store.dispatch('attributes/get');
+  }
+});
 </script>
 
 <template>
-  <div class="flex flex-col h-full overflow-hidden">
-    <!-- Loading -->
+  <div class="flex flex-col h-full overflow-hidden bg-white dark:bg-slate-900">
+    <!-- Loading state -->
     <div v-if="isLoading" class="flex flex-1 items-center justify-center">
-      <spinner size="" />
+      <woot-spinner size="" />
     </div>
 
     <template v-else-if="form">
-      <!-- ── Header ──────────────────────────────────────────────────────── -->
+      <!-- ── Header ────────────────────────────────────────────────────────── -->
+      <FormEditorHeader
+        :form="form"
+        :active-tab="activeTab"
+        :is-saving="isSaving"
+        :is-updating-status="isUpdatingStatus"
+        :is-published="isPublished"
+        :is-draft-or-paused="isDraftOrPaused"
+        :status-label="statusLabel"
+        :status-class="statusClass"
+        :form-name="form.name"
+        @back="goBack"
+        @save="saveForm"
+        @publish="updateStatus('published')"
+        @pause="updateStatus('paused')"
+        @copy-link="copyPublicLink"
+        @open-public="openPublic"
+        @tab-change="switchTab"
+      />
+
+      <!-- ── Tab: Editor (3 columns) ──────────────────────────────────────── -->
       <div
-        class="flex items-center gap-2 pb-3 mb-0 shrink-0 border-b border-slate-100 dark:border-slate-800"
+        v-show="activeTab === 'editor'"
+        class="flex flex-1 min-h-0 overflow-hidden"
       >
-        <FormIconButton
-          icon="chevron-left"
-          :tooltip="$t('ACCOUNT_FORM.DETAIL.BACK_TOOLTIP')"
-          @click="goBack"
-        />
+        <!-- Left: Field palette -->
+        <div class="w-60 shrink-0 hidden lg:block overflow-hidden">
+          <FormFieldPalette
+            :native-fields="availableNative"
+            :custom-attributes="paletteCustomAttributes"
+            :used-attribute-keys="usedCustomAttributeKeys"
+            @add-native="addNativeField"
+            @add-custom="addCustomAttribute"
+            @create-attribute="openCreateAttributeModal"
+            @attribute-deleted="onAttributeDeleted"
+          />
+        </div>
 
-        <h1
-          class="flex-1 min-w-0 text-sm font-semibold text-slate-800 dark:text-slate-100 truncate"
-        >
-          {{ form.name }}
-        </h1>
-
-        <span
-          class="shrink-0 px-2 py-0.5 text-xs font-medium rounded-full"
-          :class="statusClass"
-        >
-          {{ statusLabel }}
-        </span>
-
-        <!-- Publish / Pause -->
-        <FormIconButton
-          v-if="isDraftOrPaused"
-          icon="play-circle"
-          color-scheme="success"
-          :tooltip="$t('ACCOUNT_FORM.DETAIL.PUBLISH_TOOLTIP')"
-          :is-loading="isUpdatingStatus"
-          @click="updateStatus('published')"
-        />
-        <FormIconButton
-          v-if="isPublished"
-          icon="microphone-pause"
-          :tooltip="$t('ACCOUNT_FORM.DETAIL.PAUSE_TOOLTIP')"
-          :is-loading="isUpdatingStatus"
-          @click="updateStatus('paused')"
-        />
-
-        <span class="w-px h-4 bg-slate-200 dark:bg-slate-700 shrink-0" />
-
-        <!-- Share -->
-        <FormIconButton
-          icon="copy"
-          :tooltip="$t('ACCOUNT_FORM.DETAIL.COPY_LINK_TOOLTIP')"
-          @click="copyPublicLink"
-        />
-        <FormIconButton
-          v-if="isPublished"
-          icon="open"
-          :tooltip="$t('ACCOUNT_FORM.DETAIL.OPEN_PUBLIC_TOOLTIP')"
-          @click="openPublic"
-        />
-
-        <span class="w-px h-4 bg-slate-200 dark:bg-slate-700 shrink-0" />
-
-        <!-- Save -->
-        <FormIconButton
-          icon="save"
-          color-scheme="primary"
-          :tooltip="$t('ACCOUNT_FORM.DETAIL.SAVE_TOOLTIP')"
-          :is-loading="isSaving"
-          @click="saveForm"
-        />
-      </div>
-
-      <!-- ── Tabs ───────────────────────────────────────────────────────── -->
-      <div class="flex gap-0 shrink-0 border-b border-slate-100 dark:border-slate-800">
-        <button
-          type="button"
-          class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors duration-150 cursor-pointer border-b-2 -mb-px"
-          :class="
-            activeTab === 'general'
-              ? 'border-woot-500 text-woot-600 dark:text-woot-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
-          "
-          @click="switchTab('general')"
-        >
-          <fluent-icon icon="settings" size="13" />
-          {{ $t('ACCOUNT_FORM.TABS.GENERAL') }}
-        </button>
-        <button
-          type="button"
-          class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors duration-150 cursor-pointer border-b-2 -mb-px"
-          :class="
-            activeTab === 'appearance'
-              ? 'border-woot-500 text-woot-600 dark:text-woot-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
-          "
-          @click="switchTab('appearance')"
-        >
-          <fluent-icon icon="image" size="13" />
-          {{ $t('ACCOUNT_FORM.TABS.APPEARANCE') }}
-        </button>
-        <button
-          type="button"
-          class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors duration-150 cursor-pointer border-b-2 -mb-px"
-          :class="
-            activeTab === 'submissions'
-              ? 'border-woot-500 text-woot-600 dark:text-woot-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
-          "
-          @click="switchTab('submissions')"
-        >
-          <fluent-icon icon="people" size="13" />
-          {{ $t('ACCOUNT_FORM.TABS.SUBMISSIONS') }}
-        </button>
-      </div>
-
-      <!-- ── Tab: General ───────────────────────────────────────────────── -->
-      <div
-        v-show="activeTab === 'general'"
-        class="flex flex-1 gap-6 pt-4 min-h-0"
-      >
-        <div class="flex flex-col flex-1 gap-4 min-w-0 overflow-y-auto">
-          <!-- Public URL (readonly) -->
-          <div
-            class="flex items-center gap-2 px-2 py-1.5 text-xs rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-          >
-            <fluent-icon icon="globe" size="13" class="text-slate-400 shrink-0" />
-            <span class="flex-1 min-w-0 text-slate-500 dark:text-slate-400 truncate">
-              {{ publicUrl }}
-            </span>
+        <!-- Center: Fields editor -->
+        <div class="flex-1 min-w-0 overflow-y-auto px-6 py-5">
+          <!-- Mobile: add field shortcut (when palette is hidden) -->
+          <div class="lg:hidden mb-4">
+            <details class="border border-slate-100 dark:border-slate-700 rounded-xl overflow-hidden">
+              <summary class="flex items-center gap-2 px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer select-none bg-white dark:bg-slate-800">
+                <fluent-icon icon="add-circle" size="14" aria-hidden="true" />
+                {{ $t('ACCOUNT_FORM.PALETTE.MOBILE_TOGGLE') }}
+              </summary>
+              <div class="border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800">
+                <FormFieldPalette
+                  :native-fields="availableNative"
+                  :custom-attributes="paletteCustomAttributes"
+                  :used-attribute-keys="usedCustomAttributeKeys"
+                  @add-native="addNativeField"
+                  @add-custom="addCustomAttribute"
+                  @create-attribute="openCreateAttributeModal"
+                  @attribute-deleted="onAttributeDeleted"
+                />
+              </div>
+            </details>
           </div>
 
+          <!-- Field list -->
           <FormFieldsEditor
-            :value="form.definition"
-            @input="updateDefinition"
+            :fields="localFields"
+            :selected-index="selectedFieldIndex"
+            @reorder="reorderFields"
+            @remove="removeField"
+            @toggle-required="toggleRequired"
+            @update-label="updateFieldLabel"
+            @select="idx => (selectedFieldIndex = idx)"
+            @sync="() => {}"
           />
         </div>
 
-        <!-- Live preview -->
-        <div class="hidden xl:flex xl:flex-col xl:w-72 xl:shrink-0">
-          <p class="mb-2 text-xs font-medium text-slate-400">
-            {{ $t('ACCOUNT_FORM.APPEARANCE.PREVIEW') }}
-          </p>
-          <FormPublicPreview
+        <!-- Right: Preview -->
+        <div class="w-72 shrink-0 hidden xl:block overflow-hidden">
+          <FormPreviewPanel
             :branding="form.branding"
             :settings="form.settings"
             :definition="form.definition"
+            :contact-attributes="allContactAttributes"
           />
         </div>
       </div>
 
-      <!-- ── Tab: Appearance ────────────────────────────────────────────── -->
+      <!-- ── Tab: Configurações ────────────────────────────────────────────── -->
       <div
-        v-show="activeTab === 'appearance'"
-        class="flex flex-1 gap-6 pt-4 min-h-0"
+        v-show="activeTab === 'settings'"
+        class="flex flex-1 min-h-0 overflow-hidden"
       >
-        <div class="flex flex-col flex-1 gap-5 min-w-0 overflow-y-auto">
-          <!-- Primary color -->
-          <div class="flex items-center gap-4">
-            <label
-              class="w-32 shrink-0 text-xs text-slate-500 dark:text-slate-400"
-            >
-              {{ $t('ACCOUNT_FORM.APPEARANCE.PRIMARY_COLOR') }}
-            </label>
-            <woot-color-picker v-model="form.branding.primary_color" />
-          </div>
+        <!-- Left: settings form (same column structure as editor) -->
+        <div class="flex-1 min-w-0 overflow-y-auto px-6 py-5">
+          <div class="max-w-lg flex flex-col gap-4 pb-8">
+            <!-- Section: Identidade visual -->
+            <div>
+              <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">
+                {{ $t('ACCOUNT_FORM.SETTINGS_TAB.VISUAL_IDENTITY') }}
+              </p>
+              <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl overflow-hidden px-4 py-3">
+                <div class="flex flex-wrap items-center gap-x-6 gap-y-3">
+                  <!-- Primary color -->
+                  <div class="flex items-center gap-3 flex-1 min-w-[180px]">
+                    <label class="text-sm text-slate-600 dark:text-slate-300 shrink-0">
+                      {{ $t('ACCOUNT_FORM.APPEARANCE.PRIMARY_COLOR') }}
+                    </label>
+                    <woot-color-picker v-model="form.branding.primary_color" />
+                  </div>
+                  <div
+                    class="hidden sm:block w-px h-8 bg-slate-100 dark:bg-slate-700 shrink-0"
+                    aria-hidden="true"
+                  />
+                  <!-- Logo -->
+                  <div class="flex items-center gap-3 shrink-0">
+                    <label class="text-sm text-slate-600 dark:text-slate-300 shrink-0">
+                      {{ $t('ACCOUNT_FORM.SETTINGS_TAB.LOGO') }}
+                    </label>
+                    <FormLogoUpload
+                      :value="form.branding.logo_url"
+                      :account-id="accountId"
+                      @input="val => (form.branding.logo_url = val)"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
 
-          <!-- Logo -->
-          <div class="flex items-start gap-4">
-            <label
-              class="w-32 shrink-0 text-xs text-slate-500 dark:text-slate-400 mt-2"
-            >
-              Logo
-            </label>
-            <FormLogoUpload
-              :value="form.branding.logo_url"
-              :account-id="accountId"
-              @input="val => { form.branding.logo_url = val }"
-            />
-          </div>
+            <!-- Section: Conteúdo do cabeçalho -->
+            <div>
+              <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">
+                {{ $t('ACCOUNT_FORM.SETTINGS_TAB.HEADER_SECTION') }}
+              </p>
+              <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-700">
+                <!-- Title -->
+                <div class="px-4 py-3">
+                  <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
+                    {{ $t('ACCOUNT_FORM.APPEARANCE.HEADER_TITLE') }}
+                  </label>
+                  <input
+                    v-model="form.branding.header_title"
+                    type="text"
+                    name="header_title"
+                    autocomplete="off"
+                    class="w-full text-sm text-slate-800 dark:text-slate-200 bg-transparent outline-none placeholder-slate-300 dark:placeholder-slate-600 focus-visible:underline focus-visible:decoration-woot-400"
+                    :placeholder="$t('ACCOUNT_FORM.APPEARANCE.HEADER_TITLE')"
+                  />
+                </div>
+                <!-- Description -->
+                <div class="px-4 py-3">
+                  <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
+                    {{ $t('ACCOUNT_FORM.APPEARANCE.HEADER_DESCRIPTION') }}
+                  </label>
+                  <textarea
+                    v-model="form.branding.header_description"
+                    rows="2"
+                    name="header_description"
+                    autocomplete="off"
+                    class="w-full text-sm text-slate-800 dark:text-slate-200 bg-transparent outline-none resize-none placeholder-slate-300 dark:placeholder-slate-600 focus-visible:underline focus-visible:decoration-woot-400"
+                    :placeholder="$t('ACCOUNT_FORM.APPEARANCE.HEADER_DESCRIPTION')"
+                  />
+                </div>
+              </div>
+            </div>
 
-          <!-- Header title -->
-          <div class="flex items-center gap-4">
-            <label
-              class="w-32 shrink-0 text-xs text-slate-500 dark:text-slate-400"
-            >
-              {{ $t('ACCOUNT_FORM.APPEARANCE.HEADER_TITLE') }}
-            </label>
-            <input
-              v-model="form.branding.header_title"
-              type="text"
-              class="flex-1 px-3 py-1.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-woot-500"
-              :placeholder="$t('ACCOUNT_FORM.APPEARANCE.HEADER_TITLE')"
-            />
-          </div>
-
-          <!-- Header description -->
-          <div class="flex items-start gap-4">
-            <label
-              class="w-32 shrink-0 text-xs text-slate-500 dark:text-slate-400 mt-1.5"
-            >
-              {{ $t('ACCOUNT_FORM.APPEARANCE.HEADER_DESCRIPTION') }}
-            </label>
-            <textarea
-              v-model="form.branding.header_description"
-              rows="2"
-              class="flex-1 px-3 py-1.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 outline-none resize-none focus:ring-1 focus:ring-woot-500"
-              :placeholder="$t('ACCOUNT_FORM.APPEARANCE.HEADER_DESCRIPTION')"
-            />
-          </div>
-
-          <!-- Confirmation message -->
-          <div class="flex items-start gap-4">
-            <label
-              class="w-32 shrink-0 text-xs text-slate-500 dark:text-slate-400 mt-1.5"
-            >
-              {{ $t('ACCOUNT_FORM.APPEARANCE.CONFIRMATION_MESSAGE') }}
-            </label>
-            <textarea
-              v-model="form.settings.confirmation_message"
-              rows="2"
-              class="flex-1 px-3 py-1.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 outline-none resize-none focus:ring-1 focus:ring-woot-500"
-              :placeholder="$t('ACCOUNT_FORM.APPEARANCE.CONFIRMATION_MESSAGE')"
-            />
+            <!-- Section: Comportamento -->
+            <div>
+              <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">
+                {{ $t('ACCOUNT_FORM.SETTINGS_TAB.BEHAVIOR_SECTION') }}
+              </p>
+              <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl overflow-hidden">
+                <div class="px-4 py-3">
+                  <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
+                    {{ $t('ACCOUNT_FORM.APPEARANCE.CONFIRMATION_MESSAGE') }}
+                  </label>
+                  <textarea
+                    v-model="form.settings.confirmation_message"
+                    rows="2"
+                    name="confirmation_message"
+                    autocomplete="off"
+                    class="w-full text-sm text-slate-800 dark:text-slate-200 bg-transparent outline-none resize-none placeholder-slate-300 dark:placeholder-slate-600 focus-visible:underline focus-visible:decoration-woot-400"
+                    :placeholder="$t('ACCOUNT_FORM.APPEARANCE.CONFIRMATION_MESSAGE')"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Live preview -->
-        <div class="hidden xl:flex xl:flex-col xl:w-72 xl:shrink-0">
-          <p class="mb-2 text-xs font-medium text-slate-400">
-            {{ $t('ACCOUNT_FORM.APPEARANCE.PREVIEW') }}
-          </p>
-          <FormPublicPreview
+        <!-- Right: live preview (same column as editor tab) -->
+        <div class="w-72 shrink-0 hidden xl:block overflow-hidden">
+          <FormPreviewPanel
             :branding="form.branding"
             :settings="form.settings"
             :definition="form.definition"
+            :contact-attributes="allContactAttributes"
           />
         </div>
       </div>
 
-      <!-- ── Tab: Submissions ───────────────────────────────────────────── -->
+      <!-- ── Tab: Submissões ────────────────────────────────────────────────── -->
       <div
         v-show="activeTab === 'submissions'"
-        class="flex flex-col flex-1 min-h-0 pt-4 overflow-hidden"
+        class="flex flex-col flex-1 min-h-0 px-6 pt-5 overflow-hidden"
       >
         <!-- Toolbar -->
         <div class="flex items-center justify-between gap-2 mb-3 shrink-0">
@@ -452,16 +546,22 @@ onMounted(fetchForm);
             {{ submissionsLabel }}
           </span>
           <div class="flex items-center gap-1">
-            <FormIconButton
+            <woot-button
+              variant="smooth"
+              color-scheme="secondary"
+              size="tiny"
               icon="arrow-download"
-              :tooltip="$t('ACCOUNT_FORM.SUBMISSIONS.EXPORT_CSV_TOOLTIP')"
+              v-tooltip.top="$t('ACCOUNT_FORM.SUBMISSIONS.EXPORT_CSV_TOOLTIP')"
               :is-loading="isExporting"
               :disabled="!submissions.length"
               @click="exportCsv"
             />
-            <FormIconButton
+            <woot-button
+              variant="smooth"
+              color-scheme="secondary"
+              size="tiny"
               icon="chevron-left"
-              :tooltip="$t('ACCOUNT_FORM.SUBMISSIONS.PREV_PAGE')"
+              v-tooltip.top="$t('ACCOUNT_FORM.SUBMISSIONS.PREV_PAGE')"
               :disabled="submissionsMeta.page <= 1"
               @click="fetchSubmissions(submissionsMeta.page - 1)"
             />
@@ -471,9 +571,12 @@ onMounted(fetchForm);
             >
               {{ submissionsMeta.page }}/{{ submissionsMeta.total_pages }}
             </span>
-            <FormIconButton
+            <woot-button
+              variant="smooth"
+              color-scheme="secondary"
+              size="tiny"
               icon="chevron-right"
-              :tooltip="$t('ACCOUNT_FORM.SUBMISSIONS.NEXT_PAGE')"
+              v-tooltip.top="$t('ACCOUNT_FORM.SUBMISSIONS.NEXT_PAGE')"
               :disabled="submissionsMeta.page >= submissionsMeta.total_pages"
               @click="fetchSubmissions(submissionsMeta.page + 1)"
             />
@@ -482,7 +585,7 @@ onMounted(fetchForm);
 
         <!-- Loading -->
         <div v-if="isLoadingSubmissions" class="flex justify-center py-12">
-          <spinner size="" />
+          <woot-spinner size="" />
         </div>
 
         <!-- Empty state -->
@@ -507,7 +610,7 @@ onMounted(fetchForm);
         <!-- Table -->
         <div
           v-else
-          class="flex-1 overflow-auto rounded-lg border border-slate-200 dark:border-slate-700"
+          class="flex-1 overflow-auto rounded-xl border border-slate-200 dark:border-slate-700"
         >
           <table class="w-full text-sm">
             <thead
@@ -548,10 +651,13 @@ onMounted(fetchForm);
                   {{ submissionPayload(row, 'phone_number') }}
                 </td>
                 <td class="px-3 py-2">
-                  <FormIconButton
+                  <woot-button
                     v-if="submissionContactId(row)"
+                    variant="smooth"
+                    color-scheme="secondary"
+                    size="tiny"
                     icon="person"
-                    :tooltip="$t('ACCOUNT_FORM.SUBMISSIONS.VIEW_CONTACT_TOOLTIP')"
+                    v-tooltip.top="$t('ACCOUNT_FORM.SUBMISSIONS.VIEW_CONTACT_TOOLTIP')"
                     @click="openContact(submissionContactId(row))"
                   />
                 </td>
@@ -561,5 +667,12 @@ onMounted(fetchForm);
         </div>
       </div>
     </template>
+
+    <AddAttribute
+      v-if="showAddAttributeModal"
+      :selected-attribute-model-tab="1"
+      :hide-model-and-key="true"
+      :on-close="closeCreateAttributeModal"
+    />
   </div>
 </template>

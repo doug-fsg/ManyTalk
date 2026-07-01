@@ -10,7 +10,65 @@
       "APPEARANCE": "Appearance",
       "APPEARANCE_TOOLTIP": "Look and messages",
       "SUBMISSIONS": "Submissions",
-      "SUBMISSIONS_TOOLTIP": "Received responses"
+      "SUBMISSIONS_TOOLTIP": "Received responses",
+      "EDITOR": "Editor",
+      "SETTINGS": "Settings"
+    },
+    "EDITOR": {
+      "BREADCRUMB": "Forms",
+      "LOADING": "Loading...",
+      "NAV_LABEL": "Navigation",
+      "COPY_LINK_TOOLTIP": "Copy public link",
+      "PUBLISH_TOOLTIP": "Publish form",
+      "PAUSE_TOOLTIP": "Pause form",
+      "MORE_OPTIONS": "More options",
+      "OPEN_PUBLIC": "Open public form",
+      "COPY_PUBLIC_LINK": "Copy public link"
+    },
+    "SETTINGS_TAB": {
+      "VISUAL_IDENTITY": "Visual identity",
+      "LOGO": "Logo",
+      "HEADER_SECTION": "Header",
+      "BEHAVIOR_SECTION": "Behavior"
+    },
+    "PALETTE": {
+      "TITLE": "Add field",
+      "HINT": "Click to add to the form.",
+      "ALL_ADDED": "All available fields have been added.",
+      "NATIVE_FIELDS": "Standard fields",
+      "CUSTOM_ATTRIBUTES": "Custom attributes",
+      "IN_FORM": "In form",
+      "MOBILE_TOGGLE": "Add field",
+      "ATTRIBUTE_FALLBACK": "Attribute"
+    },
+    "FIELD_LIST": {
+      "TITLE": "Form fields",
+      "HINT": "Click to edit · drag to reorder",
+      "EMPTY": "No fields added",
+      "EMPTY_HINT": "Use the palette on the left to add fields.",
+      "DROP_HINT": "Use the palette to add fields"
+    },
+    "FIELD_CARD": {
+      "LABEL_PLACEHOLDER": "Field name",
+      "LABEL_ARIA": "Field label {type}",
+      "NATIVE_FIELD": "Native field",
+      "CUSTOM_ATTRIBUTE": "Custom attribute",
+      "NAME_FULL": "Full name",
+      "REQUIRED_TOOLTIP": "Required field — click to make optional",
+      "OPTIONAL_TOOLTIP": "Optional field — click to make required",
+      "REMOVE": "Remove field"
+    },
+    "PREVIEW": {
+      "TITLE": "Preview",
+      "DESKTOP": "Desktop",
+      "MOBILE": "Mobile",
+      "DEFAULT_TITLE": "Form",
+      "SUBMIT": "Submit"
+    },
+    "NATIVE": {
+      "NAME": "Name",
+      "EMAIL": "Email",
+      "PHONE": "Phone"
     },
     "STATUS": {
       "DRAFT": "Draft",
@@ -122,7 +180,26 @@
       "COPY_TOOLTIP": "Copy embed code",
       "COPY_SUCCESS": "Code copied!",
       "PREVIEW": "View",
-      "PREVIEW_TOOLTIP": "Preview embed"
+      "PREVIEW_TOOLTIP": "Preview embed",
+      "CLOSE": "Close"
+    },
+    "PUBLIC_FIELD": {
+      "SELECT_REQUIRED": "Select an option…",
+      "SELECT_OPTIONAL": "Optional",
+      "NO_LIST_OPTIONS": "No options configured for this field.",
+      "PLACEHOLDER_PHONE": "(555) 123-4567",
+      "PLACEHOLDER_EMAIL": "you@email.com",
+      "PLACEHOLDER_NAME": "Your full name",
+      "PLACEHOLDER_LINK": "https://example.com",
+      "PLACEHOLDER_CURRENCY": "0.00",
+      "PLACEHOLDER_PERCENT": "0",
+      "PLACEHOLDER_NUMBER": "0"
+    },
+    "PUBLIC": {
+      "UNAVAILABLE": "Form unavailable.",
+      "SUBMIT": "Submit",
+      "SUBMIT_SUCCESS": "Submitted successfully!",
+      "SUBMIT_ERROR": "Could not submit. Please try again."
     }
   }
 }

@@ -37,7 +37,15 @@ export const initalizeRouter = () => {
       name: to.name,
     });
 
-    userAuthentication.then(() => {
+    userAuthentication.then(async () => {
+      const accountId = Number(to.params.accountId);
+      if (accountId) {
+        const account = store.getters['accounts/getAccount'](accountId);
+        if (!account?.features) {
+          await store.dispatch('accounts/get');
+        }
+      }
+
       return validateAuthenticateRoutePermission(to, next, store);
     });
   });

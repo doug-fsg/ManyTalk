@@ -1,8 +1,21 @@
 <script>
 import axios from 'axios';
+import FormPublicFieldInput from 'shared/components/FormPublicFieldInput.vue';
+import {
+  resolveFieldValueKey,
+  isCheckboxField,
+  enrichDefinitionFields,
+} from 'shared/helpers/formFieldHelpers';
+import { normalizeFieldValueForSubmit } from 'shared/helpers/formFieldMasks';
+import {
+  publicFormMessages,
+  publicFormFieldLabels,
+  resolvePublicFormLocale,
+} from './messages';
 
 export default {
   name: 'PublicFormApp',
+  components: { FormPublicFieldInput },
   data() {
     return {
       loading: true,
@@ -18,6 +31,15 @@ export default {
     config() {
       return window.publicFormConfig || {};
     },
+    locale() {
+      return resolvePublicFormLocale(this.config);
+    },
+    messages() {
+      return publicFormMessages(this.locale);
+    },
+    fieldLabels() {
+      return publicFormFieldLabels(this.locale);
+    },
     primaryColor() {
       return this.form?.branding?.primary_color || '#1f93ff';
     },
@@ -25,25 +47,37 @@ export default {
       return this.config.status === 'paused';
     },
     fields() {
-      return this.form?.definition?.fields || [
-        { key: 'name', type: 'native', field: 'name', label: 'Nome', required: true },
-        { key: 'email', type: 'native', field: 'email', label: 'E-mail', required: true },
-        { key: 'phone_number', type: 'native', field: 'phone_number', label: 'Telefone', required: false },
+      const m = this.messages;
+      const rawFields = this.form?.definition?.fields || [
+        { key: 'name', type: 'native', field: 'name', label: m.NATIVE.NAME, required: true },
+        { key: 'email', type: 'native', field: 'email', label: m.NATIVE.EMAIL, required: true },
+        {
+          key: 'phone_number',
+          type: 'native',
+          field: 'phone_number',
+          label: m.NATIVE.PHONE,
+          required: false,
+        },
       ];
+      return enrichDefinitionFields(rawFields);
     },
     submitLabel() {
-      return this.form?.branding?.submit_label || 'Enviar';
+      return this.form?.branding?.submit_label || this.messages.SUBMIT;
     },
   },
   mounted() {
     this.loadForm();
   },
   methods: {
+    isCheckboxField,
+    fieldKey(field) {
+      return resolveFieldValueKey(field);
+    },
     initValues() {
       this.values = {};
       this.fields.forEach(f => {
-        const key = f.field || f.key;
-        this.values[key] = '';
+        const key = this.fieldKey(f);
+        this.values[key] = isCheckboxField(f) ? false : '';
       });
     },
     async loadForm() {
@@ -56,7 +90,7 @@ export default {
         this.initValues();
       } catch (err) {
         const respError = err?.response?.data;
-        this.error = respError?.message || respError?.error || 'Formulário indisponível.';
+        this.error = respError?.message || respError?.error || this.messages.UNAVAILABLE;
       } finally {
         this.loading = false;
       }
@@ -67,11 +101,18 @@ export default {
       this.error = null;
       const { accountId, slug } = this.config;
       const params = new URLSearchParams(window.location.search);
+
+      const payload = {};
+      this.fields.forEach(field => {
+        const key = this.fieldKey(field);
+        payload[key] = normalizeFieldValueForSubmit(field, this.values[key]);
+      });
+
       try {
         const { data } = await axios.post(
           `/public/api/v1/account_forms/${accountId}/${slug}/submit`,
           {
-            ...this.values,
+            ...payload,
             website_token: this.honeypot,
             utm_source: params.get('utm_source'),
             utm_medium: params.get('utm_medium'),
@@ -80,21 +121,13 @@ export default {
             utm_content: params.get('utm_content'),
           }
         );
-        this.successMessage = data.message || 'Enviado com sucesso!';
+        this.successMessage = data.message || this.messages.SUBMIT_SUCCESS;
       } catch (err) {
         const respData = err?.response?.data;
-        this.error = respData?.message || respData?.error || 'Não foi possível enviar. Tente novamente.';
+        this.error = respData?.message || respData?.error || this.messages.SUBMIT_ERROR;
       } finally {
         this.submitting = false;
       }
-    },
-    inputType(field) {
-      if (field.field === 'email' || field.key === 'email') return 'email';
-      if (field.field === 'phone_number' || field.key === 'phone_number') return 'tel';
-      return 'text';
-    },
-    fieldKey(field) {
-      return field.field || field.key;
     },
   },
 };
@@ -119,7 +152,7 @@ export default {
         <svg class="mx-auto mb-4 h-12 w-12 text-amber-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 9v6m4-6v6M5.25 6.75A2.25 2.25 0 017.5 4.5h9a2.25 2.25 0 012.25 2.25v10.5A2.25 2.25 0 0116.5 19.5h-9a2.25 2.25 0 01-2.25-2.25V6.75z" />
         </svg>
-        <p class="text-slate-600">{{ error || 'Formulário indisponível.' }}</p>
+        <p class="text-slate-600">{{ error || messages.UNAVAILABLE }}</p>
       </div>
 
       <!-- Success -->
@@ -139,12 +172,16 @@ export default {
         class="p-6 bg-white border rounded-xl border-slate-200 shadow-sm"
         @submit.prevent="submitForm"
       >
-        <img
+        <div
           v-if="form.branding && form.branding.logo_url"
-          :src="form.branding.logo_url"
-          alt=""
-          class="object-contain h-10 mb-4 max-w-[160px]"
-        />
+          class="flex justify-center mb-4"
+        >
+          <img
+            :src="form.branding.logo_url"
+            alt=""
+            class="object-contain h-10 max-w-[160px]"
+          />
+        </div>
         <h1 class="text-xl font-semibold text-slate-900">
           {{ (form.branding && form.branding.header_title) || form.name }}
         </h1>
@@ -157,24 +194,26 @@ export default {
         <div v-else class="mb-6" />
 
         <div class="space-y-4">
-          <label
+          <div
             v-for="field in fields"
             :key="fieldKey(field)"
             class="block text-sm"
           >
-            <span class="mb-1 block text-slate-700">
+            <span
+              v-if="!isCheckboxField(field)"
+              class="mb-1 block text-slate-700"
+            >
               {{ field.label }}<span v-if="field.required" class="ml-0.5 text-red-500" aria-hidden="true">*</span>
             </span>
-            <input
-              v-model="values[fieldKey(field)]"
-              :type="inputType(field)"
-              :required="field.required"
-              :placeholder="inputType(field) === 'tel' ? '+5511999999999' : ''"
-              :autocomplete="inputType(field) === 'email' ? 'email' : inputType(field) === 'tel' ? 'tel' : 'name'"
-              class="w-full px-3 py-2 border rounded-lg border-slate-200 focus:outline-none focus:ring-2 focus:ring-offset-0 transition-shadow"
-              :style="{ '--tw-ring-color': primaryColor }"
+            <FormPublicFieldInput
+              :field="field"
+              :model-value="values[fieldKey(field)]"
+              :labels="fieldLabels"
+              input-class="w-full px-3 py-2 border rounded-lg border-slate-200 focus:outline-none focus:ring-2 focus:ring-offset-0 transition-shadow"
+              select-class="w-full px-3 py-2 border rounded-lg border-slate-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-offset-0 transition-shadow"
+              @update:model-value="val => (values[fieldKey(field)] = val)"
             />
-          </label>
+          </div>
 
           <!-- Honeypot (hidden) -->
           <input

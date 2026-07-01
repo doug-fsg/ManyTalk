@@ -9,7 +9,6 @@ import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import ConfirmationModal from 'dashboard/components/widgets/modal/ConfirmationModal.vue';
 import FormCard from './FormCard.vue';
 import FormCreateModal from './FormCreateModal.vue';
-import FormIconButton from './FormIconButton.vue';
 
 const store = useStore();
 const getters = useStoreGetters();
@@ -34,10 +33,6 @@ const deleteConfirmTitle = computed(() =>
 const loadForms = () => store.dispatch('accountForms/get');
 
 onMounted(loadForms);
-
-const goToWorkflows = () => {
-  router.push({ name: 'workflows_list' });
-};
 
 const openCreate = () => {
   showCreateModal.value = true;
@@ -97,20 +92,13 @@ const requestDelete = async form => {
         feature-name=""
       >
         <template #actions>
-          <div class="flex items-center gap-2">
-            <FormIconButton
-              icon="chevron-left"
-              :tooltip="$t('ACCOUNT_FORM.LIST.BACK_TO_WORKFLOWS_TOOLTIP')"
-              @click="goToWorkflows"
-            />
-            <woot-button
-              v-tooltip.top="$t('ACCOUNT_FORM.LIST.CREATE_TOOLTIP')"
-              icon="add-circle"
-              @click="openCreate"
-            >
-              {{ $t('ACCOUNT_FORM.LIST.CREATE') }}
-            </woot-button>
-          </div>
+          <woot-button
+            v-tooltip.top="$t('ACCOUNT_FORM.LIST.CREATE_TOOLTIP')"
+            icon="add-circle"
+            @click="openCreate"
+          >
+            {{ $t('ACCOUNT_FORM.LIST.CREATE') }}
+          </woot-button>
         </template>
       </BaseSettingsHeader>
     </template>
