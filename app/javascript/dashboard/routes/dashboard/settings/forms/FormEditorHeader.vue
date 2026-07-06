@@ -1,16 +1,16 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useI18n } from 'dashboard/composables/useI18n';
+import FormStatusBadge from './FormStatusBadge.vue';
 
-defineProps({
+const props = defineProps({
   form: { type: Object, default: null },
   activeTab: { type: String, default: 'editor' },
   isSaving: { type: Boolean, default: false },
+  isDirty: { type: Boolean, default: false },
   isUpdatingStatus: { type: Boolean, default: false },
   isPublished: { type: Boolean, default: false },
   isDraftOrPaused: { type: Boolean, default: false },
-  statusLabel: { type: String, default: '' },
-  statusClass: { type: String, default: '' },
   formName: { type: String, default: '' },
 });
 
@@ -26,6 +26,27 @@ const emit = defineEmits([
 
 const { t } = useI18n();
 const showActionsMenu = ref(false);
+
+const saveStatus = computed(() => {
+  if (props.isSaving) return 'saving';
+  if (props.isDirty) return 'unsaved';
+  return 'saved';
+});
+
+const saveStatusLabel = computed(() => {
+  const labels = {
+    saving: t('ACCOUNT_FORM.EDITOR.SAVING'),
+    unsaved: t('ACCOUNT_FORM.EDITOR.UNSAVED'),
+    saved: t('ACCOUNT_FORM.EDITOR.SAVED'),
+  };
+  return labels[saveStatus.value];
+});
+
+const saveButtonTooltip = computed(() =>
+  props.isDirty
+    ? t('ACCOUNT_FORM.DETAIL.SAVE_TOOLTIP')
+    : t('ACCOUNT_FORM.EDITOR.SAVE_UP_TO_DATE_TOOLTIP')
+);
 
 const tabs = computed(() => [
   { key: 'editor', label: t('ACCOUNT_FORM.TABS.EDITOR'), icon: 'edit' },
@@ -74,16 +95,39 @@ const handleOpenPublic = () => {
         >
           {{ formName || $t('ACCOUNT_FORM.EDITOR.LOADING') }}
         </span>
+        <span
+          class="text-xs whitespace-nowrap select-none shrink-0"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <span
+            v-if="saveStatus === 'saving'"
+            class="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500"
+          >
+            <span
+              class="w-3 h-3 border border-woot-400 border-t-transparent rounded-full animate-spin"
+              aria-hidden="true"
+            />
+            {{ saveStatusLabel }}
+          </span>
+          <span
+            v-else-if="saveStatus === 'unsaved'"
+            class="text-amber-600 dark:text-amber-400"
+          >
+            {{ saveStatusLabel }}
+          </span>
+          <span v-else class="text-slate-400 dark:text-slate-500">
+            {{ saveStatusLabel }}
+          </span>
+        </span>
       </nav>
 
       <div class="flex items-center gap-2 shrink-0">
-        <span
+        <FormStatusBadge
           v-if="form"
-          class="px-2.5 py-0.5 text-xs font-medium rounded-full"
-          :class="statusClass"
-        >
-          {{ statusLabel }}
-        </span>
+          :status="form.status"
+          pill
+        />
 
         <woot-button
           v-tooltip.bottom="{ content: $t('ACCOUNT_FORM.EDITOR.COPY_LINK_TOOLTIP'), delay: { show: 300 } }"
@@ -150,8 +194,15 @@ const handleOpenPublic = () => {
         </div>
 
         <woot-button
+          v-tooltip.bottom="{
+            content: saveButtonTooltip,
+            delay: { show: 300 },
+          }"
           size="small"
+          :variant="isDirty ? 'solid' : 'smooth'"
+          :color-scheme="isDirty ? 'primary' : 'secondary'"
           :is-loading="isSaving"
+          :is-disabled="!isDirty"
           icon="save"
           @click="emit('save')"
         >

@@ -28,7 +28,9 @@ module AccountForms
     def sanitize_field(field)
       return field unless field.is_a?(Hash)
 
-      field.except(*STRIPPED_FIELD_KEYS, *STRIPPED_FIELD_KEYS.map(&:to_sym))
+      normalized = field.stringify_keys.except(*STRIPPED_FIELD_KEYS)
+      normalized['required'] = ActiveModel::Type::Boolean.new.cast(normalized['required'])
+      normalized
     end
   end
 end

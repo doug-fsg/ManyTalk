@@ -1,5 +1,10 @@
 import { HtmlNode, HtmlNodeModel } from '@logicflow/core';
 import { WORKFLOW_CANVAS_GRID_SIZE, findWorkflowIntentByKey } from './constants';
+import {
+  TRIGGER_EVENT_LABELS,
+  FORM_SUBMITTED_EVENT_KEY,
+  extractFormIdsFromConditions,
+} from './workflowExtensions';
 
 const NODE_META = {
   trigger: {
@@ -158,8 +163,13 @@ export const workflowNodeSubtitle = properties => {
   if (data.label) return data.label;
   const type = data.workflowNodeType;
   switch (type) {
-    case 'trigger':
-      return data.event_name || '—';
+    case 'trigger': {
+      if (data.event_name === FORM_SUBMITTED_EVENT_KEY) {
+        const count = extractFormIdsFromConditions(data.conditions || []).length;
+        if (count > 0) return `${TRIGGER_EVENT_LABELS[data.event_name]} · ${count} formulário(s)`;
+      }
+      return TRIGGER_EVENT_LABELS[data.event_name] || data.event_name || '—';
+    }
     case 'wait':
       return `${data.duration || '?'} ${data.unit || ''}`;
     case 'wait_for_reply':

@@ -273,6 +273,10 @@ pt_BR:
       invalid_email: Informe um endereço de e-mail válido.
       invalid_phone_number: Informe um telefone válido com código do país (ex. +5511999999999).
       form_unavailable: Este formulário não está disponível.
+      empty_submission: Preencha pelo menos um campo antes de enviar.
+      email_already_used: Este e-mail já está vinculado a outro contato.
+      phone_already_used: Este telefone já está vinculado a outro contato.
+      no_required_fields: Adicione pelo menos um campo obrigatório.
       submission_failed: Não foi possível salvar seu envio. Por favor, tente novamente.
   workflows:
     clone_suffix: "(cópia)"

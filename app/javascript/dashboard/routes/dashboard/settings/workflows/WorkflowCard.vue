@@ -50,6 +50,7 @@ const TRIGGER_LABEL_I18N_KEYS = {
     'WORKFLOW.LIST.TRIGGER_LABELS.contact_kanban_stage_changed',
   contact_kanban_stage_idle:
     'WORKFLOW.LIST.TRIGGER_LABELS.contact_kanban_stage_idle',
+  form_submitted: 'WORKFLOW.LIST.TRIGGER_LABELS.form_submitted',
 };
 
 const triggerLabel = computed(() => {

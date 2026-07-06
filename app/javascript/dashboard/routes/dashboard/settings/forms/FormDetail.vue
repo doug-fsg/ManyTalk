@@ -10,7 +10,7 @@ import FormEditorHeader from './FormEditorHeader.vue';
 import FormFieldPalette from './FormFieldPalette.vue';
 import FormFieldsEditor from './FormFieldsEditor.vue';
 import FormPreviewPanel from './FormPreviewPanel.vue';
-import FormLogoUpload from './FormLogoUpload.vue';
+import FormAppearanceSettings from './FormAppearanceSettings.vue';
 import AddAttribute from '../attributes/AddAttribute.vue';
 import {
   isFormSupportedAttribute,
@@ -38,6 +38,24 @@ const isLoadingSubmissions = ref(false);
 const isExporting = ref(false);
 const selectedFieldIndex = ref(-1);
 const showAddAttributeModal = ref(false);
+const savedSnapshot = ref('');
+
+const buildSnapshot = source =>
+  JSON.stringify({
+    name: source?.name,
+    branding: source?.branding,
+    settings: source?.settings,
+    definition: source?.definition,
+  });
+
+const syncSnapshot = () => {
+  if (form.value) savedSnapshot.value = buildSnapshot(form.value);
+};
+
+const isDirty = computed(() => {
+  if (!form.value) return false;
+  return buildSnapshot(form.value) !== savedSnapshot.value;
+});
 
 const formId = computed(() => Number(route.params.formId));
 const accountId = computed(() => Number(route.params.accountId));
@@ -48,25 +66,6 @@ const isPublished = computed(() => form.value?.status === 'published');
 const isDraftOrPaused = computed(
   () => form.value && (form.value.status === 'draft' || form.value.status === 'paused')
 );
-
-const statusLabel = computed(() => {
-  if (!form.value) return '';
-  return (
-    { draft: t('ACCOUNT_FORM.STATUS.DRAFT'), published: t('ACCOUNT_FORM.STATUS.PUBLISHED'), paused: t('ACCOUNT_FORM.STATUS.PAUSED') }[form.value.status] ||
-    form.value.status
-  );
-});
-
-const statusClass = computed(() => {
-  if (!form.value) return 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300';
-  return (
-    {
-      published: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-      paused: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-      draft: 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300',
-    }[form.value.status] || 'bg-slate-100 text-slate-500'
-  );
-});
 
 const publicUrl = computed(() => {
   if (!form.value?.slug) return '';
@@ -186,6 +185,9 @@ const onAttributeDeleted = attr => {
 // ── API operations (unchanged from original) ─────────────────────────────────
 
 const goBack = () => {
+  if (isDirty.value && !window.confirm(t('ACCOUNT_FORM.EDITOR.UNSAVED_LEAVE_CONFIRM'))) {
+    return;
+  }
   router.push({ name: 'forms_list', params: { accountId: accountId.value } });
 };
 
@@ -207,6 +209,7 @@ const fetchForm = async () => {
     const { data } = await AccountFormsAPI.show(formId.value);
     form.value = data;
     enrichFormDefinitionFields();
+    syncSnapshot();
   } catch {
     useAlert(t('ACCOUNT_FORM.LIST.FETCH_ERROR'));
     goBack();
@@ -215,21 +218,27 @@ const fetchForm = async () => {
   }
 };
 
+const persistForm = async () => {
+  const { data } = await AccountFormsAPI.update(formId.value, {
+    name: form.value.name,
+    branding: form.value.branding,
+    settings: form.value.settings,
+    definition: form.value.definition,
+  });
+  form.value = data;
+  enrichFormDefinitionFields();
+  syncSnapshot();
+};
+
 const saveForm = async () => {
-  if (!form.value) return;
+  if (!form.value || !isDirty.value) return;
   isSaving.value = true;
   try {
-    const { data } = await AccountFormsAPI.update(formId.value, {
-      name: form.value.name,
-      branding: form.value.branding,
-      settings: form.value.settings,
-      definition: form.value.definition,
-    });
-    form.value = data;
-    enrichFormDefinitionFields();
+    await persistForm();
     useAlert(t('ACCOUNT_FORM.DETAIL.SAVE_SUCCESS'));
-  } catch {
-    useAlert(t('ACCOUNT_FORM.DETAIL.SAVE_ERROR'));
+  } catch (error) {
+    const message = error?.response?.data?.message;
+    useAlert(message || t('ACCOUNT_FORM.DETAIL.SAVE_ERROR'));
   } finally {
     isSaving.value = false;
   }
@@ -238,11 +247,15 @@ const saveForm = async () => {
 const updateStatus = async status => {
   isUpdatingStatus.value = true;
   try {
+    if (status === 'published') await persistForm();
     const { data } = await AccountFormsAPI.updateStatus(formId.value, status);
     form.value = data;
+    enrichFormDefinitionFields();
+    syncSnapshot();
     useAlert(t('ACCOUNT_FORM.DETAIL.STATUS_SUCCESS'));
-  } catch {
-    useAlert(t('ACCOUNT_FORM.DETAIL.SAVE_ERROR'));
+  } catch (error) {
+    const message = error?.response?.data?.message;
+    useAlert(message || t('ACCOUNT_FORM.DETAIL.SAVE_ERROR'));
   } finally {
     isUpdatingStatus.value = false;
   }
@@ -320,8 +333,11 @@ const rowDate = row => new Date(row.created_at * 1000).toLocaleString();
 
 // ── Lifecycle ────────────────────────────────────────────────────────────────
 
-onMounted(() => {
-  fetchForm();
+onMounted(async () => {
+  await fetchForm();
+  if (route.query.tab === 'submissions') {
+    switchTab('submissions');
+  }
   const attrs = getters['attributes/getAttributesByModel'].value('contact_attribute');
   if (!attrs || !attrs.length) {
     store.dispatch('attributes/get');
@@ -342,11 +358,10 @@ onMounted(() => {
         :form="form"
         :active-tab="activeTab"
         :is-saving="isSaving"
+        :is-dirty="isDirty"
         :is-updating-status="isUpdatingStatus"
         :is-published="isPublished"
         :is-draft-or-paused="isDraftOrPaused"
-        :status-label="statusLabel"
-        :status-class="statusClass"
         :form-name="form.name"
         @back="goBack"
         @save="saveForm"
@@ -430,38 +445,11 @@ onMounted(() => {
         <!-- Left: settings form (same column structure as editor) -->
         <div class="flex-1 min-w-0 overflow-y-auto px-6 py-5">
           <div class="max-w-lg flex flex-col gap-4 pb-8">
-            <!-- Section: Identidade visual -->
-            <div>
-              <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">
-                {{ $t('ACCOUNT_FORM.SETTINGS_TAB.VISUAL_IDENTITY') }}
-              </p>
-              <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl overflow-hidden px-4 py-3">
-                <div class="flex flex-wrap items-center gap-x-6 gap-y-3">
-                  <!-- Primary color -->
-                  <div class="flex items-center gap-3 flex-1 min-w-[180px]">
-                    <label class="text-sm text-slate-600 dark:text-slate-300 shrink-0">
-                      {{ $t('ACCOUNT_FORM.APPEARANCE.PRIMARY_COLOR') }}
-                    </label>
-                    <woot-color-picker v-model="form.branding.primary_color" />
-                  </div>
-                  <div
-                    class="hidden sm:block w-px h-8 bg-slate-100 dark:bg-slate-700 shrink-0"
-                    aria-hidden="true"
-                  />
-                  <!-- Logo -->
-                  <div class="flex items-center gap-3 shrink-0">
-                    <label class="text-sm text-slate-600 dark:text-slate-300 shrink-0">
-                      {{ $t('ACCOUNT_FORM.SETTINGS_TAB.LOGO') }}
-                    </label>
-                    <FormLogoUpload
-                      :value="form.branding.logo_url"
-                      :account-id="accountId"
-                      @input="val => (form.branding.logo_url = val)"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <FormAppearanceSettings
+              :branding="form.branding"
+              :account-id="accountId"
+              @update:branding="val => (form.branding = val)"
+            />
 
             <!-- Section: Conteúdo do cabeçalho -->
             <div>

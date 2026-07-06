@@ -29,6 +29,16 @@ const ERROR_RULES = [
   ],
   [/Invalid action:/i, 'WORKFLOW.VALIDATION.INVALID_ACTION'],
   [/Invalid trigger event:/i, 'WORKFLOW.VALIDATION.INVALID_TRIGGER'],
+  [/Form submitted trigger requires an inbox/i, 'WORKFLOW.VALIDATION.FORM_TRIGGER_INBOX'],
+  [/Form submitted trigger inbox not found/i, 'WORKFLOW.VALIDATION.FORM_TRIGGER_INBOX_NOT_FOUND'],
+  [
+    /Form submitted trigger requires at least one published form/i,
+    'WORKFLOW.VALIDATION.FORM_TRIGGER_FORMS',
+  ],
+  [
+    /Form submitted trigger references unknown or unpublished form/i,
+    'WORKFLOW.VALIDATION.FORM_TRIGGER_FORMS_INVALID',
+  ],
   [/Invalid wait unit:/i, 'WORKFLOW.VALIDATION.INVALID_WAIT_UNIT'],
   [/Wait duration must be between/i, 'WORKFLOW.VALIDATION.INVALID_WAIT_DURATION'],
   [/Invalid wait responder:/i, 'WORKFLOW.VALIDATION.INVALID_WAIT_RESPONDER'],

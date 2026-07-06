@@ -1,6 +1,8 @@
 {
   "AUTOMATION": {
     "HEADER": "Automatizaciones",
+    "DESCRIPTION": "Las automatizaciones pueden reemplazar y agilizar procesos manuales como añadir etiquetas y asignar conversaciones a los agentes adecuados. Así su equipo puede concentrarse en lo que mejor sabe hacer.",
+    "LEARN_MORE": "Más información sobre automatizaciones",
     "HEADER_BTN_TXT": "Añadir regla de automatización",
     "LOADING": "Obteniendo reglas de automatización",
     "SIDEBAR_TXT": "<p><b>Reglas de automatización</b> <p>Automatización puede reemplazar y automatizar procesos existentes que requieren esfuerzo manual. Puedes hacer muchas cosas con la automatización, incluyendo añadir etiquetas y asignar la conversación al mejor agente. Así que el equipo se centra en lo que hacen mejor y gasta más poco tiempo en tareas manuales.</p>",

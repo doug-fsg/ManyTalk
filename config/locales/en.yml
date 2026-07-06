@@ -294,6 +294,10 @@ en:
       invalid_email: Please enter a valid email address.
       invalid_phone_number: Please enter a valid phone number with country code (e.g. +5511999999999).
       form_unavailable: This form is not available.
+      empty_submission: Fill in at least one field before submitting.
+      email_already_used: This email is already linked to another contact.
+      phone_already_used: This phone number is already linked to another contact.
+      no_required_fields: Add at least one required field.
       submission_failed: Could not save your submission. Please try again.
   workflows:
     clone_suffix: "(copy)"

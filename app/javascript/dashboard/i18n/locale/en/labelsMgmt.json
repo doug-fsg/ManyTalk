@@ -3,6 +3,8 @@
     "HEADER": "Labels",
     "HEADER_BTN_TXT": "Add label",
     "LOADING": "Fetching labels",
+    "DESCRIPTION": "Labels help you categorize and prioritize conversations and leads. You can assign a label to a conversation or contact from the sidebar.",
+    "LEARN_MORE": "Learn more about labels",
     "SEARCH_404": "There are no items matching this query",
     "SIDEBAR_TXT": "<p><b>Labels</b> <p>Labels help you to categorize conversations and prioritize them. You can assign label to a conversation from the sidepanel. <br /><br />Labels are tied to the account and can be used to create custom workflows in your organization. You can assign custom color to a label, it makes it easier to identify the label. You will be able to display the label on the sidebar to filter the conversations easily.</p>",
     "LIST": {
@@ -41,7 +43,7 @@
         "DESELECT": "Deselect label",
         "DISMISS": "Dismiss suggestion"
       },
-      "POWERED_BY": "Chatwoot AI",
+      "POWERED_BY": "ManyTalks AI",
       "DISMISS": "Dismiss",
       "ADD_SELECTED_LABELS": "Add selected labels",
       "ADD_SELECTED_LABEL": "Add selected label",

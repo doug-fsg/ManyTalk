@@ -122,5 +122,77 @@ RSpec.describe AccountForms::SubmitService do
         expect(result[:submission].utm['utm_medium']).to eq('cpc')
       end
     end
+
+    context 'when all fields are optional and payload is empty' do
+      before do
+        form.definition = {
+          'fields' => [
+            { 'key' => 'name', 'type' => 'native', 'field' => 'name', 'required' => false },
+            { 'key' => 'email', 'type' => 'native', 'field' => 'email', 'required' => false }
+          ]
+        }
+        form.save!
+      end
+
+      it 'returns failure with empty_submission' do
+        result = call_service
+        expect(result[:success]).to be false
+        expect(result[:error]).to eq('empty_submission')
+      end
+    end
+
+    context 'when phone belongs to another contact during update' do
+      let!(:other_contact) do
+        create(:contact, account: account, email: 'other@example.com', phone_number: '+5511888888888')
+      end
+      let!(:existing_contact) do
+        create(:contact, account: account, email: 'existing@example.com', name: 'Existing')
+      end
+
+      it 'submits without failing when phone is already used elsewhere' do
+        result = call_service(
+          name: 'Existing',
+          email: 'existing@example.com',
+          phone_number: '+5511888888888'
+        )
+        expect(result[:success]).to be true
+        expect(existing_contact.reload.phone_number).not_to eq('+5511888888888')
+      end
+    end
+
+    context 'when phone already exists on another contact' do
+      let!(:phone_contact) do
+        create(:contact, account: account, email: 'phone-owner@example.com', phone_number: '+5511999999999', name: 'Phone Owner')
+      end
+
+      it 'reuses and updates the contact matched by phone' do
+        result = call_service(
+          name: 'Updated Name',
+          email: 'new-email@example.com',
+          phone_number: '+5511999999999'
+        )
+
+        expect(result[:success]).to be true
+        expect(result[:contact].id).to eq(phone_contact.id)
+        expect(phone_contact.reload.name).to eq('Updated Name')
+        expect(phone_contact.email).to eq('new-email@example.com')
+      end
+
+      it 'keeps existing data when dedup_policy is keep_existing' do
+        form.settings['dedup_policy'] = 'keep_existing'
+        form.save!
+
+        result = call_service(
+          name: 'Updated Name',
+          email: 'new-email@example.com',
+          phone_number: '+5511999999999'
+        )
+
+        expect(result[:success]).to be true
+        expect(result[:contact].id).to eq(phone_contact.id)
+        expect(phone_contact.reload.name).to eq('Phone Owner')
+        expect(phone_contact.email).to eq('phone-owner@example.com')
+      end
+    end
   end
 end

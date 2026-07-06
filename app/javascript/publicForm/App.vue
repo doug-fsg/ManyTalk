@@ -1,6 +1,6 @@
 <script>
 import axios from 'axios';
-import FormPublicFieldInput from 'shared/components/FormPublicFieldInput.vue';
+import AccountFormCard from 'shared/components/AccountFormCard.vue';
 import {
   resolveFieldValueKey,
   isCheckboxField,
@@ -12,10 +12,14 @@ import {
   publicFormFieldLabels,
   resolvePublicFormLocale,
 } from './messages';
+import {
+  DEFAULT_FORM_BRANDING,
+  resolveFormBranding,
+} from 'shared/helpers/formBrandingHelpers';
 
 export default {
   name: 'PublicFormApp',
-  components: { FormPublicFieldInput },
+  components: { AccountFormCard },
   data() {
     return {
       loading: true,
@@ -24,7 +28,6 @@ export default {
       successMessage: null,
       form: null,
       values: {},
-      honeypot: '',
     };
   },
   computed: {
@@ -38,14 +41,19 @@ export default {
       return publicFormMessages(this.locale);
     },
     fieldLabels() {
-      return publicFormFieldLabels(this.locale);
+      return {
+        ...publicFormFieldLabels(this.locale),
+        defaultTitle: this.form?.name || '',
+      };
     },
-    primaryColor() {
-      return this.form?.branding?.primary_color || '#1f93ff';
+    pageStyle() {
+      const branding = this.form?.branding || DEFAULT_FORM_BRANDING;
+      return resolveFormBranding(branding).pageStyle;
     },
     isPaused() {
       return this.config.status === 'paused';
     },
+
     fields() {
       const m = this.messages;
       const rawFields = this.form?.definition?.fields || [
@@ -61,6 +69,20 @@ export default {
       ];
       return enrichDefinitionFields(rawFields);
     },
+    defaultFields() {
+      const m = this.messages;
+      return [
+        { key: 'name', type: 'native', field: 'name', label: m.NATIVE.NAME, required: true },
+        { key: 'email', type: 'native', field: 'email', label: m.NATIVE.EMAIL, required: true },
+        {
+          key: 'phone_number',
+          type: 'native',
+          field: 'phone_number',
+          label: m.NATIVE.PHONE,
+          required: false,
+        },
+      ];
+    },
     submitLabel() {
       return this.form?.branding?.submit_label || this.messages.SUBMIT;
     },
@@ -69,7 +91,6 @@ export default {
     this.loadForm();
   },
   methods: {
-    isCheckboxField,
     fieldKey(field) {
       return resolveFieldValueKey(field);
     },
@@ -95,30 +116,41 @@ export default {
         this.loading = false;
       }
     },
-    async submitForm() {
+    async onSubmit({ honeypot, values: submittedValues }) {
       if (this.submitting || !this.form) return;
       this.submitting = true;
       this.error = null;
       const { accountId, slug } = this.config;
       const params = new URLSearchParams(window.location.search);
+      const formValues = submittedValues || this.values;
 
       const payload = {};
       this.fields.forEach(field => {
         const key = this.fieldKey(field);
-        payload[key] = normalizeFieldValueForSubmit(field, this.values[key]);
+        payload[key] = normalizeFieldValueForSubmit(field, formValues[key]);
       });
+
+      const hasPayload = Object.values(payload).some(value => value !== '');
+      if (!hasPayload) {
+        this.error = this.messages.EMPTY_SUBMISSION;
+        this.submitting = false;
+        return;
+      }
 
       try {
         const { data } = await axios.post(
           `/public/api/v1/account_forms/${accountId}/${slug}/submit`,
           {
             ...payload,
-            website_token: this.honeypot,
+            website_token: honeypot,
             utm_source: params.get('utm_source'),
             utm_medium: params.get('utm_medium'),
             utm_campaign: params.get('utm_campaign'),
             utm_term: params.get('utm_term'),
             utm_content: params.get('utm_content'),
+          },
+          {
+            headers: { 'Content-Type': 'application/json' },
           }
         );
         this.successMessage = data.message || this.messages.SUBMIT_SUCCESS;
@@ -134,9 +166,9 @@ export default {
 </script>
 
 <template>
-  <div class="min-h-screen px-4 py-10 bg-slate-50">
+  <div class="min-h-screen px-4 py-10" :style="pageStyle">
     <div class="max-w-lg mx-auto">
-      <!-- Loading -->
+
       <div v-if="loading" class="flex flex-col items-center py-20 gap-3 text-slate-400">
         <svg class="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -144,7 +176,6 @@ export default {
         </svg>
       </div>
 
-      <!-- Unavailable / Paused -->
       <div
         v-else-if="isPaused || (error && !form)"
         class="p-8 text-center bg-white border rounded-xl border-slate-200 shadow-sm"
@@ -155,7 +186,6 @@ export default {
         <p class="text-slate-600">{{ error || messages.UNAVAILABLE }}</p>
       </div>
 
-      <!-- Success -->
       <div
         v-else-if="successMessage"
         class="p-8 text-center bg-white border rounded-xl border-slate-200 shadow-sm"
@@ -166,89 +196,21 @@ export default {
         <p class="text-slate-700 text-base">{{ successMessage }}</p>
       </div>
 
-      <!-- Form -->
-      <form
+      <AccountFormCard
         v-else-if="form"
-        class="p-6 bg-white border rounded-xl border-slate-200 shadow-sm"
-        @submit.prevent="submitForm"
-      >
-        <div
-          v-if="form.branding && form.branding.logo_url"
-          class="flex justify-center mb-4"
-        >
-          <img
-            :src="form.branding.logo_url"
-            alt=""
-            class="object-contain h-10 max-w-[160px]"
-          />
-        </div>
-        <h1 class="text-xl font-semibold text-slate-900">
-          {{ (form.branding && form.branding.header_title) || form.name }}
-        </h1>
-        <p
-          v-if="form.branding && form.branding.header_description"
-          class="mt-1 mb-6 text-sm text-slate-500"
-        >
-          {{ form.branding.header_description }}
-        </p>
-        <div v-else class="mb-6" />
-
-        <div class="space-y-4">
-          <div
-            v-for="field in fields"
-            :key="fieldKey(field)"
-            class="block text-sm"
-          >
-            <span
-              v-if="!isCheckboxField(field)"
-              class="mb-1 block text-slate-700"
-            >
-              {{ field.label }}<span v-if="field.required" class="ml-0.5 text-red-500" aria-hidden="true">*</span>
-            </span>
-            <FormPublicFieldInput
-              :field="field"
-              :model-value="values[fieldKey(field)]"
-              :labels="fieldLabels"
-              input-class="w-full px-3 py-2 border rounded-lg border-slate-200 focus:outline-none focus:ring-2 focus:ring-offset-0 transition-shadow"
-              select-class="w-full px-3 py-2 border rounded-lg border-slate-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-offset-0 transition-shadow"
-              @update:model-value="val => (values[fieldKey(field)] = val)"
-            />
-          </div>
-
-          <!-- Honeypot (hidden) -->
-          <input
-            v-model="honeypot"
-            type="text"
-            name="website_token"
-            tabindex="-1"
-            autocomplete="off"
-            class="hidden"
-            aria-hidden="true"
-          />
-        </div>
-
-        <!-- Error -->
-        <div v-if="error" class="flex items-center gap-1.5 mt-3 text-sm text-red-600" role="alert">
-          <svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          {{ error }}
-        </div>
-
-        <!-- Submit -->
-        <button
-          type="submit"
-          class="relative w-full px-4 py-2.5 mt-6 text-sm font-medium text-white rounded-lg transition-opacity disabled:opacity-60 flex items-center justify-center gap-2"
-          :style="{ backgroundColor: primaryColor }"
-          :disabled="submitting"
-        >
-          <svg v-if="submitting" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          {{ submitting ? '' : submitLabel }}
-        </button>
-      </form>
+        mode="live"
+        :branding="form.branding"
+        :definition="form.definition"
+        :labels="fieldLabels"
+        :default-fields="defaultFields"
+        :title-fallback="form.name"
+        :submit-label="submitLabel"
+        :submitting="submitting"
+        :error="error"
+        :values="values"
+        @update:values="val => (values = val)"
+        @submit="onSubmit"
+      />
     </div>
   </div>
 </template>

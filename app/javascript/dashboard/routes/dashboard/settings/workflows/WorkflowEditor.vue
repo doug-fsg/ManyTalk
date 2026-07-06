@@ -27,6 +27,10 @@ import {
 } from 'dashboard/helper/workflowGraphHelper';
 import { humanizeValidationError } from 'dashboard/helper/workflowValidationMessages';
 import { ensureWorkflowEditorBootstrapped } from './useWorkflowEditorBootstrap';
+import {
+  FORM_SUBMITTED_EVENT_KEY,
+  buildFormSubmittedConditions,
+} from './workflowExtensions';
 
 const WorkflowCanvas = defineAsyncComponent(() => import('./WorkflowCanvas.vue'));
 
@@ -133,6 +137,44 @@ const loadWorkflow = async () => {
   }
 };
 
+const applyConnectFormSeedIfNeeded = async () => {
+  if (isEdit.value) return;
+
+  const connectFormId = route.query.connectFormId;
+  if (!connectFormId) return;
+
+  const forms = store.getters['accountForms/getAccountForms'] || [];
+  const form = forms.find(record => String(record.id) === String(connectFormId));
+
+  if (!form) return;
+
+  if (form.status !== 'published') {
+    useAlert(t('ACCOUNT_FORM.LIST.FLOW.CONNECT_DRAFT_WARNING'));
+    router.replace({ query: {} });
+    return;
+  }
+
+  const graph = workflow.value.graph;
+  const trigger = (graph.nodes || []).find(node => node.type === 'trigger');
+  if (!trigger) return;
+
+  trigger.data = {
+    ...(trigger.data || {}),
+    event_name: FORM_SUBMITTED_EVENT_KEY,
+    conditions: buildFormSubmittedConditions([connectFormId]),
+  };
+
+  graphRevision.value += 1;
+  markDirty();
+
+  await nextTick();
+  await nextTick();
+  canvasRef.value?.focusNode?.(trigger.id);
+
+  useAlert(t('ACCOUNT_FORM.LIST.FLOW.CONNECT_INBOX_HINT'));
+  router.replace({ query: {} });
+};
+
 const handleBeforeUnload = e => {
   if (isDirty.value) {
     e.preventDefault();
@@ -148,10 +190,11 @@ const removeRouteGuard = router.beforeEach((to, from, next) => {
   return next();
 });
 
-onMounted(() => {
-  ensureWorkflowEditorBootstrapped(store);
+onMounted(async () => {
+  await ensureWorkflowEditorBootstrapped(store);
   seedActiveFromStore();
-  loadWorkflow();
+  await loadWorkflow();
+  await applyConnectFormSeedIfNeeded();
   window.addEventListener('beforeunload', handleBeforeUnload);
 });
 
@@ -595,6 +638,7 @@ const activeStatusLabel = computed(() =>
     </woot-modal>
 
     <WorkflowSimulateModal
+      v-if="isEdit && workflowId"
       :show="showSimulate"
       :workflow-id="workflowId"
       @close="showSimulate = false"

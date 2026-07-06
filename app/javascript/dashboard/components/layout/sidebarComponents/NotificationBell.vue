@@ -1,22 +1,25 @@
 <template>
   <div class="mb-4">
     <button
-      class="text-slate-50 dark:text-slate-100 w-10 h-10 my-1 p-0 flex items-center justify-center rounded-xl hover:bg-slate-25 dark:hover:bg-slate-700 dark:hover:text-slate-100 hover:text-slate-600 relative transition-all duration-200 ease-smooth"
+      class="group text-white/75 dark:text-slate-300 w-10 h-10 my-1 p-0 flex items-center justify-center rounded-xl cursor-pointer relative transition-all duration-200 ease-out hover:bg-white/15 hover:text-white dark:hover:bg-white/10 dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-woot-600 dark:focus-visible:ring-offset-woot-800 motion-reduce:transition-none"
       :class="{
-        'bg-woot-50 dark:bg-slate-800 text-woot-500 hover:bg-woot-50':
+        'bg-white text-woot-600 shadow-sm hover:bg-white hover:text-woot-600 dark:bg-slate-100 dark:text-woot-600 dark:hover:bg-slate-100 dark:shadow-md dark:shadow-woot-500/15':
           isNotificationPanelActive,
       }"
       @click="openNotificationPanel"
     >
       <fluent-icon
         icon="alert"
-        :class="{
-          'text-woot-500': isNotificationPanelActive,
-        }"
+        class="transition-all duration-200 ease-out motion-reduce:transition-none motion-reduce:transform-none"
+        :class="
+          isNotificationPanelActive
+            ? 'text-woot-600 scale-100 opacity-100'
+            : 'opacity-80 group-hover:opacity-100 group-hover:scale-110 group-hover:text-white dark:group-hover:text-white'
+        "
       />
       <span
         v-if="unreadCount"
-        class="text-black-900 bg-yellow-300 absolute -top-0.5 -right-1 text-xxs min-w-[1rem] rounded-full"
+        class="text-slate-900 bg-yellow-400 absolute -top-0.5 -right-1 text-xxs min-w-[1rem] rounded-full px-1 font-semibold"
       >
         {{ unreadCount }}
       </span>

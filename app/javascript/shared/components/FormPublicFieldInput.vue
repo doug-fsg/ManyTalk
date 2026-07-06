@@ -72,6 +72,8 @@ const handleInput = event => {
   >
     <input
       type="checkbox"
+      :id="`field-${valueKey}`"
+      :name="valueKey"
       :checked="Boolean(modelValue)"
       :disabled="disabled"
       :required="field.required"
@@ -84,6 +86,7 @@ const handleInput = event => {
   <div v-else-if="isList" class="relative">
     <select
       :id="`field-${valueKey}`"
+      :name="valueKey"
       :value="modelValue"
       :disabled="disabled || !listOptions.length"
       :required="field.required && listOptions.length > 0"
@@ -127,6 +130,7 @@ const handleInput = event => {
     </span>
     <input
       :id="`field-${valueKey}`"
+      :name="valueKey"
       :value="modelValue"
       type="text"
       inputmode="decimal"
@@ -143,6 +147,7 @@ const handleInput = event => {
   <div v-else-if="fieldKind === 'percent'" class="relative">
     <input
       :id="`field-${valueKey}`"
+      :name="valueKey"
       :value="modelValue"
       type="text"
       inputmode="decimal"
@@ -165,6 +170,7 @@ const handleInput = event => {
   <input
     v-else
     :id="`field-${valueKey}`"
+    :name="valueKey"
     :value="modelValue"
     :type="inputType"
     :inputmode="inputMode || (fieldKind === 'number' ? 'numeric' : undefined)"
@@ -175,5 +181,6 @@ const handleInput = event => {
     :autocomplete="autocomplete"
     :class="inputClass"
     @input="fieldKind === 'phone' || fieldKind === 'number' ? handleInput($event) : updateValue($event.target.value)"
+    @change="fieldKind === 'phone' || fieldKind === 'number' ? handleInput($event) : updateValue($event.target.value)"
   />
 </template>

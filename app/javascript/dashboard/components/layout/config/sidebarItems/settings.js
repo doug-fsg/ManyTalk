@@ -181,7 +181,7 @@ const settings = accountId => ({
       meta: {
         permissions: ['administrator', 'agent'],
       },
-      toState: frontendURL(`accounts/${accountId}/settings/audit-log/list`),
+      toState: frontendURL(`accounts/${accountId}/settings/audit-logs/list`),
       toStateName: 'auditlogs_list',
       isEnterpriseOnly: true,
       featureFlag: FEATURE_FLAGS.AUDIT_LOGS,

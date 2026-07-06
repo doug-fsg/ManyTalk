@@ -7,7 +7,7 @@ const conversations = accountId => ({
     'inbox_dashboard',
     'inbox_conversation',
     'conversation_through_inbox',
-    'notifications_dashboard',
+    'notifications_index',
     'label_conversations',
     'conversations_through_label',
     'team_conversations',

@@ -62,7 +62,11 @@ module AccountForms
       return true if trigger.blank?
 
       conditions = trigger.dig('data', 'conditions') || []
-      return true if conditions.empty?
+      form_condition = conditions.find { |c| c['attribute_key'].to_s == 'account_form_id' }
+      return false if form_condition.blank?
+
+      form_values = Array(form_condition['values']).map(&:to_s)
+      return false if form_values.empty?
 
       conditions.all? do |condition|
         evaluate_form_condition(condition, account_form)
@@ -114,11 +118,14 @@ module AccountForms
     end
 
     def create_conversation_for_contact(contact, inbox, account)
+      contact_inbox = ContactInboxBuilder.new(contact: contact, inbox: inbox).perform
+      return nil if contact_inbox.blank?
+
       Conversation.create!(
         account: account,
         inbox: inbox,
         contact: contact,
-        contact_inbox: ContactInbox.find_or_create_by!(contact: contact, inbox: inbox),
+        contact_inbox: contact_inbox,
         status: 'open',
         additional_attributes: { 'created_by_form' => true }
       )

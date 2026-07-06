@@ -1,6 +1,8 @@
 {
   "CANNED_MGMT": {
     "HEADER": "Respostas Prontas",
+    "DESCRIPTION": "As respostas prontas são modelos de resposta pré-escritos que ajudam a responder rapidamente a uma conversa. Os agentes podem digitar '/' seguido de um código curto para inserir uma resposta durante um chat.",
+    "LEARN_MORE": "Saiba mais sobre respostas prontas",
     "HEADER_BTN_TXT": "Adicionar resposta pronta",
     "LOADING": "A obter respostas prontas...",
     "SEARCH_404": "Não existem itens correspondentes a esta consulta.",

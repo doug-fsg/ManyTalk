@@ -1,6 +1,8 @@
 {
   "MACROS": {
     "HEADER": "Macros",
+    "DESCRIPTION": "Macros are saved actions that help support agents complete tasks easily. Agents can define a set of actions such as assigning conversations and adding labels.",
+    "LEARN_MORE": "Learn more about macros",
     "HEADER_BTN_TXT": "Add a new macro",
     "HEADER_BTN_TXT_SAVE": "Save macro",
     "LOADING": "Fetching macros",

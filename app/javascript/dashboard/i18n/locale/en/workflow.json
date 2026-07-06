@@ -35,7 +35,8 @@
       "TEMPLATE_CREATE_ERROR": "Could not create flow from template.",
       "CREATING": "Creating flow…",
       "BLANK_CTA": "Create blank",
-      "USE_TEMPLATE": "Use this template"
+      "USE_TEMPLATE": "Use this template",
+      "CONNECT_FORM_CONTEXT": "Link form \"{name}\" to a service flow."
     },
     "LIST": {
       "EMPTY": "No flows yet. Create the first one to automate customer service.",
@@ -69,7 +70,8 @@
         "message_created": "Message created",
         "manual": "Manual start",
         "contact_kanban_stage_changed": "CRM stage changed",
-        "contact_kanban_stage_idle": "Idle on CRM stage"
+        "contact_kanban_stage_idle": "Idle on CRM stage",
+        "form_submitted": "Form submitted"
       }
     },
     "DELETE_MODAL": {
@@ -221,7 +223,7 @@
       "MESSAGE_LABEL": "Message",
       "WEBHOOK_LABEL": "Webhook URL",
       "WHATSAPP_EXTERNAL_LABEL": "External WhatsApp notification",
-      "WHATSAPP_EXTERNAL_HINT": "Sends an external alert via WhatsApp Web (API). Does not open a Chatwoot conversation.",
+      "WHATSAPP_EXTERNAL_HINT": "Sends an external alert via WhatsApp Web (API). Does not open a ManyTalks conversation.",
       "WHATSAPP_INBOX_LABEL": "Outgoing WhatsApp Web (API) channel",
       "WHATSAPP_SELECT_INBOX": "Select channel",
       "WHATSAPP_PHONE_LABEL": "Destination number",
@@ -246,6 +248,12 @@
       "CANCEL_ON_RESOLVED": "Cancel if conversation is resolved",
       "SELECT_NODE_HINT": "Select a node on the canvas to edit.",
       "EVENT": "Event",
+      "FORM_TRIGGER_INBOX_LABEL": "Inbox",
+      "FORM_TRIGGER_INBOX_PLACEHOLDER": "Select an inbox",
+      "FORM_TRIGGER_INBOX_HINT": "Required to create a conversation when the lead has no open conversation yet.",
+      "FORM_TRIGGER_FORMS_LABEL": "Forms",
+      "FORM_TRIGGER_FORMS_HINT": "Select one or more published forms that trigger this flow.",
+      "FORM_TRIGGER_FORMS_EMPTY": "No published forms. Publish a form in the Forms tab first.",
       "DURATION": "Duration",
       "MINUTES": "Minutes",
       "HOURS": "Hours",
@@ -337,6 +345,10 @@
       "WHATSAPP_INBOX_TYPE": "Select a WhatsApp or WhatsApp Web (API) channel.",
       "INVALID_ACTION": "Select a valid action for this step.",
       "INVALID_TRIGGER": "Select a valid trigger event.",
+      "FORM_TRIGGER_INBOX": "Select an inbox on the form trigger.",
+      "FORM_TRIGGER_INBOX_NOT_FOUND": "The selected inbox was not found.",
+      "FORM_TRIGGER_FORMS": "Select at least one published form on the trigger.",
+      "FORM_TRIGGER_FORMS_INVALID": "One or more selected forms are not published.",
       "INVALID_WAIT_UNIT": "Select a valid time unit.",
       "INVALID_WAIT_DURATION": "Adjust the wait duration within the allowed range.",
       "INVALID_WAIT_RESPONDER": "Select who should reply at this step.",

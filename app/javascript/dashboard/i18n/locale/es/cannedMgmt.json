@@ -1,6 +1,8 @@
 {
   "CANNED_MGMT": {
     "HEADER": "Respuestas predefinidas",
+    "DESCRIPTION": "Las respuestas predefinidas son plantillas de respuesta escritas previamente que le ayudan a responder rápidamente a una conversación. Los agentes pueden escribir '/' seguido de un código corto para insertar una respuesta durante un chat.",
+    "LEARN_MORE": "Más información sobre respuestas predefinidas",
     "HEADER_BTN_TXT": "Añadir respuesta predefinida",
     "LOADING": "Obteniendo respuestas predefinidas...",
     "SEARCH_404": "No hay elementos que coincidan con esta consulta.",

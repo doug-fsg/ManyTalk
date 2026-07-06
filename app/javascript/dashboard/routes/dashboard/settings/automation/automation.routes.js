@@ -60,7 +60,7 @@ export default {
               component: FormsIndex,
               beforeEnter: requireFormsAccess,
               meta: {
-                permissions: ['administrator'],
+                permissions: agentPermissions,
               },
             },
             {
@@ -69,7 +69,7 @@ export default {
               component: FormDetail,
               beforeEnter: requireFormsAccess,
               meta: {
-                permissions: ['administrator'],
+                permissions: agentPermissions,
               },
             },
           ],

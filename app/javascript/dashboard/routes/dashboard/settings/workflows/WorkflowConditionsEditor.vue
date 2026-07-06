@@ -21,6 +21,10 @@ import {
   WORKFLOW_REPLY_CONDITION_KEYS,
 } from './constants';
 import { ensureWorkflowEditorBootstrapped } from './useWorkflowEditorBootstrap';
+import {
+  buildFormSubmittedAutomationTypes,
+  FORM_SUBMITTED_EVENT_KEY,
+} from './workflowExtensions';
 
 export default {
   name: 'WorkflowConditionsEditor',
@@ -89,7 +93,11 @@ export default {
     },
     eventName(newVal, oldVal) {
       if (!this.isReady || !newVal || newVal === oldVal || this.eventName === null) return;
-      if (newVal === 'manual' || newVal === 'contact_kanban_stage_changed') {
+      if (
+        newVal === 'manual' ||
+        newVal === 'contact_kanban_stage_changed' ||
+        newVal === FORM_SUBMITTED_EVENT_KEY
+      ) {
         this.localConditions = [];
       } else {
         this.localConditions = JSON.parse(
@@ -117,6 +125,7 @@ export default {
   methods: {
     ensureAutomationTypesExtended() {
       if (this.automationTypes._flowCatalogExtended) return;
+      Object.assign(this.automationTypes, buildFormSubmittedAutomationTypes());
       this.manifestCustomAttributes(this.automationTypes);
       this.addCustomAttributesToFlowEvent();
       this.addKanbanAttributesToFlowEvent();

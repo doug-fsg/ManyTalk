@@ -9,29 +9,25 @@ module AccountForms
 
       validated = validate_payload
       return failure(validated[:error]) if validated[:error].present?
+      return failure('empty_submission') if validated[:data].blank?
 
       contact = upsert_contact(validated[:data])
       return failure(contact[:error]) if contact[:error].present?
 
-      submission = account_form.form_submissions.create!(
-        account: account_form.account,
-        contact: contact[:record],
-        payload: validated[:data],
-        utm: extract_utm,
-        ip_address: request_meta[:ip_address],
-        user_agent: request_meta[:user_agent]
-      )
+      submission = create_submission(contact[:record], validated[:data])
+      return failure(submission[:error]) if submission[:error].present?
 
-      dispatch_form_submitted_event(submission, contact[:record])
+      dispatch_form_submitted_event(submission[:record], contact[:record])
 
       Rails.logger.info(
-        "[AccountForms] submitted form_id=#{account_form.id} submission_id=#{submission.id} " \
+        "[AccountForms] submitted form_id=#{account_form.id} submission_id=#{submission[:record].id} " \
         "contact_id=#{contact[:record].id}"
       )
 
-      { success: true, submission: submission, contact: contact[:record] }
-    rescue ActiveRecord::RecordInvalid
-      failure('submission_failed')
+      { success: true, submission: submission[:record], contact: contact[:record] }
+    rescue ActiveRecord::RecordInvalid => e
+      log_record_invalid(e)
+      failure(map_record_invalid_error(e))
     end
 
     private
@@ -72,34 +68,105 @@ module AccountForms
 
     def upsert_contact(data)
       account = account_form.account
-      dedup_key = account_form.settings['dedup_key'].presence || 'email'
-      identifier = data[dedup_key]
       native_attrs = data.slice('name', 'email', 'phone_number').compact_blank
+      policy = account_form.settings['dedup_policy'].presence || 'update_existing'
 
-      if identifier.blank?
-        contact = account.contacts.create!(**native_attrs)
-        apply_custom_attributes(contact, data)
-        return { record: contact }
+      contact = find_contact_for_submission(account, data)
+
+      if contact.blank?
+        created = create_contact(account, native_attrs)
+        return created if created[:error].present?
+
+        contact = created[:record]
+      elsif policy == 'update_existing'
+        updated = update_contact_attrs(contact, native_attrs, account)
+        return updated if updated[:error].present?
+
+        contact = updated[:record]
       end
 
-      contact = find_existing_contact(account, dedup_key, identifier)
-
-      if contact.present?
-        policy = account_form.settings['dedup_policy'].presence || 'update_existing'
-        if policy == 'update_existing'
-          contact.update!(
-            name: native_attrs['name'].presence || contact.name,
-            email: native_attrs['email'].presence || contact.email,
-            phone_number: native_attrs['phone_number'].presence || contact.phone_number
-          )
-          apply_custom_attributes(contact, data)
-        end
-        return { record: contact }
-      end
-
-      contact = account.contacts.create!(**native_attrs)
       apply_custom_attributes(contact, data)
       { record: contact }
+    end
+
+    def find_contact_for_submission(account, data)
+      dedup_key = account_form.settings['dedup_key'].presence || 'email'
+
+      contact = find_existing_contact(account, dedup_key, data[dedup_key]) if data[dedup_key].present?
+      contact ||= find_existing_contact(account, 'email', data['email']) if data['email'].present?
+      contact ||= find_existing_contact(account, 'phone_number', data['phone_number']) if data['phone_number'].present?
+      contact
+    end
+
+    def create_contact(account, native_attrs)
+      { record: account.contacts.create!(**native_attrs) }
+    rescue ActiveRecord::RecordInvalid => e
+      recovered = recover_contact_from_duplicate(account, native_attrs, e.record)
+      return recovered if recovered.present?
+
+      { error: map_record_invalid_error(e) }
+    end
+
+    def recover_contact_from_duplicate(account, native_attrs, invalid_record)
+      contact = nil
+      if invalid_record.errors.of_kind?(:email, :taken) && native_attrs['email'].present?
+        contact = find_existing_contact(account, 'email', native_attrs['email'])
+      elsif invalid_record.errors.of_kind?(:phone_number, :taken) && native_attrs['phone_number'].present?
+        contact = find_existing_contact(account, 'phone_number', native_attrs['phone_number'])
+      end
+      return nil if contact.blank?
+
+      apply_recovered_contact_policy(contact, native_attrs, account)
+    end
+
+    def apply_recovered_contact_policy(contact, native_attrs, account)
+      policy = account_form.settings['dedup_policy'].presence || 'update_existing'
+      return { record: contact } unless policy == 'update_existing'
+
+      updated = update_contact_attrs(contact, native_attrs, account)
+      return updated if updated[:error].present?
+
+      { record: updated[:record] }
+    end
+
+    def update_contact_attrs(contact, native_attrs, account)
+      attrs = {}
+      attrs[:name] = native_attrs['name'] if native_attrs['name'].present?
+      attrs[:email] = native_attrs['email'] if native_attrs['email'].present? && !email_taken_by_other?(account, contact, native_attrs['email'])
+      if native_attrs['phone_number'].present? && !phone_taken_by_other?(account, contact, native_attrs['phone_number'])
+        attrs[:phone_number] = native_attrs['phone_number']
+      end
+
+      return { record: contact } if attrs.empty?
+
+      unless contact.update(attrs)
+        return { error: map_contact_errors(contact) }
+      end
+
+      { record: contact }
+    end
+
+    def email_taken_by_other?(account, contact, email)
+      account.contacts.where.not(id: contact.id).exists?(['lower(email) = ?', email.downcase])
+    end
+
+    def phone_taken_by_other?(account, contact, phone_number)
+      account.contacts.where.not(id: contact.id).exists?(phone_number: phone_number)
+    end
+
+    def create_submission(contact, data)
+      submission = account_form.form_submissions.create!(
+        account: account_form.account,
+        contact: contact,
+        payload: data,
+        utm: extract_utm,
+        ip_address: request_meta[:ip_address],
+        user_agent: request_meta[:user_agent]
+      )
+      { record: submission }
+    rescue ActiveRecord::RecordInvalid => e
+      log_record_invalid(e)
+      { error: 'submission_failed' }
     end
 
     def apply_custom_attributes(contact, data)
@@ -142,6 +209,31 @@ module AccountForms
       )
     rescue StandardError => e
       Rails.logger.error "[AccountForms] dispatch form_submitted failed: #{e.message}"
+    end
+
+    def map_contact_errors(contact)
+      return 'invalid_email' if contact.errors.of_kind?(:email, :invalid)
+      return 'invalid_phone_number' if contact.errors.of_kind?(:phone_number, :invalid)
+      return 'email_already_used' if contact.errors.of_kind?(:email, :taken)
+      return 'phone_already_used' if contact.errors.of_kind?(:phone_number, :taken)
+
+      'submission_failed'
+    end
+
+    def map_record_invalid_error(exception)
+      record = exception.record
+      return map_contact_errors(record) if record.is_a?(Contact)
+
+      'submission_failed'
+    end
+
+    def log_record_invalid(exception)
+      record = exception.record
+      details = record.errors.full_messages.join(', ')
+      Rails.logger.error(
+        "[AccountForms] submit failed form_id=#{account_form.id} " \
+        "#{record.class.name} errors=#{details}"
+      )
     end
 
     def failure(error)

@@ -230,7 +230,7 @@
   "SIDEBAR": {
     "CURRENTLY_VIEWING_ACCOUNT": "Visualização atual:",
     "SWITCH": "Trocar",
-    "INBOX_VIEW": "Inbox View",
+    "INBOX_VIEW": "Visualização de notificações",
     "CONVERSATIONS": "Conversas",
     "INBOX": "Canal de Entrada",
     "ALL_CONVERSATIONS": "Todas as conversas",
@@ -240,7 +240,7 @@
     "REPORTS": "Relatórios",
     "SETTINGS": "Configurações",
     "KANBAN": "Kanban",
-    "CONTACTS": "Contato",
+    "CONTACTS": "Contatos",
     "HOME": "Principal",
     "AGENTS": "Atendente",
     "AGENT_BOTS": "Robôs",

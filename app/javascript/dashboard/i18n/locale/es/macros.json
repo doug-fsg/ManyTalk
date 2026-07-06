@@ -1,6 +1,8 @@
 {
   "MACROS": {
     "HEADER": "Macros",
+    "DESCRIPTION": "Las macros son acciones guardadas que ayudan a los agentes de soporte a completar tareas fácilmente. Los agentes pueden definir un conjunto de acciones como asignar conversaciones y añadir etiquetas.",
+    "LEARN_MORE": "Más información sobre macros",
     "HEADER_BTN_TXT": "Añadir una nueva macro",
     "HEADER_BTN_TXT_SAVE": "Guardar macro",
     "LOADING": "Obteniendo macros",

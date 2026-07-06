@@ -87,6 +87,47 @@ RSpec.describe 'Api::V1::Accounts::WorkflowsController', type: :request do
       expect(body['valid']).to be false
       expect(body['errors'].first).to include('message')
     end
+
+    it 'accepts form_submitted trigger with inbox and published forms' do
+      inbox = create(:inbox, account: account)
+      published_form = create(:account_form, :published, account: account)
+      form_graph = {
+        nodes: [
+          {
+            id: 'trigger_1',
+            type: 'trigger',
+            data: {
+              event_name: 'form_submitted',
+              inbox_id: inbox.id.to_s,
+              conditions: [
+                {
+                  attribute_key: 'account_form_id',
+                  filter_operator: 'equal_to',
+                  values: [published_form.id.to_s]
+                }
+              ]
+            }
+          },
+          {
+            id: 'action_1',
+            type: 'action',
+            data: { action_name: 'add_label', action_params: ['lead'] }
+          }
+        ],
+        edges: [{ id: 'e1', source: 'trigger_1', target: 'action_1' }],
+        settings: {}
+      }
+
+      post "/api/v1/accounts/#{account.id}/workflows/validate",
+           params: { graph: form_graph },
+           headers: agent.create_new_auth_token,
+           as: :json
+
+      expect(response).to have_http_status(:success)
+      body = response.parsed_body
+      expect(body['valid']).to be true
+      expect(body['errors']).to eq([])
+    end
   end
 
   describe 'GET /api/v1/accounts/:account_id/workflows' do
@@ -132,6 +173,25 @@ RSpec.describe 'Api::V1::Accounts::WorkflowsController', type: :request do
       expect(response).to have_http_status(:unprocessable_entity)
       errors = response.parsed_body['error']
       expect(errors).to include('Graph must include nodes array')
+    end
+  end
+
+  describe 'DELETE /api/v1/accounts/:account_id/workflows/:id' do
+    let(:workflow) { create(:workflow, account: account, active: true) }
+    let(:conversation) { create(:conversation, account: account) }
+
+    it 'destroys workflow with enrollments' do
+      enrollment = create(:workflow_enrollment, workflow: workflow, conversation: conversation, status: 'active')
+      create(:workflow_step_execution, workflow_enrollment: enrollment)
+
+      expect do
+        delete "/api/v1/accounts/#{account.id}/workflows/#{workflow.id}",
+               headers: agent.create_new_auth_token,
+               as: :json
+      end.to change(Workflow, :count).by(-1)
+         .and change(WorkflowEnrollment, :count).by(-1)
+
+      expect(response).to have_http_status(:ok)
     end
   end
 end

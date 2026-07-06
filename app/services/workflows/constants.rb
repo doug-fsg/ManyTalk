@@ -11,6 +11,7 @@ module Workflows
       conversation_opened
       conversation_resolved
       message_created
+      form_submitted
     ].freeze
 
     ALLOWED_ACTION_NAMES = %w[

@@ -104,9 +104,7 @@ export const mutations = {
   [types.ADD_ACCOUNT_FORM](_state, data) {
     _state.records.unshift(data);
   },
-  [types.EDIT_ACCOUNT_FORM](_state, data) {
-    MutationHelpers.updateAttributes(_state.records, data.id, data);
-  },
+  [types.EDIT_ACCOUNT_FORM]: MutationHelpers.updateAttributes,
   [types.DELETE_ACCOUNT_FORM](_state, id) {
     _state.records = _state.records.filter(record => record.id !== Number(id));
   },

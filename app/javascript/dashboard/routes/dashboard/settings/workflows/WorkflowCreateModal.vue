@@ -7,6 +7,8 @@ import { useAlert } from 'dashboard/composables';
 
 const props = defineProps({
   show: { type: Boolean, default: false },
+  connectFormId: { type: [Number, String], default: null },
+  connectFormName: { type: String, default: '' },
 });
 
 const emit = defineEmits(['close']);
@@ -47,7 +49,12 @@ const close = () => emit('close');
 
 const openBlank = () => {
   close();
-  router.push({ name: 'workflows_new' });
+  router.push({
+    name: 'workflows_new',
+    query: hasConnectContext.value
+      ? { connectFormId: String(props.connectFormId) }
+      : {},
+  });
 };
 
 const openGallery = async () => {
@@ -109,6 +116,17 @@ const onImageError = key => {
 const hasTemplateImage = key => !brokenImages.value[key];
 
 const modalSize = computed(() => (step.value === 'gallery' ? 'large' : ''));
+
+const hasConnectContext = computed(
+  () => props.connectFormId != null && props.connectFormId !== ''
+);
+
+const chooseStepDescription = computed(() => {
+  if (!hasConnectContext.value) return t('WORKFLOW.CREATE.DESC');
+  return t('WORKFLOW.CREATE.CONNECT_FORM_CONTEXT', {
+    name: props.connectFormName || t('ACCOUNT_FORM.EDITOR.BREADCRUMB'),
+  });
+});
 </script>
 
 <template>
@@ -123,9 +141,16 @@ const modalSize = computed(() => (step.value === 'gallery' ? 'large' : ''));
         :header-content="
           step === 'gallery'
             ? $t('WORKFLOW.CREATE.GALLERY_DESC')
-            : $t('WORKFLOW.CREATE.DESC')
+            : chooseStepDescription
         "
       />
+
+      <p
+        v-if="step === 'choose' && hasConnectContext"
+        class="px-8 -mt-2 mb-1 text-xs text-slate-500 dark:text-slate-400"
+      >
+        {{ $t('ACCOUNT_FORM.LIST.FLOW.CONNECT_BLANK_HINT') }}
+      </p>
 
       <!-- Step: choose -->
       <div v-if="step === 'choose'" class="flex flex-col gap-3 px-8 pb-8">

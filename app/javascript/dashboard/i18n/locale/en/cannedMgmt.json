@@ -1,6 +1,8 @@
 {
   "CANNED_MGMT": {
     "HEADER": "Canned Responses",
+    "DESCRIPTION": "Canned responses are pre-written reply templates that help you respond quickly to a conversation. Agents can type '/' followed by a short code to insert a canned response during a chat.",
+    "LEARN_MORE": "Learn more about canned responses",
     "HEADER_BTN_TXT": "Add canned response",
     "LOADING": "Fetching canned responses...",
     "SEARCH_404": "There are no items matching this query.",

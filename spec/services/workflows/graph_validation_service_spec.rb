@@ -281,4 +281,74 @@ RSpec.describe Workflows::GraphValidationService do
     result = described_class.new(graph: graph, account: account).perform
     expect(result[:valid]).to be true
   end
+
+  describe 'form_submitted trigger' do
+    let(:inbox) { create(:inbox, account: account) }
+    let(:published_form) { create(:account_form, :published, account: account) }
+
+    def form_submitted_graph(overrides = {})
+      data = {
+        'event_name' => 'form_submitted',
+        'inbox_id' => inbox.id.to_s,
+        'conditions' => [
+          {
+            'attribute_key' => 'account_form_id',
+            'filter_operator' => 'equal_to',
+            'values' => [published_form.id.to_s]
+          }
+        ]
+      }.merge(overrides)
+      {
+        'nodes' => [
+          { 'id' => 'trigger_1', 'type' => 'trigger', 'data' => data },
+          {
+            'id' => 'action_1',
+            'type' => 'action',
+            'data' => { 'action_name' => 'add_label', 'action_params' => ['x'] }
+          }
+        ],
+        'edges' => [{ 'id' => 'e1', 'source' => 'trigger_1', 'target' => 'action_1' }],
+        'settings' => {}
+      }
+    end
+
+    it 'accepts a valid form_submitted trigger' do
+      result = described_class.new(graph: form_submitted_graph, account: account).perform
+      expect(result[:valid]).to be true
+    end
+
+    it 'rejects form_submitted trigger without inbox' do
+      result = described_class.new(
+        graph: form_submitted_graph('inbox_id' => ''),
+        account: account
+      ).perform
+      expect(result[:valid]).to be false
+      expect(Workflows::GraphValidationService.error_messages(result[:errors]).join).to include('requires an inbox')
+    end
+
+    it 'rejects form_submitted trigger without forms' do
+      result = described_class.new(
+        graph: form_submitted_graph('conditions' => []),
+        account: account
+      ).perform
+      expect(result[:valid]).to be false
+      expect(Workflows::GraphValidationService.error_messages(result[:errors]).join).to include('published form')
+    end
+
+    it 'rejects form_submitted trigger with draft form' do
+      draft_form = create(:account_form, account: account)
+      graph = form_submitted_graph(
+        'conditions' => [
+          {
+            'attribute_key' => 'account_form_id',
+            'filter_operator' => 'equal_to',
+            'values' => [draft_form.id.to_s]
+          }
+        ]
+      )
+      result = described_class.new(graph: graph, account: account).perform
+      expect(result[:valid]).to be false
+      expect(Workflows::GraphValidationService.error_messages(result[:errors]).join).to include('unpublished form')
+    end
+  end
 end

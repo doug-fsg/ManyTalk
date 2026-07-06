@@ -1,8 +1,9 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import FormPublicPreview from './FormPublicPreview.vue';
+import { resolveFormBranding } from 'shared/helpers/formBrandingHelpers';
 
-defineProps({
+const props = defineProps({
   branding: { type: Object, required: true },
   settings: { type: Object, default: () => ({}) },
   definition: { type: Object, default: () => ({ fields: [] }) },
@@ -10,10 +11,17 @@ defineProps({
 });
 
 const viewMode = ref('desktop');
+const pageStyle = computed(
+  () => resolveFormBranding(props.branding).pageStyle
+);
 </script>
 
 <template>
-  <aside class="flex flex-col h-full overflow-y-auto bg-slate-50 dark:bg-slate-900/50 border-l border-slate-100 dark:border-slate-800 px-4 pt-4 pb-6">
+  <aside
+    class="flex flex-col h-full overflow-y-auto border-l border-slate-100 dark:border-slate-800 px-4 pt-4 pb-6"
+    :style="pageStyle"
+  >
+
     <div class="flex items-center justify-between mb-4 shrink-0">
       <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
         {{ $t('ACCOUNT_FORM.PREVIEW.TITLE') }}
@@ -75,9 +83,10 @@ const viewMode = ref('desktop');
           />
 
           <div
-            class="w-full rounded-[24px] overflow-hidden bg-white dark:bg-slate-900 overflow-y-auto"
-            style="max-height: 440px; min-height: 320px;"
+            class="w-full rounded-[24px] overflow-hidden overflow-y-auto"
+            :style="{ maxHeight: '440px', minHeight: '320px', ...pageStyle }"
           >
+
             <FormPublicPreview
               :branding="branding"
               :settings="settings"

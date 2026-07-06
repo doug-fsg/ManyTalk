@@ -2,7 +2,7 @@
   <woot-button
     v-tooltip.right="$t(`SIDEBAR.PROFILE_SETTINGS`)"
     variant="link"
-    class="items-center flex rounded-full"
+    class="group items-center flex rounded-full w-10 h-10 justify-center transition-all duration-200 ease-out hover:bg-white/15 dark:hover:bg-white/10 motion-reduce:transition-none"
     @click="handleClick"
   >
     <thumbnail

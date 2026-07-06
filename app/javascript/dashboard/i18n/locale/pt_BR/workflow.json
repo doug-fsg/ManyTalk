@@ -35,7 +35,8 @@
       "TEMPLATE_CREATE_ERROR": "Não foi possível criar o fluxo a partir do template.",
       "CREATING": "Criando fluxo…",
       "BLANK_CTA": "Criar em branco",
-      "USE_TEMPLATE": "Usar este template"
+      "USE_TEMPLATE": "Usar este template",
+      "CONNECT_FORM_CONTEXT": "Vincular o formulário \"{name}\" a um fluxo de atendimento."
     },
     "LIST": {
       "EMPTY": "Nenhum fluxo criado ainda. Crie o primeiro para automatizar o atendimento.",
@@ -69,7 +70,8 @@
         "message_created": "Mensagem criada",
         "manual": "Início manual",
         "contact_kanban_stage_changed": "Estágio do CRM alterado",
-        "contact_kanban_stage_idle": "Parado no estágio do CRM"
+        "contact_kanban_stage_idle": "Parado no estágio do CRM",
+        "form_submitted": "Formulário enviado"
       }
     },
     "DELETE_MODAL": {
@@ -230,7 +232,7 @@
       "MESSAGE_LABEL": "Mensagem",
       "WEBHOOK_LABEL": "URL do webhook",
       "WHATSAPP_EXTERNAL_LABEL": "Notificação WhatsApp externa",
-      "WHATSAPP_EXTERNAL_HINT": "Envia aviso para um número externo via WhatsApp Web (API). Não abre conversa no Chatwoot.",
+      "WHATSAPP_EXTERNAL_HINT": "Envia aviso para um número externo via WhatsApp Web (API). Não abre conversa no ManyTalks.",
       "WHATSAPP_INBOX_LABEL": "Canal WhatsApp Web (API) de saída",
       "WHATSAPP_SELECT_INBOX": "Selecione o canal",
       "WHATSAPP_PHONE_LABEL": "Número de destino",
@@ -255,6 +257,12 @@
       "CANCEL_ON_RESOLVED": "Cancelar se a conversa for resolvida",
       "SELECT_NODE_HINT": "Selecione um nó no diagrama para editar.",
       "EVENT": "Evento",
+      "FORM_TRIGGER_INBOX_LABEL": "Caixa de entrada",
+      "FORM_TRIGGER_INBOX_PLACEHOLDER": "Selecione a caixa de entrada",
+      "FORM_TRIGGER_INBOX_HINT": "Obrigatória para criar conversa quando o lead ainda não tiver uma aberta.",
+      "FORM_TRIGGER_FORMS_LABEL": "Formulários",
+      "FORM_TRIGGER_FORMS_HINT": "Selecione um ou mais formulários publicados que disparam este fluxo.",
+      "FORM_TRIGGER_FORMS_EMPTY": "Nenhum formulário publicado. Publique um formulário na aba Formulário.",
       "DURATION": "Duração",
       "MINUTES": "Minutos",
       "HOURS": "Horas",
@@ -346,6 +354,10 @@
       "WHATSAPP_INBOX_TYPE": "Selecione um canal WhatsApp ou WhatsApp Web (API).",
       "INVALID_ACTION": "Selecione uma ação válida para esta etapa.",
       "INVALID_TRIGGER": "Selecione um evento de gatilho válido.",
+      "FORM_TRIGGER_INBOX": "Selecione a caixa de entrada no gatilho de formulário.",
+      "FORM_TRIGGER_INBOX_NOT_FOUND": "A caixa de entrada selecionada não foi encontrada.",
+      "FORM_TRIGGER_FORMS": "Selecione pelo menos um formulário publicado no gatilho.",
+      "FORM_TRIGGER_FORMS_INVALID": "Um ou mais formulários selecionados não estão publicados.",
       "INVALID_WAIT_UNIT": "Selecione uma unidade de tempo válida.",
       "INVALID_WAIT_DURATION": "Ajuste a duração da espera dentro do limite permitido.",
       "INVALID_WAIT_RESPONDER": "Selecione quem deve responder nesta etapa.",

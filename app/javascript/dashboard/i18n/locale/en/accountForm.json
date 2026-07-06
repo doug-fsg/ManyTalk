@@ -23,7 +23,12 @@
       "PAUSE_TOOLTIP": "Pause form",
       "MORE_OPTIONS": "More options",
       "OPEN_PUBLIC": "Open public form",
-      "COPY_PUBLIC_LINK": "Copy public link"
+      "COPY_PUBLIC_LINK": "Copy public link",
+      "SAVING": "Saving...",
+      "SAVED": "Saved",
+      "UNSAVED": "Unsaved changes",
+      "UNSAVED_LEAVE_CONFIRM": "You have unsaved changes. Leave anyway?",
+      "SAVE_UP_TO_DATE_TOOLTIP": "No changes to save"
     },
     "SETTINGS_TAB": {
       "VISUAL_IDENTITY": "Visual identity",
@@ -94,7 +99,38 @@
       "DELETE": "Delete",
       "DELETE_TOOLTIP": "Delete form",
       "DELETE_CONFIRM": "Delete form \"{name}\"?",
-      "DELETE_CONFIRM_DESCRIPTION": "This action cannot be undone."
+      "DELETE_CONFIRM_DESCRIPTION": "This action cannot be undone.",
+      "TABLE_HEADER": [
+        "Name",
+        "Status",
+        "Service flow",
+        "Submissions",
+        "Public link",
+        "Updated",
+        "Actions"
+      ],
+      "FILTERS": {
+        "ALL": "All",
+        "SEARCH_PLACEHOLDER": "Search by name or slug...",
+        "NO_AUTOMATION": "No automation",
+        "NO_RESULTS": "No forms match the current filters."
+      },
+      "FLOW": {
+        "AUTOMATES": "Automates service",
+        "PAUSED_FLOW": "Flow disabled",
+        "CONTACT_ONLY": "Saves contact only",
+        "CONNECT": "Connect",
+        "VIEW_FLOW": "View flow",
+        "MORE_FLOWS": "(+{count})",
+        "TOOLTIP_AUTOMATES": "When someone submits, the flow {name} starts automatically.",
+        "TOOLTIP_CONTACT_ONLY": "Submission creates or updates the contact, but no flow is triggered.",
+        "TOOLTIP_PAUSED": "A flow is configured but is disabled.",
+        "TOOLTIP_PAUSED_HINT": "Activate the flow to automate.",
+        "BANNER_NO_AUTOMATION": "Some published forms save contacts but do not trigger a service flow.",
+        "CONNECT_BLANK_HINT": "To link this form automatically, choose Blank.",
+        "CONNECT_DRAFT_WARNING": "Only published forms can be linked to a flow. Publish the form first.",
+        "CONNECT_INBOX_HINT": "Select an inbox on the trigger to finish linking this form."
+      }
     },
     "CREATE": {
       "TITLE": "New form",
@@ -129,8 +165,23 @@
       "FIELDS_COMING_SOON": "Field editor coming soon."
     },
     "APPEARANCE": {
-      "PRIMARY_COLOR": "Primary color",
-      "PRIMARY_COLOR_TOOLTIP": "Button and accent color",
+      "PRIMARY_COLOR": "Button color",
+      "PRIMARY_COLOR_TOOLTIP": "Submit button color",
+      "BACKGROUND_COLOR": "Form background",
+      "BACKGROUND_COLOR_TOOLTIP": "Form card background",
+      "PAGE_BACKGROUND_COLOR": "Page background",
+      "PAGE_BACKGROUND_COLOR_TOOLTIP": "Page background around the form",
+
+
+      "TEXT_COLOR": "Text color",
+      "TEXT_COLOR_TOOLTIP": "Title, description and labels",
+      "LOGO_SECTION": "Logo",
+      "LOGO_ALIGNMENT": "Logo position",
+      "LOGO_ALIGN_LEFT": "Left",
+      "LOGO_ALIGN_CENTER": "Center",
+      "LOGO_ALIGN_RIGHT": "Right",
+      "LOGO_EXPAND": "Fill header",
+      "LOGO_EXPAND_HINT": "Logo fills the top banner. Position does not apply.",
       "LOGO_TOOLTIP": "Logo at top of form",
       "LOGO_UPLOAD_TOOLTIP": "Upload logo",
       "LOGO_CHANGE_TOOLTIP": "Change logo",

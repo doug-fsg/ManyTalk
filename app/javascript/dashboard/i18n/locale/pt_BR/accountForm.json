@@ -23,7 +23,12 @@
       "PAUSE_TOOLTIP": "Pausar formulário",
       "MORE_OPTIONS": "Mais opções",
       "OPEN_PUBLIC": "Abrir formulário",
-      "COPY_PUBLIC_LINK": "Copiar link público"
+      "COPY_PUBLIC_LINK": "Copiar link público",
+      "SAVING": "Salvando...",
+      "SAVED": "Salvo",
+      "UNSAVED": "Alterações não salvas",
+      "UNSAVED_LEAVE_CONFIRM": "Você tem alterações não salvas. Deseja sair?",
+      "SAVE_UP_TO_DATE_TOOLTIP": "Nenhuma alteração para salvar"
     },
     "SETTINGS_TAB": {
       "VISUAL_IDENTITY": "Identidade visual",
@@ -94,7 +99,38 @@
       "DELETE": "Excluir",
       "DELETE_TOOLTIP": "Excluir formulário",
       "DELETE_CONFIRM": "Excluir formulário \"{name}\"?",
-      "DELETE_CONFIRM_DESCRIPTION": "Essa ação não pode ser desfeita."
+      "DELETE_CONFIRM_DESCRIPTION": "Essa ação não pode ser desfeita.",
+      "TABLE_HEADER": [
+        "Nome",
+        "Status",
+        "Fluxo de atendimento",
+        "Cadastros",
+        "Link público",
+        "Atualizado",
+        "Ações"
+      ],
+      "FILTERS": {
+        "ALL": "Todos",
+        "SEARCH_PLACEHOLDER": "Buscar por nome ou slug...",
+        "NO_AUTOMATION": "Sem automação",
+        "NO_RESULTS": "Nenhum formulário corresponde aos filtros."
+      },
+      "FLOW": {
+        "AUTOMATES": "Automatiza atendimento",
+        "PAUSED_FLOW": "Fluxo desativado",
+        "CONTACT_ONLY": "Só salva contato",
+        "CONNECT": "Conectar",
+        "VIEW_FLOW": "Ver fluxo",
+        "MORE_FLOWS": "(+{count})",
+        "TOOLTIP_AUTOMATES": "Quando alguém envia, o fluxo {name} inicia automaticamente.",
+        "TOOLTIP_CONTACT_ONLY": "O envio cria ou atualiza o contato, mas nenhum fluxo é disparado.",
+        "TOOLTIP_PAUSED": "Há um fluxo configurado, mas está desativado.",
+        "TOOLTIP_PAUSED_HINT": "Ative o fluxo para automatizar.",
+        "BANNER_NO_AUTOMATION": "Alguns formulários publicados salvam contatos, mas não disparam um fluxo de atendimento.",
+        "CONNECT_BLANK_HINT": "Para vincular este formulário automaticamente, escolha Em branco.",
+        "CONNECT_DRAFT_WARNING": "Só formulários publicados podem ser vinculados a um fluxo. Publique o formulário primeiro.",
+        "CONNECT_INBOX_HINT": "Selecione a caixa de entrada no gatilho para concluir o vínculo."
+      }
     },
     "CREATE": {
       "TITLE": "Novo formulário",
@@ -129,8 +165,23 @@
       "FIELDS_COMING_SOON": "Editor de campos em breve."
     },
     "APPEARANCE": {
-      "PRIMARY_COLOR": "Cor principal",
-      "PRIMARY_COLOR_TOOLTIP": "Cor do botão e destaques",
+      "PRIMARY_COLOR": "Cor do botão",
+      "PRIMARY_COLOR_TOOLTIP": "Cor do botão de envio",
+      "BACKGROUND_COLOR": "Cor do formulário",
+      "BACKGROUND_COLOR_TOOLTIP": "Fundo do cartão do formulário",
+      "PAGE_BACKGROUND_COLOR": "Cor da página",
+      "PAGE_BACKGROUND_COLOR_TOOLTIP": "Fundo da página ao redor do formulário",
+
+
+      "TEXT_COLOR": "Cor do texto",
+      "TEXT_COLOR_TOOLTIP": "Título, descrição e rótulos",
+      "LOGO_SECTION": "Logo",
+      "LOGO_ALIGNMENT": "Posição da logo",
+      "LOGO_ALIGN_LEFT": "Esquerda",
+      "LOGO_ALIGN_CENTER": "Centro",
+      "LOGO_ALIGN_RIGHT": "Direita",
+      "LOGO_EXPAND": "Preencher cabeçalho",
+      "LOGO_EXPAND_HINT": "A logo ocupa a faixa superior do formulário. Posição não se aplica.",
       "LOGO_TOOLTIP": "Logo no topo do formulário",
       "LOGO_UPLOAD_TOOLTIP": "Enviar logo",
       "LOGO_CHANGE_TOOLTIP": "Trocar logo",

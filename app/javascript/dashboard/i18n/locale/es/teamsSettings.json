@@ -2,6 +2,8 @@
   "TEAMS_SETTINGS": {
     "NEW_TEAM": "Crear un nuevo equipo",
     "HEADER": "Equipos",
+    "DESCRIPTION": "Los equipos le permiten organizar agentes en grupos según sus responsabilidades. Un agente puede pertenecer a varios equipos. Al trabajar en colaboración, puede asignar conversaciones a equipos específicos.",
+    "LEARN_MORE": "Más información sobre equipos",
     "SIDEBAR_TXT": "<p><b>Equipos</b></p> <p>Los equipos le permiten organizar sus agentes en grupos basados en sus responsabilidades. <br /> Un agente puede ser parte de múltiples equipos. Puedes asignar conversaciones a un equipo cuando trabajas en colaboración. </p>",
     "LIST": {
       "404": "No hay equipos creados en ésta cuenta.",

@@ -29,11 +29,13 @@ RSpec.describe AccountForm do
       expect(form).to be_valid
     end
 
-    it 'validates slug format — allows only lowercase alphanumeric and hyphens' do
+    it 'parameterizes slug with invalid characters before validation' do
       form = build(:account_form, account: account, slug: 'My Form!')
-      expect(form).not_to be_valid
+      expect(form).to be_valid
+      expect(form.slug).to eq('my-form')
     end
   end
+
 
   describe 'slug normalization' do
     it 'parameterizes the name when slug is blank' do
@@ -59,8 +61,42 @@ RSpec.describe AccountForm do
     it 'applies default branding on create' do
       form = create(:account_form, account: account)
       expect(form.branding['primary_color']).to be_present
+      expect(form.branding['background_color']).to eq('#ffffff')
+      expect(form.branding['page_background_color']).to eq('#f8fafc')
+      expect(form.branding['text_color']).to eq('#0f172a')
+      expect(form.branding['logo_alignment']).to eq('center')
+      expect(form.branding['logo_expand']).to eq(false)
     end
   end
+
+  describe '#branding_for_api' do
+    it 'returns defaults for partial branding without saving' do
+      form = build(:account_form, account: account, branding: { 'primary_color' => '#112233' })
+      api = form.branding_for_api
+      expect(api['primary_color']).to eq('#112233')
+      expect(api['background_color']).to eq('#ffffff')
+      expect(api['logo_alignment']).to eq('center')
+    end
+  end
+
+  describe 'branding update merge' do
+    it 'does not drop existing logo_url when updating text_color only' do
+      form = create(
+        :account_form,
+        account: account,
+        branding: AccountForm::DEFAULT_BRANDING.merge(
+          'logo_url' => 'https://cdn.example/logo.png',
+          'primary_color' => '#112233'
+        )
+      )
+      form.update!(branding: form.branding.merge('text_color' => '#111111'))
+      form.reload
+      expect(form.branding['logo_url']).to eq('https://cdn.example/logo.png')
+      expect(form.branding['primary_color']).to eq('#112233')
+      expect(form.branding['text_color']).to eq('#111111')
+    end
+  end
+
 
   describe '#public_url' do
     it 'returns a URL containing account_id and slug' do
@@ -73,11 +109,17 @@ RSpec.describe AccountForm do
   describe '#submissions_count' do
     it 'returns the counter cache value' do
       form = create(:account_form, :published, account: account)
-      create(:form_submission, account_form: form, account: account, contact: create(:contact, account: account))
+      FormSubmission.create!(
+        account_form: form,
+        account: account,
+        contact: create(:contact, account: account),
+        payload: { 'email' => 'a@b.com' }
+      )
       form.reload
       expect(form.submissions_count).to eq(1)
     end
   end
+
 
   describe 'status enum' do
     it 'has draft, published, paused statuses' do

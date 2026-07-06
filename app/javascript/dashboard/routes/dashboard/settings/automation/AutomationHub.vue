@@ -28,9 +28,7 @@ const isWorkflowsEnabled = computed(() =>
   )
 );
 
-const showFormsTab = computed(
-  () => isWorkflowsEnabled.value && isAdministrator.value
-);
+const showFormsTab = computed(() => isWorkflowsEnabled.value);
 
 const activeTab = computed(() => {
   if (route.name === 'forms_list' || route.name === 'forms_show') {

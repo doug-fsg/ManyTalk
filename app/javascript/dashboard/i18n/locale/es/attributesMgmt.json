@@ -3,6 +3,8 @@
     "HEADER": "Atributos personalizados",
     "HEADER_BTN_TXT": "Añadir atributo personalizado",
     "LOADING": "Obtener atributos personalizados",
+    "DESCRIPTION": "Un atributo personalizado registra detalles adicionales sobre sus contactos o conversaciones, como el plan de suscripción o la fecha de la primera compra. Puede añadir diferentes tipos como texto, listas o números.",
+    "LEARN_MORE": "Más información sobre atributos personalizados",
     "SIDEBAR_TXT": "<p><b>Atributos personalizados</b> <p>Un atributo personalizado registra los datos de tus contactos/conversación — como el plan de suscripción, o cuando hayan pedido el primer artículo etc. <br /><br />Para crear un atributo personalizado, simplemente haga clic en el<b>Añadir atributo personalizado.</b> También puede editar o eliminar un atributo personalizado existente haciendo clic en el botón Editar o Borrar.</p>",
     "ADD": {
       "TITLE": "Añadir atributo personalizado",

@@ -40,7 +40,7 @@ const typeLabel = computed(() => {
 });
 
 const requiredToggleIcon = computed(() =>
-  props.field.required ? 'lock-closed-outline' : 'checkmark-circle-outline'
+  props.field.required ? 'lock-closed' : 'checkmark-circle'
 );
 
 const requiredToggleLabel = computed(() =>

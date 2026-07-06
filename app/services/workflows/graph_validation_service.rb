@@ -95,9 +95,33 @@ module Workflows
 
     def validate_trigger_node(data, node)
       event = data['event_name']
-      return if Constants::ALLOWED_TRIGGER_EVENTS.include?(event)
+      unless Constants::ALLOWED_TRIGGER_EVENTS.include?(event)
+        add_error("Invalid trigger event: #{event}", node_id: node['id'])
+        return
+      end
 
-      add_error("Invalid trigger event: #{event}", node_id: node['id'])
+      validate_form_submitted_trigger(data, node) if event == 'form_submitted'
+    end
+
+    def validate_form_submitted_trigger(data, node)
+      inbox_id = data['inbox_id']
+      if inbox_id.blank?
+        add_error('Form submitted trigger requires an inbox', node_id: node['id'])
+      elsif account.inboxes.find_by(id: inbox_id).blank?
+        add_error('Form submitted trigger inbox not found', node_id: node['id'])
+      end
+
+      form_ids = FormSubmittedLinkageParser.extract_form_ids(data['conditions'])
+      if form_ids.empty?
+        add_error('Form submitted trigger requires at least one published form', node_id: node['id'])
+        return
+      end
+
+      published_ids = account.account_forms.published.where(id: form_ids).pluck(:id).map(&:to_s)
+      missing = form_ids.map(&:to_s) - published_ids
+      return if missing.empty?
+
+      add_error('Form submitted trigger references unknown or unpublished form', node_id: node['id'])
     end
 
     def validate_wait_node(data, node)

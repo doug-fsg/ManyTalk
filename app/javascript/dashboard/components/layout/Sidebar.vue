@@ -32,6 +32,10 @@
 <script>
 import { mapGetters } from 'vuex';
 import { getSidebarItems } from './config/default-sidebar';
+import {
+  getPrimaryMenuKeyForRoute,
+  resolvePrimaryMenuItem,
+} from './config/primaryMenuHelper';
 
 import PrimarySidebar from './sidebarComponents/Primary.vue';
 import SecondarySidebar from './sidebarComponents/Secondary.vue';
@@ -100,29 +104,45 @@ export default {
     primaryMenuItems() {
       const userPermissions = this.currentUser.permissions;
       const menuItems = this.sideMenuConfig.primaryMenu;
-      return menuItems.filter(menuItem => {
-        const isAvailableForTheUser = hasPermissions(
-          routesWithPermissions[menuItem.toStateName],
-          userPermissions
-        );
+      return menuItems
+        .filter(menuItem => {
+          if (menuItem.key === 'contacts' && this.hideContactsForAgents) {
+            return false;
+          }
 
-        if (!isAvailableForTheUser) {
-          return false;
-        }
-        if (
-          menuItem.alwaysVisibleOnChatwootInstances &&
-          !this.isACustomBrandedInstance
-        ) {
-          return true;
-        }
-        if (menuItem.featureFlag) {
-          return this.isFeatureEnabledonAccount(
-            this.accountId,
-            menuItem.featureFlag
+          const resolvedItem = resolvePrimaryMenuItem(menuItem, {
+            accountId: this.accountId,
+            currentRole: this.currentRole,
+          });
+
+          const isAvailableForTheUser = hasPermissions(
+            routesWithPermissions[resolvedItem.toStateName],
+            userPermissions
           );
-        }
-        return true;
-      });
+
+          if (!isAvailableForTheUser) {
+            return false;
+          }
+          if (
+            menuItem.alwaysVisibleOnChatwootInstances &&
+            !this.isACustomBrandedInstance
+          ) {
+            return true;
+          }
+          if (menuItem.featureFlag) {
+            return this.isFeatureEnabledonAccount(
+              this.accountId,
+              menuItem.featureFlag
+            );
+          }
+          return true;
+        })
+        .map(menuItem =>
+          resolvePrimaryMenuItem(menuItem, {
+            accountId: this.accountId,
+            currentRole: this.currentRole,
+          })
+        );
     },
     activeSecondaryMenu() {
       const { secondaryMenu } = this.sideMenuConfig;
@@ -135,11 +155,22 @@ export default {
       return activeSecondaryMenu;
     },
     activePrimaryMenu() {
-      const activePrimaryMenu =
-        this.primaryMenuItems.find(
-          menuItem => menuItem.key === this.activeSecondaryMenu.parentNav
-        ) || {};
-      return activePrimaryMenu;
+      const fromSecondary = this.activeSecondaryMenu.parentNav;
+      if (fromSecondary) {
+        return (
+          this.primaryMenuItems.find(menuItem => menuItem.key === fromSecondary) ||
+          {}
+        );
+      }
+
+      const routeKey = getPrimaryMenuKeyForRoute(this.$route);
+      if (routeKey) {
+        return (
+          this.primaryMenuItems.find(menuItem => menuItem.key === routeKey) || {}
+        );
+      }
+
+      return {};
     },
     isOnActivitiesPage() {
       return this.$route.name === 'activities_view';

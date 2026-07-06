@@ -2,23 +2,23 @@
 
 class AccountFormPolicy < ApplicationPolicy
   def index?
-    administrator? && workflows_enabled?
+    account_member? && workflows_enabled?
   end
 
   def create?
-    administrator? && workflows_enabled?
+    account_member? && workflows_enabled?
   end
 
   def show?
-    administrator? && workflows_enabled?
+    account_member? && workflows_enabled?
   end
 
   def update?
-    administrator? && workflows_enabled?
+    account_member? && workflows_enabled?
   end
 
   def destroy?
-    administrator? && workflows_enabled?
+    account_member? && workflows_enabled?
   end
 
   def update_status?
@@ -31,8 +31,8 @@ class AccountFormPolicy < ApplicationPolicy
 
   private
 
-  def administrator?
-    @account_user&.administrator?
+  def account_member?
+    @account_user.present?
   end
 
   def workflows_enabled?

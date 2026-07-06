@@ -2,14 +2,16 @@
 
 class Api::V1::Accounts::AccountFormsController < Api::V1::Accounts::BaseController
   before_action :check_authorization
-  before_action :check_admin_authorization?
   before_action :fetch_account_form, only: [:show, :update, :destroy, :update_status, :submissions, :export_submissions]
 
   def index
     @account_forms = Current.account.account_forms.ordered
+    assign_linked_workflows(@account_forms.map(&:id))
   end
 
-  def show; end
+  def show
+    assign_linked_workflows([@account_form.id])
+  end
 
   def create
     @account_form = Current.account.account_forms.new(account_form_params)
@@ -36,6 +38,7 @@ class Api::V1::Accounts::AccountFormsController < Api::V1::Accounts::BaseControl
     end
 
     @account_form.update!(status: new_status, updated_by: current_user)
+    assign_linked_workflows([@account_form.id])
     render :show
   end
 
@@ -79,7 +82,22 @@ class Api::V1::Accounts::AccountFormsController < Api::V1::Accounts::BaseControl
       permitted[:definition] = AccountForms::DefinitionSanitizer.call(permitted[:definition])
     end
 
+    if permitted[:branding].present?
+      permitted[:branding] = sanitize_branding_params(permitted[:branding])
+    end
+
     permitted
+  end
+
+  def sanitize_branding_params(incoming)
+    base = @account_form&.branding.is_a?(Hash) ? @account_form.branding.stringify_keys : {}
+    incoming_hash = if incoming.respond_to?(:to_unsafe_h)
+                      incoming.to_unsafe_h
+                    else
+                      incoming.to_h
+                    end
+    merged = AccountForm::DEFAULT_BRANDING.merge(base).merge(incoming_hash.stringify_keys)
+    AccountForms::BrandingSanitizer.call(merged)
   end
 
   def submission_page
@@ -90,5 +108,12 @@ class Api::V1::Accounts::AccountFormsController < Api::V1::Accounts::BaseControl
     per = params[:per_page].to_i
     per = 25 if per <= 0
     [per, 100].min
+  end
+
+  def assign_linked_workflows(form_ids)
+    @linked_workflows_by_form_id = AccountForms::LinkedWorkflowsResolver.build(
+      account: Current.account,
+      form_ids: form_ids
+    )
   end
 end

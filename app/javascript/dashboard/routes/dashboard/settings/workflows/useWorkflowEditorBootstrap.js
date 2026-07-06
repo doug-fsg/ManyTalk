@@ -9,6 +9,7 @@ const WORKFLOW_EDITOR_DISPATCHES = [
   'inboxes/get',
   'campaigns/get',
   'contacts/get',
+  'accountForms/get',
 ];
 
 export function ensureWorkflowEditorBootstrapped(store) {

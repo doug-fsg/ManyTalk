@@ -70,7 +70,7 @@
 
 | type | data fields |
 |------|-------------|
-| `trigger` | `event_name`, `conditions` |
+| `trigger` | `event_name`, `conditions`, optional `inbox_id` (when `event_name` is `form_submitted`) |
 | `wait` | `duration` (integer), `unit` (`minutes`, `hours`, `days`), optional `label` |
 | `wait_for_reply` | `duration`, `unit`, optional `label` — waits for contact reply or timeout |
 | `condition` | `conditions` (same format as automation rules) |
@@ -88,6 +88,56 @@ When the node executes on an API inbox with `webhook_url` configured, the server
 - Standard `conversation.webhook_data` fields
 
 Optional `context.last_messages` (last 5 public messages) is always included in the webhook payload.
+
+### Trigger event: `form_submitted`
+
+Starts the workflow when a published account form is submitted (public form page).
+
+**Trigger `data` fields:**
+
+| field | type | required | description |
+|-------|------|----------|-------------|
+| `event_name` | string | yes | Must be `form_submitted` |
+| `inbox_id` | string/integer | yes | Inbox used to create a conversation when the contact has no open conversation |
+| `conditions` | array | yes | Must include one `account_form_id` condition with `equal_to` and one or more published form IDs |
+
+**Form filter condition:**
+
+```json
+{
+  "attribute_key": "account_form_id",
+  "filter_operator": "equal_to",
+  "values": ["12", "34"]
+}
+```
+
+Only **published** forms may appear in `values`. Multiple IDs mean any of those forms can trigger the workflow.
+
+**Enrollment behavior:**
+
+1. If the contact already has an **open conversation**, that conversation is used (most recently updated). `inbox_id` is ignored.
+2. If there is **no open conversation**, a new open conversation is created in `inbox_id`.
+3. If the submitted form ID is not in `conditions[].values`, no enrollment is created.
+
+Example trigger node:
+
+```json
+{
+  "id": "trigger_1",
+  "type": "trigger",
+  "data": {
+    "event_name": "form_submitted",
+    "inbox_id": "42",
+    "conditions": [
+      {
+        "attribute_key": "account_form_id",
+        "filter_operator": "equal_to",
+        "values": ["12", "34"]
+      }
+    ]
+  }
+}
+```
 
 ## Edge `sourceHandle` values
 
@@ -209,6 +259,8 @@ First occurrence of any message (including short ones like "oi") always reaches 
 - `wait_for_reply` edges use `sourceHandle`: `replied` or `timeout`
 - `ai_wait_for_intent` edges use `sourceHandle`: `intent_detected` or `timeout`
 - `action_name` must be in server allowlist
+- `event_name` on trigger must be in server allowlist (includes `form_submitted`)
+- `form_submitted` trigger requires `inbox_id` and at least one published form in `account_form_id` conditions
 - Combined count of `wait`, `wait_for_reply`, and `ai_wait_for_intent` nodes ≤ 10
 - `ai_wait_for_intent` requires `inteligencia_artificial` feature flag
 

@@ -64,9 +64,7 @@ class Api::V1::Accounts::WorkflowsController < Api::V1::Accounts::BaseController
   end
 
   def destroy
-    @workflow.workflow_enrollments.in_progress.find_each { |e| e.cancel!('workflow_deleted') }
-    @workflow.update!(active: false)
-    @workflow.destroy!
+    Workflows::DestroyService.new(workflow: @workflow).perform
     head :ok
   end
 

@@ -3,6 +3,8 @@
     "HEADER": "Etiquetas",
     "HEADER_BTN_TXT": "Adicionar Etiqueta",
     "LOADING": "Buscando etiquetas",
+    "DESCRIPTION": "As etiquetas ajudam a categorizar e priorizar conversas e contactos. Pode atribuir uma etiqueta a uma conversa ou contacto a partir do painel lateral.",
+    "LEARN_MORE": "Saiba mais sobre etiquetas",
     "SEARCH_404": "Não existem itens correspondentes a esta consulta",
     "SIDEBAR_TXT": "<p><b>Etiquetas</b> <p>As etiquetas o ajudam a categorizar as conversas e a priorizá-las. Você pode atribuir a etiqueta a uma conversa a partir do painel lateral. <br /><br />As etiquetas estão vinculadas à conta e podem ser usadas para criar fluxos de trabalho personalizados em sua organização. Você pode atribuir uma cor personalizada para uma etiqueta, facilitando a identificação da etiqueta. Você será capaz de exibir o rótulo na barra lateral para filtrar as conversas facilmente.</p>",
     "LIST": {
@@ -45,7 +47,7 @@
         "DESELECT": "Desmarcar etiqueta",
         "DISMISS": "Descartar sugestão"
       },
-      "POWERED_BY": "Chatwoot IA",
+      "POWERED_BY": "ManyTalks IA",
       "DISMISS": "Descartar",
       "ADD_SELECTED_LABELS": "Adicionar etiquetas selecionadas",
       "ADD_SELECTED_LABEL": "Adicionar etiqueta selecionada",

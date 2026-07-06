@@ -5,10 +5,15 @@ import { useAlert } from 'dashboard/composables';
 import { useI18n } from 'dashboard/composables/useI18n';
 import WorkflowsAPI from 'dashboard/api/workflows';
 import {
-  WORKFLOW_TRIGGER_EVENTS,
   WORKFLOW_ACTION_TYPES,
   WORKFLOW_WAIT_RESPONDERS,
 } from './constants';
+import {
+  WORKFLOW_TRIGGER_EVENTS_EXTENDED,
+  FORM_SUBMITTED_EVENT_KEY,
+  extractFormIdsFromConditions,
+  buildFormSubmittedConditions,
+} from './workflowExtensions';
 import WorkflowConditionsEditor from './WorkflowConditionsEditor.vue';
 import WorkflowAiOutreachPanel from './WorkflowAiOutreachPanel.vue';
 import WorkflowAiAnalysisPanel from './WorkflowAiAnalysisPanel.vue';
@@ -35,6 +40,19 @@ const isTestingWhatsapp = ref(false);
 const agents = computed(() => store.getters['agents/getAgents'] || []);
 const teams = computed(() => store.getters['teams/getTeams'] || []);
 const labels = computed(() => store.getters['labels/getLabels'] || []);
+const inboxes = computed(() => store.getters['inboxes/getInboxes'] || []);
+const publishedForms = computed(() => {
+  const forms = store.getters['accountForms/getAccountForms'] || [];
+  return forms.filter(form => form.status === 'published');
+});
+
+const selectedFormIds = computed(() =>
+  extractFormIdsFromConditions(nodeProps.value.conditions || [])
+);
+
+const isFormSubmittedTrigger = computed(
+  () => nodeProps.value.event_name === FORM_SUBMITTED_EVENT_KEY
+);
 
 const whatsappInboxes = computed(() =>
   listExternalWhatsappInboxes(store.getters['inboxes/getInboxes'] || [])
@@ -89,7 +107,27 @@ const updateProp = (key, value) => emit('update-node', { [key]: value });
 const onConditionsUpdate = conditions => updateProp('conditions', conditions);
 
 const onTriggerEventChange = event => {
-  emit('update-node', { event_name: event, conditions: [] });
+  const patch = { event_name: event, conditions: [] };
+  if (event !== FORM_SUBMITTED_EVENT_KEY) {
+    patch.inbox_id = '';
+  }
+  emit('update-node', patch);
+};
+
+const onFormTriggerInboxChange = value => {
+  updateProp('inbox_id', value ? String(value) : '');
+};
+
+const isFormSelected = formId => selectedFormIds.value.includes(String(formId));
+
+const toggleForm = formId => {
+  if (props.readOnly) return;
+  const ids = [...selectedFormIds.value];
+  const strId = String(formId);
+  const idx = ids.indexOf(strId);
+  if (idx === -1) ids.push(strId);
+  else ids.splice(idx, 1);
+  updateProp('conditions', buildFormSubmittedConditions(ids));
 };
 
 const onActionNameChange = newName => {
@@ -289,12 +327,66 @@ const stepLabelTitleClass =
             :class="inputClass"
             @change="onTriggerEventChange($event.target.value)"
           >
-            <option v-for="ev in WORKFLOW_TRIGGER_EVENTS" :key="ev.key" :value="ev.key">
+            <option v-for="ev in WORKFLOW_TRIGGER_EVENTS_EXTENDED" :key="ev.key" :value="ev.key">
               {{ ev.value }}
             </option>
           </select>
         </div>
+        <div v-if="isFormSubmittedTrigger" class="space-y-4">
+          <div>
+            <label :class="labelClass">{{ $t('WORKFLOW.EDITOR.FORM_TRIGGER_FORMS_LABEL') }}</label>
+            <p
+              v-if="!publishedForms.length"
+              class="text-xs text-slate-500 dark:text-slate-400"
+            >
+              {{ $t('WORKFLOW.EDITOR.FORM_TRIGGER_FORMS_EMPTY') }}
+            </p>
+            <div
+              v-else
+              class="max-h-40 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-600 divide-y divide-slate-100 dark:divide-slate-700"
+            >
+              <label
+                v-for="form in publishedForms"
+                :key="form.id"
+                class="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                :class="readOnly ? 'opacity-60 cursor-not-allowed' : ''"
+              >
+                <input
+                  type="checkbox"
+                  class="rounded border-slate-300 dark:border-slate-600"
+                  :checked="isFormSelected(form.id)"
+                  :disabled="readOnly"
+                  @change="toggleForm(form.id)"
+                />
+                <span class="min-w-0 truncate text-slate-800 dark:text-slate-100">{{ form.name }}</span>
+              </label>
+            </div>
+            <p class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+              {{ $t('WORKFLOW.EDITOR.FORM_TRIGGER_FORMS_HINT') }}
+            </p>
+          </div>
+          <div>
+            <label :class="labelClass">{{ $t('WORKFLOW.EDITOR.FORM_TRIGGER_INBOX_LABEL') }}</label>
+            <select
+              :value="nodeProps.inbox_id || ''"
+              :disabled="readOnly"
+              :class="inputClass"
+              @change="onFormTriggerInboxChange($event.target.value)"
+            >
+              <option value="" disabled>
+                {{ $t('WORKFLOW.EDITOR.FORM_TRIGGER_INBOX_PLACEHOLDER') }}
+              </option>
+              <option v-for="inbox in inboxes" :key="inbox.id" :value="inbox.id">
+                {{ inbox.name }}
+              </option>
+            </select>
+            <p class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+              {{ $t('WORKFLOW.EDITOR.FORM_TRIGGER_INBOX_HINT') }}
+            </p>
+          </div>
+        </div>
         <WorkflowConditionsEditor
+          v-if="!isFormSubmittedTrigger"
           :conditions="nodeProps.conditions || []"
           :event-name="nodeProps.event_name"
           :read-only="readOnly"

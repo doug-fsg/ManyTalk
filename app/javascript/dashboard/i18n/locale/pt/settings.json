@@ -238,6 +238,7 @@
     "UNATTENDED_CONVERSATIONS": "Por responder",
     "REPORTS": "relatórios",
     "SETTINGS": "Configurações",
+    "KANBAN": "Kanban",
     "CONTACTS": "Contactos",
     "HOME": "Principal",
     "AGENTS": "Agentes",
@@ -279,6 +280,7 @@
     "SLA": "SLA",
     "BETA": "Beta",
     "REPORTS_OVERVIEW": "Visão geral",
+    "REPORTS_WORKFLOWS": "Fluxo de Atendimento",
     "REAUTHORIZE": "A ligação da sua caixa de entrada expirou. Reconecte para continuar a receber e enviar mensagens",
     "WHATSAPP_WEB_DISCONNECTED": "WhatsApp desconectado",
     "WHATSAPP_WEB_DISCONNECTED_HINT": "WhatsApp desconectado",
@@ -318,7 +320,7 @@
     "NO_BILLING_USER": "Os seus dados de pagamento estão a ser configurados. Atualize a página e tente novamente."
   },
   "CREATE_ACCOUNT": {
-    "NO_ACCOUNT_WARNING": "Não conseguimos encontrar nenhuma conta do Chatwoot. Por favor, crie uma nova conta para continuar.",
+    "NO_ACCOUNT_WARNING": "Não conseguimos encontrar nenhuma conta do ManyTalks. Por favor, crie uma nova conta para continuar.",
     "NEW_ACCOUNT": "Nova conta",
     "SELECTOR_SUBTITLE": "Criar uma nova conta",
     "API": {
