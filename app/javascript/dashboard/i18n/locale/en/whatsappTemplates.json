@@ -17,9 +17,29 @@
         "PARSER": {
             "VARIABLES_LABEL": "Variables",
             "VARIABLE_PLACEHOLDER": "Enter %{variable} value",
+            "HEADER_MEDIA_LABEL": "Header media",
+            "HEADER_MEDIA_URL_PLACEHOLDER": "Public media URL (https://...)",
+            "HEADER_MEDIA_NAME_LABEL": "Filename",
+            "HEADER_MEDIA_NAME_PLACEHOLDER": "document.pdf",
+            "BUTTONS_LABEL": "Buttons",
+            "COPY_CODE_LABEL": "Promo code",
+            "COPY_CODE_PLACEHOLDER": "Enter code (max 15 characters)",
             "GO_BACK_LABEL": "Go Back",
             "SEND_MESSAGE_LABEL": "Send Message",
             "FORM_ERROR_MESSAGE": "Please fill all variables before sending"
+        },
+        "GUIDE": {
+            "TAB_CREATE_TITLE": "Create templates",
+            "TAB_CREATE_SUBTITLE": "Create and approve templates in Meta Manager.",
+            "TAB_SYNC_TITLE": "Sync",
+            "TAB_SYNC_SUBTITLE": "Import approved templates into this inbox.",
+            "CREATE_TEMPLATES": "Create Templates",
+            "SYNC_BUTTON": "Sync",
+            "SYNC_SUCCESS": "Templates synced.",
+            "SYNC_ERROR": "Sync failed.",
+            "TEMPLATES_COUNT": "%{count} approved template(s)",
+            "PICKER_EMPTY": "No approved templates.",
+            "PICKER_SETTINGS_LINK": "Configure in Templates"
         }
     }
 }

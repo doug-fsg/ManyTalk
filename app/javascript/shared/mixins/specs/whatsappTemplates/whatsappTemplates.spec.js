@@ -17,6 +17,14 @@ const config = {
     WootButton: { template: '<button />' },
     WootInput: { template: '<input />' },
   },
+  mocks: {
+    $store: {
+      getters: {
+        'accounts/isFeatureEnabledonAccount': () => false,
+        getCurrentAccountId: () => 1,
+      },
+    },
+  },
 };
 
 describe('#WhatsAppTemplates', () => {
@@ -25,7 +33,7 @@ describe('#WhatsAppTemplates', () => {
       ...config,
       propsData: { template: templates[0] },
     });
-    expect(wrapper.vm.variables).toEqual(['{{1}}', '{{2}}', '{{3}}']);
+    expect(wrapper.vm.bodyVariables).toEqual(['1', '2', '3']);
   });
 
   it('returns no variables from a template string if it does not contain variables', () => {
@@ -33,7 +41,7 @@ describe('#WhatsAppTemplates', () => {
       ...config,
       propsData: { template: templates[12] },
     });
-    expect(wrapper.vm.variables).toBeNull();
+    expect(wrapper.vm.bodyVariables).toEqual([]);
   });
 
   it('returns the body of a template', () => {
@@ -44,16 +52,13 @@ describe('#WhatsAppTemplates', () => {
     const expectedOutput = templates[1].components.find(
       i => i.type === 'BODY'
     ).text;
-    expect(wrapper.vm.templateString).toEqual(expectedOutput);
+    expect(wrapper.vm.processedString).toEqual(expectedOutput);
   });
 
   it('generates the templates from variable input', async () => {
     const wrapper = shallowMount(TemplateParser, {
       ...config,
       propsData: { template: templates[0] },
-      data: () => {
-        return { processedParams: {} };
-      },
     });
     await wrapper.setData({
       processedParams: { 1: 'abc', 2: 'xyz', 3: 'qwerty' },

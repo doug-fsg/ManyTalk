@@ -125,3 +125,7 @@
   enabled: false
 - name: workflows
   enabled: false
+- name: whatsapp_coexistence
+  enabled: false
+- name: whatsapp_enhanced_templates
+  enabled: false

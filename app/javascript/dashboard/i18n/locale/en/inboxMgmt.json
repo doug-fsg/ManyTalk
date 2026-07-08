@@ -576,7 +576,10 @@
       "BUSINESS_HOURS": "Business Hours",
       "WIDGET_BUILDER": "Widget Builder",
       "BOT_CONFIGURATION": "Bot Configuration",
-      "UNOAPI_CONFIGURATION": "Unoapi Configuration" 
+      "UNOAPI_CONFIGURATION": "Unoapi Configuration",
+      "TEMPLATES": "Templates",
+      "ACCOUNT_HEALTH": "Account health",
+      "CSAT": "CSAT"
     },
     "SETTINGS": "Settings",
     "FEATURES": {
@@ -866,6 +869,57 @@
       "LINE": "Line",
       "API": "API Channel",
       "WHATSAPP_WEB": "WhatsApp Web"
+    },
+    "ACCOUNT_HEALTH": {
+      "TITLE": "Account health",
+      "DESCRIPTION": "WhatsApp number status from Meta.",
+      "GO_TO_SETTINGS": "Open Meta",
+      "NO_DATA": "Could not load health data.",
+      "FIELDS": {
+        "DISPLAY_PHONE_NUMBER": { "LABEL": "Phone number" },
+        "VERIFIED_NAME": { "LABEL": "Verified name" },
+        "DISPLAY_NAME_STATUS": { "LABEL": "Name status" },
+        "CODE_VERIFICATION_STATUS": { "LABEL": "Phone verification" },
+        "QUALITY_RATING": { "LABEL": "Quality rating" },
+        "MESSAGING_LIMIT_TIER": { "LABEL": "Messaging limit" },
+        "ACCOUNT_MODE": { "LABEL": "Account mode" }
+      },
+      "WEBHOOK": {
+        "TITLE": "Webhook",
+        "URL_MISMATCH": "Webhook URL does not match expected URL.",
+        "ACTION_REQUIRED": "Webhook is not configured correctly.",
+        "REGISTER_BUTTON": "Register webhook",
+        "REGISTER_SUCCESS": "Webhook registered.",
+        "REGISTER_ERROR": "Failed to register webhook."
+      }
+    },
+    "CSAT": {
+      "TITLE": "CSAT survey",
+      "SUBTITLE": "Configure customer satisfaction survey.",
+      "SAVE_BUTTON": "Save",
+      "WHATSAPP_NOTE": "On WhatsApp Cloud, saving creates a template in Meta. The CSAT survey is only sent after Meta approves the template.",
+      "MESSAGE": { "LABEL": "Message" },
+      "BUTTON_TEXT": {
+        "LABEL": "Button text",
+        "DEFAULT": "Rate us"
+      },
+      "LANGUAGE": { "LABEL": "Template language" },
+      "TEMPLATE_STATUS": {
+        "LABEL": "Template status",
+        "DEFAULT": "No template",
+        "NOT_FOUND": "Template not found",
+        "APPROVED": "Approved",
+        "PENDING": "Pending",
+        "REJECTED": "Rejected"
+      },
+      "TEMPLATE_CREATION": {
+        "SUCCESS_MESSAGE": "CSAT template submitted for approval.",
+        "ERROR_MESSAGE": "Failed to create template."
+      },
+      "API": {
+        "SUCCESS_MESSAGE": "Settings saved.",
+        "ERROR_MESSAGE": "Failed to save."
+      }
     }
   }
 }

@@ -54,7 +54,11 @@ class AutomationRuleListener < BaseListener
 
   def ignore_message_created_event?(event)
     message = event.data[:message]
-    performed_by_automation?(event) || message.activity?
+    performed_by_automation?(event) || message.activity? || external_echo_message?(message)
+  end
+
+  def external_echo_message?(message)
+    message.content_attributes&.dig('external_echo') == true
   end
 
   private

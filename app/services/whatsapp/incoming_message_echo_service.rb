@@ -1,0 +1,143 @@
+# Handles smb_message_echoes webhooks (WhatsApp Business app coexistence).
+# Isolated from IncomingMessageWhatsappCloudService to preserve fork group/custom logic.
+class Whatsapp::IncomingMessageEchoService
+  include ::Whatsapp::IncomingMessageServiceHelpers
+  include ::Whatsapp::IncomingMessageIdentifierHelper
+
+  pattr_initialize [:inbox!, :params!]
+
+  def perform
+    return unless inbox.account.feature_enabled?('whatsapp_coexistence')
+    return unless whatsapp_cloud_channel?
+
+    processed_params
+    return if messages_data.blank?
+    return if unprocessable_message_type?(message_type)
+    return if find_message_by_source_id(messages_data.first[:id])
+    return unless lock_message_source_id!
+
+    set_contact_from_echo
+    return unless @contact
+
+    ActiveRecord::Base.transaction do
+      set_conversation
+      create_messages
+    end
+  end
+
+  private
+
+  def whatsapp_cloud_channel?
+    inbox.channel.is_a?(Channel::Whatsapp) && inbox.channel.provider == 'whatsapp_cloud'
+  end
+
+  def processed_params
+    @processed_params ||= params[:entry].try(:first).try(:[], 'changes').try(:first).try(:[], 'value')
+  end
+
+  def messages_data
+    @processed_params&.dig(:message_echoes)
+  end
+
+  def create_messages
+    message = messages_data.first
+    log_error(message) && return if error_webhook_event?(message)
+
+    process_in_reply_to(message)
+    message_type == 'contacts' ? create_contact_messages(message) : create_regular_message(message)
+  end
+
+  def create_contact_messages(message)
+    message['contacts'].each do |contact|
+      create_message(message, source_id: message[:id])
+      attach_contact(contact)
+      @message.save!
+    end
+  end
+
+  def create_regular_message(message)
+    create_message(message, source_id: message[:id])
+    attach_files
+    attach_location if message_type == 'location'
+    @message.save!
+  end
+
+  def set_conversation
+    @conversation = if @inbox.lock_to_single_conversation
+                        @contact_inbox.conversations.last
+                      else
+                        @contact_inbox.conversations.where.not(status: :resolved).last
+                      end
+    return if @conversation
+
+    @conversation = ::Conversation.create!(conversation_params)
+  end
+
+  def create_message(message, source_id: nil)
+    content_attrs = { external_echo: true }
+    content_attrs[:in_reply_to_external_id] = @in_reply_to_external_id if @in_reply_to_external_id.present?
+
+    @message = @conversation.messages.build(
+      content: message_content(message),
+      account_id: @inbox.account_id,
+      inbox_id: @inbox.id,
+      message_type: :outgoing,
+      status: :delivered,
+      sender: nil,
+      source_id: (source_id || message[:id]).to_s,
+      content_attributes: content_attrs
+    )
+  end
+
+  def attach_files
+    return if %w[text button interactive location contacts].include?(message_type)
+
+    attachment_payload = messages_data.first[message_type.to_sym]
+    @message.content ||= attachment_payload[:caption]
+
+    attachment_file = download_attachment_file(attachment_payload)
+    return if attachment_file.blank?
+
+    @message.attachments.new(
+      account_id: @message.account_id,
+      file_type: file_content_type(message_type),
+      file: {
+        io: attachment_file,
+        filename: attachment_file.original_filename,
+        content_type: attachment_file.content_type
+      }
+    )
+  end
+
+  def attach_location
+    location = messages_data.first['location']
+    location_name = location['name'] ? "#{location['name']}, #{location['address']}" : ''
+    @message.attachments.new(
+      account_id: @message.account_id,
+      file_type: file_content_type(message_type),
+      coordinates_lat: location['latitude'],
+      coordinates_long: location['longitude'],
+      fallback_title: location_name,
+      external_url: location['url']
+    )
+  end
+
+  def attach_contact(contact)
+    phones = contact[:phones]
+    phones = [{ phone: 'Phone number is not available' }] if phones.blank?
+
+    phones.each do |phone|
+      @message.attachments.new(
+        account_id: @message.account_id,
+        file_type: file_content_type(message_type),
+        fallback_title: phone[:phone].to_s
+      )
+    end
+  end
+
+  def download_attachment_file(attachment_payload)
+    url_response = HTTParty.get(inbox.channel.media_url(attachment_payload[:id]), headers: inbox.channel.api_headers)
+    inbox.channel.authorization_error! if url_response.unauthorized?
+    Down.download(url_response.parsed_response['url'], headers: inbox.channel.api_headers) if url_response.success?
+  end
+end

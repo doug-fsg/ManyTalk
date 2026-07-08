@@ -17,9 +17,29 @@
         "PARSER": {
             "VARIABLES_LABEL": "Variables",
             "VARIABLE_PLACEHOLDER": "Introduzca el valor de %{variable}",
+            "HEADER_MEDIA_LABEL": "Medios del encabezado",
+            "HEADER_MEDIA_URL_PLACEHOLDER": "URL pública del medio (https://...)",
+            "HEADER_MEDIA_NAME_LABEL": "Nombre del archivo",
+            "HEADER_MEDIA_NAME_PLACEHOLDER": "documento.pdf",
+            "BUTTONS_LABEL": "Botones",
+            "COPY_CODE_LABEL": "Código promocional",
+            "COPY_CODE_PLACEHOLDER": "Introduzca el código (máx. 15 caracteres)",
             "GO_BACK_LABEL": "Volver",
             "SEND_MESSAGE_LABEL": "Enviar mensaje",
             "FORM_ERROR_MESSAGE": "Por favor, rellene todas las variables antes de enviar"
+        },
+        "GUIDE": {
+            "TAB_CREATE_TITLE": "Crear plantillas",
+            "TAB_CREATE_SUBTITLE": "Cree y apruebe plantillas en el Administrador de Meta.",
+            "TAB_SYNC_TITLE": "Sincronizar",
+            "TAB_SYNC_SUBTITLE": "Importe las plantillas aprobadas a este inbox.",
+            "CREATE_TEMPLATES": "Crear Templates",
+            "SYNC_BUTTON": "Sincronizar",
+            "SYNC_SUCCESS": "Plantillas sincronizadas.",
+            "SYNC_ERROR": "Error al sincronizar.",
+            "TEMPLATES_COUNT": "%{count} plantilla(s) aprobada(s)",
+            "PICKER_EMPTY": "Ninguna plantilla aprobada.",
+            "PICKER_SETTINGS_LINK": "Configurar en Templates"
         }
     }
 }

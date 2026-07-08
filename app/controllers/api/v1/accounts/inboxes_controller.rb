@@ -1,10 +1,11 @@
 class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   include Api::V1::InboxesHelper
+  include Api::V1::Accounts::Concerns::WhatsappHealthManagement
   before_action :fetch_inbox, except: [:index, :create]
   before_action :fetch_agent_bot, only: [:set_agent_bot]
   before_action :validate_limit, only: [:create]
   # we are already handling the authorization in fetch inbox
-  before_action :check_authorization, except: [:show]
+  before_action :check_authorization, except: [:show, :sync_templates, :health, :register_webhook, :register_phone]
 
   def index
     @inboxes = policy_scope(Current.account.inboxes.order_by_name.includes(:channel, { avatar_attachment: [:blob] }))
@@ -42,7 +43,9 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   end
 
   def update
-    @inbox.update!(permitted_params.except(:channel))
+    inbox_params = permitted_params.except(:channel, :csat_config)
+    inbox_params[:csat_config] = format_csat_config(permitted_params[:csat_config]) if permitted_params[:csat_config].present?
+    @inbox.update!(inbox_params)
     update_inbox_working_hours
     update_channel if channel_update_required?
   end
@@ -65,6 +68,21 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   def destroy
     ::DeleteObjectJob.perform_later(@inbox, Current.user, request.ip) if @inbox.present?
     render status: :ok, json: { message: I18n.t('messages.inbox_deletetion_response') }
+  end
+
+  def sync_templates
+    authorize @inbox, :update?
+
+    unless @inbox.whatsapp? && @inbox.channel.is_a?(Channel::Whatsapp)
+      return render json: { error: 'WhatsApp inbox required' }, status: :unprocessable_entity
+    end
+
+    @inbox.channel.sync_templates
+    @inbox.reload
+    render :show
+  rescue StandardError => e
+    Rails.logger.error "[WHATSAPP] Template sync failed for inbox #{@inbox.id}: #{e.message}"
+    render json: { error: e.message }, status: :unprocessable_entity
   end
 
   private
@@ -124,7 +142,26 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   def inbox_attributes
     [:name, :avatar, :greeting_enabled, :greeting_message, :enable_email_collect, :csat_survey_enabled,
      :enable_auto_assignment, :working_hours_enabled, :out_of_office_message, :timezone, :allow_messages_after_resolved,
-     :lock_to_single_conversation, :portal_id, :sender_name_type, :business_name, :allow_agent_to_delete_message]
+     :lock_to_single_conversation, :portal_id, :sender_name_type, :business_name, :allow_agent_to_delete_message,
+     { csat_config: [:display_type, :message, :button_text, :language,
+                     { survey_rules: [:operator, { values: [] }],
+                       template: [:name, :template_id, :created_at, :language, :status] }] }]
+  end
+
+  def format_csat_config(config)
+    existing = @inbox.csat_config || {}
+    formatted = {
+      'display_type' => config['display_type'] || existing['display_type'] || 'emoji',
+      'message' => config['message'] || existing['message'] || '',
+      'survey_rules' => {
+        'operator' => config.dig('survey_rules', 'operator') || existing.dig('survey_rules', 'operator') || 'contains',
+        'values' => config.dig('survey_rules', 'values') || existing.dig('survey_rules', 'values') || []
+      },
+      'button_text' => config['button_text'] || existing['button_text'] || 'Please rate us',
+      'language' => config['language'] || existing['language'] || 'en'
+    }
+    formatted['template'] = config['template'].presence || existing['template']
+    formatted.compact
   end
 
   def permitted_params(channel_attributes = [])

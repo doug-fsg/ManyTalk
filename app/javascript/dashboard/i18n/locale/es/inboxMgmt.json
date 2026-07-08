@@ -576,7 +576,8 @@
       "BUSINESS_HOURS": "Horarios",
       "WIDGET_BUILDER": "Constructor de Widget",
       "BOT_CONFIGURATION": "Configuración del bot",
-      "UNOAPI_CONFIGURATION": "Unoapi Configuration" 
+      "UNOAPI_CONFIGURATION": "Unoapi Configuration",
+      "TEMPLATES": "Templates"
     },
     "SETTINGS": "Ajustes",
     "FEATURES": {

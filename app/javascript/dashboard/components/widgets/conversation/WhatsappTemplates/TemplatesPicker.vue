@@ -11,54 +11,66 @@
       />
     </div>
     <div class="template__list-container">
-      <div v-for="(template, i) in filteredTemplateMessages" :key="template.id">
-        <button
-          class="template__list-item"
-          @click="$emit('onSelect', template)"
-        >
-          <div>
-            <div class="flex items-center justify-between mb-2.5">
-              <p class="label-title">
-                {{ template.name }}
-              </p>
-              <span
-                class="inline-block py-1 px-2 rounded-sm text-xs leading-none cursor-default bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100"
-              >
-                {{ $t('WHATSAPP_TEMPLATES.PICKER.LABELS.LANGUAGE') }} :
-                {{ template.language }}
-              </span>
-            </div>
+      <whatsapp-template-guide
+        v-if="showEmptyGuide"
+        :inbox-id="inboxId"
+        @synced="$emit('synced')"
+      />
+      <template v-else>
+        <div v-for="(template, i) in filteredTemplateMessages" :key="template.id">
+          <button
+            class="template__list-item"
+            @click="$emit('onSelect', template)"
+          >
             <div>
-              <p class="strong">
-                {{ $t('WHATSAPP_TEMPLATES.PICKER.LABELS.TEMPLATE_BODY') }}
-              </p>
-              <p class="label-body">{{ getTemplatebody(template) }}</p>
+              <div class="flex items-center justify-between mb-2.5">
+                <p class="label-title">
+                  {{ template.name }}
+                </p>
+                <span
+                  class="inline-block py-1 px-2 rounded-sm text-xs leading-none cursor-default bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100"
+                >
+                  {{ $t('WHATSAPP_TEMPLATES.PICKER.LABELS.LANGUAGE') }} :
+                  {{ template.language }}
+                </span>
+              </div>
+              <div>
+                <p class="strong">
+                  {{ $t('WHATSAPP_TEMPLATES.PICKER.LABELS.TEMPLATE_BODY') }}
+                </p>
+                <p class="label-body">{{ getTemplatebody(template) }}</p>
+              </div>
+              <div class="label-category">
+                <p class="strong">
+                  {{ $t('WHATSAPP_TEMPLATES.PICKER.LABELS.CATEGORY') }}
+                </p>
+                <p>{{ template.category }}</p>
+              </div>
             </div>
-            <div class="label-category">
-              <p class="strong">
-                {{ $t('WHATSAPP_TEMPLATES.PICKER.LABELS.CATEGORY') }}
-              </p>
-              <p>{{ template.category }}</p>
-            </div>
-          </div>
-        </button>
-        <hr v-if="i != filteredTemplateMessages.length - 1" :key="`hr-${i}`" />
-      </div>
-      <div v-if="!filteredTemplateMessages.length">
-        <p>
-          {{ $t('WHATSAPP_TEMPLATES.PICKER.NO_TEMPLATES_FOUND') }}
-          <strong>{{ query }}</strong>
-        </p>
-      </div>
+          </button>
+          <hr v-if="i != filteredTemplateMessages.length - 1" :key="`hr-${i}`" />
+        </div>
+        <div v-if="!filteredTemplateMessages.length">
+          <p>
+            {{ $t('WHATSAPP_TEMPLATES.PICKER.NO_TEMPLATES_FOUND') }}
+            <strong>{{ query }}</strong>
+          </p>
+        </div>
+      </template>
     </div>
   </div>
 </template>
 
 <script>
+import WhatsappTemplateGuide from './WhatsappTemplateGuide.vue';
+
 // TODO: Remove this when we support all formats
 const formatsToRemove = ['DOCUMENT', 'IMAGE', 'VIDEO'];
 
 export default {
+  components: {
+    WhatsappTemplateGuide,
+  },
   props: {
     inboxId: {
       type: Number,
@@ -71,6 +83,17 @@ export default {
     };
   },
   computed: {
+    inbox() {
+      return this.$store.getters['inboxes/getInboxes'].find(
+        record => record.id === Number(this.inboxId)
+      );
+    },
+    isWhatsAppCloudInbox() {
+      return (
+        this.inbox?.channel_type === 'Channel::Whatsapp' &&
+        this.inbox?.provider === 'whatsapp_cloud'
+      );
+    },
     whatsAppTemplateMessages() {
       // TODO: Remove the last filter when we support all formats
       return this.$store.getters['inboxes/getWhatsAppTemplates'](this.inboxId)
@@ -84,6 +107,13 @@ export default {
     filteredTemplateMessages() {
       return this.whatsAppTemplateMessages.filter(template =>
         template.name.toLowerCase().includes(this.query.toLowerCase())
+      );
+    },
+    showEmptyGuide() {
+      return (
+        this.isWhatsAppCloudInbox &&
+        !this.query &&
+        this.whatsAppTemplateMessages.length === 0
       );
     },
   },

@@ -60,6 +60,15 @@
       "MARK_ALL_READ": "Todas as notificações marcadas como lidas",
       "DELETE_ALL": "Todas as notificações excluídas",
       "DELETE_ALL_READ": "Todas as notificações lidas foram excluídas"
+    },
+    "REAUTHORIZE": {
+      "SUCCESS": "WhatsApp reconectado.",
+      "ERROR": "Falha ao reconectar.",
+      "LOADING_FACEBOOK": "Carregando Facebook SDK...",
+      "CONFIGURATION_ERROR": "Configuração WhatsApp incompleta.",
+      "FACEBOOK_LOAD_ERROR": "Falha ao carregar Facebook SDK.",
+      "WHATSAPP_APP_ID_MISSING": "WhatsApp App ID não configurado.",
+      "WHATSAPP_CONFIG_ID_MISSING": "WhatsApp Configuration ID não configurado."
     }
   }
 }

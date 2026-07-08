@@ -51,6 +51,10 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
     response.success?
   end
 
+  def get_template_status(template_name)
+    Whatsapp::CsatTemplateService.new(whatsapp_channel).get_template_status(template_name)
+  end
+
   def api_headers
     { 'Authorization' => "Bearer #{whatsapp_channel.provider_config['api_key']}", 'Content-Type' => 'application/json' }
   end
@@ -151,23 +155,45 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
       response['messages'].first['id']
     else
       Rails.logger.error response.body
-      message.update!(status: :failed, external_error: response.body)
+      external_error = humanize_whatsapp_error(response)
+      message.update!(status: :failed, external_error: external_error)
       nil
     end
   end
 
+  def humanize_whatsapp_error(response)
+    parsed = response.parsed_response
+    error = parsed.is_a?(Hash) ? parsed['error'] : nil
+    return response.body if error.blank?
+
+    code = error['code']
+    details = error.dig('error_data', 'details') || error['message']
+
+    if code == 131_037
+      return I18n.t('conversations.messages.whatsapp.errors.display_name_not_approved')
+    end
+
+    details
+  end
+
   def template_body_parameters(template_info)
+    components = normalize_template_components(template_info[:parameters])
+
     {
       name: template_info[:name],
       language: {
         policy: 'deterministic',
         code: template_info[:lang_code]
       },
-      components: [{
-        type: 'body',
-        parameters: template_info[:parameters]
-      }]
+      components: components
     }
+  end
+
+  def normalize_template_components(parameters)
+    return [{ type: 'body', parameters: [] }] if parameters.blank?
+    return parameters if parameters.first.is_a?(Hash) && parameters.first[:type] != 'text'
+
+    [{ type: 'body', parameters: parameters }]
   end
 
   def whatsapp_reply_context(message)

@@ -6,29 +6,107 @@
       readonly
       class="template-input"
     />
-    <div v-if="variables" class="template__variables-container">
+    <div v-if="bodyVariables.length" class="template__variables-container">
       <p class="variables-label">
         {{ $t('WHATSAPP_TEMPLATES.PARSER.VARIABLES_LABEL') }}
       </p>
       <div
-        v-for="(variable, key) in processedParams"
-        :key="key"
+        v-for="variable in bodyVariables"
+        :key="variable"
         class="template__variable-item"
       >
         <span class="variable-label">
-          {{ key }}
+          {{ variable }}
         </span>
         <woot-input
-          v-model="processedParams[key]"
+          v-if="enhancedTemplatesEnabled"
+          v-model="processedParams.body[variable]"
           type="text"
           class="variable-input"
           :styles="{ marginBottom: 0 }"
+          :placeholder="
+            $t('WHATSAPP_TEMPLATES.PARSER.VARIABLE_PLACEHOLDER', {
+              variable,
+            })
+          "
+        />
+        <woot-input
+          v-else
+          v-model="processedParams[variable]"
+          type="text"
+          class="variable-input"
+          :styles="{ marginBottom: 0 }"
+          :placeholder="
+            $t('WHATSAPP_TEMPLATES.PARSER.VARIABLE_PLACEHOLDER', {
+              variable,
+            })
+          "
         />
       </div>
-      <p v-if="$v.$dirty && $v.$invalid" class="error">
-        {{ $t('WHATSAPP_TEMPLATES.PARSER.FORM_ERROR_MESSAGE') }}
-      </p>
     </div>
+
+    <div v-if="enhancedTemplatesEnabled && hasMediaHeader" class="template__variables-container">
+      <p class="variables-label">
+        {{ $t('WHATSAPP_TEMPLATES.PARSER.HEADER_MEDIA_LABEL') }}
+      </p>
+      <div class="template__variable-item">
+        <span class="variable-label">
+          {{ headerComponent.format }}
+        </span>
+        <woot-input
+          v-model="processedParams.header.media_url"
+          type="text"
+          class="variable-input"
+          :styles="{ marginBottom: 0 }"
+          :placeholder="$t('WHATSAPP_TEMPLATES.PARSER.HEADER_MEDIA_URL_PLACEHOLDER')"
+        />
+      </div>
+      <div
+        v-if="headerComponent.format.toLowerCase() === 'document'"
+        class="template__variable-item"
+      >
+        <span class="variable-label">
+          {{ $t('WHATSAPP_TEMPLATES.PARSER.HEADER_MEDIA_NAME_LABEL') }}
+        </span>
+        <woot-input
+          v-model="processedParams.header.media_name"
+          type="text"
+          class="variable-input"
+          :styles="{ marginBottom: 0 }"
+          :placeholder="$t('WHATSAPP_TEMPLATES.PARSER.HEADER_MEDIA_NAME_PLACEHOLDER')"
+        />
+      </div>
+    </div>
+
+    <div
+      v-if="enhancedTemplatesEnabled && buttonFields.length"
+      class="template__variables-container"
+    >
+      <p class="variables-label">
+        {{ $t('WHATSAPP_TEMPLATES.PARSER.BUTTONS_LABEL') }}
+      </p>
+      <div
+        v-for="buttonField in buttonFields"
+        :key="buttonField.index"
+        class="template__variable-item"
+      >
+        <span class="variable-label">
+          {{ buttonField.label }}
+        </span>
+        <woot-input
+          v-model="processedParams.buttons[buttonField.index].parameter"
+          type="text"
+          class="variable-input"
+          :styles="{ marginBottom: 0 }"
+          :placeholder="buttonField.placeholder"
+        />
+      </div>
+    </div>
+
+    <p v-if="$v.$dirty && $v.$invalid" class="error">
+      {{ $t('WHATSAPP_TEMPLATES.PARSER.FORM_ERROR_MESSAGE') }}
+    </p>
+
     <footer>
       <woot-button variant="smooth" @click="$emit('resetTemplate')">
         {{ $t('WHATSAPP_TEMPLATES.PARSER.GO_BACK_LABEL') }}
@@ -41,21 +119,32 @@
 </template>
 
 <script>
-const allKeysRequired = value => {
-  const keys = Object.keys(value);
-  return keys.every(key => value[key]);
-};
+import { mapGetters } from 'vuex';
 import { requiredIf } from 'vuelidate/lib/validators';
+import accountMixin from 'dashboard/mixins/account';
+import {
+  allKeysRequired,
+  buildLegacyTemplateParameters,
+  buildTemplateParameters,
+  findComponentByType,
+  hasMediaHeader,
+  replaceTemplateVariables,
+  COMPONENT_TYPES,
+} from 'dashboard/helper/templateHelper';
+
 export default {
+  mixins: [accountMixin],
   props: {
     template: {
       type: Object,
-      default: () => {},
+      default: () => ({}),
     },
   },
   validations: {
     processedParams: {
-      requiredIfKeysPresent: requiredIf('variables'),
+      requiredIfKeysPresent: requiredIf(function requiredIfKeysPresent() {
+        return this.hasAnyVariables;
+      }),
       allKeysRequired,
     },
   },
@@ -65,20 +154,82 @@ export default {
     };
   },
   computed: {
-    variables() {
-      const variables = this.templateString.match(/{{([^}]+)}}/g);
-      return variables;
+    ...mapGetters({
+      isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
+    }),
+    enhancedTemplatesEnabled() {
+      return this.isFeatureEnabledonAccount(
+        this.accountId,
+        'whatsapp_enhanced_templates'
+      );
     },
-    templateString() {
-      return this.template.components.find(
-        component => component.type === 'BODY'
-      ).text;
+    headerComponent() {
+      return findComponentByType(this.template, COMPONENT_TYPES.HEADER);
+    },
+    hasMediaHeader() {
+      return hasMediaHeader(this.template);
+    },
+    bodyVariables() {
+      const bodyComponent = findComponentByType(
+        this.template,
+        COMPONENT_TYPES.BODY
+      );
+      if (!bodyComponent?.text) return [];
+
+      const matchedVariables = bodyComponent.text.match(/{{([^}]+)}}/g);
+      if (!matchedVariables) return [];
+
+      return matchedVariables.map(variable =>
+        variable.replace(/{{|}}/g, '')
+      );
+    },
+    hasAnyVariables() {
+      return (
+        this.bodyVariables.length > 0 ||
+        (this.enhancedTemplatesEnabled && this.hasMediaHeader) ||
+        this.buttonFields.length > 0
+      );
     },
     processedString() {
-      return this.templateString.replace(/{{([^}]+)}}/g, (match, variable) => {
-        const variableKey = this.processVariable(variable);
-        return this.processedParams[variableKey] || `{{${variable}}}`;
+      const bodyComponent = findComponentByType(
+        this.template,
+        COMPONENT_TYPES.BODY
+      );
+      if (!bodyComponent?.text) return '';
+
+      return replaceTemplateVariables(bodyComponent.text, this.processedParams);
+    },
+    buttonFields() {
+      if (!this.enhancedTemplatesEnabled) return [];
+
+      const buttonComponents =
+        this.template.components?.filter(
+          component => component.type === COMPONENT_TYPES.BUTTONS
+        ) || [];
+
+      const fields = [];
+      buttonComponents.forEach(buttonComponent => {
+        buttonComponent.buttons?.forEach((button, index) => {
+          if (button.type === 'URL' && button.url?.includes('{{')) {
+            fields.push({
+              index,
+              label: button.text || `URL ${index + 1}`,
+              placeholder: button.url,
+            });
+          }
+          if (button.type === 'COPY_CODE') {
+            fields.push({
+              index,
+              label: this.$t('WHATSAPP_TEMPLATES.PARSER.COPY_CODE_LABEL'),
+              placeholder: this.$t(
+                'WHATSAPP_TEMPLATES.PARSER.COPY_CODE_PLACEHOLDER'
+              ),
+            });
+          }
+        });
       });
+
+      return fields;
     },
   },
   mounted() {
@@ -88,6 +239,7 @@ export default {
     sendMessage() {
       this.$v.$touch();
       if (this.$v.$invalid) return;
+
       const payload = {
         message: this.processedString,
         templateParams: {
@@ -100,18 +252,16 @@ export default {
       };
       this.$emit('sendMessage', payload);
     },
-    processVariable(str) {
-      return str.replace(/{{|}}/g, '');
-    },
     generateVariables() {
-      const matchedVariables = this.templateString.match(/{{([^}]+)}}/g);
-      if (!matchedVariables) return;
+      if (this.enhancedTemplatesEnabled) {
+        this.processedParams = buildTemplateParameters(
+          this.template,
+          true
+        );
+        return;
+      }
 
-      const variables = matchedVariables.map(i => this.processVariable(i));
-      this.processedParams = variables.reduce((acc, variable) => {
-        acc[variable] = '';
-        return acc;
-      }, {});
+      this.processedParams = buildLegacyTemplateParameters(this.template);
     },
   },
 };

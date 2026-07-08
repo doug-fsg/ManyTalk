@@ -37,15 +37,24 @@ FactoryBot.define do
     transient do
       sync_templates { true }
       validate_provider_config { true }
+      skip_webhook_setup { true }
     end
 
     before(:create) do |channel_whatsapp, options|
       # since factory already has the required message templates, we just need to bypass it getting updated
       channel_whatsapp.define_singleton_method(:sync_templates) { nil } unless options.sync_templates
       channel_whatsapp.define_singleton_method(:validate_provider_config) { nil } unless options.validate_provider_config
+      if options.skip_webhook_setup
+        channel_whatsapp.define_singleton_method(:should_auto_setup_webhooks?) { false }
+      end
       if channel_whatsapp.provider == 'whatsapp_cloud'
-        channel_whatsapp.provider_config = channel_whatsapp.provider_config.merge({ 'api_key' => 'test_key', 'phone_number_id' => '123456789',
-                                                                                    'business_account_id' => '123456789' })
+        cloud_config = {
+          'api_key' => 'test_key',
+          'phone_number_id' => '123456789',
+          'business_account_id' => '123456789'
+        }
+        cloud_config['source'] = 'embedded_signup' if options.skip_webhook_setup
+        channel_whatsapp.provider_config = channel_whatsapp.provider_config.merge(cloud_config)
       end
     end
 

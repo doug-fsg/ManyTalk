@@ -156,6 +156,9 @@ en:
       deleted: This message was deleted
       delivery_status:
         error_code: "Error code: %{error_code}"
+      whatsapp:
+        errors:
+          display_name_not_approved: 'WhatsApp: display name pending or number not registered.'
     activity:
       status:
         resolved: "Conversation was marked resolved by %{user_name}"
@@ -185,6 +188,8 @@ en:
         removed: "%{user_name} removed SLA policy %{sla_name}"
       muted: "%{user_name} has muted the conversation"
       unmuted: "%{user_name} has unmuted the conversation"
+      csat:
+        not_sent_due_to_messaging_window: "CSAT survey was not sent because the messaging window has expired."
       kanban:
         moved: "%{user_name} moved contact to %{stage_name}"
     templates:

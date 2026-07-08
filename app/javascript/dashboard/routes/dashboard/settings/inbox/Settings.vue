@@ -23,6 +23,12 @@
 
     <MicrosoftReauthorize v-if="microsoftUnauthorized" :inbox="inbox" />
     <FacebookReauthorize v-if="facebookUnauthorized" :inbox="inbox" />
+    <WhatsappReauthorize
+      v-if="whatsappUnauthorized"
+      :inbox="inbox"
+      :whatsapp-registration-incomplete="whatsappRegistrationIncomplete"
+      @reauthorized="fetchHealthData"
+    />
 
     <div v-if="selectedTabKey === 'inbox_settings'" class="mx-8">
       <SettingsSection
@@ -200,7 +206,7 @@
           </p>
         </label>
 
-        <label class="w-3/4 pb-4">
+        <label class="w-3/4 pb-4" v-if="!hasCsatTab">
           {{ $t('INBOX_MGMT.SETTINGS_POPUP.ENABLE_CSAT') }}
           <select v-model="csatSurveyEnabled">
             <option :value="true">
@@ -408,6 +414,19 @@
     <div v-if="selectedTabKey === 'configuration'">
       <ConfigurationPage :inbox="inbox" />
     </div>
+    <div v-if="selectedTabKey === 'whatsapp_templates'" class="mx-8">
+      <TemplatesPage :inbox-id="inbox.id" />
+    </div>
+    <div v-if="selectedTabKey === 'whatsapp_health'" class="mx-8">
+      <AccountHealth
+        :health-data="healthData"
+        :is-registering-webhook="isRegisteringWebhook"
+        @registerWebhook="registerWebhook"
+      />
+    </div>
+    <div v-if="selectedTabKey === 'csat'" class="mx-8">
+      <CustomerSatisfactionPage :inbox="inbox" />
+    </div>
     <div v-if="selectedTabKey === 'preChatForm'">
       <PreChatFormSettings :inbox="inbox" />
     </div>
@@ -443,6 +462,11 @@ import WeeklyAvailability from './components/WeeklyAvailability.vue';
 import GreetingsEditor from 'shared/components/GreetingsEditor.vue';
 import ConfigurationPage from './settingsPage/ConfigurationPage.vue';
 import CollaboratorsPage from './settingsPage/CollaboratorsPage.vue';
+import TemplatesPage from './settingsPage/TemplatesPage.vue';
+import CustomerSatisfactionPage from './settingsPage/CustomerSatisfactionPage.vue';
+import AccountHealth from './components/AccountHealth.vue';
+import WhatsappReauthorize from './channels/whatsapp/Reauthorize.vue';
+import InboxHealthAPI from 'dashboard/api/inboxHealth';
 import MicrosoftReauthorize from './channels/microsoft/Reauthorize.vue';
 import WidgetBuilder from './WidgetBuilder.vue';
 import BotConfiguration from './components/BotConfiguration.vue';
@@ -456,6 +480,10 @@ export default {
     BotConfiguration,
     CollaboratorsPage,
     ConfigurationPage,
+    TemplatesPage,
+    CustomerSatisfactionPage,
+    AccountHealth,
+    WhatsappReauthorize,
     FacebookReauthorize,
     GreetingsEditor,
     PreChatFormSettings,
@@ -495,9 +523,15 @@ export default {
       selectedTabIndex: 0,
       selectedPortalSlug: '',
       showBusinessNameInput: false,
+      healthData: null,
+      isLoadingHealth: false,
+      isRegisteringWebhook: false,
     };
   },
   computed: {
+    hasCsatTab() {
+      return this.tabs.some(tab => tab.key === 'csat');
+    },
     ...mapGetters({
       accountId: 'getCurrentAccountId',
       isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
@@ -536,6 +570,10 @@ export default {
           key: 'businesshours',
           name: this.$t('INBOX_MGMT.TABS.BUSINESS_HOURS'),
         },
+        {
+          key: 'csat',
+          name: this.$t('INBOX_MGMT.TABS.CSAT'),
+        },
       ];
 
       if (this.isAWebWidgetInbox) {
@@ -572,6 +610,20 @@ export default {
         ];
       }
       //
+
+      if (this.isAWhatsAppCloudChannel) {
+        visibleToAllChannelTabs = [
+          ...visibleToAllChannelTabs,
+          {
+            key: 'whatsapp_templates',
+            name: this.$t('INBOX_MGMT.TABS.TEMPLATES'),
+          },
+          {
+            key: 'whatsapp_health',
+            name: this.$t('INBOX_MGMT.TABS.ACCOUNT_HEALTH'),
+          },
+        ];
+      }
 
       if (
         (this.isATwilioChannel ||
@@ -663,6 +715,30 @@ export default {
     facebookUnauthorized() {
       return this.isAFacebookInbox && this.inbox.reauthorization_required;
     },
+    isEmbeddedSignupWhatsApp() {
+      return this.inbox.provider_config?.source === 'embedded_signup';
+    },
+    whatsappUnauthorized() {
+      return (
+        this.isAWhatsAppCloudChannel &&
+        this.isEmbeddedSignupWhatsApp &&
+        this.inbox.reauthorization_required
+      );
+    },
+    whatsappRegistrationIncomplete() {
+      if (
+        !this.healthData ||
+        !this.isAWhatsAppCloudChannel ||
+        !this.isEmbeddedSignupWhatsApp
+      ) {
+        return false;
+      }
+
+      return (
+        this.healthData.platform_type === 'NOT_APPLICABLE' ||
+        this.healthData.throughput?.level === 'NOT_APPLICABLE'
+      );
+    },
   },
   watch: {
     $route(to) {
@@ -670,12 +746,50 @@ export default {
         this.fetchInboxSettings();
       }
     },
+    inbox: {
+      handler() {
+        if (this.isAWhatsAppCloudChannel) {
+          this.fetchHealthData();
+        }
+      },
+      immediate: true,
+    },
   },
   mounted() {
     this.fetchInboxSettings();
     this.fetchPortals();
   },
   methods: {
+    async fetchHealthData() {
+      if (!this.isAWhatsAppCloudChannel || !this.inbox?.id) return;
+
+      try {
+        this.isLoadingHealth = true;
+        const response = await InboxHealthAPI.getHealthStatus(this.inbox.id);
+        this.healthData = response.data;
+      } catch {
+        this.healthData = null;
+      } finally {
+        this.isLoadingHealth = false;
+      }
+    },
+    async registerWebhook() {
+      if (!this.inbox?.id) return;
+
+      try {
+        this.isRegisteringWebhook = true;
+        await InboxHealthAPI.registerWebhook(this.inbox.id);
+        useAlert(this.$t('INBOX_MGMT.ACCOUNT_HEALTH.WEBHOOK.REGISTER_SUCCESS'));
+        await this.fetchHealthData();
+      } catch (error) {
+        useAlert(
+          error?.response?.data?.error ||
+            this.$t('INBOX_MGMT.ACCOUNT_HEALTH.WEBHOOK.REGISTER_ERROR')
+        );
+      } finally {
+        this.isRegisteringWebhook = false;
+      }
+    },
     fetchPortals() {
       this.$store.dispatch('portals/index');
     },

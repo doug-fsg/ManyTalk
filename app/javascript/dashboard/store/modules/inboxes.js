@@ -44,6 +44,7 @@ export const state = {
     isDeleting: false,
     isUpdatingIMAP: false,
     isUpdatingSMTP: false,
+    isSyncingTemplates: false,
   },
 };
 
@@ -264,6 +265,18 @@ export const actions = {
     } catch (error) {
       commit(types.default.SET_INBOXES_UI_FLAG, { isUpdatingSMTP: false });
       throwErrorMessage(error);
+    }
+  },
+  syncWhatsAppTemplates: async ({ commit }, inboxId) => {
+    commit(types.default.SET_INBOXES_UI_FLAG, { isSyncingTemplates: true });
+    try {
+      const response = await InboxesAPI.syncTemplates(inboxId);
+      commit(types.default.EDIT_INBOXES, response.data);
+    } catch (error) {
+      throwErrorMessage(error);
+      throw error;
+    } finally {
+      commit(types.default.SET_INBOXES_UI_FLAG, { isSyncingTemplates: false });
     }
   },
   delete: async ({ commit }, inboxId) => {

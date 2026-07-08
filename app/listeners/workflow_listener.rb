@@ -73,7 +73,11 @@ class WorkflowListener < BaseListener
 
   def ignore_message_created_event?(event)
     message = event.data[:message]
-    performed_by_workflow?(event) || message.activity? || workflow_message?(message)
+    performed_by_workflow?(event) || message.activity? || workflow_message?(message) || external_echo_message?(message)
+  end
+
+  def external_echo_message?(message)
+    message.content_attributes&.dig('external_echo') == true
   end
 
   def workflow_message?(message)

@@ -222,6 +222,11 @@ Rails.application.routes.draw do
             get :agent_bot, on: :member
             post :set_agent_bot, on: :member
             delete :avatar, on: :member
+            post :sync_templates, on: :member
+            get :health, on: :member
+            post :register_webhook, on: :member
+            post :register_phone, on: :member
+            resource :csat_template, only: [:show, :create], controller: 'inbox_csat_templates'
             resource :whatsapp_web_connection, only: [:create], controller: 'whatsapp_web_connections'
           end
           resources :inbox_members, only: [:create, :show], param: :inbox_id do

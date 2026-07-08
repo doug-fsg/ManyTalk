@@ -36,6 +36,18 @@ class Inboxes extends CacheEnabledApiClient {
       { responseType }
     );
   }
+
+  syncTemplates(inboxId) {
+    return axios.post(`${this.url}/${inboxId}/sync_templates`);
+  }
+
+  getCSATTemplateStatus(inboxId) {
+    return axios.get(`${this.url}/${inboxId}/csat_template`);
+  }
+
+  createCSATTemplate(inboxId, template) {
+    return axios.post(`${this.url}/${inboxId}/csat_template`, { template });
+  }
 }
 
 export default new Inboxes();

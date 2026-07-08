@@ -8,6 +8,7 @@ json.greeting_message resource.greeting_message
 json.working_hours_enabled resource.working_hours_enabled
 json.enable_email_collect resource.enable_email_collect
 json.csat_survey_enabled resource.csat_survey_enabled
+json.csat_config resource.csat_config
 json.enable_auto_assignment resource.enable_auto_assignment
 json.auto_assignment_config resource.auto_assignment_config
 json.out_of_office_message resource.out_of_office_message
@@ -106,8 +107,14 @@ end
 
 json.provider resource.channel.try(:provider)
 
-### WhatsApp Channel
-if resource.whatsapp?
-  json.message_templates resource.channel.try(:message_templates)
-  json.provider_config resource.channel.try(:provider_config) if Current.account_user&.administrator?
-end
+  ### WhatsApp Channel
+  if resource.whatsapp?
+    json.message_templates resource.channel.try(:message_templates)
+    json.whatsapp_business_account_id resource.channel.try(:provider_config).try(:[], 'business_account_id')
+    provider_config = resource.channel.try(:provider_config) || {}
+    json.reauthorization_required(
+      provider_config['source'] == 'embedded_signup' &&
+        resource.channel.reauthorization_required?
+    )
+    json.provider_config provider_config if Current.account_user&.administrator?
+  end
