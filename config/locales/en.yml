@@ -188,10 +188,17 @@ en:
         removed: "%{user_name} removed SLA policy %{sla_name}"
       muted: "%{user_name} has muted the conversation"
       unmuted: "%{user_name} has unmuted the conversation"
+      merged: "Conversation #%{mergee_display_id} was merged into this conversation by %{user_name}"
       csat:
         not_sent_due_to_messaging_window: "CSAT survey was not sent because the messaging window has expired."
       kanban:
         moved: "%{user_name} moved contact to %{stage_name}"
+    merge:
+      errors:
+        invalid: "Conversation merge is not allowed"
+        account_mismatch: "Conversations do not belong to this account"
+        inbox_mismatch: "Conversations must belong to the same inbox"
+        contact_mismatch: "Conversations must belong to the same contact"
     templates:
       greeting_message_body: "%{account_name} typically replies in a few hours."
       ways_to_reach_you_message_body: "Give the team a way to reach you."
@@ -215,6 +222,10 @@ en:
   contacts:
     online:
       delete: "%{contact_name} is Online, please try again later"
+    merge:
+      errors:
+        invalid: Unable to merge contacts
+        account_mismatch: Contact does not belong to the account
   integration_apps:
     dashboard_apps:
       name: "Dashboard Apps"

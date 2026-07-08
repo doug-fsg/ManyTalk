@@ -23,7 +23,9 @@ class ContactMergeAction
   def validate_contacts
     return if belongs_to_account?(@base_contact) && belongs_to_account?(@mergee_contact)
 
-    raise StandardError, 'contact does not belong to the account'
+    raise CustomExceptions::ContactMerge::InvalidMerge.new(
+      message: I18n.t('contacts.merge.errors.account_mismatch')
+    )
   end
 
   def belongs_to_account?(contact)

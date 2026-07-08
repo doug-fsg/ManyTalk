@@ -6,8 +6,26 @@ module AccessTokenAuthHelper
   }.freeze
 
   def ensure_access_token
-    token = request.headers[:api_access_token] || request.headers[:HTTP_API_ACCESS_TOKEN]
+    token = extract_access_token
     @access_token = AccessToken.find_by(token: token) if token.present?
+  end
+
+  def extract_access_token
+    api_access_token_from_headers || bearer_token_from_authorization_header
+  end
+
+  def api_access_token_from_headers
+    request.headers[:api_access_token].presence ||
+      request.headers['Api-Access-Token'].presence ||
+      request.headers['HTTP_API_ACCESS_TOKEN'].presence
+  end
+
+  def bearer_token_from_authorization_header
+    authorization = request.headers['Authorization'].presence || request.headers['HTTP_AUTHORIZATION'].presence
+    return if authorization.blank?
+
+    scheme, token = authorization.split(' ', 2)
+    token.presence if scheme.present? && scheme.casecmp('Bearer').zero?
   end
 
   def authenticate_access_token!

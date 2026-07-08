@@ -39,6 +39,8 @@
       }
     },
     "MERGE_CONTACT": "Mesclar contatos",
+    "MERGE_CONVERSATION": "Mesclar conversa",
+    "MERGE": "Mesclar",
     "CONTACT_ACTIONS": "Ações de contatos",
     "MUTE_CONTACT": "Bloquear Contato",
     "UNMUTE_CONTACT": "Desbloquear Contato",

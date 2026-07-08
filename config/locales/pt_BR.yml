@@ -167,10 +167,17 @@ pt_BR:
         removed: "%{user_name} removeu a política de VAR %{sla_name}"
       muted: "%{user_name} silenciou a conversa"
       unmuted: "%{user_name} reativou a conversa"
+      merged: "A conversa #%{mergee_display_id} foi mesclada nesta conversa por %{user_name}"
       csat:
         not_sent_due_to_messaging_window: "A pesquisa CSAT não foi enviada porque a janela de mensagens expirou."
       kanban:
         moved: "%{user_name} moveu o contato para %{stage_name}"
+    merge:
+      errors:
+        invalid: "Mesclagem de conversas não permitida"
+        account_mismatch: "As conversas não pertencem a esta conta"
+        inbox_mismatch: "As conversas devem pertencer ao mesmo inbox"
+        contact_mismatch: "As conversas devem pertencer ao mesmo contato"
     templates:
       greeting_message_body: "%{account_name} normalmente responde em algumas horas."
       ways_to_reach_you_message_body: "Informe uma forma para entrarmos em contato com você."
@@ -194,6 +201,10 @@ pt_BR:
   contacts:
     online:
       delete: "%{contact_name} está Online, por favor, tente novamente mais tarde"
+    merge:
+      errors:
+        invalid: Não foi possível mesclar os contatos
+        account_mismatch: O contato não pertence à conta
   integration_apps:
     dashboard_apps:
       name: "Apps da Dashboard"

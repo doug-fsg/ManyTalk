@@ -156,6 +156,18 @@ class ActionCableListener < BaseListener
     broadcast(account, tokens, CONTACT_MERGED, contact.push_event_data)
   end
 
+  def conversation_merged(event)
+    conversation, account = extract_conversation_and_account(event)
+    tokens = event.data[:tokens]
+
+    broadcast(
+      account,
+      tokens,
+      CONVERSATION_MERGED,
+      conversation.push_event_data.merge(mergee_display_id: event.data[:mergee_display_id])
+    )
+  end
+
   def contact_deleted(event)
     contact, account = extract_contact_and_account(event)
     tokens = user_tokens(account, account.agents)

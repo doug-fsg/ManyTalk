@@ -43,6 +43,7 @@ Rails.application.routes.draw do
         scope module: :accounts do
           namespace :actions do
             resource :contact_merge, only: [:create]
+            resource :conversation_merge, only: [:create]
           end
           resource :bulk_actions, only: [:create]
           resources :agents, only: [:index, :create, :update, :destroy] do
@@ -116,6 +117,7 @@ Rails.application.routes.draw do
               get :meta
               get :search
               post :filter
+              post :merge, to: 'actions/conversation_merges#create'
             end
             scope module: :conversations do
               resources :messages, only: [:index, :create, :destroy] do
@@ -177,6 +179,7 @@ Rails.application.routes.draw do
               post :filter
               post :import
               post :export
+              post :merge, to: 'actions/contact_merges#create'
             end
             member do
               get :contactable_inboxes

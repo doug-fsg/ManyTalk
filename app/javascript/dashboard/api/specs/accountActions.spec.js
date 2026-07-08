@@ -5,6 +5,7 @@ describe('#ContactsAPI', () => {
   it('creates correct instance', () => {
     expect(accountActionsAPI).toBeInstanceOf(ApiClient);
     expect(accountActionsAPI).toHaveProperty('merge');
+    expect(accountActionsAPI).toHaveProperty('mergeConversation');
   });
 
   describe('API calls', () => {
@@ -31,6 +32,17 @@ describe('#ContactsAPI', () => {
         {
           base_contact_id: 1,
           mergee_contact_id: 2,
+        }
+      );
+    });
+
+    it('#mergeConversation', () => {
+      accountActionsAPI.mergeConversation(10, 20);
+      expect(axiosMock.post).toHaveBeenCalledWith(
+        '/api/v1/actions/conversation_merge',
+        {
+          base_conversation_id: 10,
+          mergee_conversation_id: 20,
         }
       );
     });

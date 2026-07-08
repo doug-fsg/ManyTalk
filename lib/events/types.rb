@@ -29,6 +29,7 @@ module Events::Types
   CONVERSATION_TYPING_ON = 'conversation.typing_on'
   CONVERSATION_TYPING_OFF = 'conversation.typing_off'
   CONVERSATION_MENTIONED = 'conversation.mentioned'
+  CONVERSATION_MERGED = 'conversation.merged'
 
   # message events
   MESSAGE_CREATED = 'message.created'

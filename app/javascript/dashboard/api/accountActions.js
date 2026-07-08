@@ -8,9 +8,16 @@ class AccountActions extends ApiClient {
   }
 
   merge(parentId, childId) {
-    return axios.post(`${this.url}/contact_merge`, {
+    return axios.post(`${this.baseUrl()}/contacts/merge`, {
       base_contact_id: parentId,
       mergee_contact_id: childId,
+    });
+  }
+
+  mergeConversation(baseConversationId, mergeeConversationId) {
+    return axios.post(`${this.baseUrl()}/conversations/merge`, {
+      base_conversation_id: baseConversationId,
+      mergee_conversation_id: mergeeConversationId,
     });
   }
 }

@@ -68,6 +68,7 @@ module Events
       Events::Types::CONVERSATION_TYPING_ON => :conversation,
       Events::Types::CONVERSATION_TYPING_OFF => :conversation,
       Events::Types::CONVERSATION_MENTIONED => :conversation,
+      Events::Types::CONVERSATION_MERGED => :conversation,
       Events::Types::CONTACT_CREATED => :contact,
       Events::Types::CONTACT_UPDATED => :contact,
       Events::Types::CONTACT_KANBAN_STAGE_CHANGED => :contact,

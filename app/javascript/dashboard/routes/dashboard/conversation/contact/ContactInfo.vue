@@ -95,7 +95,7 @@
           <social-icons :social-profiles="socialProfiles" />
         </div>
       </div>
-      <div class="flex items-center w-full mt-0.5 gap-2">
+      <div class="flex items-center w-full mt-0.5 gap-2 overflow-visible">
         <woot-button
           v-tooltip="$t('CONTACT_PANEL.NEW_MESSAGE')"
           title="$t('CONTACT_PANEL.NEW_MESSAGE')"
@@ -111,15 +111,11 @@
           size="small"
           @click="toggleEditModal"
         />
-        <woot-button
-          v-tooltip="$t('CONTACT_PANEL.MERGE_CONTACT')"
-          title="$t('CONTACT_PANEL.MERGE_CONTACT')"
-          icon="merge"
-          variant="smooth"
-          size="small"
-          color-scheme="secondary"
+        <merge-actions-dropdown
           :disabled="uiFlags.isMerging"
-          @click="openMergeModal"
+          :can-merge-conversation="Boolean(currentChat.id)"
+          @merge-contact="openMergeModal"
+          @merge-conversation="openConversationMergeModal"
         />
         <woot-button
           v-if="isAdmin"
@@ -151,6 +147,12 @@
         :show="showMergeModal"
         @close="toggleMergeModal"
       />
+      <conversation-merge-modal
+        v-if="showConversationMergeModal && currentChat.id"
+        :show="showConversationMergeModal"
+        :primary-conversation="currentChat"
+        @close="toggleConversationMergeModal"
+      />
     </div>
     <woot-delete-modal
       v-if="showDeleteModal"
@@ -176,6 +178,8 @@ import SocialIcons from './SocialIcons.vue';
 import EditContact from './EditContact.vue';
 import NewConversation from './NewConversation.vue';
 import ContactMergeModal from 'dashboard/modules/contact/ContactMergeModal.vue';
+import ConversationMergeModal from 'dashboard/modules/conversation/ConversationMergeModal.vue';
+import MergeActionsDropdown from './MergeActionsDropdown.vue';
 import { getCountryFlag } from 'dashboard/helper/flag';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import {
@@ -192,6 +196,8 @@ export default {
     SocialIcons,
     NewConversation,
     ContactMergeModal,
+    ConversationMergeModal,
+    MergeActionsDropdown,
   },
   props: {
     contact: {
@@ -226,11 +232,15 @@ export default {
       showEditModal: false,
       showConversationModal: false,
       showMergeModal: false,
+      showConversationMergeModal: false,
       showDeleteModal: false,
     };
   },
   computed: {
-    ...mapGetters({ uiFlags: 'contacts/getUIFlags' }),
+    ...mapGetters({
+      uiFlags: 'contacts/getUIFlags',
+      currentChat: 'getSelectedChat',
+    }),
     contactProfileLink() {
       return `/app/accounts/${this.$route.params.accountId}/contacts/${this.contact.id}`;
     },
@@ -334,6 +344,12 @@ export default {
     },
     openMergeModal() {
       this.toggleMergeModal();
+    },
+    toggleConversationMergeModal() {
+      this.showConversationMergeModal = !this.showConversationMergeModal;
+    },
+    openConversationMergeModal() {
+      this.toggleConversationMergeModal();
     },
   },
 };

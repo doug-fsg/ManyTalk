@@ -38,6 +38,7 @@
     "REMOVE_SELECTION": "Remove Selection",
     "DOWNLOAD": "Download",
     "UNKNOWN_FILE_TYPE": "Unknown File",
+    "MERGE_CONVERSATION": "Merge conversation",
     "SAVE_CONTACT": "Save",
     "UPLOADING_ATTACHMENTS": "Uploading attachments...",
     "REPLIED_TO_STORY": "Replied to your story",
@@ -336,5 +337,34 @@
     "ORIGINAL_CONTENT": "Original Content",
     "TRANSLATED_CONTENT": "Translated Content",
     "NO_TRANSLATIONS_AVAILABLE": "No translations are available for this content"
+  },
+  "MERGE_CONVERSATIONS": {
+    "TITLE": "Merge conversations",
+    "DESCRIPTION": "Merge conversations to combine two threads into one, including all messages and labels. In case of conflict, the destination conversation attributes will take precedence.",
+    "PRIMARY": {
+      "TITLE": "Current conversation",
+      "HELP_LABEL": "To be deleted"
+    },
+    "PARENT": {
+      "TITLE": "Destination conversation",
+      "PLACEHOLDER": "Search conversations",
+      "HELP_LABEL": "To be kept"
+    },
+    "SUMMARY": {
+      "TITLE": "Summary",
+      "DELETE_WARNING": "Conversation <strong>#%{primaryConversationId}</strong> will be deleted.",
+      "ATTRIBUTE_WARNING": "Messages and labels from <strong>#%{primaryConversationId}</strong> will be moved to <strong>#%{parentConversationId}</strong>.",
+      "LABELS_WARNING": "All labels from both conversations will be combined on the destination conversation."
+    },
+    "EMPTY_STATE": "There are no other conversations for this contact in this inbox.",
+    "FORM": {
+      "SUBMIT": "Merge conversations",
+      "CANCEL": "Cancel",
+      "PARENT_CONVERSATION": {
+        "ERROR": "Select a destination conversation"
+      },
+      "SUCCESS_MESSAGE": "Conversation merged successfully",
+      "ERROR_MESSAGE": "Could not merge conversations, try again!"
+    }
   }
 }

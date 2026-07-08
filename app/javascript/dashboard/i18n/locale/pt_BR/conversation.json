@@ -38,6 +38,7 @@
     "REMOVE_SELECTION": "Remover Seleção",
     "DOWNLOAD": "Baixar",
     "UNKNOWN_FILE_TYPE": "Arquivo Desconhecido",
+    "MERGE_CONVERSATION": "Mesclar conversa",
     "SAVE_CONTACT": "Salvar",
     "UPLOADING_ATTACHMENTS": "Enviando anexos...",
     "REPLIED_TO_STORY": "Respondido ao seu story",
@@ -337,5 +338,34 @@
     "ORIGINAL_CONTENT": "Conteúdo original",
     "TRANSLATED_CONTENT": "Conteúdo Traduzido",
     "NO_TRANSLATIONS_AVAILABLE": "Nenhuma tradução está disponível para este conteúdo"
+  },
+  "MERGE_CONVERSATIONS": {
+    "TITLE": "Mesclar conversas",
+    "DESCRIPTION": "Mescle conversas para combinar dois threads em um, incluindo todas as mensagens e labels. Em caso de conflito, os atributos da conversa destino terão prioridade.",
+    "PRIMARY": {
+      "TITLE": "Conversa atual",
+      "HELP_LABEL": "Será excluída"
+    },
+    "PARENT": {
+      "TITLE": "Conversa destino",
+      "PLACEHOLDER": "Buscar conversas",
+      "HELP_LABEL": "Será mantida"
+    },
+    "SUMMARY": {
+      "TITLE": "Resumo",
+      "DELETE_WARNING": "A conversa <strong>#%{primaryConversationId}</strong> será excluída.",
+      "ATTRIBUTE_WARNING": "Mensagens e labels da conversa <strong>#%{primaryConversationId}</strong> serão movidas para <strong>#%{parentConversationId}</strong>.",
+      "LABELS_WARNING": "Todas as etiquetas das duas conversas serão combinadas na conversa destino."
+    },
+    "EMPTY_STATE": "Não há outras conversas deste contato neste inbox.",
+    "FORM": {
+      "SUBMIT": "Mesclar conversas",
+      "CANCEL": "Cancelar",
+      "PARENT_CONVERSATION": {
+        "ERROR": "Selecione uma conversa destino"
+      },
+      "SUCCESS_MESSAGE": "Conversa mesclada com sucesso",
+      "ERROR_MESSAGE": "Não foi possível mesclar as conversas, tente novamente!"
+    }
   }
 }

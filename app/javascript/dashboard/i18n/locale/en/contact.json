@@ -39,6 +39,8 @@
       }
     },
     "MERGE_CONTACT": "Merge contact",
+    "MERGE_CONVERSATION": "Merge conversation",
+    "MERGE": "Merge",
     "CONTACT_ACTIONS": "Contact actions",
     "MUTE_CONTACT": "Block Contact",
     "UNMUTE_CONTACT": "Unblock Contact",

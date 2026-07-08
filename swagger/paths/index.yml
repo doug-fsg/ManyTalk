@@ -264,6 +264,11 @@
     - $ref: '#/parameters/account_id'
   post:
     $ref: ./application/contacts/filter.yml
+/api/v1/accounts/{account_id}/contacts/merge:
+  parameters:
+    - $ref: '#/parameters/account_id'
+  post:
+    $ref: ./application/contacts/merge.yml
 /api/v1/accounts/{account_id}/contacts/{id}/contact_inboxes:
   $ref: ./application/contact_inboxes/create.yml
 /api/v1/accounts/{account_id}/contacts/{id}/contactable_inboxes:
@@ -333,6 +338,11 @@
     - $ref: '#/parameters/account_id'
   post:
     $ref: ./application/conversation/filter.yml
+/api/v1/accounts/{account_id}/conversations/merge:
+  parameters:
+    - $ref: '#/parameters/account_id'
+  post:
+    $ref: ./application/conversations/merge.yml
 /api/v1/accounts/{account_id}/conversations/{conversation_id}:
   parameters:
     - $ref: '#/parameters/account_id'

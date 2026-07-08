@@ -27,6 +27,28 @@ RSpec.describe 'API Base', type: :request do
         expect(json_response['email']).to eq(user.email)
       end
     end
+
+    context 'when it is a valid Api-Access-Token header' do
+      it 'returns current user information' do
+        get '/api/v1/profile',
+            headers: { 'Api-Access-Token' => user.access_token.token },
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body['id']).to eq(user.id)
+      end
+    end
+
+    context 'when it is a valid Authorization Bearer token' do
+      it 'returns current user information' do
+        get '/api/v1/profile',
+            headers: { Authorization: "Bearer #{user.access_token.token}" },
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body['id']).to eq(user.id)
+      end
+    end
   end
 
   describe 'request with api_access_token for a super admin' do

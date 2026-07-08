@@ -2,13 +2,14 @@ class Api::V1::Accounts::Actions::ContactMergesController < Api::V1::Accounts::B
   before_action :set_base_contact, only: [:create]
   before_action :set_mergee_contact, only: [:create]
 
+  rescue_from CustomExceptions::ContactMerge::InvalidMerge, with: :render_invalid_merge_error
+
   def create
-    contact_merge_action = ContactMergeAction.new(
+    @base_contact = ContactMergeAction.new(
       account: Current.account,
       base_contact: @base_contact,
       mergee_contact: @mergee_contact
-    )
-    contact_merge_action.perform
+    ).perform
   end
 
   private
@@ -23,5 +24,9 @@ class Api::V1::Accounts::Actions::ContactMergesController < Api::V1::Accounts::B
 
   def contacts
     @contacts ||= Current.account.contacts
+  end
+
+  def render_invalid_merge_error(exception)
+    render json: { error: exception.message }, status: :unprocessable_entity
   end
 end

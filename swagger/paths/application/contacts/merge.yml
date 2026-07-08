@@ -1,0 +1,35 @@
+tags:
+  - Contacts
+operationId: contactMerge
+description: Merge two contacts into one. All conversations, messages and attributes from the mergee contact are moved to the base contact.
+summary: Merge Contacts
+security:
+  - userApiKey: []
+parameters:
+  - $ref: '#/parameters/account_id'
+  - name: data
+    in: body
+    required: true
+    schema:
+      type: object
+      required:
+        - base_contact_id
+        - mergee_contact_id
+      properties:
+        base_contact_id:
+          type: integer
+          description: ID of the contact that will remain after the merge
+        mergee_contact_id:
+          type: integer
+          description: ID of the contact that will be merged and removed
+responses:
+  200:
+    description: Success
+    schema:
+      $ref: '#/definitions/extended_contact'
+  401:
+    description: Unauthorized
+  422:
+    description: Unprocessable Entity
+    schema:
+      $ref: '#/definitions/request_error'

@@ -212,6 +212,16 @@ export const mutations = {
     _state.allConversations.push(conversation);
   },
 
+  [types.REMOVE_CONVERSATION](_state, { conversationId }) {
+    _state.allConversations = _state.allConversations.filter(
+      conversation => conversation.id !== conversationId
+    );
+
+    if (_state.selectedChatId === conversationId) {
+      _state.selectedChatId = null;
+    }
+  },
+
   [types.UPDATE_CONVERSATION](_state, conversation) {
     const { allConversations } = _state;
     const currentConversationIndex = allConversations.findIndex(

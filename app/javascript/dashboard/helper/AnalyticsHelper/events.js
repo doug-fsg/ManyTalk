@@ -7,6 +7,7 @@ export const CONVERSATION_EVENTS = Object.freeze({
   INSERTED_A_VARIABLE: 'Inserted a variable',
   USED_MENTIONS: 'Used mentions',
   SEARCH_CONVERSATION: 'Searched conversations',
+  MERGED_CONVERSATIONS: 'Used merge conversation option',
   APPLY_FILTER: 'Applied filters in the conversation list',
   CHANGE_PRIORITY: 'Assigned priority to a conversation',
   INSERT_ARTICLE_LINK: 'Inserted article into reply via article search',
