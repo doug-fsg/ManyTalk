@@ -22,9 +22,34 @@ watch(
 
 const NATIVE_ICONS = { name: 'person', email: 'mail', phone_number: 'call' };
 
+const DISPLAY_TYPE_ICONS = {
+  text: 'document',
+  textarea: 'text-description',
+  number: 'number-symbol',
+  currency: 'tag',
+  percent: 'number-symbol',
+  link: 'link',
+  date: 'calendar',
+  list: 'list',
+  checkbox: 'checkmark-circle',
+  file: 'attach',
+};
+
+const TYPE_I18N_KEYS = {
+  text: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.TEXT',
+  textarea: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.TEXTAREA',
+  number: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.NUMBER',
+  currency: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.CURRENCY',
+  percent: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.PERCENT',
+  link: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.LINK',
+  date: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.DATE',
+  list: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.LIST',
+  checkbox: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.CHECKBOX',
+};
+
 const typeIcon = computed(() => {
   if (props.field.type === 'native') return NATIVE_ICONS[props.field.field] || 'document';
-  return 'tag';
+  return DISPLAY_TYPE_ICONS[props.field.attribute_display_type] || 'tag';
 });
 
 const typeLabel = computed(() => {
@@ -36,7 +61,8 @@ const typeLabel = computed(() => {
     };
     return labels[props.field.field] || t('ACCOUNT_FORM.FIELD_CARD.NATIVE_FIELD');
   }
-  return t('ACCOUNT_FORM.FIELD_CARD.CUSTOM_ATTRIBUTE');
+  const key = TYPE_I18N_KEYS[props.field.attribute_display_type];
+  return key ? t(key) : t('ACCOUNT_FORM.FIELD_CARD.CUSTOM_ATTRIBUTE');
 });
 
 const requiredToggleIcon = computed(() =>

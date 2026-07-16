@@ -144,31 +144,48 @@
                   <!-- Filtro de status -->
                   <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
-                      Status
+                      {{ $t('ACTIVITIES.FILTERS.STATUS') }}
                     </label>
                     <select
                       v-model="filters.status"
                       class="w-full px-2 py-1 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 transition-colors duration-150 ease-smooth"
                     >
-                      <option value="all">Todos</option>
-                      <option value="pending">Pendentes</option>
-                      <option value="completed">Concluídas</option>
-                      <option value="overdue">Atrasadas</option>
+                      <option value="all">{{ $t('ACTIVITIES.FILTERS.ALL') }}</option>
+                      <option value="pending">{{ $t('ACTIVITIES.STATUS.PENDING') }}</option>
+                      <option value="completed">{{ $t('ACTIVITIES.STATUS.COMPLETED') }}</option>
+                      <option value="overdue">{{ $t('ACTIVITIES.FILTERS.OVERDUE') }}</option>
+                      <option value="failed">{{ $t('ACTIVITIES.STATUS.FAILED') }}</option>
                     </select>
                   </div>
 
                   <!-- Filtro de tipo -->
                   <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
-                      Tipo
+                      {{ $t('ACTIVITIES.FILTERS.TYPE') }}
                     </label>
                     <select
                       v-model="filters.type"
                       class="w-full px-2 py-1 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 transition-colors duration-150 ease-smooth"
                     >
-                      <option value="all">Todos</option>
-                      <option value="task">Tarefas</option>
-                      <option value="scheduled_message">Mensagens</option>
+                      <option value="all">{{ $t('ACTIVITIES.FILTERS.ALL') }}</option>
+                      <option value="task">{{ $t('ACTIVITIES.TYPE.TASK') }}</option>
+                      <option value="scheduled_message">{{ $t('ACTIVITIES.TYPE.SCHEDULED_MESSAGE') }}</option>
+                    </select>
+                  </div>
+
+                  <!-- Filtro de responsável -->
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
+                      {{ $t('ACTIVITIES.FORM.ASSIGNEE') }}
+                    </label>
+                    <select
+                      v-model="filters.assigneeId"
+                      class="w-full px-2 py-1 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 transition-colors duration-150 ease-smooth"
+                    >
+                      <option value="all">{{ $t('ACTIVITIES.FILTERS.ALL') }}</option>
+                      <option v-for="agent in agents" :key="agent.id" :value="agent.id">
+                        {{ agent.name }}
+                      </option>
                     </select>
                   </div>
 
@@ -229,7 +246,10 @@
       :style="showCreateButton ? 'max-height: calc(100vh - 120px)' : ''"
     >
       <!-- Vista Mensal -->
-      <div v-if="currentView === 'month'" class="calendar-month-view">
+      <div v-if="currentView === 'month'" class="calendar-month-view relative">
+        <div v-if="loading" class="absolute inset-0 z-10 flex items-center justify-center bg-white/60 dark:bg-slate-900/60">
+          <spinner />
+        </div>
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-soft border border-slate-200 dark:border-slate-700 overflow-hidden">
           <!-- Cabeçalho dos dias da semana -->
           <div class="calendar-weekdays grid grid-cols-7 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
@@ -293,7 +313,7 @@
                     'activity-card-mini px-2 py-1 rounded text-xs cursor-pointer transition-all duration-150 group relative',
                     getActivityClass(activity)
                   ]"
-                  @click.stop="openActivityModal(activity)"
+                  @click.stop="openActivityDetail(activity)"
                   @mouseenter="showTooltip(activity, $event)"
                   @mouseleave="hideTooltip"
                 >
@@ -359,7 +379,7 @@
                   'activity-card-list p-4 cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50',
                   getActivityBorderClass(activity)
                 ]"
-                @click="openActivityModal(activity)"
+                @click="openActivityDetail(activity)"
               >
                 <div class="flex items-start gap-3">
                   <!-- Ícone de tipo -->
@@ -419,16 +439,17 @@
                       v-if="activity.status === 'pending'"
                       class="p-1.5 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400 transition-colors"
                       @click.stop="completeActivity(activity.id)"
-                      v-tooltip="'Concluir'"
+                      v-tooltip="$t('ACTIVITIES.ACTIONS.COMPLETE')"
                     >
                       <fluent-icon icon="checkmark" size="16" />
                     </button>
                     <button
-                      class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors"
-                      @click.stop="openEditModal(activity)"
-                      v-tooltip="'Editar'"
+                      v-if="activity.status === 'pending' || activity.status === 'failed'"
+                      class="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
+                      @click.stop="deleteActivity(activity.id)"
+                      v-tooltip="$t('ACTIVITIES.ACTIONS.DELETE')"
                     >
-                      <fluent-icon icon="edit" size="16" />
+                      <fluent-icon icon="delete" size="16" />
                     </button>
                   </div>
                 </div>
@@ -439,19 +460,86 @@
       </div>
     </div>
 
-    <!-- Modal de criação/edição de atividade -->
+    <!-- Modal de visualização -->
     <woot-modal
-      v-if="showActivityModal"
-      :show.sync="showActivityModal"
-      :on-close="closeActivityModal"
+      v-if="showDetailModal && selectedActivity"
+      :show.sync="showDetailModal"
+      :on-close="closeDetailModal"
+    >
+      <activity-detail-modal
+        :activity="selectedActivity"
+        :account-id="$route.params.accountId"
+        @edit="openEditFromDetail"
+        @delete="deleteActivity"
+        @complete="completeActivity"
+      />
+    </woot-modal>
+
+    <!-- Modal de criação/edição -->
+    <woot-modal
+      v-if="showFormModal"
+      :show.sync="showFormModal"
+      :on-close="closeFormModal"
     >
       <activity-form-modal
         :activity="selectedActivity"
         :contact-id="selectedActivity && selectedActivity.contact_id ? selectedActivity.contact_id : null"
         :pipeline-id="pipelineId"
         @submit="handleActivitySubmit"
-        @cancel="closeActivityModal"
+        @cancel="closeFormModal"
       />
+    </woot-modal>
+
+    <!-- Modal de atividades do dia -->
+    <woot-modal
+      v-if="showDayModal"
+      :show.sync="showDayModal"
+      :on-close="closeDayModal"
+    >
+      <div class="p-6">
+        <h3 class="text-base font-semibold text-slate-900 dark:text-white mb-4">
+          {{ selectedDay ? formatDate(selectedDay.date) : '' }}
+        </h3>
+        <div v-if="!selectedDayActivities.length" class="text-sm text-slate-500 dark:text-slate-400">
+          {{ $t('ACTIVITIES.EMPTY') }}
+        </div>
+        <div v-else class="space-y-2 max-h-96 overflow-y-auto">
+          <div
+            v-for="activity in selectedDayActivities"
+            :key="activity.id"
+            class="p-3 rounded-lg border border-slate-200 dark:border-slate-700"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                class="flex-1 min-w-0 text-left"
+                @click="openActivityDetail(activity); closeDayModal()"
+              >
+                <span class="text-sm font-medium text-slate-900 dark:text-white">{{ activity.title }}</span>
+                <span class="block text-xs text-slate-500">{{ formatTime(activity.scheduled_at) }}</span>
+              </button>
+              <div class="flex items-center gap-1 flex-shrink-0">
+                <button
+                  v-if="activity.status === 'pending'"
+                  type="button"
+                  class="p-1.5 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400"
+                  @click.stop="completeActivity(activity.id)"
+                >
+                  <fluent-icon icon="checkmark" size="14" />
+                </button>
+                <button
+                  v-if="activity.status === 'pending' || activity.status === 'failed'"
+                  type="button"
+                  class="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400"
+                  @click.stop="deleteActivity(activity.id)"
+                >
+                  <fluent-icon icon="delete" size="14" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </woot-modal>
 
     <!-- Tooltip informativo -->
@@ -529,7 +617,12 @@
             <!-- Pipeline (se disponível) -->
             <div v-if="tooltipActivity.pipeline" class="flex items-center gap-2 text-xs">
               <fluent-icon icon="kanban" size="12" class="text-slate-400 dark:text-slate-500 flex-shrink-0" />
-              <span class="text-slate-700 dark:text-slate-300 truncate">{{ tooltipActivity.pipeline.name }}</span>
+              <span class="text-slate-700 dark:text-slate-300 truncate">
+                {{ tooltipActivity.pipeline.name }}
+                <template v-if="tooltipActivity.pipeline.stage_id">
+                  · {{ tooltipActivity.pipeline.stage_id }}
+                </template>
+              </span>
             </div>
 
             <!-- Tipo -->
@@ -557,6 +650,9 @@
 import FluentIcon from 'shared/components/FluentIcon/DashboardIcon.vue';
 import Spinner from 'shared/components/Spinner.vue';
 import ActivityFormModal from './ActivityFormModal.vue';
+import ActivityDetailModal from '../../activities/components/ActivityDetailModal.vue';
+import { useAlert } from 'dashboard/composables';
+import { mapGetters } from 'vuex';
 import {
   startOfMonth,
   endOfMonth,
@@ -582,6 +678,7 @@ export default {
     FluentIcon,
     Spinner,
     ActivityFormModal,
+    ActivityDetailModal,
   },
   props: {
     pipelineId: {
@@ -613,20 +710,28 @@ export default {
       filters: {
         status: 'all',
         type: 'all',
+        assigneeId: 'all',
       },
       searchQuery: '',
       searchTerm: '',
       loading: false,
-      showActivityModal: false,
+      showFormModal: false,
+      showDetailModal: false,
       selectedActivity: null,
       showFiltersDropdown: false,
       showQuickSearch: false,
       tooltipActivity: null,
       tooltipPosition: { x: 0, y: 0 },
       tooltipAbove: true,
+      showDayModal: false,
+      selectedDay: null,
     };
   },
   computed: {
+    ...mapGetters({
+      agents: 'agents/getAgents',
+      currentUser: 'getCurrentUser',
+    }),
     activities() {
       if (!this.$store.state.activities) return [];
       return this.$store.state.activities.records || [];
@@ -746,28 +851,64 @@ export default {
       return groups;
     },
     hasActiveFilters() {
-      return this.filters.status !== 'all' || this.filters.type !== 'all' || this.searchQuery !== '';
+      return this.filters.status !== 'all' || this.filters.type !== 'all' || this.filters.assigneeId !== 'all' || this.searchQuery !== '';
     },
     activeFiltersCount() {
       let count = 0;
       if (this.filters.status !== 'all') count++;
       if (this.filters.type !== 'all') count++;
+      if (this.filters.assigneeId !== 'all') count++;
       if (this.searchQuery !== '') count++;
       return count;
     },
+    selectedDayActivities() {
+      if (!this.selectedDay?.date) return [];
+      const date = new Date(this.selectedDay.date);
+      return this.getActivitiesForDay(date);
+    },
+  },
+  watch: {
+    currentDate() {
+      this.loadActivities();
+    },
+    'filters.status'() {
+      this.loadActivities();
+    },
+    'filters.type'() {
+      this.loadActivities();
+    },
+    'filters.assigneeId'() {
+      this.loadActivities();
+    },
   },
   mounted() {
+    this.$store.dispatch('agents/get');
     this.loadActivities();
   },
   methods: {
+    buildLoadParams() {
+      const monthStart = startOfMonth(this.currentDate);
+      const monthEnd = endOfMonth(this.currentDate);
+      const rangeStart = startOfWeek(monthStart);
+      const rangeEnd = endOfWeek(monthEnd);
+      const params = {
+        scheduled_from: rangeStart.toISOString(),
+        scheduled_to: rangeEnd.toISOString(),
+      };
+      if (this.filters.status !== 'all') params.status = this.filters.status;
+      if (this.filters.type !== 'all') params.activity_type = this.filters.type;
+      if (this.filters.assigneeId !== 'all') params.assignee_id = this.filters.assigneeId;
+      return params;
+    },
     async loadActivities() {
       this.loading = true;
       try {
         await this.$store.dispatch('activities/get', {
-          accountId: this.$route.params.accountId,
-          params: {},
+          params: this.buildLoadParams(),
           merge: false,
         });
+      } catch (error) {
+        useAlert(this.$t('ACTIVITIES.ERRORS.LOAD_FAILED'));
       } finally {
         this.loading = false;
       }
@@ -791,44 +932,68 @@ export default {
       this.currentDate = new Date();
     },
     selectDay(day) {
-      // Implementar: abrir modal com atividades do dia
-      console.log('Selected day:', day);
+      this.selectedDay = day;
+      this.showDayModal = true;
+    },
+    closeDayModal() {
+      this.showDayModal = false;
+      this.selectedDay = null;
     },
     openCreateModal() {
       this.selectedActivity = null;
-      this.showActivityModal = true;
+      this.showFormModal = true;
     },
-    openEditModal(activity) {
+    openActivityDetail(activity) {
       this.selectedActivity = activity;
-      this.showActivityModal = true;
+      this.showDetailModal = true;
     },
-    openActivityModal(activity) {
+    openEditFromDetail(activity) {
       this.selectedActivity = activity;
-      this.showActivityModal = true;
+      this.showDetailModal = false;
+      this.showFormModal = true;
     },
-    closeActivityModal() {
-      this.showActivityModal = false;
+    closeDetailModal() {
+      this.showDetailModal = false;
+      this.selectedActivity = null;
+    },
+    closeFormModal() {
+      this.showFormModal = false;
       this.selectedActivity = null;
     },
     async handleActivitySubmit({ activity, inbox_id }) {
-      const action = this.selectedActivity ? 'update' : 'create';
-      await this.$store.dispatch(`activities/${action}`, {
-        accountId: this.$route.params.accountId,
-        activityId: this.selectedActivity?.id,
-        params: {
-          ...activity,
-          inbox_id,
-        },
-      });
-      this.closeActivityModal();
-      await this.loadActivities();
+      try {
+        const action = this.selectedActivity ? 'update' : 'create';
+        await this.$store.dispatch(`activities/${action}`, {
+          activityId: this.selectedActivity?.id,
+          params: { ...activity, inbox_id },
+        });
+        this.closeFormModal();
+        await this.loadActivities();
+        useAlert(this.$t('ACTIVITIES.SUCCESS.SAVED'));
+      } catch (error) {
+        useAlert(this.$t('ACTIVITIES.ERRORS.SAVE_FAILED'));
+      }
     },
     async completeActivity(activityId) {
-      await this.$store.dispatch('activities/complete', {
-        accountId: this.$route.params.accountId,
-        activityId,
-      });
-      await this.loadActivities();
+      try {
+        await this.$store.dispatch('activities/complete', { activityId });
+        this.closeDetailModal();
+        await this.loadActivities();
+      } catch (error) {
+        useAlert(this.$t('ACTIVITIES.ERRORS.COMPLETE_FAILED'));
+      }
+    },
+    async deleteActivity(activityId) {
+      try {
+        await this.$store.dispatch('activities/destroy', { activityId });
+        this.closeDetailModal();
+        this.closeFormModal();
+        this.closeDayModal();
+        await this.loadActivities();
+        useAlert(this.$t('ACTIVITIES.SUCCESS.DELETED'));
+      } catch (error) {
+        useAlert(this.$t('ACTIVITIES.ERRORS.DELETE_FAILED'));
+      }
     },
     debouncedSearch() {
       // Debounce simples
@@ -855,6 +1020,9 @@ export default {
       }
       if (activity.status === 'pending') {
         return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-l-2 border-amber-500';
+      }
+      if (activity.status === 'failed') {
+        return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-l-2 border-red-600';
       }
       return 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border-l-2 border-slate-400';
     },
@@ -930,18 +1098,16 @@ export default {
       return 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300';
     },
     getStatusLabel(status) {
-      const labels = {
-        pending: 'Pendente',
-        completed: 'Concluída',
-        cancelled: 'Cancelada',
-      };
-      return labels[status] || status;
+      const key = `ACTIVITIES.STATUS.${status.toUpperCase()}`;
+      return this.$t(key) !== key ? this.$t(key) : status;
     },
     clearFilters() {
       this.filters.status = 'all';
       this.filters.type = 'all';
+      this.filters.assigneeId = 'all';
       this.searchQuery = '';
       this.searchTerm = '';
+      this.loadActivities();
     },
     closeFiltersDropdown() {
       this.showFiltersDropdown = false;

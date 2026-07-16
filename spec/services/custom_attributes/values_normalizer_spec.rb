@@ -56,5 +56,24 @@ RSpec.describe CustomAttributes::ValuesNormalizer do
         ]
       )
     end
+
+    it 'respects stage_order when mapping nested stages hash' do
+      values = {
+        'stages' => {
+          'Estágio 1' => { 'color' => '#aaa' },
+          'Estágio 2' => { 'color' => '#bbb' },
+          'Estágio 3' => { 'color' => '#ccc' }
+        },
+        'stage_order' => ['Estágio 3', 'Estágio 1', 'Estágio 2']
+      }
+
+      expect(described_class.for_api(values)).to eq(
+        [
+          { name: 'Estágio 3', color: '#ccc' },
+          { name: 'Estágio 1', color: '#aaa' },
+          { name: 'Estágio 2', color: '#bbb' }
+        ]
+      )
+    end
   end
 end

@@ -10,7 +10,7 @@
         size="small"
         variant="smooth"
         color-scheme="primary"
-        @click="showForm = true"
+        @click="openCreateForm"
       >
         {{ $t('ACTIVITIES.CREATE') }}
       </woot-button>
@@ -30,7 +30,8 @@
       <div
         v-for="activity in activities"
         :key="activity.id"
-        class="p-3 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 transition-all duration-200"
+        class="p-3 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 transition-all duration-200 cursor-pointer hover:border-slate-300 dark:hover:border-slate-500"
+        @click="openActivityDetail(activity)"
       >
         <div class="flex items-start justify-between gap-2">
           <div class="flex-1 min-w-0">
@@ -93,7 +94,7 @@
               </div>
             </div>
           </div>
-          <div class="flex items-center gap-1 flex-shrink-0">
+          <div class="flex items-center gap-1 flex-shrink-0" @click.stop>
             <woot-button
               v-if="activity.status === 'pending'"
               size="tiny"
@@ -102,16 +103,25 @@
               icon="checkmark"
               @click="handleComplete(activity.id)"
             />
-            <woot-button
-              size="tiny"
-              variant="clear"
-              icon="edit"
-              @click="handleEdit(activity)"
-            />
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Modal de visualização -->
+    <woot-modal
+      v-if="showDetail && selectedActivity"
+      :show.sync="showDetail"
+      :on-close="closeDetail"
+    >
+      <activity-detail-modal
+        :activity="selectedActivity"
+        :account-id="$route.params.accountId"
+        @edit="openEditFromDetail"
+        @delete="handleDelete"
+        @complete="handleComplete"
+      />
+    </woot-modal>
 
     <!-- Modal de formulário -->
     <woot-modal
@@ -133,14 +143,17 @@
 <script>
 import FluentIcon from 'shared/components/FluentIcon/DashboardIcon.vue';
 import Spinner from 'shared/components/Spinner.vue';
+import { useAlert } from 'dashboard/composables';
 import { formatUnixDate } from 'shared/helpers/DateHelper';
 import ActivityFormModal from './ActivityFormModal.vue';
+import ActivityDetailModal from '../../activities/components/ActivityDetailModal.vue';
 
 export default {
   components: {
     FluentIcon,
     Spinner,
     ActivityFormModal,
+    ActivityDetailModal,
   },
   props: {
     contactId: {
@@ -155,6 +168,7 @@ export default {
   data() {
     return {
       showForm: false,
+      showDetail: false,
       selectedActivity: null,
       loading: false,
       expandedActivities: {},
@@ -184,43 +198,72 @@ export default {
       this.loading = true;
       try {
         await this.$store.dispatch('activities/get', {
-          accountId: this.$route.params.accountId,
           params: { contact_id: this.contactId },
-          merge: true, // Acumular em vez de substituir para não perder atividades de outros contatos
+          merge: false,
         });
+      } catch (error) {
+        useAlert(this.$t('ACTIVITIES.ERRORS.LOAD_FAILED'));
       } finally {
         this.loading = false;
       }
     },
     async handleComplete(activityId) {
-      await this.$store.dispatch('activities/complete', {
-        accountId: this.$route.params.accountId,
-        activityId,
-      });
-      await this.loadActivities();
+      try {
+        await this.$store.dispatch('activities/complete', { activityId });
+        await this.loadActivities();
+      } catch (error) {
+        useAlert(this.$t('ACTIVITIES.ERRORS.COMPLETE_FAILED'));
+      }
     },
-    handleEdit(activity) {
-      this.selectedActivity = activity;
+    openCreateForm() {
+      this.selectedActivity = null;
       this.showForm = true;
     },
+    openActivityDetail(activity) {
+      this.selectedActivity = activity;
+      this.showDetail = true;
+    },
+    openEditFromDetail(activity) {
+      this.selectedActivity = activity;
+      this.showDetail = false;
+      this.showForm = true;
+    },
+    closeDetail() {
+      this.showDetail = false;
+      this.selectedActivity = null;
+    },
     async handleSubmit({ activity, inbox_id }) {
-      const action = this.selectedActivity ? 'update' : 'create';
-      await this.$store.dispatch(`activities/${action}`, {
-        accountId: this.$route.params.accountId,
-        activityId: this.selectedActivity?.id,
-        params: {
-          ...activity,
-          contact_id: this.contactId,
-          contact_pipeline_position_id: this.getPipelinePositionId(),
-          inbox_id, // Para criar conversa quando necessário
-        },
-      });
-      this.closeForm();
-      await this.loadActivities();
+      try {
+        const action = this.selectedActivity ? 'update' : 'create';
+        await this.$store.dispatch(`activities/${action}`, {
+          activityId: this.selectedActivity?.id,
+          params: {
+            ...activity,
+            contact_id: this.contactId,
+            contact_pipeline_position_id: this.getPipelinePositionId(),
+            inbox_id,
+          },
+        });
+        this.closeForm();
+        await this.loadActivities();
+      } catch (error) {
+        useAlert(this.$t('ACTIVITIES.ERRORS.SAVE_FAILED'));
+      }
     },
     closeForm() {
       this.showForm = false;
       this.selectedActivity = null;
+    },
+    async handleDelete(activityId) {
+      try {
+        await this.$store.dispatch('activities/destroy', { activityId });
+        this.closeDetail();
+        this.closeForm();
+        await this.loadActivities();
+        useAlert(this.$t('ACTIVITIES.SUCCESS.DELETED'));
+      } catch (error) {
+        useAlert(this.$t('ACTIVITIES.ERRORS.DELETE_FAILED'));
+      }
     },
     formatDate(date) {
       return this.formatRelativeDate(new Date(date));

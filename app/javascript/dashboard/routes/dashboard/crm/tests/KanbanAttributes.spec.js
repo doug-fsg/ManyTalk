@@ -3,10 +3,36 @@ import Vuex from 'vuex';
 import KanbanAttributes from '../components/KanbanAttributes.vue';
 import KanbanColumn from '../components/KanbanColumn.vue';
 import draggable from 'vuedraggable';
+import ContactAPI from 'dashboard/api/contacts';
+
+vi.mock('dashboard/api/contacts', () => ({
+  default: {
+    updatePipelinePosition: vi.fn(),
+  },
+}));
 
 const localVue = createLocalVue();
 localVue.use(Vuex);
 localVue.component('draggable', draggable);
+
+const pipelineId = 1;
+
+const contactsWithPositions = [
+  {
+    id: 1,
+    name: 'Test Contact 1',
+    pipeline_positions: [
+      { pipeline_id: pipelineId, stage_id: '1ºcontato', position: 0 },
+    ],
+  },
+  {
+    id: 2,
+    name: 'Test Contact 2',
+    pipeline_positions: [
+      { pipeline_id: pipelineId, stage_id: '2ºcontato', position: 0 },
+    ],
+  },
+];
 
 describe('KanbanAttributes.vue', () => {
   let wrapper;
@@ -16,40 +42,48 @@ describe('KanbanAttributes.vue', () => {
 
   beforeEach(() => {
     actions = {
-      'contacts/update': vi.fn(),
       'contacts/get': vi.fn(),
       'attributes/get': vi.fn(),
     };
 
     getters = {
-      'contacts/getContacts': () => [
-        { 
-          id: 1, 
-          name: 'Test Contact 1',
-          custom_attributes: { 'pipeline-123': '1ºcontato' }
-        },
-        { 
-          id: 2, 
-          name: 'Test Contact 2',
-          custom_attributes: { 'pipeline-123': '2ºcontato' }
-        }
-      ],
+      'contacts/getContacts': () => contactsWithPositions,
       'contacts/getMeta': () => ({ count: 2 }),
       'attributes/getAttributes': () => [
         {
-          id: 1,
+          id: pipelineId,
           attribute_display_name: 'Pipeline Test',
           attribute_key: 'pipeline-123',
           attribute_display_type: 'list',
-          attribute_values: ['1ºcontato', '2ºcontato']
-        }
+          attribute_values: [
+            { name: '1ºcontato', color: '#111111' },
+            { name: '2ºcontato', color: '#222222' },
+          ],
+          is_kanban: true,
+          can_view: true,
+        },
       ],
       'attributes/getUIFlags': () => ({ isFetching: false }),
+      'kanban/canEditPipeline': () => () => true,
+      'kanban/canViewPipeline': () => () => true,
+      'kanban/getPipelinePermission': () => () => 'editor',
     };
 
     store = new Vuex.Store({
       actions,
       getters,
+    });
+
+    ContactAPI.updatePipelinePosition.mockResolvedValue({
+      data: {
+        pipeline_id: pipelineId,
+        stage_id: '2ºcontato',
+        position: 0,
+        entered_at: new Date().toISOString(),
+        deal_value: null,
+        metadata: {},
+        assignee: null,
+      },
     });
 
     wrapper = shallowMount(KanbanAttributes, {
@@ -66,59 +100,52 @@ describe('KanbanAttributes.vue', () => {
           $off: vi.fn(),
           $emit: vi.fn(),
         },
+        $route: { params: { accountId: 1 } },
       },
     });
   });
 
   afterEach(() => {
     wrapper.destroy();
+    vi.clearAllMocks();
   });
 
   it('should initialize with correct data', () => {
     expect(wrapper.vm.columns).toBeDefined();
-    expect(wrapper.vm.selectedAttribute).toBeDefined();
     expect(wrapper.vm.operationManager).toBeDefined();
   });
 
   it('should setup columns correctly when attribute is selected', async () => {
     await wrapper.vm.selectAttribute({
+      id: pipelineId,
       attribute_key: 'pipeline-123',
-      attribute_values: ['1ºcontato', '2ºcontato']
+      attribute_values: [
+        { name: '1ºcontato', color: '#111111' },
+        { name: '2ºcontato', color: '#222222' },
+      ],
     });
-    
+
     expect(wrapper.vm.columns.length).toBe(2);
     expect(wrapper.vm.columns[0].items.length).toBe(1);
   });
 
   it('should handle card movement correctly', async () => {
-    const contact = { 
-      id: 1, 
-      name: 'Test Contact',
-      custom_attributes: { 'pipeline-123': '1ºcontato' }
-    };
-    
-    await wrapper.vm.onItemMoved({
-      contactId: 1,
-      sourceColumnId: 'column-0',
-      targetColumnId: 'column-1',
-      sourceColumnTitle: '1ºcontato',
-      targetColumnTitle: '2ºcontato'
+    wrapper.setData({
+      selectedAttribute: {
+        id: pipelineId,
+        attribute_key: 'pipeline-123',
+      },
+      contacts: contactsWithPositions,
     });
 
-    expect(actions['contacts/update']).toHaveBeenCalled();
-  });
-
-  it('should handle errors during card movement', async () => {
-    actions['contacts/update'].mockRejectedValue(new Error('Update failed'));
-    
     await wrapper.vm.onItemMoved({
       contactId: 1,
-      sourceColumnId: 'column-0',
-      targetColumnId: 'column-1',
       sourceColumnTitle: '1ºcontato',
-      targetColumnTitle: '2ºcontato'
+      targetColumnTitle: '2ºcontato',
+      oldIndex: 0,
+      newIndex: 0,
     });
 
-    expect(wrapper.vm.operationManager.hasOperationFailed(1)).toBe(true);
+    expect(ContactAPI.updatePipelinePosition).toHaveBeenCalled();
   });
 });

@@ -38,7 +38,18 @@ class CustomAttributeDefinition < ApplicationRecord
   validates :attribute_model, presence: true
 
   enum attribute_model: { conversation_attribute: 0, contact_attribute: 1 }
-  enum attribute_display_type: { text: 0, number: 1, currency: 2, percent: 3, link: 4, date: 5, list: 6, checkbox: 7, file: 8 }
+  enum attribute_display_type: {
+    text: 0,
+    number: 1,
+    currency: 2,
+    percent: 3,
+    link: 4,
+    date: 5,
+    list: 6,
+    checkbox: 7,
+    file: 8,
+    textarea: 9
+  }
 
   belongs_to :account
   has_many :contact_pipeline_positions, foreign_key: 'pipeline_id', dependent: :destroy
@@ -118,24 +129,31 @@ class CustomAttributeDefinition < ApplicationRecord
   end
 
   def ensure_attribute_values_is_hash
-    # Converter array legado para objeto {stages: [...], permissions: {}}
+    # Converter array legado para objeto {stages: [...], permissions: {}, stage_order: [...]}
     if self.attribute_values.is_a?(Array)
+      legacy_values = self.attribute_values
       self.attribute_values = {
-        'stages' => self.attribute_values,
-        'permissions' => {}
+        'stages' => legacy_values,
+        'permissions' => {},
+        'stage_order' => legacy_values.map do |stage|
+          stage.is_a?(Hash) ? (stage['name'] || stage[:name]).to_s : stage.to_s
+        end.compact
       }
     elsif self.attribute_values.nil?
       self.attribute_values = {
         'stages' => [],
-        'permissions' => {}
+        'permissions' => {},
+        'stage_order' => []
       }
     elsif !self.attribute_values.key?('permissions')
-      # Se já é hash mas não tem permissions, adicionar
+      # Se já é hash mas não tem permissions, adicionar preservando stage_order
       stages = self.attribute_values.is_a?(Hash) ? (self.attribute_values['stages'] || self.attribute_values.values) : []
+      stage_order = self.attribute_values['stage_order']
       self.attribute_values = {
         'stages' => stages,
-        'permissions' => {}
-      }
+        'permissions' => {},
+        'stage_order' => stage_order
+      }.compact
     end
   end
 

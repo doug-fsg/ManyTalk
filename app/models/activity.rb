@@ -17,6 +17,7 @@
 #  contact_pipeline_position_id :bigint
 #  conversation_id              :bigint
 #  inbox_id                     :bigint
+#  metadata                     :jsonb            not null
 #  user_id                      :bigint           not null
 #
 # Indexes
@@ -55,7 +56,7 @@ class Activity < ApplicationRecord
   belongs_to :inbox, optional: true
 
   validates :activity_type, inclusion: { in: %w[task scheduled_message] }
-  validates :status, inclusion: { in: %w[pending completed cancelled] }
+  validates :status, inclusion: { in: %w[pending completed cancelled failed] }
   validates :title, presence: true
   validates :scheduled_at, presence: true
   validates :message_content, presence: true, if: -> { scheduled_message? }
@@ -74,6 +75,15 @@ class Activity < ApplicationRecord
 
   def cancel!
     update!(status: 'cancelled')
+  end
+
+  def fail!(reason:, error: nil)
+    metadata = (self.metadata || {}).merge(
+      'failure_reason' => reason,
+      'last_error' => error,
+      'failed_at' => Time.current.iso8601
+    )
+    update!(status: 'failed', metadata: metadata)
   end
 
   def task?

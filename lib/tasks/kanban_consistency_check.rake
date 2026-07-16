@@ -1,139 +1,125 @@
 namespace :chatwoot do
   namespace :kanban do
-    desc 'Check consistency between JSON structure and contact_pipeline_positions table'
+    desc 'Check legacy Kanban JSON still stored on contacts'
     task consistency_check: :environment do
-      puts "🔍 Verificação de Consistência do Kanban"
-      puts "=" * 60
+      puts '🔍 Verificação de dados legados do Kanban'
+      puts '=' * 60
 
       pipelines = CustomAttributeDefinition.kanban_attributes
-        .where(attribute_model: 'contact_attribute')
+                                           .where(attribute_model: 'contact_attribute')
 
       if pipelines.empty?
-        puts "⚠️  Nenhum pipeline Kanban encontrado!"
-        return
+        puts '⚠️  Nenhum pipeline Kanban encontrado!'
+        next
       end
 
-      total_errors = 0
-      total_checked = 0
+      total_stale_json = 0
+      total_missing_in_table = 0
 
       pipelines.each do |pipeline|
-        puts "\n📊 Verificando pipeline: #{pipeline.attribute_display_name} (#{pipeline.attribute_key})"
-        puts "-" * 60
+        puts "\n📊 Pipeline: #{pipeline.attribute_display_name} (#{pipeline.attribute_key})"
+        puts '-' * 60
 
-        # Contatos com dados no JSON
-        contacts_in_json = Contact.where(
+        contacts_with_json = Contact.where(account_id: pipeline.account_id).where(
           "custom_attributes->>? IS NOT NULL AND custom_attributes->>? != ''",
           pipeline.attribute_key, pipeline.attribute_key
         )
 
-        # Contatos com dados na tabela
-        contacts_in_table = Contact.joins(
-          "INNER JOIN contact_pipeline_positions ON contact_pipeline_positions.contact_id = contacts.id"
-        ).where("contact_pipeline_positions.pipeline_id = ?", pipeline.id)
+        table_count = ContactPipelinePosition.where(pipeline_id: pipeline.id).count
+        json_count = contacts_with_json.count
 
-        json_count = contacts_in_json.count
-        table_count = contacts_in_table.count
+        puts "Contatos em contact_pipeline_positions: #{table_count}"
+        puts "Contatos com JSON legado em custom_attributes: #{json_count}"
 
-        puts "Contatos no JSON: #{json_count}"
-        puts "Contatos na tabela: #{table_count}"
+        stale_json = 0
+        missing_in_table = 0
 
-        # Verificar inconsistências
-        errors = []
+        contacts_with_json.find_each do |contact|
+          position = ContactPipelinePosition.find_by(contact_id: contact.id, pipeline_id: pipeline.id)
 
-        # 1. Contatos no JSON mas não na tabela
-        contacts_in_json.find_each do |contact|
-          total_checked += 1
-          position = ContactPipelinePosition.find_by(
-            contact_id: contact.id,
-            pipeline_id: pipeline.id
-          )
-
-          unless position
-            errors << {
-              type: 'missing_in_table',
-              contact_id: contact.id,
-              stage_in_json: contact.custom_attributes[pipeline.attribute_key]
-            }
-            next
-          end
-
-          # 2. Verificar se stage_id bate
-          json_stage = contact.custom_attributes[pipeline.attribute_key]
-          if position.stage_id != json_stage
-            errors << {
-              type: 'stage_mismatch',
-              contact_id: contact.id,
-              stage_in_json: json_stage,
-              stage_in_table: position.stage_id
-            }
-          end
-
-          # 3. Verificar deal_value
-          json_deal_value = contact.additional_attributes&.dig('kanban', pipeline.id.to_s, 'deal', 'value')
-          if json_deal_value.present? && position.deal_value != json_deal_value.to_f
-            errors << {
-              type: 'deal_value_mismatch',
-              contact_id: contact.id,
-              value_in_json: json_deal_value,
-              value_in_table: position.deal_value
-            }
+          if position
+            stale_json += 1
+          else
+            missing_in_table += 1
+            puts "  ⚠️  Contato #{contact.id} tem JSON mas não existe em contact_pipeline_positions"
           end
         end
 
-        # 4. Contatos na tabela mas não no JSON (orphans)
-        contacts_in_table.find_each do |contact|
-          json_stage = contact.custom_attributes&.dig(pipeline.attribute_key)
-          unless json_stage.present?
-            errors << {
-              type: 'orphan_in_table',
-              contact_id: contact.id,
-              stage_in_table: ContactPipelinePosition.find_by(
-                contact_id: contact.id,
-                pipeline_id: pipeline.id
-              )&.stage_id
-            }
-          end
+        additional_json_count = Contact.where(account_id: pipeline.account_id).where(
+          "additional_attributes->'kanban'->? IS NOT NULL",
+          pipeline.id.to_s
+        ).count
+
+        if additional_json_count.positive?
+          puts "Contatos com JSON legado em additional_attributes.kanban: #{additional_json_count}"
+          stale_json += additional_json_count
         end
 
-        if errors.any?
-          puts "\n❌ Encontradas #{errors.size} inconsistências:"
-          errors.first(10).each do |error|
-            puts "  - #{error[:type]}: Contato ID #{error[:contact_id]}"
-            if error[:stage_in_json] && error[:stage_in_table]
-              puts "    JSON: #{error[:stage_in_json]} | Tabela: #{error[:stage_in_table]}"
-            end
-          end
-          puts "  ... e mais #{errors.size - 10} inconsistências" if errors.size > 10
-          total_errors += errors.size
-        else
-          puts "\n✅ Nenhuma inconsistência encontrada!"
-        end
+        puts "JSON legado com registro na tabela (fonte da verdade = tabela): #{stale_json}"
+        puts "JSON legado sem registro na tabela: #{missing_in_table}"
+
+        total_stale_json += stale_json
+        total_missing_in_table += missing_in_table
       end
 
-      puts "\n" + "=" * 60
-      puts "📈 Resumo:"
-      puts "  Contatos verificados: #{total_checked}"
-      puts "  Inconsistências encontradas: #{total_errors}"
+      puts "\n#{'=' * 60}"
+      puts '📈 Resumo:'
+      puts "  Registros JSON legados detectados: #{total_stale_json}"
+      puts "  Contatos só no JSON (precisam migrar): #{total_missing_in_table}"
 
-      if total_errors > 0
-        puts "\n⚠️  Recomendação: Execute a migração de dados para corrigir inconsistências"
-        puts "   rake chatwoot:kanban:migrate_data"
+      if total_stale_json.positive? || total_missing_in_table.positive?
+        puts "\n💡 Execute: rake chatwoot:kanban:cleanup_legacy_json"
+        puts '   ou: rake chatwoot:kanban:migrate_data[sync]'
       else
-        puts "\n✅ Dados consistentes entre JSON e tabela!"
+        puts "\n✅ Nenhum dado legado encontrado. Kanban usa apenas contact_pipeline_positions."
       end
+    end
+
+    desc 'Remove legacy Kanban JSON from contacts already stored in contact_pipeline_positions'
+    task cleanup_legacy_json: :environment do
+      puts '🧹 Limpando JSON legado do Kanban'
+      puts '=' * 60
+
+      pipelines = CustomAttributeDefinition.kanban_attributes
+                                           .where(attribute_model: 'contact_attribute')
+
+      cleaned = 0
+      imported = 0
+
+      pipelines.find_each do |pipeline|
+        puts "\n📊 Pipeline: #{pipeline.attribute_display_name}"
+
+        Contact.where(account_id: pipeline.account_id).where(
+          "custom_attributes->>? IS NOT NULL OR additional_attributes->'kanban'->? IS NOT NULL",
+          pipeline.attribute_key,
+          pipeline.id.to_s
+        ).find_each do |contact|
+          position = ContactPipelinePosition.find_by(contact_id: contact.id, pipeline_id: pipeline.id)
+
+          if position
+            cleaned += 1 if Contacts::KanbanLegacyCleanup.cleanup!(contact, pipeline)
+          else
+            imported += 1 if Contacts::KanbanLegacyCleanup.import_from_json!(contact, pipeline)
+          end
+        end
+      end
+
+      puts "\n✅ Limpeza concluída"
+      puts "  JSON removido de contatos já migrados: #{cleaned}"
+      puts "  Contatos importados do JSON para a tabela: #{imported}"
     end
 
     desc 'Migrate existing Kanban data from JSON to contact_pipeline_positions table'
     task :migrate_data, [:sync] => :environment do |_t, args|
-      puts "🚀 Iniciando migração de dados do Kanban"
-      puts "=" * 60
+      puts '🚀 Iniciando migração de dados do Kanban'
+      puts '=' * 60
 
       pipelines = CustomAttributeDefinition.kanban_attributes
-        .where(attribute_model: 'contact_attribute')
+                                           .where(attribute_model: 'contact_attribute')
 
       if pipelines.empty?
-        puts "⚠️  Nenhum pipeline Kanban encontrado!"
-        return
+        puts '⚠️  Nenhum pipeline Kanban encontrado!'
+        next
       end
 
       puts "Pipelines encontrados: #{pipelines.count}"
@@ -142,17 +128,16 @@ namespace :chatwoot do
       end
 
       print "\n⚠️  Deseja continuar com a migração? (y/N): "
-      response = STDIN.gets.chomp.downcase
+      response = $stdin.gets.chomp.downcase
 
-      unless response == 'y' || response == 'yes'
-        puts "❌ Migração cancelada pelo usuário."
-        return
+      unless %w[y yes].include?(response)
+        puts '❌ Migração cancelada pelo usuário.'
+        next
       end
 
-      # Se --sync foi passado, executar de forma síncrona (útil para testes)
       if args[:sync] == 'sync' || ENV['SYNC'] == 'true'
         puts "\n📦 Executando migração de forma síncrona..."
-        
+
         pipelines.each do |pipeline|
           puts "\n  Migrando pipeline: #{pipeline.attribute_display_name}..."
           Contacts::MigrateKanbanDataJob.new.perform(pipeline.id, 0)
@@ -160,22 +145,19 @@ namespace :chatwoot do
         end
 
         puts "\n✅ Migração concluída!"
-        puts "   Use 'rake chatwoot:kanban:consistency_check' para verificar a consistência."
+        puts "   Use 'rake chatwoot:kanban:consistency_check' para verificar."
       else
         puts "\n📦 Enfileirando jobs de migração..."
-        
+
         pipelines.each do |pipeline|
           Contacts::MigrateKanbanDataJob.perform_later(pipeline.id, 0)
           puts "  ✅ Job enfileirado para pipeline: #{pipeline.attribute_display_name}"
         end
 
         puts "\n✅ Migração iniciada!"
-        puts "   Os jobs serão processados em background."
         puts "   Use 'rake chatwoot:kanban:consistency_check' para verificar o progresso."
-        puts "\n💡 Dica: Para executar de forma síncrona (sem Sidekiq), use:"
-        puts "   rake chatwoot:kanban:migrate_data[sync]"
+        puts "\n💡 Para executar de forma síncrona: rake chatwoot:kanban:migrate_data[sync]"
       end
     end
   end
 end
-

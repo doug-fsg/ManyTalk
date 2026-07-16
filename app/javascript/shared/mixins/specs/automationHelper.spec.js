@@ -21,6 +21,9 @@ describe('automationMethodsMixin', () => {
       'some_random_value'
     );
     expect(helpers.getCustomAttributeInputType('text')).toEqual('plain_text');
+    expect(helpers.getCustomAttributeInputType('textarea')).toEqual(
+      'plain_text'
+    );
     expect(helpers.getCustomAttributeInputType('list')).toEqual(
       'search_select'
     );
@@ -79,6 +82,7 @@ describe('automationMethodsMixin', () => {
   it('getOperatorTypes returns the correct custom attribute operators', () => {
     expect(helpers.getOperatorTypes('list')).toEqual(OPERATOR_TYPES_1);
     expect(helpers.getOperatorTypes('text')).toEqual(OPERATOR_TYPES_3);
+    expect(helpers.getOperatorTypes('textarea')).toEqual(OPERATOR_TYPES_3);
     expect(helpers.getOperatorTypes('number')).toEqual(OPERATOR_TYPES_1);
     expect(helpers.getOperatorTypes('link')).toEqual(OPERATOR_TYPES_1);
     expect(helpers.getOperatorTypes('date')).toEqual(OPERATOR_TYPES_4);

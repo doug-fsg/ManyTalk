@@ -86,6 +86,39 @@ describe Whatsapp::SendOnWhatsappService do
         expect(message.reload.source_id).to eq('123456789')
       end
 
+      it 'interpolates liquid variables in template processed params before sending' do
+        conversation.contact.update!(name: 'Maria Silva')
+        liquid_template_params = template_params.merge(
+          processed_params: { '1' => 'Olá {{contact.last_name}}' }
+        )
+        message = create(
+          :message,
+          additional_attributes: { template_params: liquid_template_params },
+          content: 'Your package will be delivered in 3 business days.',
+          conversation: conversation,
+          message_type: :outgoing
+        )
+        allow(HTTParty).to receive(:post).and_return(whatsapp_request)
+        allow(whatsapp_request).to receive(:success?).and_return(true)
+        allow(whatsapp_request).to receive(:[]).with('messages').and_return([{ 'id' => '123456789' }])
+        expect(HTTParty).to receive(:post).with(
+          'https://waba.360dialog.io/v1/messages',
+          headers: { 'D360-API-KEY' => 'test_key', 'Content-Type' => 'application/json' },
+          body: {
+            to: '123456789',
+            template: {
+              name: 'sample_shipping_confirmation',
+              namespace: '23423423_2342423_324234234_2343224',
+              language: { 'policy': 'deterministic', 'code': 'en_US' },
+              components: [{ 'type': 'body', 'parameters': [{ 'type': 'text', 'text': 'Olá Silva' }] }]
+            },
+            type: 'template'
+          }.to_json
+        )
+        described_class.new(message: message).perform
+        expect(message.reload.source_id).to eq('123456789')
+      end
+
       it 'calls channel.send_template when template has regexp characters' do
         message = create(
           :message,

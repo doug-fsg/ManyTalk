@@ -18,6 +18,7 @@ export const getCustomAttributeInputType = key => {
   const customAttributeMap = {
     date: 'date',
     text: 'plain_text',
+    textarea: 'plain_text',
     list: 'search_select',
     checkbox: 'search_select',
   };
@@ -65,6 +66,7 @@ export const getOperatorTypes = key => {
   const operatorMap = {
     list: OPERATOR_TYPES_1,
     text: OPERATOR_TYPES_3,
+    textarea: OPERATOR_TYPES_3,
     number: OPERATOR_TYPES_1,
     link: OPERATOR_TYPES_1,
     date: OPERATOR_TYPES_4,

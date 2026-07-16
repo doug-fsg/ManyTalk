@@ -39,6 +39,7 @@
       "COUNTRY": "País/região",
       "CUSTOM_ATTRIBUTE_LIST": "Lista",
       "CUSTOM_ATTRIBUTE_TEXT": "Texto",
+      "CUSTOM_ATTRIBUTE_TEXTAREA": "Texto longo",
       "CUSTOM_ATTRIBUTE_NUMBER": "Número",
       "CUSTOM_ATTRIBUTE_LINK": "Link",
       "CUSTOM_ATTRIBUTE_CHECKBOX": "Checkbox",

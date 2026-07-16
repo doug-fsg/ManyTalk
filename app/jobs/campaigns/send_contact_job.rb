@@ -63,7 +63,12 @@ class Campaigns::SendContactJob < ApplicationJob
     Rails.logger.error("[SendContactJob] conversation: campaign_id=#{campaign.id} conversation_id=#{conversation.id} inbox_type=#{campaign.inbox&.inbox_type}")
 
     if campaign_has_macro_only?(campaign)
-      # Disparo de fluxo: executa somente a macro, não envia a mensagem da campanha
+      if whatsapp_template_campaign?(campaign)
+        track_failure(campaign, contact_data, 'Macros are not allowed for WhatsApp campaigns')
+        increment_processed_and_maybe_finalize(campaign)
+        return
+      end
+
       execute_macro_if_present(campaign, conversation, contact_data)
     else
       # Disparo único: envia a mensagem da campanha
@@ -90,7 +95,7 @@ class Campaigns::SendContactJob < ApplicationJob
       end
 
       Rails.logger.error("[SendContactJob] mensagem criada no DB: campaign_id=#{campaign.id} conversation_id=#{conversation.id} message_id=#{message.id}")
-      execute_macro_if_present(campaign, conversation, contact_data)
+      execute_macro_if_present(campaign, conversation, contact_data) unless whatsapp_template_campaign?(campaign)
     end
 
     track_success(campaign, contact_data)
@@ -199,6 +204,10 @@ class Campaigns::SendContactJob < ApplicationJob
   end
 
   def send_message(campaign, conversation, contact_data = {})
+    if whatsapp_template_campaign?(campaign)
+      return send_whatsapp_template_message(campaign, conversation, contact_data)
+    end
+
     content = substitute_message_variables(campaign.message, contact_data, conversation.contact)
     user = campaign.sender || campaign.account.administrators.first
     message = Messages::MessageBuilder.new(
@@ -232,11 +241,52 @@ class Campaigns::SendContactJob < ApplicationJob
       .gsub(/@variavel/i, variavel.to_s)
   end
 
+  def whatsapp_template_campaign?(campaign)
+    campaign.inbox.whatsapp? && campaign.trigger_rules['send_mode'] == 'template_only'
+  end
+
+  def send_whatsapp_template_message(campaign, conversation, contact_data)
+    user = campaign.sender || campaign.account.administrators.first
+    template_params = Campaigns::TemplateParamsInterpolator.new(
+      campaign: campaign,
+      conversation: conversation,
+      contact_data: contact_data,
+      sender: user
+    ).perform
+
+    if template_params.blank?
+      raise 'WhatsApp template is required'
+    end
+
+    content = template_preview_content(template_params)
+    Messages::MessageBuilder.new(
+      user,
+      conversation,
+      content: content,
+      template_params: template_params,
+      message_type: 'outgoing',
+      campaign_id: campaign.id
+    ).perform
+  end
+
+  def template_preview_content(template_params)
+    processed = template_params['processed_params']
+    return template_params['name'] if processed.blank?
+
+    if processed.is_a?(Hash)
+      processed.values.flatten.compact.join(' ').presence || template_params['name']
+    else
+      template_params['name']
+    end
+  end
+
   def campaign_has_macro_only?(campaign)
     campaign.trigger_rules['macro_id'].present?
   end
 
   def execute_macro_if_present(campaign, conversation, contact_data = nil)
+    return if whatsapp_template_campaign?(campaign)
+
     macro_id = campaign.trigger_rules['macro_id'].presence
     return unless macro_id
 

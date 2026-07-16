@@ -9,6 +9,7 @@ export const ATTRIBUTE_DISPLAY_TYPE_IDS = {
   list: 6,
   checkbox: 7,
   file: 8,
+  textarea: 9,
 };
 
 export const ATTRIBUTE_MODELS = [
@@ -24,6 +25,7 @@ export const ATTRIBUTE_MODELS = [
 
 export const ATTRIBUTE_TYPES = [
   { id: 0, i18nKey: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.TEXT' },
+  { id: 9, i18nKey: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.TEXTAREA' },
   { id: 1, i18nKey: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.NUMBER' },
   { id: 4, i18nKey: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.LINK' },
   { id: 5, i18nKey: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.DATE' },
@@ -34,6 +36,7 @@ export const ATTRIBUTE_TYPES = [
 /** Contact attribute types allowed on public forms (excludes file). */
 export const FORM_CONTACT_ATTRIBUTE_TYPES = [
   { id: 0, i18nKey: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.TEXT' },
+  { id: 9, i18nKey: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.TEXTAREA' },
   { id: 1, i18nKey: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.NUMBER' },
   { id: 2, i18nKey: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.CURRENCY' },
   { id: 3, i18nKey: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.PERCENT' },

@@ -104,6 +104,13 @@ export const getters = {
   getApiInboxes($state) {
     return $state.records.filter(item => item.channel_type === INBOX_TYPES.API);
   },
+  getWhatsappCloudInboxes($state) {
+    return $state.records.filter(
+      item =>
+        item.channel_type === INBOX_TYPES.WHATSAPP &&
+        item.provider === 'whatsapp_cloud'
+    );
+  },
   getTwilioInboxes($state) {
     return $state.records.filter(
       item => item.channel_type === INBOX_TYPES.TWILIO

@@ -20,6 +20,8 @@ const MESSAGES = {
     PLACEHOLDER_CURRENCY: '0,00',
     PLACEHOLDER_PERCENT: '0',
     PLACEHOLDER_NUMBER: '0',
+    PLACEHOLDER_TEXTAREA: 'Escreva sua mensagem…',
+    TEXTAREA_HINT: 'Enter cria uma nova linha.',
   },
   en: {
     NATIVE: {
@@ -42,6 +44,8 @@ const MESSAGES = {
     PLACEHOLDER_CURRENCY: '0.00',
     PLACEHOLDER_PERCENT: '0',
     PLACEHOLDER_NUMBER: '0',
+    PLACEHOLDER_TEXTAREA: 'Write your message…',
+    TEXTAREA_HINT: 'Press Enter to start a new line.',
   },
 };
 
@@ -72,6 +76,8 @@ export const publicFormFieldLabels = locale => {
       currency: m.PLACEHOLDER_CURRENCY,
       percent: m.PLACEHOLDER_PERCENT,
       number: m.PLACEHOLDER_NUMBER,
+      textarea: m.PLACEHOLDER_TEXTAREA,
     },
+    textareaHint: m.TEXTAREA_HINT,
   };
 };

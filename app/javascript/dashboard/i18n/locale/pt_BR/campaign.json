@@ -54,6 +54,20 @@
           "PLACEHOLDER": "Selecionar marcadores dos clientes",
           "ERROR": "Público é necessário"
         },
+        "AUDIENCE_SOURCE": {
+          "ARIA": "Escolher origem do público",
+          "LABELS": "Etiquetas",
+          "SPREADSHEET": "Planilha",
+          "LABELS_HINT": "Envie para todos os contatos com as etiquetas selecionadas.",
+          "LABELS_COUNT": "{count} etiqueta(s) selecionada(s)",
+          "CHOOSE_FILE": "Escolher arquivo",
+          "DOWNLOAD_TEMPLATE": "Baixar modelo Excel",
+          "SWITCH_CONFIRM": "Trocar o modo de público vai limpar a seleção atual. Deseja continuar?"
+        },
+        "WHATSAPP_TEMPLATE": {
+          "LABEL": "Template",
+          "REQUIRED": "Selecione um template"
+        },
         "CONTACT_LIST": {
           "LABEL": "Upload de Lista de Contatos",
           "ERROR_NO_COLUMN": "A coluna 'numeros' não foi encontrada na planilha.",

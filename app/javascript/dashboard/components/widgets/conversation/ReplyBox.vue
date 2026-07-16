@@ -138,6 +138,7 @@
     <whatsapp-templates
       :inbox-id="inbox.id"
       :show="showWhatsAppTemplatesModal"
+      :variables="messageVariables"
       @close="hideWhatsappTemplatesModal"
       @on-send="onSendWhatsAppReply"
       @cancel="hideWhatsappTemplatesModal"

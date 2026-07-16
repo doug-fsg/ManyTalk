@@ -90,11 +90,14 @@ export const resolveFormBranding = (branding = {}) => {
         : '1px solid #f1f5f9',
     },
     inputClass: isDark
-      ? 'w-full px-3 py-2 border rounded-lg bg-white text-slate-900 border-white/20 focus:outline-none focus:ring-2 focus:ring-offset-0 transition-shadow'
-      : 'w-full px-3 py-2 border rounded-lg border-slate-200 bg-slate-50 text-slate-900 focus:outline-none focus:ring-2 focus:ring-offset-0 transition-shadow',
+      ? 'w-full h-10 px-3 py-2 text-base border rounded-lg bg-white text-slate-900 border-white/20 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-offset-0 transition-shadow'
+      : 'w-full h-10 px-3 py-2 text-base border rounded-lg border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-offset-0 transition-shadow',
+    textareaClass: isDark
+      ? 'w-full min-h-36 px-3 py-3 text-base border-2 rounded-xl resize-y leading-relaxed bg-white text-slate-900 border-white/20 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-offset-0 transition-shadow'
+      : 'w-full min-h-36 px-3 py-3 text-base border-2 rounded-xl resize-y leading-relaxed bg-white text-slate-900 border-slate-200 placeholder:text-slate-400 shadow-inner focus:outline-none focus:ring-2 focus:ring-offset-0 transition-shadow',
     selectClass: isDark
-      ? 'w-full px-3 py-2 border rounded-lg bg-white text-slate-900 border-white/20 focus:outline-none focus:ring-2 focus:ring-offset-0 transition-shadow'
-      : 'w-full px-3 py-2 border rounded-lg border-slate-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-offset-0 transition-shadow',
+      ? 'w-full h-10 px-3 py-2 text-base border rounded-lg bg-white text-slate-900 border-white/20 focus:outline-none focus:ring-2 focus:ring-offset-0 transition-shadow'
+      : 'w-full h-10 px-3 py-2 text-base border rounded-lg border-slate-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-offset-0 transition-shadow',
     buttonStyle: { backgroundColor: primaryColor },
     focusRingStyle: { '--tw-ring-color': primaryColor },
   };

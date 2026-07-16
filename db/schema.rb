@@ -133,6 +133,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_07_200000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "inbox_id"
+    t.jsonb "metadata", default: {}, null: false
     t.index ["account_id", "assignee_id"], name: "index_activities_on_account_id_and_assignee_id"
     t.index ["account_id", "scheduled_at"], name: "index_activities_on_account_id_and_scheduled_at"
     t.index ["account_id", "status"], name: "index_activities_on_account_id_and_status"

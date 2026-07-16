@@ -243,7 +243,7 @@ export default {
         return false;
       }
       const position = contact.pipeline_positions.find(
-        p => p.pipeline_id === this.pipelineId
+        p => Number(p.pipeline_id) === Number(this.pipelineId)
       );
       return position?.stage_id === this.selectedStage;
     },

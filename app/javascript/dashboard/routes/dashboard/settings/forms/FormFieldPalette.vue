@@ -23,6 +23,7 @@ const NATIVE_ICONS = { name: 'person', email: 'mail', phone_number: 'call' };
 
 const DISPLAY_TYPE_ICONS = {
   text: 'document',
+  textarea: 'text-description',
   number: 'number-symbol',
   currency: 'tag',
   percent: 'number-symbol',
@@ -35,6 +36,7 @@ const DISPLAY_TYPE_ICONS = {
 
 const TYPE_I18N_KEYS = {
   text: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.TEXT',
+  textarea: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.TEXTAREA',
   number: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.NUMBER',
   currency: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.CURRENCY',
   percent: 'ATTRIBUTES_MGMT.ADD.FORM.TYPE.OPTIONS.PERCENT',

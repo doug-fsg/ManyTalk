@@ -124,7 +124,11 @@ class Api::V1::Accounts::CustomAttributeDefinitionsController < Api::V1::Account
   def permit_kanban_payload
     params.require(:custom_attribute_definition).permit(
       *BASE_PAYLOAD_KEYS,
-      attribute_values: {}
+      attribute_values: [
+        { stages: {} },
+        { permissions: {} },
+        { stage_order: [] }
+      ]
     )
   end
 
@@ -137,51 +141,88 @@ class Api::V1::Accounts::CustomAttributeDefinitionsController < Api::V1::Account
   end
 
   def normalize_kanban_attribute_values!(payload)
-    stages = payload[:attribute_values]
-    permissions = {}
+    attribute_values = payload[:attribute_values]
+    return if attribute_values.blank?
 
-    if stages.is_a?(Array)
-      stages_hash = {}
-      stages.each do |stage|
-        if stage.is_a?(Hash)
-          name = stage['name'] || stage[:name]
-          color = stage['color'] || stage[:color]
-          stages_hash[name] = { 'color' => color } if name
-        elsif stage.present?
-          stages_hash[stage.to_s] = { 'color' => nil }
-        end
-      end
-
-      payload[:attribute_values] = {
-        'stages' => stages_hash,
-        'permissions' => permissions
-      }
+    if attribute_values.is_a?(Array)
+      payload[:attribute_values] = build_kanban_attribute_values(
+        stages: attribute_values,
+        permissions: {},
+        stage_order: nil
+      )
       return
     end
 
-    return unless stages.is_a?(Hash)
+    return unless attribute_values.is_a?(Hash)
 
-    stages = payload[:attribute_values]['stages'] || payload[:attribute_values][:stages] || {}
-    permissions = payload[:attribute_values]['permissions'] || payload[:attribute_values][:permissions] || {}
+    stages = attribute_values['stages'] || attribute_values[:stages] || {}
+    permissions = attribute_values['permissions'] || attribute_values[:permissions] || {}
+    stage_order = attribute_values['stage_order'] || attribute_values[:stage_order]
 
     if stages.is_a?(Array)
       stages_hash = {}
+      ordered_names = []
+
       stages.each do |stage|
         if stage.is_a?(Hash)
           name = stage['name'] || stage[:name]
           color = stage['color'] || stage[:color]
-          stages_hash[name] = { 'color' => color } if name
+          next unless name
+
+          stages_hash[name] = { 'color' => color }
+          ordered_names << name.to_s
         elsif stage.present?
-          stages_hash[stage.to_s] = { 'color' => nil }
+          name = stage.to_s
+          stages_hash[name] = { 'color' => nil }
+          ordered_names << name
         end
       end
+
       stages = stages_hash
+      stage_order = ordered_names if stage_order.blank?
     end
 
-    payload[:attribute_values] = {
-      'stages' => stages,
-      'permissions' => permissions
+    payload[:attribute_values] = build_kanban_attribute_values(
+      stages: stages,
+      permissions: permissions,
+      stage_order: stage_order
+    )
+  end
+
+  def build_kanban_attribute_values(stages:, permissions:, stage_order:)
+    stages_hash = if stages.is_a?(Hash)
+                    stages.each_with_object({}) do |(name, data), memo|
+                      memo[name.to_s] = {
+                        'color' => data.is_a?(Hash) ? (data['color'] || data[:color]) : nil
+                      }
+                    end
+                  else
+                    build_stages_hash_from_array(Array(stages))
+                  end
+
+    normalized_order = Array(stage_order).map(&:to_s).select { |name| stages_hash.key?(name) }
+    remaining_names = stages_hash.keys - normalized_order
+    normalized_order += remaining_names
+
+    {
+      'stages' => stages_hash,
+      'permissions' => permissions || {},
+      'stage_order' => normalized_order
     }
+  end
+
+  def build_stages_hash_from_array(stages)
+    stages.each_with_object({}) do |stage, memo|
+      if stage.is_a?(Hash)
+        name = stage['name'] || stage[:name]
+        color = stage['color'] || stage[:color]
+        next unless name
+
+        memo[name.to_s] = { 'color' => color }
+      elsif stage.present?
+        memo[stage.to_s] = { 'color' => nil }
+      end
+    end
   end
 
   def permitted_params

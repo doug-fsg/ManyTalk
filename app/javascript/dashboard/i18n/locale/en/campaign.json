@@ -54,6 +54,20 @@
           "PLACEHOLDER": "Select the customer labels",
           "ERROR": "Audience is required"
         },
+        "AUDIENCE_SOURCE": {
+          "ARIA": "Choose audience source",
+          "LABELS": "Labels",
+          "SPREADSHEET": "Spreadsheet",
+          "LABELS_HINT": "Send to all contacts with the selected labels.",
+          "LABELS_COUNT": "{count} label(s) selected",
+          "CHOOSE_FILE": "Choose file",
+          "DOWNLOAD_TEMPLATE": "Download Excel template",
+          "SWITCH_CONFIRM": "Switching audience mode will clear your current selection. Continue?"
+        },
+        "WHATSAPP_TEMPLATE": {
+          "LABEL": "Template",
+          "REQUIRED": "Select a template"
+        },
         "CONTACT_LIST": {
         "LABEL": "Upload Contact List",
         "ERROR_NO_COLUMN": "The 'numbers' column was not found in the spreadsheet.",

@@ -72,6 +72,14 @@ const inputClass = computed(() => {
   return base;
 });
 
+const textareaClass = computed(() => {
+  const base = resolved.value.textareaClass;
+  if (isPreview.value) {
+    return `${base} text-xs text-slate-400`;
+  }
+  return base;
+});
+
 const selectClass = computed(() => {
   const base = resolved.value.selectClass;
   if (isPreview.value) {
@@ -87,7 +95,7 @@ const readFieldValuesFromDom = () => {
 
   const domValues = {};
   formRef.value
-    .querySelectorAll('input[id^="field-"], select[id^="field-"]')
+    .querySelectorAll('input[id^="field-"], select[id^="field-"], textarea[id^="field-"]')
     .forEach(el => {
       const key = el.id.replace(/^field-/, '');
       if (!key) return;
@@ -203,6 +211,7 @@ const onSubmit = () => {
           :readonly="isPreview"
           :labels="labels"
           :input-class="inputClass"
+          :textarea-class="textareaClass"
           :select-class="selectClass"
           :checkbox-class="isPreview ? 'pointer-events-none opacity-80' : ''"
           @update:model-value="val => updateField(field, val)"

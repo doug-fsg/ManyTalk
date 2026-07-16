@@ -41,8 +41,24 @@
     </div>
     <div v-if="notAttributeTypeCheckboxAndList">
       <div v-if="isEditing" v-on-clickaway="onClickAway">
-        <div class="mb-2 w-full flex items-center">
+        <div
+          class="mb-2 w-full flex"
+          :class="isAttributeTypeTextarea ? 'items-start' : 'items-center'"
+        >
+          <textarea
+            v-if="isAttributeTypeTextarea"
+            ref="inputfield"
+            v-model="editedValue"
+            rows="4"
+            class="ltr:!rounded-r-none rtl:!rounded-l-none !mb-0 !text-sm min-h-[7.5rem] resize-y leading-relaxed py-2"
+            autofocus="true"
+            :class="{ error: $v.editedValue.$error }"
+            @blur="$v.editedValue.$touch"
+            @keydown.ctrl.enter="onUpdate"
+            @keydown.meta.enter="onUpdate"
+          />
           <input
+            v-else
             ref="inputfield"
             v-model="editedValue"
             :type="inputType"
@@ -85,6 +101,7 @@
         <p
           v-else
           class="group-hover:bg-slate-50 group-hover:dark:bg-slate-700 inline-block rounded-sm mb-0 break-all py-0.5 px-1"
+          :class="{ 'whitespace-pre-wrap': isAttributeTypeTextarea }"
         >
           {{ displayValue || '---' }}
         </p>
@@ -238,6 +255,9 @@ export default {
     isAttributeTypeFile() {
       return this.attributeType === 'file';
     },
+    isAttributeTypeTextarea() {
+      return this.attributeType === 'textarea';
+    },
     urlValue() {
       return isValidURL(this.value) ? this.value : '---';
     },
@@ -248,7 +268,10 @@ export default {
       return !this.isAttributeTypeCheckbox && !this.isAttributeTypeList && !this.isAttributeTypeFile;
     },
     inputType() {
-      return this.isAttributeTypeLink ? 'url' : this.attributeType;
+      if (this.isAttributeTypeLink) return 'url';
+      if (this.isAttributeTypeTextarea) return 'text';
+      if (this.isAttributeTypeDate) return 'date';
+      return 'text';
     },
     shouldShowErrorMessage() {
       return this.$v.editedValue.$error;

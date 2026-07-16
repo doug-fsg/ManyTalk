@@ -32,6 +32,7 @@
           "ERROR": "O tipo é obrigatório",
           "OPTIONS": {
             "TEXT": "Texto",
+            "TEXTAREA": "Texto longo",
             "NUMBER": "Número",
             "CURRENCY": "Moeda",
             "PERCENT": "Percentual",

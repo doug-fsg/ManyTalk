@@ -29,7 +29,10 @@
           role="status"
           aria-live="polite"
         >
-          <fluent-icon icon="circle" size="4" class="text-amber-500 dark:text-amber-400 animate-pulse" />
+          <span
+            class="inline-block w-1 h-1 rounded-full bg-amber-500 dark:bg-amber-400 animate-pulse shrink-0"
+            aria-hidden="true"
+          />
           <span class="text-xs text-amber-600 dark:text-amber-400">
             Não salvo
           </span>
@@ -412,11 +415,17 @@ export default {
       // Se for objeto com stages (formato novo: { stages: { "nome": { color } } })
       else if (this.selectedAttribute.attribute_values.stages) {
         const stagesObj = this.selectedAttribute.attribute_values.stages;
-        // Se stages é objeto, converter para array
+        const stageOrder = this.selectedAttribute.attribute_values.stage_order;
+        // Se stages é objeto, converter para array respeitando stage_order
         if (typeof stagesObj === 'object' && !Array.isArray(stagesObj)) {
-          stages = Object.entries(stagesObj).map(([name, data]) => ({
+          const orderedNames = Array.isArray(stageOrder) && stageOrder.length
+            ? stageOrder.filter(name => Object.prototype.hasOwnProperty.call(stagesObj, name))
+            : Object.keys(stagesObj);
+          const remainingNames = Object.keys(stagesObj).filter(name => !orderedNames.includes(name));
+
+          stages = [...orderedNames, ...remainingNames].map(name => ({
             name,
-            color: data?.color || null
+            color: stagesObj[name]?.color || null,
           }));
         } else {
           stages = stagesObj;
@@ -447,17 +456,21 @@ export default {
       });
     },
     updatedAttributeListValues() {
-      // Formato: { stages: { "nome": { color }, ... }, permissions: {...} }
+      // Formato: { stages: { "nome": { color }, ... }, stage_order: [...], permissions: {...} }
       const stages = {};
+      const stageOrder = [];
+
       this.values.forEach((item) => {
         stages[item.name] = {
-          color: item.color || this.getStageColor(item.name)
+          color: item.color || this.getStageColor(item.name),
         };
+        stageOrder.push(item.name);
       });
-      
+
       return {
         stages,
-        permissions: this.agentPermissions
+        stage_order: stageOrder,
+        permissions: this.agentPermissions,
       };
     },
     isButtonDisabled() {

@@ -1,6 +1,7 @@
 /** Display types supported on public forms (file upload excluded). */
 export const FORM_SUPPORTED_DISPLAY_TYPES = [
   'text',
+  'textarea',
   'number',
   'currency',
   'percent',
@@ -20,6 +21,7 @@ const DISPLAY_TYPE_BY_ID = {
   6: 'list',
   7: 'checkbox',
   8: 'file',
+  9: 'textarea',
 };
 
 export const normalizeDisplayType = type => {
@@ -82,9 +84,13 @@ export const isCheckboxField = field =>
 export const isListField = field =>
   field?.type === 'custom_attribute' && getFieldDisplayType(field) === 'list';
 
+export const isTextareaField = field =>
+  field?.type === 'custom_attribute' && getFieldDisplayType(field) === 'textarea';
+
 export const getFieldKind = field => {
   if (isCheckboxField(field)) return 'checkbox';
   if (isListField(field)) return 'list';
+  if (isTextareaField(field)) return 'textarea';
   if (field?.field === 'phone_number' || field?.key === 'phone_number') return 'phone';
   if (field?.field === 'email' || field?.key === 'email') return 'email';
   if (field?.field === 'name' || field?.key === 'name') return 'name';
@@ -126,6 +132,8 @@ export const fieldPlaceholderForField = field => {
       return '0';
     case 'number':
       return '0';
+    case 'textarea':
+      return '';
     default:
       return '';
   }

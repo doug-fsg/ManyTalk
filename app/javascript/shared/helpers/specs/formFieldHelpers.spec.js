@@ -2,6 +2,10 @@ import {
   normalizeAttributeValues,
   listOptionsFromField,
   isListField,
+  isTextareaField,
+  getFieldKind,
+  isFormSupportedAttribute,
+  FORM_SUPPORTED_DISPLAY_TYPES,
   enrichDefinitionFields,
   enrichCustomField,
 } from '../formFieldHelpers';
@@ -72,6 +76,56 @@ describe('formFieldHelpers', () => {
         isListField({
           type: 'custom_attribute',
           attribute_display_type: 6,
+        })
+      ).toBe(true);
+    });
+  });
+
+  describe('isTextareaField', () => {
+    it('detects textarea fields by display type', () => {
+      expect(
+        isTextareaField({
+          type: 'custom_attribute',
+          attribute_display_type: 'textarea',
+        })
+      ).toBe(true);
+    });
+
+    it('detects textarea fields by numeric display type', () => {
+      expect(
+        isTextareaField({
+          type: 'custom_attribute',
+          attribute_display_type: 9,
+        })
+      ).toBe(true);
+    });
+  });
+
+  describe('getFieldKind', () => {
+    it('returns textarea for textarea custom attributes', () => {
+      expect(
+        getFieldKind({
+          type: 'custom_attribute',
+          attribute_display_type: 'textarea',
+        })
+      ).toBe('textarea');
+    });
+  });
+
+  describe('FORM_SUPPORTED_DISPLAY_TYPES / isFormSupportedAttribute', () => {
+    it('includes textarea', () => {
+      expect(FORM_SUPPORTED_DISPLAY_TYPES).toContain('textarea');
+    });
+
+    it('marks textarea attributes as form-supported', () => {
+      expect(
+        isFormSupportedAttribute({
+          attribute_display_type: 'textarea',
+        })
+      ).toBe(true);
+      expect(
+        isFormSupportedAttribute({
+          attribute_display_type: 9,
         })
       ).toBe(true);
     });

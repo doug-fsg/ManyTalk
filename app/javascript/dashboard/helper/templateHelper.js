@@ -1,3 +1,5 @@
+import { replaceVariablesInMessage } from '@chatwoot/utils';
+
 export const COMPONENT_TYPES = {
   HEADER: 'HEADER',
   BODY: 'BODY',
@@ -40,6 +42,27 @@ export const replaceTemplateVariables = (templateText, processedParams) => {
     const variableKey = processVariable(variable);
     return bodyParams[variableKey] || `{{${variable}}}`;
   });
+};
+
+export const interpolateParamsValues = (params, variables = {}) => {
+  if (typeof params === 'string') {
+    return replaceVariablesInMessage({ message: params, variables });
+  }
+
+  if (Array.isArray(params)) {
+    return params.map(entry => interpolateParamsValues(entry, variables));
+  }
+
+  if (params && typeof params === 'object') {
+    return Object.fromEntries(
+      Object.entries(params).map(([key, value]) => [
+        key,
+        key === 'media_type' ? value : interpolateParamsValues(value, variables),
+      ])
+    );
+  }
+
+  return params;
 };
 
 export const hasMediaHeader = template => {

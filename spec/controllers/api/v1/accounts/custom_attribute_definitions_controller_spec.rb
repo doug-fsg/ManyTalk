@@ -170,6 +170,48 @@ RSpec.describe 'Custom Attribute Definitions API', type: :request do
         expect(response).to have_http_status(:success)
         expect(list_attr.reload.attribute_values).to eq(['Opção A', 'Opção B'])
       end
+
+      it 'persists kanban stage order when updating pipeline stages' do
+        kanban_attr = create(
+          :custom_attribute_definition,
+          :kanban,
+          account: account,
+          attribute_values: {
+            'stages' => {
+              'Lead' => { 'color' => '#111111' },
+              'Qualified' => { 'color' => '#222222' },
+              'Won' => { 'color' => '#333333' }
+            },
+            'permissions' => {},
+            'stage_order' => %w[Lead Qualified Won]
+          }
+        )
+
+        patch "/api/v1/accounts/#{account.id}/custom_attribute_definitions/#{kanban_attr.id}",
+              headers: user.create_new_auth_token,
+              params: {
+                custom_attribute_definition: {
+                  attribute_values: {
+                    stages: {
+                      'Lead' => { color: '#111111' },
+                      'Qualified' => { color: '#222222' },
+                      'Won' => { color: '#333333' }
+                    },
+                    permissions: {},
+                    stage_order: %w[Won Qualified Lead]
+                  }
+                }
+              },
+              as: :json
+
+        expect(response).to have_http_status(:success)
+
+        reloaded = kanban_attr.reload.attribute_values
+        expect(reloaded['stage_order']).to eq(%w[Won Qualified Lead])
+        expect(CustomAttributes::ValuesNormalizer.for_api(reloaded).map { |stage| stage[:name] }).to eq(
+          %w[Won Qualified Lead]
+        )
+      end
     end
   end
 

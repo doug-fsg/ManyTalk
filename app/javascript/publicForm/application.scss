@@ -29,3 +29,14 @@ body {
 .form-public-select:invalid {
   color: rgb(100 116 139);
 }
+
+.form-public-textarea {
+  min-height: 9rem;
+  line-height: 1.625;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.form-public-textarea-hint {
+  color: rgb(100 116 139);
+}

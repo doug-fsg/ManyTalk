@@ -38,10 +38,7 @@ class Contacts::MigrateKanbanDataJob < ApplicationJob
 
       contacts.find_each do |contact|
         begin
-          sync_service = Contacts::KanbanSyncService.new(contact, pipeline.id)
-          
-          # Usar método que não verifica feature flag (permite migração mesmo com flag desabilitada)
-          result = sync_service.sync_to_table_without_flag_check
+          result = Contacts::KanbanLegacyCleanup.import_from_json!(contact, pipeline)
           
           if result
             migrated_count += 1

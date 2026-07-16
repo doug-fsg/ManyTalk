@@ -16,6 +16,7 @@ const config = {
   stubs: {
     WootButton: { template: '<button />' },
     WootInput: { template: '<input />' },
+    TemplateVariableInput: { template: '<input />' },
   },
   mocks: {
     $store: {

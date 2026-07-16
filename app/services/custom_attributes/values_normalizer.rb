@@ -32,9 +32,7 @@ module CustomAttributes
         if stages.is_a?(Array)
           return stages
         elsif stages.is_a?(Hash)
-          return stages.map do |name, data|
-            { name: name.to_s, color: data['color'] || data[:color] }
-          end
+          return ordered_stages_from_hash(stages, values)
         end
 
         return []
@@ -43,6 +41,25 @@ module CustomAttributes
       return values if values.is_a?(Array)
 
       []
+    end
+
+    def ordered_stages_from_hash(stages, values)
+      stage_order = values['stage_order'] || values[:stage_order]
+
+      if stage_order.is_a?(Array) && stage_order.any?
+        ordered_names = stage_order.map(&:to_s).select { |name| stages.key?(name) }
+        remaining_names = stages.keys.map(&:to_s) - ordered_names
+        names = ordered_names + remaining_names
+      else
+        names = stages.keys.map(&:to_s)
+      end
+
+      names.filter_map do |name|
+        data = stages[name] || stages[name.to_sym]
+        next unless data
+
+        { name: name.to_s, color: data['color'] || data[:color] }
+      end
     end
 
     def extract_label(item)

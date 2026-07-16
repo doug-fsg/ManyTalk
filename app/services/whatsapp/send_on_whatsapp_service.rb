@@ -43,13 +43,14 @@ class Whatsapp::SendOnWhatsappService < Base::SendOnChannelService
 
   def processable_channel_message_template
     if template_params.present?
-      return enhanced_template_result if enhanced_templates_enabled?
+      params = interpolated_template_params
+      return enhanced_template_result(params) if enhanced_templates_enabled?
 
       return [
-        template_params['name'],
-        template_params['namespace'],
-        template_params['language'],
-        template_params['processed_params']&.map { |_, value| { type: 'text', text: value } }
+        params['name'],
+        params['namespace'],
+        params['language'],
+        params['processed_params']&.map { |_, value| { type: 'text', text: value } }
       ]
     end
 
@@ -63,12 +64,25 @@ class Whatsapp::SendOnWhatsappService < Base::SendOnChannelService
     [nil, nil, nil, nil]
   end
 
-  def enhanced_template_result
+  def enhanced_template_result(params = interpolated_template_params)
     Whatsapp::TemplateProcessorService.new(
       channel: channel,
-      template_params: template_params,
+      template_params: params,
       message: message
     ).call
+  end
+
+  def interpolated_template_params
+    return template_params if template_params.blank?
+    return template_params if template_params['processed_params'].blank?
+
+    params = template_params.deep_dup
+    interpolator = Messages::LiquidInterpolatorService.new(
+      conversation: message.conversation,
+      sender: message.sender
+    )
+    params['processed_params'] = interpolator.interpolate_value(params['processed_params'])
+    params
   end
 
   def enhanced_templates_enabled?

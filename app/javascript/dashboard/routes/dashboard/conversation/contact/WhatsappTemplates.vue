@@ -8,6 +8,7 @@
     <template-parser
       v-else
       :template="selectedWaTemplate"
+      :variables="variables"
       @resetTemplate="onResetTemplate"
       @sendMessage="onSendMessage"
     />
@@ -30,6 +31,10 @@ export default {
     show: {
       type: Boolean,
       default: true,
+    },
+    variables: {
+      type: Object,
+      default: () => ({}),
     },
   },
   data() {

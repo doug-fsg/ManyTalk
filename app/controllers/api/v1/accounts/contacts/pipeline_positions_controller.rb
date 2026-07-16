@@ -6,43 +6,16 @@ class Api::V1::Accounts::Contacts::PipelinePositionsController < Api::V1::Accoun
 
   # Atualizar posição do contato no pipeline
   def update
-    position = @contact.contact_pipeline_positions
-      .includes(:assignee)
-      .find_or_initialize_by(pipeline_id: params[:pipeline_id])
+    pipeline_id = params[:pipeline_id].to_i
+    position = find_or_build_pipeline_position(pipeline_id)
+    return unless apply_pipeline_position_attributes(position)
 
-    position.assign_attributes(
-      stage_id: params[:stage_id],
-      position: params[:position] || position.position || 0
-    )
+    save_pipeline_position!(position)
+  rescue ActiveRecord::RecordNotUnique
+    position = @contact.contact_pipeline_positions.find_by!(pipeline_id: pipeline_id)
+    return unless apply_pipeline_position_attributes(position)
 
-    position.entered_at = params[:entered_at] if params[:entered_at].present?
-    position.deal_value = params[:deal_value] if params[:deal_value].present?
-    position.metadata = params[:metadata] if params[:metadata].present?
-    
-    # Permitir trocar dono explicitamente (apenas admin)
-    # EXCEÇÃO: Agentes podem atribuir para si mesmos quando o card não tem dono
-    # Aceitar null para remover assignee (apenas admin)
-    if params.key?(:assignee_id)
-      if can_change_assignee?(position, params[:assignee_id])
-        position.assignee_id = params[:assignee_id]
-      else
-        return render json: { error: 'Sem permissão para trocar dono' }, status: :forbidden
-      end
-    end
-
-    if position.save
-      render json: {
-        pipeline_id: position.pipeline_id,
-        stage_id: position.stage_id,
-        position: position.position,
-        entered_at: position.entered_at,
-        deal_value: position.deal_value,
-        metadata: position.metadata || {},
-        assignee: position.assignee ? assignee_json(position.assignee) : nil
-      }
-    else
-      render json: { error: position.errors.full_messages }, status: :unprocessable_entity
-    end
+    save_pipeline_position!(position)
   end
 
   # Remover contato do pipeline
@@ -342,6 +315,52 @@ class Api::V1::Accounts::Contacts::PipelinePositionsController < Api::V1::Accoun
       available_name: user.available_name,
       avatar_url: user.avatar_url,
       thumbnail: user.avatar_url
+    }
+  end
+
+  def find_or_build_pipeline_position(pipeline_id)
+    @contact.contact_pipeline_positions.find_or_initialize_by(pipeline_id: pipeline_id)
+  end
+
+  def apply_pipeline_position_attributes(position)
+    position.assign_attributes(
+      stage_id: params[:stage_id],
+      position: params[:position] || position.position || 0
+    )
+
+    position.entered_at = params[:entered_at] if params[:entered_at].present?
+    position.deal_value = params[:deal_value] if params[:deal_value].present?
+    position.metadata = params[:metadata] if params[:metadata].present?
+
+    return true unless params.key?(:assignee_id)
+
+    if can_change_assignee?(position, params[:assignee_id])
+      position.assignee_id = params[:assignee_id]
+      true
+    else
+      render json: { error: 'Sem permissão para trocar dono' }, status: :forbidden
+      false
+    end
+  end
+
+  def save_pipeline_position!(position)
+    if position.save
+      position = ContactPipelinePosition.includes(:assignee).find(position.id)
+      render json: pipeline_position_json(position)
+    else
+      render json: { error: position.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+  def pipeline_position_json(position)
+    {
+      pipeline_id: position.pipeline_id,
+      stage_id: position.stage_id,
+      position: position.position,
+      entered_at: position.entered_at,
+      deal_value: position.deal_value,
+      metadata: position.metadata || {},
+      assignee: position.assignee ? assignee_json(position.assignee) : nil
     }
   end
 end

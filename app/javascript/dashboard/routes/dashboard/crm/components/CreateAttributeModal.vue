@@ -510,14 +510,19 @@ export default {
             };
             return acc;
           }, {});
+
+        const stageOrder = this.stages
+          .filter(stage => stage.name && stage.name.trim())
+          .map(stage => stage.name.trim());
         
         if (Object.keys(validStages).length === 0) {
           throw new Error(this.$t('KANBAN.CREATE_PIPELINE.FORM.STAGES.ERROR'));
         }
         
-        // Formato: { stages: { "nome": { color }, ... }, permissions: {} }
+        // Formato: { stages: { "nome": { color }, ... }, stage_order: [...], permissions: {} }
         const attributeValues = {
           stages: validStages,
+          stage_order: stageOrder,
           permissions: this.agentPermissions || {}
         };
         

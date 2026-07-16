@@ -57,7 +57,8 @@ class Api::V1::Accounts::CampaignsController < Api::V1::Accounts::BaseController
     @campaign.processing! if @campaign.completed?
     init_retry_redis(@campaign, failed_contacts.length)
 
-    failed_contacts.each_with_index do |contact_data, index|
+    failed_contacts.each_with_index do |entry, index|
+      contact_data = Campaigns::AudienceResolver.normalize_job_contact(entry)
       Campaigns::SendContactJob.set(wait: (index * delay_seconds).seconds).perform_later(
         @campaign.id,
         contact_data
@@ -126,20 +127,13 @@ class Api::V1::Accounts::CampaignsController < Api::V1::Accounts::BaseController
     failed_list = read_failed_contacts_from_rules(@campaign)
     
     # Identifica contatos que já foram processados
-    processed_phones = (sent_list + failed_list).map do |entry|
-      # Entry has format: {"contact" => { "id" => "123", ...}, "status" => "..."} OR {"contact" => "123", ...}
-      contact_data = entry.is_a?(Hash) && entry.key?('contact') ? entry['contact'] : entry
-      
-      if contact_data.is_a?(Hash)
-        (contact_data['id'] || contact_data['phone_number']).to_s
-      else
-        contact_data.to_s
-      end
-    end.compact.reject(&:empty?)
+    processed_phones = (sent_list + failed_list).filter_map do |entry|
+      contact_data = Campaigns::AudienceResolver.normalize_job_contact(entry)
+      Campaigns::AudienceResolver.contact_phone_key(contact_data).presence
+    end.uniq
 
     pending_contacts = audience_contacts.reject do |contact_data|
-      phone = contact_data['id'] || contact_data['phone_number']
-      processed_phones.include?(phone.to_s)
+      processed_phones.include?(Campaigns::AudienceResolver.contact_phone_key(contact_data))
     end
 
     if pending_contacts.blank?
@@ -292,7 +286,7 @@ class Api::V1::Accounts::CampaignsController < Api::V1::Accounts::BaseController
   end
 
   def resolve_audience_contacts_for_resend
-    @campaign.audience.to_a.select { |a| a['id'].present? }
+    Campaigns::AudienceResolver.new(campaign: @campaign).deliverable_contacts
   end
 
   def init_resend_redis(campaign, count)

@@ -10,7 +10,7 @@
         class="templates__search-input"
       />
     </div>
-    <div class="template__list-container">
+    <div class="template__list-container" :class="{ 'template__list-container--compact': compact }">
       <whatsapp-template-guide
         v-if="showEmptyGuide"
         :inbox-id="inboxId"
@@ -20,32 +20,34 @@
         <div v-for="(template, i) in filteredTemplateMessages" :key="template.id">
           <button
             class="template__list-item"
+            :class="{ 'template__list-item--compact': compact }"
             @click="$emit('onSelect', template)"
           >
             <div>
-              <div class="flex items-center justify-between mb-2.5">
-                <p class="label-title">
+              <div class="flex items-center justify-between gap-2" :class="{ 'mb-0': compact }">
+                <p class="label-title" :class="{ 'label-title--compact': compact }">
                   {{ template.name }}
                 </p>
                 <span
-                  class="inline-block py-1 px-2 rounded-sm text-xs leading-none cursor-default bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100"
+                  class="inline-block py-0.5 px-1.5 rounded-sm text-xs leading-none cursor-default bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 shrink-0"
                 >
-                  {{ $t('WHATSAPP_TEMPLATES.PICKER.LABELS.LANGUAGE') }} :
                   {{ template.language }}
                 </span>
               </div>
-              <div>
-                <p class="strong">
-                  {{ $t('WHATSAPP_TEMPLATES.PICKER.LABELS.TEMPLATE_BODY') }}
-                </p>
-                <p class="label-body">{{ getTemplatebody(template) }}</p>
-              </div>
-              <div class="label-category">
-                <p class="strong">
-                  {{ $t('WHATSAPP_TEMPLATES.PICKER.LABELS.CATEGORY') }}
-                </p>
-                <p>{{ template.category }}</p>
-              </div>
+              <template v-if="!compact">
+                <div>
+                  <p class="strong">
+                    {{ $t('WHATSAPP_TEMPLATES.PICKER.LABELS.TEMPLATE_BODY') }}
+                  </p>
+                  <p class="label-body">{{ getTemplatebody(template) }}</p>
+                </div>
+                <div class="label-category">
+                  <p class="strong">
+                    {{ $t('WHATSAPP_TEMPLATES.PICKER.LABELS.CATEGORY') }}
+                  </p>
+                  <p>{{ template.category }}</p>
+                </div>
+              </template>
             </div>
           </button>
           <hr v-if="i != filteredTemplateMessages.length - 1" :key="`hr-${i}`" />
@@ -75,6 +77,10 @@ export default {
     inboxId: {
       type: Number,
       default: undefined,
+    },
+    compact: {
+      type: Boolean,
+      default: false,
     },
   },
   data() {
@@ -141,11 +147,23 @@ export default {
 .template__list-container {
   @apply bg-slate-25 dark:bg-slate-900 rounded-md max-h-[18.75rem] overflow-y-auto p-2.5;
 
+  &--compact {
+    @apply max-h-[12rem] p-1.5;
+  }
+
   .template__list-item {
     @apply rounded-lg cursor-pointer block p-2.5 text-left w-full hover:bg-woot-50 dark:hover:bg-slate-800;
 
+    &--compact {
+      @apply py-2 px-2;
+    }
+
     .label-title {
       @apply text-sm;
+
+      &--compact {
+        @apply text-xs font-medium truncate;
+      }
     }
 
     .label-category {

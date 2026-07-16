@@ -114,4 +114,70 @@ RSpec.describe Campaign do
       end
     end
   end
+
+  describe 'validate_exclusive_audience' do
+    let(:account) { create(:account) }
+    let(:api_channel) { create(:channel_api, account: account) }
+    let(:api_inbox) { api_channel.inbox }
+
+    it 'rejects mixed label and contact audience for one-off campaigns' do
+      campaign = build(
+        :campaign,
+        account: account,
+        inbox: api_inbox,
+        audience: [
+          { 'id' => 1, 'type' => 'Label' },
+          { 'id' => '5511999999999', 'type' => 'Contact' }
+        ]
+      )
+
+      expect(campaign).not_to be_valid
+      expect(campaign.errors[:audience]).to include('cannot mix labels and contacts')
+    end
+
+    it 'allows audience with only labels' do
+      campaign = build(
+        :campaign,
+        account: account,
+        inbox: api_inbox,
+        audience: [{ 'id' => 1, 'type' => 'Label' }]
+      )
+
+      expect(campaign).to be_valid
+    end
+  end
+
+  describe 'validate_whatsapp_template_campaign' do
+    let(:account) { create(:account) }
+    let(:whatsapp_channel) { create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud') }
+    let(:whatsapp_inbox) { whatsapp_channel.inbox }
+
+    it 'requires template_params for WhatsApp one-off campaigns' do
+      campaign = build(
+        :campaign,
+        account: account,
+        inbox: whatsapp_inbox,
+        trigger_rules: { 'send_mode' => 'template_only' }
+      )
+
+      expect(campaign).not_to be_valid
+      expect(campaign.errors[:base]).to include('WhatsApp campaigns require an approved template')
+    end
+
+    it 'rejects macros on WhatsApp campaigns' do
+      campaign = build(
+        :campaign,
+        account: account,
+        inbox: whatsapp_inbox,
+        trigger_rules: {
+          'send_mode' => 'template_only',
+          'macro_id' => 1,
+          'template_params' => { 'name' => 'hello_world' }
+        }
+      )
+
+      expect(campaign).not_to be_valid
+      expect(campaign.errors[:base]).to include('Macros are not allowed for WhatsApp campaigns')
+    end
+  end
 end

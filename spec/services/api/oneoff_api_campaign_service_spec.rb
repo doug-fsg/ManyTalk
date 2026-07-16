@@ -98,6 +98,25 @@ RSpec.describe Api::OneoffApiCampaignService do
       end
     end
 
+    context 'with label audience including contacts without phone' do
+      let!(:contact_with_phone) { create(:contact, account: account, phone_number: '+5511999990001') }
+      let!(:contact_without_phone) { create(:contact, account: account, phone_number: nil) }
+
+      before do
+        contact_with_phone.update_labels([label.title])
+        contact_without_phone.update_labels([label.title])
+      end
+
+      it 'sets total to deliverable contacts only' do
+        allow(Campaigns::SendContactJob).to receive(:set).and_return(double(perform_later: true))
+
+        service.perform
+
+        stats = campaign.reload.trigger_rules['delivery_stats']
+        expect(stats['total']).to eq(1)
+      end
+    end
+
     context 'with contact audience (planilha)' do
       let(:campaign) do
         create(:campaign,

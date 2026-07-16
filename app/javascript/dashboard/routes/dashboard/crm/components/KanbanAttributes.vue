@@ -167,21 +167,24 @@
         <draggable
           v-model="columns"
           class="kanban-columns"
+          :disabled="isColumnDragDisabled"
           :options="{
             group: 'columns',
             handle: '.column-header',
             animation: 150,
           }"
+          @end="onColumnsReordered"
         >
           <kanban-column
-            v-for="column in displayColumns"
+            v-for="column in columns"
             :key="column.id"
-            :column="column"
+            :column="getDisplayColumn(column)"
             :pipeline-id="selectedAttribute.id"
             :operation-manager="operationManager"
             :column-stats="columnStats[column.title]"
-            :has-active-filters="filteredColumns.length > 0"
+            :has-active-filters="hasActiveColumnFilters"
             :is-viewer-mode="isViewerMode"
+            :allow-column-reorder="!isColumnDragDisabled"
             @item-moved="onItemMoved"
             @view-contact="openContact"
             @remove-card="removeCardFromKanban"
@@ -257,6 +260,7 @@
       :full-width="false"
     >
       <edit-kanban-pipeline
+        v-if="showEditPipelineModal"
         :selected-attribute="selectedAttribute"
         :is-updating="uiFlags.isUpdating"
         @on-close="handleEditPipelineSuccess"
@@ -337,7 +341,6 @@ import AddContactToStageModal from './AddContactToStageModal.vue';
 import KanbanCardModal from './KanbanCardModal.vue';
 import KanbanEmptyState from './KanbanEmptyState.vue';
 import { KanbanOperationManager } from '../utils/KanbanOperationManager';
-import { KanbanAttributeService } from '../utils/KanbanAttributeService';
 import { PipelineCacheManager } from '../services/PipelineCacheManager';
 import { KanbanLogger } from '../utils/KanbanLogger';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
@@ -427,6 +430,7 @@ export default {
       showWinLostModal: false,
       winLostModalContact: {},
       winLostModalStatus: 'won',
+      isSavingColumnOrder: false,
       winLostModalDealValue: 0,
       // Modal para adicionar contato na etapa
       showAddContactModal: false,
@@ -463,10 +467,6 @@ export default {
 
     if (this.bus) {
       this.bus.$on(BUS_EVENTS.THEME_CHANGE, this.checkDarkMode);
-      this.bus.$on(
-        'contact_attribute_updated',
-        this.handleContactAttributeUpdate
-      );
       this.bus.$on('contact_updated', this.handleContactUpdate);
       this.bus.$on('kanban_clear_updates', this.clearUpdateCache);
     }
@@ -486,10 +486,6 @@ export default {
 
     if (this.bus) {
       this.bus.$off(BUS_EVENTS.THEME_CHANGE, this.checkDarkMode);
-      this.bus.$off(
-        'contact_attribute_updated',
-        this.handleContactAttributeUpdate
-      );
       this.bus.$off('contact_updated', this.handleContactUpdate);
       this.bus.$off('kanban_clear_updates', this.clearUpdateCache);
     }
@@ -571,8 +567,39 @@ export default {
       }
       return null;
     },
+    hasActiveColumnFilters() {
+      const hasSearch = !!(this.searchQuery && this.searchQuery.trim());
+      const hasWinLost = this.winLostFilter && this.winLostFilter !== 'open';
+      const filters = this.kanbanFilters || {};
+      const hasLabels = filters.labels && filters.labels.length > 0;
+      const hasDealValue =
+        (filters.dealValueMin !== null && filters.dealValueMin !== '') ||
+        (filters.dealValueMax !== null && filters.dealValueMax !== '');
+      const hasDateRange = filters.dateFrom || filters.dateTo;
+      const hasAssignees = filters.assignees && filters.assignees.length > 0;
+
+      return (
+        hasSearch ||
+        hasWinLost ||
+        hasLabels ||
+        hasDealValue ||
+        hasDateRange ||
+        hasAssignees
+      );
+    },
+    isColumnDragDisabled() {
+      return (
+        this.isViewerMode ||
+        !this.canEditCurrentPipeline ||
+        this.hasActiveColumnFilters ||
+        this.isSavingColumnOrder
+      );
+    },
     displayColumns() {
-      return this.filteredColumns.length ? this.filteredColumns : this.columns;
+      if (this.hasActiveColumnFilters && this.filteredColumns.length) {
+        return this.filteredColumns;
+      }
+      return this.columns;
     },
     // Contatos paginados para o modo lista (já vem paginado do backend)
     paginatedContacts() {
@@ -784,11 +811,7 @@ export default {
           this.loadContactsPage(1);
         } else {
           // No modo kanban, usar filtro local
-          if (!newVal || newVal.trim() === '') {
-            this.filteredColumns = [...this.columns];
-          } else {
-            this.handleSearch();
-          }
+          this.handleSearch();
         }
       },
     },
@@ -821,10 +844,6 @@ export default {
       this.pipelineCacheManager = new PipelineCacheManager(this.$store);
       this.logger = new KanbanLogger(false);
       this.operationManager = new KanbanOperationManager(this.logger);
-      this.attributeService = new KanbanAttributeService(
-        this.$store,
-        this.logger
-      );
     },
     async loadInitialData() {
       try {
@@ -865,97 +884,6 @@ export default {
     },
     checkDarkMode() {
       // Método para atualizar o isDarkMode quando o tema mudar
-    },
-    async handleContactAttributeUpdate(contact, attribute, payload) {
-      const attributeKey = Object.keys(attribute)[0];
-      const attributeValue = attribute[attributeKey];
-
-      // Verificar se esta atualização veio do próprio Kanban (para evitar loops)
-      if (payload && payload.fromKanban) {
-        this.logger.log('info', 'Ignorando atualização iniciada pelo Kanban', {
-          contactId: contact.id,
-          attribute: attributeKey,
-          operation: payload.kanbanOperation,
-        });
-        return;
-      }
-
-      // Log do início da operação
-      this.logger.log('info', 'Iniciando atualização de atributo', {
-        contactId: contact.id,
-        attribute: attributeKey,
-        value: attributeValue,
-      });
-
-      // Verificar se já existe operação pendente
-      if (this.operationManager.isOperationPending(contact.id)) {
-        this.logger.log('warn', 'Operação pendente encontrada, aguardando...', {
-          contactId: contact.id,
-          attribute: attributeKey,
-        });
-        return;
-      }
-
-      // Verificar se o atributo é o que estamos exibindo no Kanban
-      if (
-        this.selectedAttribute &&
-        attributeKey !== this.selectedAttribute.attribute_key
-      ) {
-        this.logger.log(
-          'info',
-          'Atributo não corresponde ao Kanban atual, ignorando',
-          {
-            kanbanAttr: this.selectedAttribute.attribute_key,
-            updateAttr: attributeKey,
-          }
-        );
-        return;
-      }
-
-      // Atualizar o cache em tempo real
-      if (this.selectedAttribute) {
-        this.updatePipelineCacheForContact(
-          this.selectedAttribute.id,
-          contact.id,
-          attributeValue
-        );
-      }
-
-      // Registrar nova operação
-      const operationId = this.operationManager.registerOperation(
-        contact.id,
-        attributeValue
-      );
-
-      try {
-        // Debounce para evitar múltiplas atualizações
-        clearTimeout(this.updateDebounceTimeout);
-        this.updateDebounceTimeout = setTimeout(async () => {
-          await this.updateCardPosition(contact, attributeValue, operationId);
-        }, 300);
-
-        // Tracking do evento
-        this.trackEvent('card_move_started', {
-          contact_id: contact.id,
-          from_column: this.getCurrentColumn(contact.id),
-          to_column: attributeValue,
-          operation_id: operationId,
-        });
-      } catch (error) {
-        this.logger.log('error', 'Erro ao atualizar posição do card', {
-          error,
-          contactId: contact.id,
-          operationId,
-        });
-        this.operationManager.completeOperation(operationId, false);
-
-        // Tracking do erro
-        this.trackEvent('card_move_error', {
-          contact_id: contact.id,
-          error: error.message,
-          operation_id: operationId,
-        });
-      }
     },
 
     async updateCardPosition(contact, newColumn, operationId) {
@@ -1115,6 +1043,11 @@ export default {
     },
 
     applyFiltersToColumns() {
+      if (!this.hasActiveColumnFilters) {
+        this.filteredColumns = [];
+        return;
+      }
+
       const searchQuery = (this.searchQuery || '').toLowerCase();
       this.filteredColumns = this.columns.map(column => {
         const filteredItems = column.items.filter(contact => {
@@ -1202,33 +1135,6 @@ export default {
       this.searchDebounce = setTimeout(() => this.applyFiltersToColumns(), 300);
     },
 
-    handleContactAttributeRemoved(contact, attributeKey) {
-      this.logger.log('info', this.$t('KANBAN.CONTACT_ATTRIBUTE_REMOVED'));
-
-      // Se o kanban estiver aberto e for o mesmo atributo que foi removido
-      if (
-        this.selectedAttribute &&
-        this.selectedAttribute.attribute_key === attributeKey &&
-        !this.processingUpdate // Adiciona verificação para evitar loop
-      ) {
-        // Atualizar colunas para remover o card
-        this.setupColumns();
-
-        // Mostrar notificação
-        this.safeShowNotification(
-          'info',
-          this.$t('KANBAN.CONTACT_ATTRIBUTE_REMOVED')
-        );
-      }
-    },
-    handleAttributeRemovedFromKanban(contactId, attributeKey) {
-      if (
-        this.selectedAttribute &&
-        this.selectedAttribute.attribute_key === attributeKey
-      ) {
-        this.setupColumns();
-      }
-    },
     async fetchAttributes() {
       try {
         await this.$store.dispatch('attributes/get');
@@ -1669,7 +1575,7 @@ export default {
         });
 
         this.columns.push({
-          id: `column-${index}`,
+          id: `column-${stageName}`,
           title: stageName,
           color: color,
           items: contacts,
@@ -2059,13 +1965,6 @@ export default {
         this.setupColumns();
       });
     },
-    // Helper para lidar com valores de atributos potencialmente ausentes
-    getAttributeValue(customAttributes, attributeKey) {
-      if (!customAttributes) {
-        return null;
-      }
-      return customAttributes[attributeKey] || null;
-    },
     // Helper para obter position do contato no pipeline
     getContactPosition(contactId, pipelineId, stageId) {
       const contact = this.contacts.find(c => c.id === contactId);
@@ -2139,12 +2038,6 @@ export default {
       // Limpar todas as operações no gerenciador
       if (this.operationManager) {
         this.operationManager.clearOperations();
-      }
-
-      // Limpar serviço de atributos
-      if (this.attributeService) {
-        this.attributeService.clearAllLocks();
-        this.attributeService.clearRecentUpdates();
       }
 
       this.logger.log('warn', 'Todas as travas foram redefinidas');
@@ -2221,10 +2114,73 @@ export default {
       if (columnIndex !== -1) {
         this.$set(this.columns[columnIndex], 'items', items);
         // Sincronizar filteredColumns imediatamente para evitar "voltar" visual
-        // (displayColumns usa filteredColumns quando tem filtros ativos)
-        if (this.filteredColumns.length > 0) {
+        if (this.hasActiveColumnFilters) {
           this.applyFiltersToColumns();
         }
+      }
+    },
+    getDisplayColumn(column) {
+      if (!this.hasActiveColumnFilters) {
+        return column;
+      }
+
+      const filteredColumn = this.filteredColumns.find(
+        col => col.id === column.id || col.title === column.title
+      );
+      return filteredColumn || column;
+    },
+    buildAttributeValuesFromColumns() {
+      const stages = {};
+      const stageOrder = [];
+
+      this.columns.forEach(column => {
+        stages[column.title] = {
+          color: column.color || this.getStageColor(column.title),
+        };
+        stageOrder.push(column.title);
+      });
+
+      const permissions = this.selectedAttribute?.permissions
+        ? { ...this.selectedAttribute.permissions }
+        : {};
+
+      return {
+        stages,
+        stage_order: stageOrder,
+        permissions,
+      };
+    },
+    async onColumnsReordered(event) {
+      if (this.isColumnDragDisabled) return;
+      if (event.oldIndex === event.newIndex) return;
+      if (!this.selectedAttribute) return;
+
+      this.isSavingColumnOrder = true;
+
+      try {
+        await this.$store.dispatch('attributes/update', {
+          id: this.selectedAttribute.id,
+          attribute_values: this.buildAttributeValuesFromColumns(),
+        });
+
+        const updatedStages = this.columns.map(column => ({
+          name: column.title,
+          color: column.color || this.getStageColor(column.title),
+        }));
+
+        this.$set(this.selectedAttribute, 'attribute_values', updatedStages);
+
+        if (window.bus) {
+          window.bus.$emit('attributes:updated');
+        }
+      } catch (error) {
+        this.setupColumns();
+        this.safeShowNotification(
+          'error',
+          error?.message || this.$t('KANBAN.ERRORS.UPDATE_FAILED')
+        );
+      } finally {
+        this.isSavingColumnOrder = false;
       }
     },
     openConversation(conversationId) {
@@ -2378,98 +2334,6 @@ export default {
       this.$forceUpdate();
       if (this.$refs.kanbanHeader) {
         this.$refs.kanbanHeader.$forceUpdate();
-      }
-    },
-    async handleDrop({ removedIndex, addedIndex, payload }, columnId) {
-      if (removedIndex === null && addedIndex === null) return;
-
-      const contact = payload;
-      const targetColumn = this.columns.find(col => col.id === columnId);
-      if (!targetColumn) return;
-
-      const operationId = `move-${contact.id}-${Date.now()}`;
-      const oldValue = getStage(contact, this.selectedAttribute.id);
-      const newValue = targetColumn.value;
-
-      try {
-        this.operationManager.startOperation(operationId);
-
-        // Atualizar o cache antes da chamada à API (otimista)
-        this.pipelineCacheManager.updateContactInCache(
-          this.selectedAttribute.id,
-          contact.id,
-          this.selectedAttribute.attribute_key,
-          newValue
-        );
-
-        await this.updateContactAttribute(contact, newValue);
-        this.operationManager.completeOperation(operationId);
-
-        // Atualizar o cache novamente após sucesso da API
-        this.pipelineCacheManager.updateCache(
-          this.selectedAttribute.id,
-          this.pagination
-        );
-      } catch (error) {
-        // Reverter o cache em caso de erro
-        this.pipelineCacheManager.updateContactInCache(
-          this.selectedAttribute.id,
-          contact.id,
-          oldValue
-        );
-
-        this.operationManager.failOperation(operationId);
-        this.safeShowNotification(
-          'error',
-          this.$t('KANBAN.ERRORS.MOVE_FAILED')
-        );
-      }
-    },
-    async updateContactAttribute(contact, newValue) {
-      if (!this.selectedAttribute) return;
-
-      // Obter dados atuais do pipeline_positions
-      const currentPosition = contact.pipeline_positions?.find(
-        p => p.pipeline_id === this.selectedAttribute.id
-      );
-      
-      const dealValue = currentPosition?.deal_value;
-      const metadata = currentPosition?.metadata || {};
-      const position = currentPosition?.position || 0;
-      const enteredAt = currentPosition?.entered_at || new Date().toISOString();
-
-      // Atualizar via pipeline_positions
-      const response = await ContactAPI.updatePipelinePosition(
-        contact.id,
-        this.selectedAttribute.id,
-        newValue,
-        position,
-        enteredAt,
-        dealValue,
-        metadata
-      );
-
-      // Atualizar pipeline_positions localmente
-      if (contact.pipeline_positions) {
-        const positionIndex = contact.pipeline_positions.findIndex(
-          p => p.pipeline_id === this.selectedAttribute.id
-        );
-        
-        const updatedPosition = {
-          pipeline_id: response.data.pipeline_id,
-          stage_id: response.data.stage_id,
-          position: response.data.position,
-          entered_at: response.data.entered_at,
-          deal_value: response.data.deal_value,
-          metadata: response.data.metadata || {},
-          assignee: response.data.assignee || null,
-        };
-        
-        if (positionIndex >= 0) {
-          this.$set(contact.pipeline_positions, positionIndex, updatedPosition);
-        } else {
-          contact.pipeline_positions.push(updatedPosition);
-        }
       }
     },
     updatePipelineCache(pipelineId) {
@@ -2851,22 +2715,6 @@ export default {
       const days = Math.floor(timeDiff / 86400000);
       
       return `${days}d`;
-    },
-    handleKanbanOperation(contact, newColumnValue, operation) {
-      const operationId = `${operation}-${contact.id}-${Date.now()}`;
-      const oldValue = getStage(contact, this.selectedAttribute.id);
-
-      // Registrar a operação
-      this.operationManager.registerOperation({
-        id: operationId,
-        cardId: contact.id,
-        type: operation,
-        fromColumn: oldValue,
-        toColumn: newColumnValue,
-        timestamp: Date.now(),
-      });
-
-      return operationId;
     },
     handleOpenWinModal(data) {
       this.winLostModalContact = data.contact;

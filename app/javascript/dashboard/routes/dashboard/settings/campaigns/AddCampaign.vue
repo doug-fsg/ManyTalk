@@ -64,32 +64,12 @@
             </span>
           </label>
 
-          <label
+          <campaign-audience-selector
             v-if="isOneOffType"
-            class="multiselect-wrap--small"
-            :class="{ error: $v.selectedAudience.$error }"
-          >
-            {{ $t('CAMPAIGN.ADD.FORM.AUDIENCE.LABEL') }}
-            <multiselect
-              v-model="selectedAudience"
-              :options="audienceList"
-              track-by="id"
-              label="title"
-              :multiple="true"
-              :close-on-select="false"
-              :clear-on-select="false"
-              :hide-selected="true"
-              :placeholder="$t('CAMPAIGN.ADD.FORM.AUDIENCE.PLACEHOLDER')"
-              selected-label
-              :select-label="$t('FORMS.MULTISELECT.ENTER_TO_SELECT')"
-              :deselect-label="$t('FORMS.MULTISELECT.ENTER_TO_REMOVE')"
-              @blur="$v.selectedAudience.$touch"
-              @select="$v.selectedAudience.$touch"
-            />
-            <span v-if="$v.selectedAudience.$error" class="message">
-              {{ $t('CAMPAIGN.ADD.FORM.AUDIENCE.ERROR') }}
-            </span>
-          </label>
+            v-model="audienceState"
+            :show-error="$v.audienceState.$error"
+            @input="$v.audienceState.$touch"
+          />
 
           <label
             v-if="isOngoingType"
@@ -196,63 +176,6 @@
             </span>
           </label>
 
-          <div v-if="isOneOffType" class="file-upload-section">
-            <label>
-              {{ $t('CAMPAIGN.ADD.FORM.CONTACT_LIST.LABEL') }}
-              <input
-                type="file"
-                accept=".xlsx, .xls, .csv"
-                @change="handleFileUpload"
-              />
-            </label>
-            <p v-if="fileUploadError" class="error-message">
-              {{ fileUploadError }}
-            </p>
-            <div v-if="validationMessages.length > 0" class="validation-messages">
-              <p class="validation-title">{{ $t('CAMPAIGN.ADD.FORM.CONTACT_LIST.VALIDATION_TITLE') }}</p>
-              <ul class="validation-list">
-                <li v-for="(message, index) in validationMessages" :key="index" class="validation-item">
-                  {{ message }}
-                </li>
-              </ul>
-              <p v-if="hasMoreInvalidNumbers" class="more-invalid-note">
-                {{ $t('CAMPAIGN.ADD.FORM.CONTACT_LIST.SHOWING_SAMPLE', {
-                  shown: validationMessages.length,
-                  total: totalInvalidNumbers
-                }) }}
-              </p>
-            </div>
-            <div v-if="contactCount" class="contact-list-info">
-              <p class="contact-count">
-                {{
-                  $t('CAMPAIGN.ADD.FORM.CONTACT_LIST.CONTACT_COUNT', {
-                    count: contactCount,
-                  })
-                }}
-              </p>
-              <button class="delete-button" @click="removeContactList">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <polyline points="3 6 5 6 21 6" />
-                  <path
-                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                  />
-                  <line x1="10" y1="11" x2="10" y2="17" />
-                  <line x1="14" y1="11" x2="14" y2="17" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
           <!-- Checkbox temporariamente comentado
           <div class="row">
             <div class="medium-12 columns">
@@ -300,15 +223,23 @@ import { required } from 'vuelidate/lib/validators';
 import { useAlert } from 'dashboard/composables';
 import WootMessageEditor from 'dashboard/components/widgets/WootWriter/Editor.vue';
 import campaignMixin from 'shared/mixins/campaignMixin';
+import { INBOX_TYPES } from 'shared/mixins/inboxMixin';
 import WootDateTimePicker from 'dashboard/components/ui/DateTimePicker.vue';
+import CampaignAudienceSelector from './CampaignAudienceSelector.vue';
 import { CAMPAIGNS_EVENTS } from '../../../../helper/AnalyticsHelper/events';
-import * as XLSX from 'xlsx';
 import { validatePhoneList } from './utils/phoneValidation';
+import {
+  defaultAudienceState,
+  buildAudiencePayload,
+  audienceStateIsComplete,
+  AUDIENCE_SOURCES,
+} from './utils/campaignAudienceHelper';
 
 export default {
   components: {
     WootDateTimePicker,
     WootMessageEditor,
+    CampaignAudienceSelector,
   },
 
   mixins: [campaignMixin],
@@ -324,16 +255,9 @@ export default {
       enabled: true,
       triggerOnlyDuringBusinessHours: false,
       scheduledAt: null,
-      selectedAudience: [],
+      audienceState: defaultAudienceState(),
       senderList: [],
       selectedMacro: '',
-      contactList: [],
-      fileUploadError: '',
-      contactCount: 0,
-      invalidNumbers: [],
-      validationMessages: [],
-      hasMoreInvalidNumbers: false,
-      totalInvalidNumbers: 0,
       showInSystem: true,
     };
   },
@@ -351,8 +275,8 @@ export default {
       },
     };
 
-    const audienceOrContactListRequired = {
-      required: value => value.length > 0 || this.contactList.length > 0,
+    const audienceComplete = {
+      required: () => audienceStateIsComplete(this.audienceState),
     };
 
     if (this.isOngoingType) {
@@ -383,7 +307,7 @@ export default {
     if (this.isOneOffType) {
       return {
         ...commonValidations,
-        selectedAudience: audienceOrContactListRequired,
+        audienceState: audienceComplete,
         selectedMacro: {
           required,
         },
@@ -404,7 +328,13 @@ export default {
       return [
         ...this.$store.getters['inboxes/getSMSInboxes'],
         ...this.$store.getters['inboxes/getApiInboxes'],
-      ];
+      ].filter(
+        inbox =>
+          !(
+            inbox.channel_type === INBOX_TYPES.WHATSAPP &&
+            inbox.provider === 'whatsapp_cloud'
+          )
+      );
     },
     sendersAndBotList() {
       return [
@@ -459,99 +389,6 @@ export default {
     async fetchMacros() {
       await this.$store.dispatch('macros/get');
     },
-    handleFileUpload(event) {
-      const file = event.target.files[0];
-      const reader = new FileReader();
-
-      reader.onload = e => {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-        // Variações possíveis dos nomes das colunas
-        const possibleNumberColumns = ['numeros', 'numero', 'Número', 'número', 'nUmeros'];
-        const possibleNameColumns = ['nome', 'Nome', 'Nomes'];
-        const possibleVariableColumns = ['variavel', 'variável', 'Variavel', 'Variável'];
-
-        // Função para encontrar a chave correta
-        function findColumn(possibleColumns, row) {
-          return possibleColumns.find(column => column in row);
-        }
-
-        // Encontrar as colunas correspondentes no jsonData
-        const numberColumn = findColumn(possibleNumberColumns, jsonData[0]);
-        const nameColumn = findColumn(possibleNameColumns, jsonData[0]);
-        const variableColumn = findColumn(possibleVariableColumns, jsonData[0]);
-
-        if (jsonData.length > 0 && numberColumn) {
-          const contacts = jsonData.map(row => ({
-            numero: row[numberColumn],
-            nome: row[nameColumn] || '',
-            variavel: row[variableColumn] || ''
-          })).filter(contact => contact.numero);
-
-          // Validar os números de telefone
-          const validationResult = validatePhoneList(contacts);
-          
-          if (validationResult.hasErrors) {
-            // Verificar se há muitos números inválidos
-            if (validationResult.totalInvalid > 50) {
-              this.fileUploadError = this.$t('CAMPAIGN.ADD.FORM.CONTACT_LIST.ERROR_TOO_MANY_INVALID', {
-                count: validationResult.totalInvalid
-              });
-            } else {
-              this.fileUploadError = this.$t('CAMPAIGN.ADD.FORM.CONTACT_LIST.ERROR_INVALID_NUMBERS', {
-                count: validationResult.totalInvalid,
-                total: contacts.length
-              });
-            }
-            
-            // Armazenar os números inválidos e suas mensagens
-            this.invalidNumbers = validationResult.invalidNumbers;
-            
-            // Mostrar apenas uma amostra dos números inválidos
-            this.validationMessages = validationResult.limitedInvalidNumbers.map(contact => 
-              `${contact.numero}: ${this.$t(contact.messageKey)}`
-            );
-            
-            this.hasMoreInvalidNumbers = validationResult.hasMoreInvalid;
-            this.totalInvalidNumbers = validationResult.totalInvalid;
-            
-            // Limpar a lista de contatos se houver números inválidos
-            this.contactList = [];
-            this.contactCount = 0;
-          } else {
-            this.contactList = validationResult.validNumbers;
-            this.contactCount = this.contactList.length;
-            this.fileUploadError = '';
-            this.invalidNumbers = [];
-            this.validationMessages = [];
-            this.hasMoreInvalidNumbers = false;
-            this.totalInvalidNumbers = 0;
-          }
-          
-          this.$v.selectedAudience.$touch();
-        } else {
-          this.fileUploadError = this.$t('CAMPAIGN.ADD.FORM.CONTACT_LIST.ERROR_NO_COLUMN');
-          this.contactList = [];
-          this.contactCount = 0;
-          this.invalidNumbers = [];
-          this.validationMessages = [];
-          this.hasMoreInvalidNumbers = false;
-          this.totalInvalidNumbers = 0;
-        }
-      };
-
-      reader.readAsArrayBuffer(file);
-    },
-    removeContactList() {
-      this.contactList = [];
-      this.contactCount = 0;
-      this.$v.selectedAudience.$touch();
-    },
     getCampaignDetails() {
       let campaignDetails = null;
       if (this.isOngoingType) {
@@ -569,22 +406,7 @@ export default {
           },
         };
       } else {
-        const selectedMacroObj = this.macrosList.find(
-          macro => macro.id === Number(this.selectedMacro)
-        );
-
-        const audience =
-          this.contactList.length > 0
-            ? this.contactList.map(contact => ({
-                id: contact.numero,
-                type: 'Contact',
-                nome: contact.nome,
-                variavel: contact.variavel
-              }))
-            : this.selectedAudience.map(item => ({
-                id: item.id,
-                type: 'Label'
-              }));
+        const audience = buildAudiencePayload(this.audienceState);
 
         campaignDetails = {
           title: this.title,
@@ -596,7 +418,10 @@ export default {
             macro_id: this.selectedMacro || '',
             show_in_system: this.showInSystem,
           },
-          contact_list: this.contactList,
+          contact_list:
+            this.audienceState.source === AUDIENCE_SOURCES.SPREADSHEET
+              ? this.audienceState.contactList
+              : [],
         };
       }
       return campaignDetails;
@@ -614,20 +439,18 @@ export default {
 
       // Validação para campanhas one-off
       if (this.$v.$invalid) {
-        if (
-          this.contactList.length === 0 &&
-          this.selectedAudience.length === 0
-        ) {
+        if (!audienceStateIsComplete(this.audienceState)) {
           useAlert(this.$t('CAMPAIGN.ADD.FORM.ERROR_NO_AUDIENCE_OR_CONTACTS'));
         }
         return;
       }
 
-      // Validar os números de telefone antes de salvar
-      if (this.contactList.length > 0) {
-        const validationResult = validatePhoneList(this.contactList);
+      if (
+        this.audienceState.source === AUDIENCE_SOURCES.SPREADSHEET &&
+        this.audienceState.contactList.length > 0
+      ) {
+        const validationResult = validatePhoneList(this.audienceState.contactList);
         if (validationResult.hasErrors) {
-          // Verificar se há muitos números inválidos
           if (validationResult.totalInvalid > 50) {
             useAlert(this.$t('CAMPAIGN.ADD.FORM.CONTACT_LIST.ERROR_TOO_MANY_INVALID', {
               count: validationResult.totalInvalid
@@ -635,18 +458,19 @@ export default {
           } else {
             useAlert(this.$t('CAMPAIGN.ADD.FORM.CONTACT_LIST.ERROR_INVALID_NUMBERS', {
               count: validationResult.totalInvalid,
-              total: this.contactList.length
+              total: this.audienceState.contactList.length
             }));
           }
-          
-          // Atualizar o estado para mostrar os erros
-          this.invalidNumbers = validationResult.invalidNumbers;
-          this.validationMessages = validationResult.limitedInvalidNumbers.map(contact => 
-            `${contact.numero}: ${this.$t(contact.messageKey)}`
-          );
-          this.hasMoreInvalidNumbers = validationResult.hasMoreInvalid;
-          this.totalInvalidNumbers = validationResult.totalInvalid;
-          
+
+          this.audienceState = {
+            ...this.audienceState,
+            validationMessages: validationResult.limitedInvalidNumbers.map(contact =>
+              `${contact.numero}: ${this.$t(contact.messageKey)}`
+            ),
+            hasMoreInvalidNumbers: validationResult.hasMoreInvalid,
+            totalInvalidNumbers: validationResult.totalInvalid,
+          };
+
           return;
         }
       }
@@ -700,44 +524,6 @@ export default {
   }
 }
 
-.file-upload-section {
-  margin-bottom: 1rem;
-
-  .error-message {
-    color: red;
-    margin-top: 0.5rem;
-  }
-
-  .contact-list-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 0.5rem;
-
-    .contact-count {
-      font-weight: bold;
-    }
-
-    .delete-button {
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 0;
-      color: var(--color-body);
-      transition: color 0.3s ease;
-
-      &:hover {
-        color: var(--color-error);
-      }
-
-      svg {
-        width: 20px;
-        height: 20px;
-      }
-    }
-  }
-}
-
 .create-macro-link {
   display: inline;
   font-size: 0.750rem; /* Um pouco menor que o padrão para parecer sutil */
@@ -748,41 +534,6 @@ export default {
 
   &:hover {
     color: var(--color-primary-700); /* Um tom mais escuro para diferenciar no hover */
-  }
-}
-
-.validation-messages {
-  margin-top: 1rem;
-  padding: 0.5rem;
-  border-left: 3px solid var(--color-error);
-  border-radius: 4px;
-
-  .validation-title {
-    font-weight: bold;
-    margin-bottom: 0.5rem;
-    color: var(--color-error);
-  }
-
-  .validation-list {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-    max-height: 150px;
-    overflow-y: auto;
-  }
-
-  .validation-item {
-    padding: 0.25rem 0;
-    color: var(--color-error);
-    font-size: 0.875rem;
-    border-bottom: 1px solid var(--b-100);
-  }
-
-  .more-invalid-note {
-    margin-top: 0.5rem;
-    font-size: 0.75rem;
-    font-style: italic;
-    color: var(--s-600);
   }
 }
 

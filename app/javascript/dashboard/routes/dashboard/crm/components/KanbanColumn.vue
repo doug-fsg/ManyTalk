@@ -7,6 +7,7 @@
   >
     <div 
       class="column-header"
+      :class="{ 'column-header--draggable': allowColumnReorder }"
       :data-title="column.title"
       :style="{ backgroundColor: getHeaderColor(column.color) }"
     >
@@ -127,7 +128,11 @@ export default {
     isViewerMode: {
       type: Boolean,
       default: false
-    }
+    },
+    allowColumnReorder: {
+      type: Boolean,
+      default: true,
+    },
   },
   data() {
     return {
@@ -385,9 +390,13 @@ export default {
 .column-header {
   padding: var(--space-small) var(--space-normal);
   font-weight: var(--font-weight-medium);
-  cursor: move;
+  cursor: default;
   position: relative;
   border-bottom: 1px solid var(--s-100);
+
+  &--draggable {
+    cursor: move;
+  }
   
   .dark-mode & {
     border-color: var(--b-600);

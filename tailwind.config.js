@@ -10,6 +10,7 @@ module.exports = {
     './app/javascript/dashboard/**/*.vue',
     './app/javascript/portal/**/*.vue',
     './app/javascript/shared/**/*.vue',
+    './app/javascript/shared/helpers/**/*.js',
     './app/javascript/survey/**/*.vue',
     './app/javascript/publicForm/**/*.vue',
     './app/views/**/*.html.erb',

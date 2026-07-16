@@ -8,6 +8,7 @@ export const getInputType = (key, operator, filterTypes) => {
 export const generateCustomAttributesInputType = type => {
   const filterInputTypes = {
     text: 'string',
+    textarea: 'string',
     number: 'string',
     date: 'string',
     checkbox: 'multi_select',

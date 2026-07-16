@@ -49,7 +49,6 @@ const primaryMenuItems = accountId => [
     toState: frontendURL(`accounts/${accountId}/activities`),
     toStateName: 'activities_view',
     roles: ['administrator', 'agent'],
-    beta: true,
   },
   {
     icon: 'library',

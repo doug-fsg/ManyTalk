@@ -7,13 +7,15 @@ class Activities::ProcessScheduledActivitiesJob < ApplicationJob
                          .scheduled_before(Time.current)
                          .includes(:conversation, :user)
 
+    processed = 0
     activities.find_each do |activity|
+      processed += 1
       if activity.scheduled_message?
         Activities::SendScheduledMessageService.new(activity).perform
       end
     end
 
-    Rails.logger.info "Processadas #{activities.count} atividades agendadas"
+    Rails.logger.info "Processadas #{processed} atividades agendadas"
   end
 end
 

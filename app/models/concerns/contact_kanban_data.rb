@@ -1,5 +1,5 @@
-# Concern para gerenciar acesso aos dados do Kanban do contato
-# Usa apenas contact_pipeline_positions - sem fallback para JSON
+# Concern para gerenciar acesso aos dados do Kanban do contato.
+# Fonte da verdade: contact_pipeline_positions (JSON legado é removido automaticamente).
 module ContactKanbanData
   extend ActiveSupport::Concern
 

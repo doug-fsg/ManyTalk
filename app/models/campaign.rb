@@ -36,6 +36,8 @@ class Campaign < ApplicationRecord
   validates :message, presence: true
   validate :validate_campaign_inbox
   validate :validate_url
+  validate :validate_exclusive_audience, if: :one_off?
+  validate :validate_whatsapp_template_campaign, if: :whatsapp_one_off?
   validate :prevent_completed_campaign_from_update, on: :update
   belongs_to :account
   belongs_to :inbox
@@ -58,6 +60,7 @@ class Campaign < ApplicationRecord
     Twilio::OneoffSmsCampaignService.new(campaign: self).perform if inbox.inbox_type == 'Twilio SMS'
     Sms::OneoffSmsCampaignService.new(campaign: self).perform if inbox.inbox_type == 'Sms'
     Api::OneoffApiCampaignService.new(campaign: self).perform if inbox.inbox_type == 'API'
+    Whatsapp::OneoffWhatsappCampaignService.new(campaign: self).perform if inbox.inbox_type == 'Whatsapp'
   end
 
   def has_contact_sheet?
@@ -73,14 +76,14 @@ class Campaign < ApplicationRecord
   def validate_campaign_inbox
     return unless inbox
 
-    errors.add :inbox, 'Unsupported Inbox type' unless ['API', 'Website', 'Twilio SMS', 'Sms'].include? inbox.inbox_type
+    errors.add :inbox, 'Unsupported Inbox type' unless ['API', 'Website', 'Twilio SMS', 'Sms', 'Whatsapp'].include? inbox.inbox_type
   end
 
   # TO-DO we clean up with better validations when campaigns evolve into more inboxes
   def ensure_correct_campaign_attributes
     return if inbox.blank?
 
-    if ['Twilio SMS', 'API', 'Sms'].include?(inbox.inbox_type)
+    if ['Twilio SMS', 'API', 'Sms', 'Whatsapp'].include?(inbox.inbox_type)
       self.campaign_type = 'one_off'
       self.scheduled_at ||= Time.now.utc
     else
@@ -94,6 +97,29 @@ class Campaign < ApplicationRecord
 
     use_http_protocol = trigger_rules['url'].starts_with?('http://') || trigger_rules['url'].starts_with?('https://')
     errors.add(:url, 'invalid') if inbox.inbox_type == 'Website' && !use_http_protocol
+  end
+
+  def validate_exclusive_audience
+    return if audience.blank?
+
+    types = audience.filter_map { |item| item['type'] }.uniq
+    return unless types.include?('Label') && types.include?('Contact')
+
+    errors.add(:audience, 'cannot mix labels and contacts')
+  end
+
+  def whatsapp_one_off?
+    one_off? && inbox&.whatsapp?
+  end
+
+  def validate_whatsapp_template_campaign
+    if trigger_rules['macro_id'].present?
+      errors.add(:base, 'Macros are not allowed for WhatsApp campaigns')
+    end
+
+    return if trigger_rules['template_params'].present? && trigger_rules['send_mode'] == 'template_only'
+
+    errors.add(:base, 'WhatsApp campaigns require an approved template')
   end
 
   def prevent_completed_campaign_from_update

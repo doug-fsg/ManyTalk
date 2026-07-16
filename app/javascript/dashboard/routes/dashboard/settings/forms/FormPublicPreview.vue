@@ -29,7 +29,9 @@ const fieldLabels = computed(() => ({
     currency: t('ACCOUNT_FORM.PUBLIC_FIELD.PLACEHOLDER_CURRENCY'),
     percent: t('ACCOUNT_FORM.PUBLIC_FIELD.PLACEHOLDER_PERCENT'),
     number: t('ACCOUNT_FORM.PUBLIC_FIELD.PLACEHOLDER_NUMBER'),
+    textarea: t('ACCOUNT_FORM.PUBLIC_FIELD.PLACEHOLDER_TEXTAREA'),
   },
+  textareaHint: t('ACCOUNT_FORM.PUBLIC_FIELD.TEXTAREA_HINT'),
 }));
 
 const defaultFields = computed(() => [

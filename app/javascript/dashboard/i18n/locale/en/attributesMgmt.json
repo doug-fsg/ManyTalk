@@ -32,6 +32,7 @@
           "ERROR": "Type is required",
           "OPTIONS": {
             "TEXT": "Text",
+            "TEXTAREA": "Long text",
             "NUMBER": "Number",
             "CURRENCY": "Currency",
             "PERCENT": "Percent",

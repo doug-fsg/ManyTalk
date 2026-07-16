@@ -38,6 +38,27 @@
           </div>
         </div>
        
+        <label :class="{ error: $v.selectedInbox.$error }">
+          {{ $t('CAMPAIGN.ADD.FORM.INBOX.LABEL') }}
+          <select v-model="selectedInbox" @change="onChangeInbox($event)">
+            <option v-for="item in inboxes" :key="item.name" :value="item.id">
+              {{ item.name }}
+            </option>
+          </select>
+          <span v-if="$v.selectedInbox.$error" class="message">
+            {{ $t('CAMPAIGN.ADD.FORM.INBOX.ERROR') }}
+          </span>
+        </label>
+
+        <campaign-whatsapp-template-field
+          v-if="isOneOffType && isWhatsappMetaInbox && selectedInbox"
+          v-model="whatsappTemplatePayload"
+          :inbox-id="Number(selectedInbox)"
+          :variables="campaignMessageVariables"
+          :show-error="$v.whatsappTemplatePayload.$error"
+          @input="$v.whatsappTemplatePayload.$touch"
+        />
+
         <label v-else-if="isOneOffType && !hasMacro" :class="{ error: $v.message.$error }">
           {{ $t('CAMPAIGN.ADD.FORM.MESSAGE.LABEL') }}
           <textarea
@@ -52,44 +73,12 @@
           </span>
         </label>
 
-        <label :class="{ error: $v.selectedInbox.$error }">
-          {{ $t('CAMPAIGN.ADD.FORM.INBOX.LABEL') }}
-          <select v-model="selectedInbox" @change="onChangeInbox($event)">
-            <option v-for="item in inboxes" :key="item.name" :value="item.id">
-              {{ item.name }}
-            </option>
-          </select>
-          <span v-if="$v.selectedInbox.$error" class="message">
-            {{ $t('CAMPAIGN.ADD.FORM.INBOX.ERROR') }}
-          </span>
-        </label>
-
-        <label
+        <campaign-audience-selector
           v-if="isOneOffType"
-          class="multiselect-wrap--small"
-          :class="{ error: $v.selectedAudience.$error }"
-        >
-          {{ $t('CAMPAIGN.ADD.FORM.AUDIENCE.LABEL') }}
-          <multiselect
-            v-model="selectedAudience"
-            :options="audienceList"
-            track-by="id"
-            label="title"
-            :multiple="true"
-            :close-on-select="false"
-            :clear-on-select="false"
-            :hide-selected="true"
-            :placeholder="$t('CAMPAIGN.ADD.FORM.AUDIENCE.PLACEHOLDER')"
-            selected-label
-            :select-label="$t('FORMS.MULTISELECT.ENTER_TO_SELECT')"
-            :deselect-label="$t('FORMS.MULTISELECT.ENTER_TO_REMOVE')"
-            @blur="$v.selectedAudience.$touch"
-            @select="$v.selectedAudience.$touch"
-          />
-          <span v-if="$v.selectedAudience.$error" class="message">
-            {{ $t('CAMPAIGN.ADD.FORM.AUDIENCE.ERROR') }}
-          </span>
-        </label>
+          v-model="audienceState"
+          :show-error="$v.audienceState.$error"
+          @input="$v.audienceState.$touch"
+        />
 
         <label
           v-if="isOngoingType"
@@ -166,7 +155,7 @@
         </label>
 
         <label
-          v-if="isOneOffType && hasMacro"
+          v-if="isOneOffType && hasMacro && !isWhatsappMetaInbox"
           class="select-wrap"
           :class="{ error: $v.selectedMacro.$error }"
         >
@@ -195,63 +184,6 @@
             {{ $t('CAMPAIGN.ADD.FORM.MACRO.ERROR') }}
           </span>
         </label>
-
-        <div v-if="isOneOffType" class="file-upload-section">
-          <label>
-            {{ $t('CAMPAIGN.ADD.FORM.CONTACT_LIST.LABEL') }}
-            <input
-              type="file"
-              accept=".xlsx, .xls, .csv"
-              @change="handleFileUpload"
-            />
-          </label>
-          <p v-if="fileUploadError" class="error-message">
-            {{ fileUploadError }}
-          </p>
-          <div v-if="validationMessages.length > 0" class="validation-messages">
-            <p class="validation-title">{{ $t('CAMPAIGN.ADD.FORM.CONTACT_LIST.VALIDATION_TITLE') }}</p>
-            <ul class="validation-list">
-              <li v-for="(message, index) in validationMessages" :key="index" class="validation-item">
-                {{ message }}
-              </li>
-            </ul>
-            <p v-if="hasMoreInvalidNumbers" class="more-invalid-note">
-              {{ $t('CAMPAIGN.ADD.FORM.CONTACT_LIST.SHOWING_SAMPLE', {
-                shown: validationMessages.length,
-                total: totalInvalidNumbers
-              }) }}
-            </p>
-          </div>
-          <div v-if="contactCount" class="contact-list-info">
-            <p class="contact-count">
-              {{
-                $t('CAMPAIGN.ADD.FORM.CONTACT_LIST.CONTACT_COUNT', {
-                  count: contactCount,
-                })
-              }}
-            </p>
-            <button class="delete-button" @click="removeContactList">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <polyline points="3 6 5 6 21 6" />
-                <path
-                  d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                />
-                <line x1="10" y1="11" x2="10" y2="17" />
-                <line x1="14" y1="11" x2="14" y2="17" />
-              </svg>
-            </button>
-          </div>
-        </div>
 
         <!-- Checkbox temporariamente comentado
         <div class="row">
@@ -300,14 +232,26 @@ import { useAlert } from 'dashboard/composables';
 import WootMessageEditor from 'dashboard/components/widgets/WootWriter/Editor.vue';
 import campaignMixin from 'shared/mixins/campaignMixin';
 import WootDateTimePicker from 'dashboard/components/ui/DateTimePicker.vue';
+import CampaignAudienceSelector from './CampaignAudienceSelector.vue';
+import CampaignWhatsappTemplateField from './CampaignWhatsappTemplateField.vue';
+import { INBOX_TYPES } from 'shared/mixins/inboxMixin';
+import { getMessageVariables } from '@chatwoot/utils';
 import { CAMPAIGNS_EVENTS } from '../../../../helper/AnalyticsHelper/events';
-import * as XLSX from 'xlsx';
 import { validatePhoneList } from './utils/phoneValidation';
+import {
+  defaultAudienceState,
+  buildAudiencePayload,
+  parseAudienceToState,
+  audienceStateIsComplete,
+  AUDIENCE_SOURCES,
+} from './utils/campaignAudienceHelper';
 
 export default {
   components: {
     WootDateTimePicker,
     WootMessageEditor,
+    CampaignAudienceSelector,
+    CampaignWhatsappTemplateField,
   },
 
   mixins: [campaignMixin],
@@ -329,16 +273,10 @@ export default {
       enabled: true,
       triggerOnlyDuringBusinessHours: false,
       scheduledAt: null,
-      selectedAudience: [],
+      audienceState: defaultAudienceState(),
+      whatsappTemplatePayload: null,
       senderList: [],
       selectedMacro: '',
-      contactList: [],
-      fileUploadError: '',
-      contactCount: 0,
-      invalidNumbers: [],
-      validationMessages: [],
-      hasMoreInvalidNumbers: false,
-      totalInvalidNumbers: 0,
       showInSystem: true,
     };
   },
@@ -349,19 +287,21 @@ export default {
         required,
       },
       message: {
-        required,
+        required: () => {
+          if (this.isOngoingType) return true;
+          if (this.isWhatsappMetaInbox) return true;
+          return !!this.message && this.message.trim().length > 0;
+        },
       },
       selectedInbox: {
         required,
       },
     };
 
-    const audienceOrContactListRequired = {
-      required: value => {
-        if (this.isOngoingType) {
-          return true;
-        }
-        return value.length > 0 || this.contactList.length > 0;
+    const audienceComplete = {
+      required: () => {
+        if (this.isOngoingType) return true;
+        return audienceStateIsComplete(this.audienceState);
       },
     };
 
@@ -393,7 +333,13 @@ export default {
     if (this.isOneOffType) {
       const validations = {
         ...commonValidations,
-        selectedAudience: audienceOrContactListRequired,
+        audienceState: audienceComplete,
+        whatsappTemplatePayload: {
+          required: () => {
+            if (!this.isWhatsappMetaInbox) return true;
+            return !!this.whatsappTemplatePayload?.templateParams;
+          },
+        },
       };
 
       if (this.hasMacro) {
@@ -417,7 +363,29 @@ export default {
       return [
         ...this.$store.getters['inboxes/getSMSInboxes'],
         ...this.$store.getters['inboxes/getApiInboxes'],
+        ...this.$store.getters['inboxes/getWhatsappCloudInboxes'],
       ];
+    },
+    selectedInboxObject() {
+      const all = this.$store.getters['inboxes/getInboxes'] || [];
+      return all.find(inbox => inbox.id === Number(this.selectedInbox));
+    },
+    isWhatsappMetaInbox() {
+      const inbox = this.selectedInboxObject;
+      return (
+        inbox?.channel_type === INBOX_TYPES.WHATSAPP &&
+        inbox?.provider === 'whatsapp_cloud'
+      );
+    },
+    campaignMessageVariables() {
+      return getMessageVariables({
+        conversation: {
+          meta: { sender: { name: '@nome' }, assignee: {} },
+          id: '',
+          custom_attributes: {},
+        },
+        contact: { name: '@nome', custom_attributes: {} },
+      });
     },
     sendersAndBotList() {
       return [
@@ -466,6 +434,11 @@ export default {
       this.scheduledAt = value;
     },
     async onChangeInbox() {
+      if (this.isWhatsappMetaInbox) {
+        this.selectedMacro = '';
+        this.whatsappTemplatePayload = null;
+      }
+
       try {
         const response = await this.$store.dispatch('inboxMembers/get', {
           inboxId: this.selectedInbox,
@@ -482,99 +455,6 @@ export default {
     },
     async fetchMacros() {
       await this.$store.dispatch('macros/get');
-    },
-    handleFileUpload(event) {
-      const file = event.target.files[0];
-      const reader = new FileReader();
-
-      reader.onload = e => {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-        // Variações possíveis dos nomes das colunas
-        const possibleNumberColumns = ['numeros', 'numero', 'Número', 'número', 'nUmeros'];
-        const possibleNameColumns = ['nome', 'Nome', 'Nomes'];
-        const possibleVariableColumns = ['variavel', 'variável', 'Variavel', 'Variável'];
-
-        // Função para encontrar a chave correta
-        function findColumn(possibleColumns, row) {
-          return possibleColumns.find(column => column in row);
-        }
-
-        // Encontrar as colunas correspondentes no jsonData
-        const numberColumn = findColumn(possibleNumberColumns, jsonData[0]);
-        const nameColumn = findColumn(possibleNameColumns, jsonData[0]);
-        const variableColumn = findColumn(possibleVariableColumns, jsonData[0]);
-
-        if (jsonData.length > 0 && numberColumn) {
-          const contacts = jsonData.map(row => ({
-            numero: row[numberColumn],
-            nome: row[nameColumn] || '',
-            variavel: row[variableColumn] || ''
-          })).filter(contact => contact.numero);
-
-          // Validar os números de telefone
-          const validationResult = validatePhoneList(contacts);
-          
-          if (validationResult.hasErrors) {
-            // Verificar se há muitos números inválidos
-            if (validationResult.totalInvalid > 50) {
-              this.fileUploadError = this.$t('CAMPAIGN.ADD.FORM.CONTACT_LIST.ERROR_TOO_MANY_INVALID', {
-                count: validationResult.totalInvalid
-              });
-            } else {
-              this.fileUploadError = this.$t('CAMPAIGN.ADD.FORM.CONTACT_LIST.ERROR_INVALID_NUMBERS', {
-                count: validationResult.totalInvalid,
-                total: contacts.length
-              });
-            }
-            
-            // Armazenar os números inválidos e suas mensagens
-            this.invalidNumbers = validationResult.invalidNumbers;
-            
-            // Mostrar apenas uma amostra dos números inválidos
-            this.validationMessages = validationResult.limitedInvalidNumbers.map(contact => 
-              `${contact.numero}: ${this.$t(contact.messageKey)}`
-            );
-            
-            this.hasMoreInvalidNumbers = validationResult.hasMoreInvalid;
-            this.totalInvalidNumbers = validationResult.totalInvalid;
-            
-            // Limpar a lista de contatos se houver números inválidos
-            this.contactList = [];
-            this.contactCount = 0;
-          } else {
-            this.contactList = validationResult.validNumbers;
-            this.contactCount = this.contactList.length;
-            this.fileUploadError = '';
-            this.invalidNumbers = [];
-            this.validationMessages = [];
-            this.hasMoreInvalidNumbers = false;
-            this.totalInvalidNumbers = 0;
-          }
-          
-          this.$v.selectedAudience.$touch();
-        } else {
-          this.fileUploadError = this.$t('CAMPAIGN.ADD.FORM.CONTACT_LIST.ERROR_NO_COLUMN');
-          this.contactList = [];
-          this.contactCount = 0;
-          this.invalidNumbers = [];
-          this.validationMessages = [];
-          this.hasMoreInvalidNumbers = false;
-          this.totalInvalidNumbers = 0;
-        }
-      };
-
-      reader.readAsArrayBuffer(file);
-    },
-    removeContactList() {
-      this.contactList = [];
-      this.contactCount = 0;
-      this.$v.selectedAudience.$touch();
     },
     getCampaignDetails() {
       let campaignDetails = null;
@@ -593,30 +473,35 @@ export default {
           },
         };
       } else {
-        const audience =
-          this.contactList.length > 0
-            ? this.contactList.map(contact => ({
-                id: contact.numero,
-                type: 'Contact',
-                nome: contact.nome,
-                variavel: contact.variavel
-              }))
-            : this.selectedAudience.map(item => ({
-                id: item.id,
-                type: 'Label'
-              }));
+        const audience = buildAudiencePayload(this.audienceState);
+        const triggerRules = {
+          show_in_system: this.showInSystem,
+        };
+
+        if (this.isWhatsappMetaInbox) {
+          triggerRules.send_mode = 'template_only';
+          triggerRules.template_params =
+            this.whatsappTemplatePayload?.templateParams || null;
+          triggerRules.macro_id = '';
+        } else {
+          triggerRules.macro_id = this.selectedMacro || '';
+        }
 
         campaignDetails = {
           title: this.title,
-          message: this.message,
+          message: this.isWhatsappMetaInbox
+            ? this.whatsappTemplatePayload?.message ||
+              this.whatsappTemplatePayload?.templateParams?.name ||
+              '.'
+            : this.message,
           inbox_id: this.selectedInbox,
           scheduled_at: this.scheduledAt,
           audience,
-          trigger_rules: {
-            macro_id: this.selectedMacro || '',
-            show_in_system: this.showInSystem,
-          },
-          contact_list: this.contactList,
+          trigger_rules: triggerRules,
+          contact_list:
+            this.audienceState.source === AUDIENCE_SOURCES.SPREADSHEET
+              ? this.audienceState.contactList
+              : [],
         };
       }
       return campaignDetails;
@@ -640,20 +525,24 @@ export default {
 
       // Validação para campanhas one-off
       if (this.$v.$invalid) {
-        if (
-          this.contactList.length === 0 &&
-          this.selectedAudience.length === 0
-        ) {
+        if (!audienceStateIsComplete(this.audienceState)) {
           useAlert(this.$t('CAMPAIGN.ADD.FORM.ERROR_NO_AUDIENCE_OR_CONTACTS'));
+        } else if (
+          this.isWhatsappMetaInbox &&
+          !this.whatsappTemplatePayload?.templateParams
+        ) {
+          useAlert(this.$t('CAMPAIGN.ADD.FORM.WHATSAPP_TEMPLATE.REQUIRED'));
         }
         return;
       }
 
       // Validar os números de telefone antes de salvar
-      if (this.contactList.length > 0) {
-        const validationResult = validatePhoneList(this.contactList);
+      if (
+        this.audienceState.source === AUDIENCE_SOURCES.SPREADSHEET &&
+        this.audienceState.contactList.length > 0
+      ) {
+        const validationResult = validatePhoneList(this.audienceState.contactList);
         if (validationResult.hasErrors) {
-          // Verificar se há muitos números inválidos
           if (validationResult.totalInvalid > 50) {
             useAlert(this.$t('CAMPAIGN.ADD.FORM.CONTACT_LIST.ERROR_TOO_MANY_INVALID', {
               count: validationResult.totalInvalid
@@ -661,18 +550,19 @@ export default {
           } else {
             useAlert(this.$t('CAMPAIGN.ADD.FORM.CONTACT_LIST.ERROR_INVALID_NUMBERS', {
               count: validationResult.totalInvalid,
-              total: this.contactList.length
+              total: this.audienceState.contactList.length
             }));
           }
-          
-          // Atualizar o estado para mostrar os erros
-          this.invalidNumbers = validationResult.invalidNumbers;
-          this.validationMessages = validationResult.limitedInvalidNumbers.map(contact => 
-            `${contact.numero}: ${this.$t(contact.messageKey)}`
-          );
-          this.hasMoreInvalidNumbers = validationResult.hasMoreInvalid;
-          this.totalInvalidNumbers = validationResult.totalInvalid;
-          
+
+          this.audienceState = {
+            ...this.audienceState,
+            validationMessages: validationResult.limitedInvalidNumbers.map(contact =>
+              `${contact.numero}: ${this.$t(contact.messageKey)}`
+            ),
+            hasMoreInvalidNumbers: validationResult.hasMoreInvalid,
+            totalInvalidNumbers: validationResult.totalInvalid,
+          };
+
           return;
         }
       }
@@ -717,7 +607,12 @@ export default {
         inbox,
         scheduled_at: scheduledAt,
         audience,
-        trigger_rules: { macro_id: selectedMacro, show_in_system: showInSystem } = {},
+        trigger_rules: {
+          macro_id: selectedMacro,
+          show_in_system: showInSystem,
+          template_params: templateParams,
+          send_mode: sendMode,
+        } = {},
       } = this.selectedCampaign;
 
       // Mapeamento detalhado e explícito
@@ -759,26 +654,19 @@ export default {
 
       // Processamento de audience
       const campaignAudience = audience || [];
-      if (campaignAudience.length > 0) {
-        if (campaignAudience[0].type === 'Label') {
-          this.selectedAudience = campaignAudience.map(item => 
-  this.audienceList.find(a => a.id === item.id) || item
-);
+      this.audienceState = parseAudienceToState(
+        campaignAudience,
+        this.audienceList
+      );
 
-        } else if (campaignAudience[0].type === 'Contact') {
-          this.contactList = campaignAudience.map(contact => ({
-            numero: contact.id,
-            nome: contact.nome || '',
-            variavel: contact.variavel || ''
-          }));
-          this.contactCount = this.contactList.length;
-        }
+      if (templateParams && sendMode === 'template_only') {
+        this.whatsappTemplatePayload = {
+          message: message || '',
+          templateParams: templateParams,
+        };
       }
 
-      // Atualizado para pegar o valor do trigger_rules
       this.showInSystem = showInSystem !== undefined ? showInSystem : true;
-
-      // Log final para verificação
     },
     resetForm() {
       this.title = '';
@@ -786,58 +674,9 @@ export default {
       this.selectedInbox = null;
       this.scheduledAt = null;
       this.selectedMacro = '';
-      this.selectedAudience = [];
-      this.contactList = [];
-      this.contactCount = 0;
-      this.showInSystem = true; // Reinicia para o valor padrão
-    },
-    validatePhoneNumber(number) {
-      if (!number) {
-        return {
-          isValid: false,
-          message: this.$t('CAMPAIGN.CONTACT_LIST.ERROR_EMPTY_NUMBER'),
-        };
-      }
-
-      // Remove todos os caracteres não numéricos
-      const cleanNumber = number.toString().replace(/\D/g, '');
-
-      // Verifica se é um número internacional (mais de 11 dígitos)
-      if (cleanNumber.length > 11) {
-        return {
-          isValid: true,
-          isInternational: true,
-          message: this.$t('CAMPAIGN.CONTACT_LIST.INFO_INTERNATIONAL'),
-        };
-      }
-
-      // Se o número tem menos de 11 dígitos ou não é internacional
-      if (cleanNumber.length < 11) {
-        return {
-          isValid: false,
-          message: this.$t('CAMPAIGN.CONTACT_LIST.ERROR_MISSING_DDD'),
-        };
-      }
-
-      // Se tem exatamente 11 dígitos, verifica se é um número brasileiro válido
-      if (cleanNumber.length === 11) {
-        const ddd = cleanNumber.substring(0, 2);
-        if (!/^[1-9][1-9]$/.test(ddd)) {
-          return {
-            isValid: false,
-            message: this.$t('CAMPAIGN.CONTACT_LIST.ERROR_MISSING_DDD'),
-          };
-        }
-        return {
-          isValid: true,
-          message: this.$t('CAMPAIGN.CONTACT_LIST.ERROR_VALID'),
-        };
-      }
-
-      return {
-        isValid: false,
-        message: this.$t('CAMPAIGN.CONTACT_LIST.ERROR_BRAZILIAN_FORMAT'),
-      };
+      this.audienceState = defaultAudienceState();
+      this.whatsappTemplatePayload = null;
+      this.showInSystem = true;
     },
   },
 };
@@ -855,79 +694,6 @@ export default {
     .ProseMirror-menubar {
       @apply rounded-tl-[4px];
     }
-  }
-}
-
-.file-upload-section {
-  margin-bottom: 1rem;
-
-  .error-message {
-    color: red;
-    margin-top: 0.5rem;
-  }
-
-  .contact-list-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 0.5rem;
-
-    .contact-count {
-      font-weight: bold;
-    }
-
-    .delete-button {
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 0;
-      color: var(--color-body);
-      transition: color 0.3s ease;
-
-      &:hover {
-        color: var(--color-error);
-      }
-
-      svg {
-        width: 20px;
-        height: 20px;
-      }
-    }
-  }
-}
-
-.validation-messages {
-  margin-top: 1rem;
-  padding: 0.5rem;
-  border-left: 3px solid var(--color-error);
-  border-radius: 4px;
-
-  .validation-title {
-    font-weight: bold;
-    margin-bottom: 0.5rem;
-    color: var(--color-error);
-  }
-
-  .validation-list {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-    max-height: 150px;
-    overflow-y: auto;
-  }
-
-  .validation-item {
-    padding: 0.25rem 0;
-    color: var(--color-error);
-    font-size: 0.875rem;
-    border-bottom: 1px solid var(--b-100);
-  }
-
-  .more-invalid-note {
-    margin-top: 0.5rem;
-    font-size: 0.75rem;
-    font-style: italic;
-    color: var(--s-600);
   }
 }
 

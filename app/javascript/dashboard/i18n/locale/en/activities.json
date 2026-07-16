@@ -1,1 +1,113 @@
-{"ACTIVITIES":{"TITLE":"Activities","CREATE":"New Activity","NEW_ACTIVITY":"New Activity","EDIT":"Edit Activity","EMPTY":"No activities","DESCRIPTION":"Manage tasks and scheduled messages","TABS":{"LIST":"List","BOARD":"Board"},"TYPE":{"TASK":"Task","MESSAGE":"Message","SCHEDULED_MESSAGE":"Schedule Message"},"STATUS":{"PENDING":"Pending","COMPLETED":"Completed","CANCELLED":"Cancelled"},"FORM":{"TITLE":"Title","TITLE_PLACEHOLDER":"What needs to be done?","DESCRIPTION":"Description","SCHEDULED_AT":"When","MESSAGE_CONTENT":"Message","MESSAGE_PLACEHOLDER":"Type your message...","INBOX":"Channel","SELECT_INBOX":"Select a channel","CONVERSATION":"Conversation","ASSIGNEE":"Assignee","TYPE_LABEL":"Type","SUBMIT":"Create","CANCEL":"Cancel","CONTACT":"Contact","SEARCH_CONTACT_PLACEHOLDER":"Search contacts","NO_CONTACTS_FOUND":"No contacts found","CONTACT_REQUIRED":"Select a contact to continue","CONTACT_SEARCH_ERROR":"Error searching contacts. Please try again.","SCHEDULED_MESSAGE_FOOTER":"When the scheduled time arrives, the message will be sent to the contact.","DEFAULT_SCHEDULED_TITLE":"Scheduled message","MESSAGE_REQUIRED":"Enter the message to be sent."},"ACTIONS":{"COMPLETE":"Complete","CANCEL":"Cancel","EDIT":"Edit","DELETE":"Delete"},"ONBOARDING":{"TITLE":"Welcome to Activities!","SUBTITLE":"A new way to organize your work and never miss a commitment.","TASK_TITLE":"Tasks","TASK_DESC":"Create reminders and track actions you need to do: call a customer, send a proposal, follow up. You define the title, description, and time — it's that simple.","MESSAGE_TITLE":"Schedule Message","MESSAGE_DESC":"Automate your communication! Choose the channel (WhatsApp, API, etc.), write the message, and set when it will be sent. At the scheduled time, the message is sent automatically to the contact.","FILTERS_TITLE":"Powerful filters","FILTERS_DESC":"Filter by status (Pending, Completed, Cancelled), activity type, assignee, and more. Find exactly what you need in seconds.","VIEWS_TITLE":"List or calendar view","VIEWS_DESC":"Switch between calendar view (to see everything over time) and list view (to focus on chronological order). Whatever makes the most sense for you, when you need it.","EXTRA_TITLE":"And there's more","EXTRA_DESC":"Use search to quickly find activities. Assign team members to work together. Create activities right from the contact profile in the CRM. Everything integrated so you can sell and support better.","CTA":"Got it, let's go!"}}}
+{
+  "ACTIVITIES": {
+    "TITLE": "Activities",
+    "CREATE": "New Activity",
+    "NEW_ACTIVITY": "New Activity",
+    "EDIT": "Edit Activity",
+    "EMPTY": "No activities",
+    "DESCRIPTION": "Manage tasks and scheduled messages",
+    "TABS": { "LIST": "List", "BOARD": "Board" },
+    "TYPE": {
+      "TASK": "Task",
+      "MESSAGE": "Message",
+      "SCHEDULED_MESSAGE": "Schedule Message"
+    },
+    "STATUS": {
+      "PENDING": "Pending",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled",
+      "FAILED": "Failed"
+    },
+    "FILTERS": {
+      "ALL": "All",
+      "STATUS": "Status",
+      "TYPE": "Type",
+      "OVERDUE": "Overdue"
+    },
+    "FORM": {
+      "TITLE": "Title",
+      "TITLE_PLACEHOLDER": "What needs to be done?",
+      "DESCRIPTION": "Description",
+      "DESCRIPTION_HINT": "Add optional details about this activity",
+      "SCHEDULED_AT": "When",
+      "MESSAGE_CONTENT": "Message",
+      "MESSAGE_PLACEHOLDER": "Type your message...",
+      "INBOX": "Channel",
+      "SELECT_INBOX": "Select a channel",
+      "CONVERSATION": "Conversation",
+      "ASSIGNEE": "Assignee",
+      "TYPE_LABEL": "Type",
+      "SUBMIT": "Create",
+      "SUBMIT_UPDATE": "Save",
+      "CANCEL": "Cancel",
+      "CONTACT": "Contact",
+      "SEARCH_CONTACT_PLACEHOLDER": "Search contacts",
+      "NO_CONTACTS_FOUND": "No contacts found",
+      "CONTACT_REQUIRED": "Select a contact to continue",
+      "CONTACT_SEARCH_ERROR": "Error searching contacts. Please try again.",
+      "SCHEDULED_MESSAGE_FOOTER": "When the scheduled time arrives, the message will be sent to the contact.",
+      "WHATSAPP_SCHEDULED_FOOTER": "If the 24h window is open, we send the free-form message. Otherwise, the selected template is used.",
+      "WHATSAPP_WINDOW_HINT": "WhatsApp only allows free-form messages within 24h of the contact's last message. Outside that window, the fallback template is used automatically.",
+      "WHATSAPP_TEMPLATE_FALLBACK": "Fallback template (required outside the 24h window)",
+      "WHATSAPP_TEMPLATE_REQUIRED": "Select a WhatsApp template to continue.",
+      "WHATSAPP_TEMPLATE_SELECTED": "Template \"{name}\" configured.",
+      "DEFAULT_SCHEDULED_TITLE": "Scheduled message",
+      "MESSAGE_REQUIRED": "Enter the message to be sent.",
+      "SCHEDULED_TODAY": "Will run today at {time}",
+      "SCHEDULED_TOMORROW": "Will run tomorrow at {time}",
+      "SCHEDULED_YESTERDAY": "Was scheduled for yesterday at {time}",
+      "SCHEDULED_DAYS_AGO": "Was scheduled {days} days ago at {time}",
+      "SCHEDULED_FUTURE": "Will run on {date} at {time}"
+    },
+    "ACTIONS": {
+      "COMPLETE": "Complete",
+      "EDIT": "Edit",
+      "DELETE": "Delete"
+    },
+    "DETAIL": {
+      "SCHEDULE": "Schedule",
+      "PEOPLE": "People",
+      "CREATED_BY": "Created by",
+      "CREATED_AT": "Created at",
+      "PIPELINE": "Pipeline",
+      "CHANNEL": "Channel",
+      "VIEW_CONTACT": "View contact",
+      "VIEW_CONVERSATION": "View conversation #{id}",
+      "WHATSAPP_TEMPLATE": "WhatsApp template: {name}",
+      "CLOSE": "Close",
+      "FAILURE_TITLE": "Delivery failed",
+      "FAILURE_UNKNOWN": "Unknown error while processing the activity.",
+      "FAILURE_OUTSIDE_WINDOW": "WhatsApp 24h window closed with no available template.",
+      "FAILURE_TEMPLATE_REQUIRED": "WhatsApp template required outside the 24h window.",
+      "FAILURE_TEMPLATE_NOT_FOUND": "WhatsApp template not found or invalid.",
+      "FAILURE_CONVERSATION": "Could not find or create the conversation.",
+      "FAILURE_MESSAGE_REQUIRED": "Message content was not provided.",
+      "FAILURE_SEND_ERROR": "Error sending the scheduled message."
+    },
+    "ERRORS": {
+      "LOAD_FAILED": "Could not load activities.",
+      "SAVE_FAILED": "Could not save the activity.",
+      "COMPLETE_FAILED": "Could not complete the activity.",
+      "DELETE_FAILED": "Could not delete the activity."
+    },
+    "SUCCESS": {
+      "SAVED": "Activity saved successfully.",
+      "DELETED": "Activity deleted."
+    },
+    "ONBOARDING": {
+      "TITLE": "Welcome to Activities!",
+      "SUBTITLE": "A new way to organize your work and never miss a commitment.",
+      "TASK_TITLE": "Tasks",
+      "TASK_DESC": "Create reminders and track actions you need to do: call a customer, send a proposal, follow up. You define the title, description, and time — it's that simple.",
+      "MESSAGE_TITLE": "Schedule Message",
+      "MESSAGE_DESC": "Automate your communication! Choose the channel (WhatsApp, API, etc.), write the message, and set when it will be sent. At the scheduled time, the message is sent automatically to the contact.",
+      "FILTERS_TITLE": "Powerful filters",
+      "FILTERS_DESC": "Filter by status (Pending, Completed, Cancelled), activity type, assignee, and more. Find exactly what you need in seconds.",
+      "VIEWS_TITLE": "List or calendar view",
+      "VIEWS_DESC": "Switch between calendar view (to see everything over time) and list view (to focus on chronological order). Whatever makes the most sense for you, when you need it.",
+      "EXTRA_TITLE": "And there's more",
+      "EXTRA_DESC": "Use search to quickly find activities. Assign team members to work together. Create activities right from the contact profile in the CRM. Everything integrated so you can sell and support better.",
+      "CTA": "Got it, let's go!"
+    }
+  }
+}

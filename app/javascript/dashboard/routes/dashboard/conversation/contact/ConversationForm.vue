@@ -149,6 +149,7 @@
           <whatsapp-templates
             v-else-if="hasWhatsappTemplates"
             :inbox-id="selectedInbox.inbox.id"
+            :variables="messageVariables"
             @on-select-template="toggleWaTemplate"
             @on-send="onSendWhatsAppReply"
           />
@@ -261,6 +262,7 @@ import {
   appendSignature,
   removeSignature,
 } from 'dashboard/helper/editorHelper';
+import { getMessageVariables } from '@chatwoot/utils';
 
 export default {
   components: {
@@ -423,6 +425,16 @@ export default {
     },
     allowedFileTypes() {
       return ALLOWED_FILE_TYPES;
+    },
+    messageVariables() {
+      return getMessageVariables({
+        conversation: {
+          meta: { sender: this.contact, assignee: this.currentUser },
+          id: '',
+          custom_attributes: {},
+        },
+        contact: this.contact,
+      });
     },
   },
   watch: {

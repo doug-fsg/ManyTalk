@@ -49,6 +49,7 @@ class ContactPipelinePosition < ApplicationRecord
   after_commit :dispatch_contact_updated_event, on: [:create, :update, :destroy]
   after_commit :enqueue_kanban_workflow_if_needed, on: [:create, :update]
   after_commit :dispatch_kanban_stage_changed_webhook, on: [:create, :update]
+  after_commit :cleanup_legacy_kanban_json
   
   # Auto-atribuir dono ao criar card
   before_create :auto_assign_owner_if_new
@@ -136,7 +137,18 @@ class ContactPipelinePosition < ApplicationRecord
       
       # Se stages é um hash (formato {"Etapa 1" => {color: "#ff6900"}}), converter para array
       if stages.is_a?(Hash)
-        stages.map { |name, data| { name: name.to_s, color: data.is_a?(Hash) ? (data['color'] || data[:color]) : nil } }
+        stage_order = attribute_values['stage_order'] || attribute_values[:stage_order]
+        ordered_names = if stage_order.is_a?(Array) && stage_order.any?
+                          stage_order.map(&:to_s).select { |name| stages.key?(name) }
+                        else
+                          stages.keys.map(&:to_s)
+                        end
+        remaining_names = stages.keys.map(&:to_s) - ordered_names
+
+        (ordered_names + remaining_names).map do |name|
+          data = stages[name]
+          { name: name.to_s, color: data.is_a?(Hash) ? (data['color'] || data[:color]) : nil }
+        end
       else
         Array(stages)
       end
@@ -206,6 +218,16 @@ class ContactPipelinePosition < ApplicationRecord
     )
   rescue StandardError => e
     Rails.logger.error("Error dispatching kanban stage changed webhook: #{e.class.name} - #{e.message}")
+  end
+
+  def cleanup_legacy_kanban_json
+    return unless pipeline&.is_kanban?
+
+    Contacts::KanbanLegacyCleanup.cleanup!(contact, pipeline)
+  rescue StandardError => e
+    Rails.logger.error(
+      "Erro ao limpar JSON legado do Kanban para contato #{contact_id}, pipeline #{pipeline_id}: #{e.message}"
+    )
   end
 
   def dispatch_contact_updated_event

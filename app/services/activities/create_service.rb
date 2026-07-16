@@ -17,7 +17,8 @@ class Activities::CreateService
       contact_id: @params[:contact_id],
       conversation_id: @params[:conversation_id],
       inbox_id: @params[:inbox_id],
-      message_content: @params[:message_content]
+      message_content: @params[:message_content],
+      metadata: @params[:metadata] || {}
     )
   end
 end

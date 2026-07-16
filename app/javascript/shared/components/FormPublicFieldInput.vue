@@ -19,6 +19,7 @@ const props = defineProps({
   disabled: { type: Boolean, default: false },
   readonly: { type: Boolean, default: false },
   inputClass: { type: String, default: '' },
+  textareaClass: { type: String, default: '' },
   selectClass: { type: String, default: '' },
   checkboxClass: { type: String, default: '' },
   labels: { type: Object, default: () => ({}) },
@@ -49,6 +50,12 @@ const selectPlaceholder = computed(() =>
 
 const noListOptionsMessage = computed(
   () => props.labels.noListOptions || 'Nenhuma opção configurada para este campo.'
+);
+
+const textareaHint = computed(() => props.labels.textareaHint || '');
+
+const resolvedTextareaClass = computed(() =>
+  props.textareaClass || props.inputClass
 );
 
 const updateValue = val => {
@@ -165,6 +172,29 @@ const handleInput = event => {
     >
       %
     </span>
+  </div>
+
+  <div v-else-if="fieldKind === 'textarea'" class="form-public-textarea-wrap">
+    <textarea
+      :id="`field-${valueKey}`"
+      :name="valueKey"
+      :value="modelValue"
+      rows="5"
+      wrap="soft"
+      :disabled="disabled"
+      :readonly="readonly"
+      :required="field.required"
+      :placeholder="placeholder"
+      :autocomplete="autocomplete"
+      :class="[resolvedTextareaClass, 'form-public-textarea']"
+      @input="updateValue($event.target.value)"
+    />
+    <p
+      v-if="textareaHint && !readonly"
+      class="form-public-textarea-hint mt-1.5 text-xs leading-snug"
+    >
+      {{ textareaHint }}
+    </p>
   </div>
 
   <input

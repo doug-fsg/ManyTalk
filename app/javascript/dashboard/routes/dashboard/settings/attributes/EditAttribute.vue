@@ -91,7 +91,7 @@ export default {
       return this.attributeType === 6;
     },
     isAttributeTypeText() {
-      return this.attributeType === 0;
+      return this.attributeType === 0 || this.attributeType === 9;
     },
     isRegexEnabled() {
       return this.regexEnabled;

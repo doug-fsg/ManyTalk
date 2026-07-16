@@ -244,7 +244,9 @@
       "PLACEHOLDER_LINK": "https://example.com",
       "PLACEHOLDER_CURRENCY": "0.00",
       "PLACEHOLDER_PERCENT": "0",
-      "PLACEHOLDER_NUMBER": "0"
+      "PLACEHOLDER_NUMBER": "0",
+      "PLACEHOLDER_TEXTAREA": "Write your message…",
+      "TEXTAREA_HINT": "Press Enter to start a new line."
     },
     "PUBLIC": {
       "UNAVAILABLE": "Form unavailable.",

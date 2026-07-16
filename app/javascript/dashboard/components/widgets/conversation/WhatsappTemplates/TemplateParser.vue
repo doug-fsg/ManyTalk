@@ -2,7 +2,7 @@
   <div class="w-full">
     <textarea
       v-model="processedString"
-      rows="4"
+      :rows="campaignMode ? 2 : 4"
       readonly
       class="template-input"
     />
@@ -18,24 +18,18 @@
         <span class="variable-label">
           {{ variable }}
         </span>
-        <woot-input
+        <template-variable-input
           v-if="enhancedTemplatesEnabled"
           v-model="processedParams.body[variable]"
-          type="text"
-          class="variable-input"
-          :styles="{ marginBottom: 0 }"
           :placeholder="
             $t('WHATSAPP_TEMPLATES.PARSER.VARIABLE_PLACEHOLDER', {
               variable,
             })
           "
         />
-        <woot-input
+        <template-variable-input
           v-else
           v-model="processedParams[variable]"
-          type="text"
-          class="variable-input"
-          :styles="{ marginBottom: 0 }"
           :placeholder="
             $t('WHATSAPP_TEMPLATES.PARSER.VARIABLE_PLACEHOLDER', {
               variable,
@@ -93,11 +87,8 @@
         <span class="variable-label">
           {{ buttonField.label }}
         </span>
-        <woot-input
+        <template-variable-input
           v-model="processedParams.buttons[buttonField.index].parameter"
-          type="text"
-          class="variable-input"
-          :styles="{ marginBottom: 0 }"
           :placeholder="buttonField.placeholder"
         />
       </div>
@@ -107,7 +98,7 @@
       {{ $t('WHATSAPP_TEMPLATES.PARSER.FORM_ERROR_MESSAGE') }}
     </p>
 
-    <footer>
+    <footer v-if="!campaignMode">
       <woot-button variant="smooth" @click="$emit('resetTemplate')">
         {{ $t('WHATSAPP_TEMPLATES.PARSER.GO_BACK_LABEL') }}
       </woot-button>
@@ -115,6 +106,11 @@
         {{ $t('WHATSAPP_TEMPLATES.PARSER.SEND_MESSAGE_LABEL') }}
       </woot-button>
     </footer>
+    <div v-else class="campaign-parser-footer">
+      <button type="button" class="back-link" @click="$emit('resetTemplate')">
+        {{ $t('WHATSAPP_TEMPLATES.PARSER.GO_BACK_LABEL') }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -128,16 +124,27 @@ import {
   buildTemplateParameters,
   findComponentByType,
   hasMediaHeader,
+  interpolateParamsValues,
   replaceTemplateVariables,
   COMPONENT_TYPES,
 } from 'dashboard/helper/templateHelper';
+import TemplateVariableInput from './TemplateVariableInput.vue';
 
 export default {
+  components: { TemplateVariableInput },
   mixins: [accountMixin],
   props: {
     template: {
       type: Object,
       default: () => ({}),
+    },
+    variables: {
+      type: Object,
+      default: () => ({}),
+    },
+    campaignMode: {
+      type: Boolean,
+      default: false,
     },
   },
   validations: {
@@ -197,7 +204,12 @@ export default {
       );
       if (!bodyComponent?.text) return '';
 
-      return replaceTemplateVariables(bodyComponent.text, this.processedParams);
+      const interpolatedParams = interpolateParamsValues(
+        this.processedParams,
+        this.variables
+      );
+
+      return replaceTemplateVariables(bodyComponent.text, interpolatedParams);
     },
     buttonFields() {
       if (!this.enhancedTemplatesEnabled) return [];
@@ -234,23 +246,54 @@ export default {
   },
   mounted() {
     this.generateVariables();
+    if (this.campaignMode) {
+      this.emitCampaignPayload();
+    }
+  },
+  watch: {
+    processedParams: {
+      deep: true,
+      handler() {
+        if (this.campaignMode) {
+          this.emitCampaignPayload();
+        }
+      },
+    },
   },
   methods: {
-    sendMessage() {
-      this.$v.$touch();
-      if (this.$v.$invalid) return;
+    buildPayload() {
+      const interpolatedParams = interpolateParamsValues(
+        this.processedParams,
+        this.variables
+      );
 
-      const payload = {
-        message: this.processedString,
+      const bodyComponent = findComponentByType(
+        this.template,
+        COMPONENT_TYPES.BODY
+      );
+      const messageContent = bodyComponent?.text
+        ? replaceTemplateVariables(bodyComponent.text, interpolatedParams)
+        : '';
+
+      return {
+        message: messageContent,
         templateParams: {
           name: this.template.name,
           category: this.template.category,
           language: this.template.language,
           namespace: this.template.namespace,
-          processed_params: this.processedParams,
+          processed_params: interpolatedParams,
         },
       };
-      this.$emit('sendMessage', payload);
+    },
+    emitCampaignPayload() {
+      this.$emit('change', this.buildPayload());
+    },
+    sendMessage() {
+      this.$v.$touch();
+      if (this.$v.$invalid) return;
+
+      this.$emit('sendMessage', this.buildPayload());
     },
     generateVariables() {
       if (this.enhancedTemplatesEnabled) {
@@ -304,5 +347,13 @@ footer {
 }
 .template-input {
   @apply bg-slate-25 dark:bg-slate-900 text-slate-700 dark:text-slate-100;
+}
+
+.campaign-parser-footer {
+  @apply mt-2;
+
+  .back-link {
+    @apply text-xs text-slate-500 dark:text-slate-400 hover:text-woot-500 underline bg-transparent border-0 p-0 cursor-pointer;
+  }
 }
 </style>
