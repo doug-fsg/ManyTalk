@@ -54,6 +54,17 @@
             </div>
           </div>
         </div>
+        <div class="header-actions">
+          <woot-button
+            icon="add"
+            size="small"
+            variant="smooth"
+            color-scheme="primary"
+            @click="openNewActivity"
+          >
+            {{ $t('KANBAN.CARD_MODAL.NEW_ACTIVITY') }}
+          </woot-button>
+        </div>
       </div>
 
       <!-- Seletor de Etapas do Kanban (no topo) -->
@@ -226,37 +237,71 @@
             <button
               :class="[
                 'px-4 py-2 text-sm font-medium transition-colors duration-150 border-b-2',
+                activeTab === 'timeline'
+                  ? 'border-woot-500 text-woot-600 dark:border-woot-400 dark:text-woot-400'
+                  : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
+              ]"
+              @click="setActiveTab('timeline')"
+            >
+              {{ $t('CONTACT_PROFILE.TABS.TIMELINE') }}
+            </button>
+            <button
+              :class="[
+                'px-4 py-2 text-sm font-medium transition-colors duration-150 border-b-2',
                 activeTab === 'notes'
                   ? 'border-woot-500 text-woot-600 dark:border-woot-400 dark:text-woot-400'
                   : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
               ]"
-              @click="activeTab = 'notes'"
+              @click="setActiveTab('notes')"
             >
               {{ $t('CONTACT_PANEL.SIDEBAR_SECTIONS.NOTES') }}
             </button>
             <button
               :class="[
-                'px-4 py-2 text-sm font-medium transition-colors duration-150 border-b-2',
+                'px-4 py-2 text-sm font-medium transition-colors duration-150 border-b-2 flex items-center gap-1.5',
                 activeTab === 'activities'
                   ? 'border-woot-500 text-woot-600 dark:border-woot-400 dark:text-woot-400'
                   : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
               ]"
-              @click="activeTab = 'activities'"
+              @click="setActiveTab('activities')"
             >
               {{ $t('ACTIVITIES.TITLE') }}
+              <span
+                v-if="overdueActivitiesCount > 0"
+                class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
+              >
+                {{ overdueActivitiesCount }}
+              </span>
+              <span
+                v-else-if="pendingActivitiesCount > 0"
+                class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+              >
+                {{ pendingActivitiesCount }}
+              </span>
             </button>
           </div>
 
           <!-- Conteúdo das tabs -->
           <div class="tab-content">
+            <contact-timeline
+              v-if="activeTab === 'timeline' && contact.id"
+              :contact-id="contact.id"
+              :account-id="currentAccountId"
+              :highlight-pipeline-id="pipelineId"
+              compact
+              @open-activities="openActivitiesFromTimeline"
+            />
             <contact-notes
               v-if="activeTab === 'notes' && contact.id"
               :contact-id="contact.id"
             />
             <contact-activities
               v-if="activeTab === 'activities' && contact.id"
+              ref="contactActivities"
               :contact-id="contact.id"
+              :contact="contact"
               :pipeline-id="pipelineId"
+              :highlight-activity-id="effectiveHighlightActivityId"
             />
           </div>
         </div>
@@ -275,6 +320,7 @@ import CustomAttributes from 'dashboard/routes/dashboard/conversation/customAttr
 import ContactConversations from 'dashboard/routes/dashboard/conversation/ContactConversations.vue';
 import ContactNotes from 'dashboard/modules/notes/NotesOnContactPage.vue';
 import ContactActivities from './ContactActivities.vue';
+import ContactTimeline from '../../contacts/components/profile/ContactTimeline.vue';
 import MultiselectDropdown from 'shared/components/ui/MultiselectDropdown.vue';
 import { useAlert } from 'dashboard/composables';
 import ContactAPI from 'dashboard/api/contacts';
@@ -286,6 +332,11 @@ import {
   getStage,
   getPipelinePosition
 } from '../utils/pipelinePositionsHelper';
+import {
+  getActivityCountForContact,
+  resolveCardModalTab,
+  storeCardModalTab,
+} from '../utils/crmNavigationHelper';
 
 export default {
   name: 'KanbanCardModal',
@@ -298,6 +349,7 @@ export default {
     ContactConversations,
     ContactNotes,
     ContactActivities,
+    ContactTimeline,
     MultiselectDropdown,
   },
   mixins: [agentMixin],
@@ -322,6 +374,14 @@ export default {
       type: Array,
       default: () => [],
     },
+    initialTab: {
+      type: String,
+      default: null,
+    },
+    highlightActivityId: {
+      type: [Number, String],
+      default: null,
+    },
   },
   data() {
     return {
@@ -335,7 +395,8 @@ export default {
         customAttributes: true,
         conversations: true,
       },
-      activeTab: 'notes',
+      activeTab: 'timeline',
+      localHighlightActivityId: null,
     };
   },
   computed: {
@@ -343,7 +404,29 @@ export default {
       currentUser: 'getCurrentUser',
       currentAccountId: 'getCurrentAccountId',
       agents: 'agents/getAgents',
+      getPendingCountByContactId: 'activities/getPendingCountByContactId',
+      getOverdueCountByContactId: 'activities/getOverdueCountByContactId',
     }),
+    pendingActivitiesCount() {
+      if (!this.contact?.id) return 0;
+      return getActivityCountForContact(
+        this.getPendingCountByContactId,
+        this.contact.id
+      );
+    },
+    overdueActivitiesCount() {
+      if (!this.contact?.id) return 0;
+      return getActivityCountForContact(
+        this.getOverdueCountByContactId,
+        this.contact.id
+      );
+    },
+    hasOverdueActivities() {
+      return this.overdueActivitiesCount > 0;
+    },
+    effectiveHighlightActivityId() {
+      return this.localHighlightActivityId || this.highlightActivityId;
+    },
     isAdmin() {
       return this.currentUser?.role === 'administrator';
     },
@@ -448,16 +531,23 @@ export default {
     },
   },
   watch: {
-    show(newValue) {
-      if (newValue) {
-        this.selectedStage = this.currentStage;
-        // Carregar atributos apenas se ainda não foram carregados
-        const attributes = this.$store.getters['attributes/getAttributes'];
-        if (!attributes || !attributes.length) {
-          this.$store.dispatch('attributes/get', 0);
+    show: {
+      immediate: true,
+      handler(newValue) {
+        if (newValue) {
+          this.selectedStage = this.currentStage;
+          this.applyInitialTab();
+          const attributes = this.$store.getters['attributes/getAttributes'];
+          if (!attributes || !attributes.length) {
+            this.$store.dispatch('attributes/get', 0);
+          }
+          this.$store.dispatch('agents/get');
         }
-        // Carregar agentes sempre quando modal abre (para garantir que está disponível)
-        this.$store.dispatch('agents/get');
+      },
+    },
+    initialTab(newValue) {
+      if (this.show && newValue) {
+        this.applyInitialTab();
       }
     },
     currentStage(newValue) {
@@ -482,6 +572,26 @@ export default {
     this.$store.dispatch('agents/get');
   },
   methods: {
+    applyInitialTab() {
+      this.activeTab = resolveCardModalTab({
+        initialTab: this.initialTab,
+        hasOverdueActivities: this.hasOverdueActivities,
+      });
+    },
+    setActiveTab(tab) {
+      this.activeTab = tab;
+      storeCardModalTab(tab);
+    },
+    openNewActivity() {
+      this.setActiveTab('activities');
+      this.$nextTick(() => {
+        this.$refs.contactActivities?.openCreateForm();
+      });
+    },
+    openActivitiesFromTimeline(activityId) {
+      this.localHighlightActivityId = activityId;
+      this.setActiveTab('activities');
+    },
     onSelfAssign() {
       const {
         account_id,
@@ -770,24 +880,23 @@ export default {
 
     .stage-button {
       @apply transition-all;
-      
+
       &.stage-button-active {
         @apply shadow-sm;
-        // Verde mais vivo para etapa selecionada (mesma cor do botão success do sistema)
         background-color: #44ce4b !important;
         color: white !important;
         border-color: #44ce4b !important;
-        
+
         &:hover {
           background-color: #3ab841 !important;
           border-color: #3ab841 !important;
         }
-        
+
         .dark-mode & {
           background-color: #44ce4b !important;
           color: white !important;
           border-color: #44ce4b !important;
-          
+
           &:hover {
             background-color: #3ab841 !important;
             border-color: #3ab841 !important;

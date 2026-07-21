@@ -46,6 +46,10 @@ export default {
       type: Array,
       default: () => [],
     },
+    accountForms: {
+      type: Array,
+      default: () => [],
+    },
     inboxes: {
       type: Array,
       default: () => [],
@@ -206,6 +210,37 @@ export default {
         })),
       };
     },
+    contactFormSection() {
+      if (
+        !this.isFeatureEnabledonAccount(this.accountId, FEATURE_FLAGS.WORKFLOWS)
+      ) {
+        return null;
+      }
+
+      const formsWithSubmissions = this.accountForms
+        .filter(form => (form.submissions_count || 0) > 0)
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+
+      if (!formsWithSubmissions.length) {
+        return null;
+      }
+
+      return {
+        icon: 'document',
+        label: 'SUBMITTED_VIA_FORM',
+        hasSubMenu: true,
+        key: 'account_form',
+        children: formsWithSubmissions.map(form => ({
+          id: form.id,
+          label: form.name,
+          truncateLabel: true,
+          toState: frontendURL(
+            `accounts/${this.accountId}/forms/${form.id}/contacts`
+          ),
+        })),
+      };
+    },
     teamSection() {
       return {
         icon: 'people-team',
@@ -263,7 +298,11 @@ export default {
     },
     additionalSecondaryMenuItems() {
       let conversationMenuItems = [this.inboxSection, this.labelSection];
-      let contactMenuItems = [this.contactLabelSection];
+      let contactMenuItems = [];
+      if (this.contactFormSection) {
+        contactMenuItems.push(this.contactFormSection);
+      }
+      contactMenuItems.push(this.contactLabelSection);
       if (this.teams.length) {
         conversationMenuItems = [this.teamSection, ...conversationMenuItems];
       }

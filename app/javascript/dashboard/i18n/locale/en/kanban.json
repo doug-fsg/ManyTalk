@@ -28,6 +28,12 @@
     "REMOVE_CARD": "Remove from Kanban",
     "LOADING_CONTACTS": "Loading contacts...",
     "LOAD_MORE_CONTACTS": "Load more contacts",
+    "CARD_MODAL": {
+      "NEW_ACTIVITY": "New activity",
+      "SELECT_STAGE": "Select stage",
+      "STAGE_PREVIOUS": "Previous stage: {stage}",
+      "STAGE_NEXT": "Next stage: {stage}"
+    },
     "ACTIONS": {
       "TITLE": "Actions",
       "NEW": "New Pipeline",
@@ -79,9 +85,20 @@
       "CANCEL": "No, keep it"
     },
     "PARTIAL_CONTACTS_LOADED": "Loaded {loaded} contacts out of {total}.",
+    "CONTEXT_BAR": {
+      "PIPELINE": "Pipeline: {name}",
+      "GO_TO_ACTIVITIES": "Activities",
+      "OVERDUE_COUNT": "{count} overdue",
+      "GO_TO_PIPELINE": "Go to pipeline",
+      "GO_TO_PIPELINE_NAMED": "Go to {name}",
+      "MY_TASKS": "My tasks",
+      "ASSIGNEE_FILTER": "Assignee: {name}"
+    },
     "CARD": {
       "HIDE_CONVERSATIONS": "Hide conversations",
       "VIEW_CONVERSATIONS": "View conversations",
+      "ACTIVITIES_BADGE_CLICK": "Click to view activities",
+      "ACTIVITIES_BADGE_ARIA": "View {count} pending activities",
       "LOADING": "Loading conversations...",
       "NO_CONVERSATIONS": "No conversations found",
       "NO_MESSAGES": "No messages",

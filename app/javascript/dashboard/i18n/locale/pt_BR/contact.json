@@ -229,6 +229,7 @@
   },
   "CONTACTS_PAGE": {
     "HEADER": "Contato",
+    "FORM_FILTER": "Formulário",
     "FIELDS": "Campos de contatos",
     "SEARCH_BUTTON": "Pesquisar",
     "SEARCH_INPUT_PLACEHOLDER": "Procurar contatos",
@@ -257,7 +258,70 @@
   },
   "CONTACT_PROFILE": {
     "BACK_BUTTON": "Contato",
-    "LOADING": "Carregando o perfil do contato..."
+    "LOADING": "Carregando o perfil do contato...",
+    "TABS": {
+      "TIMELINE": "Linha do tempo",
+      "DEAL": "Negócio",
+      "NOTES": "Observações",
+      "ACTIVITIES": "Atividades"
+    },
+    "HEADER": {
+      "OPEN_IN_PIPELINE": "Abrir no funil",
+      "VIA_FORM": "via Formulário {form}",
+      "PENDING_ACTIVITIES": "{count} tarefa(s) pendente(s)",
+      "OVERDUE_ACTIVITIES": "{count} tarefa(s) atrasada(s)"
+    },
+    "DEAL": {
+      "NO_PIPELINE_TITLE": "Contato ainda não está em um funil",
+      "NO_PIPELINE_HINT": "Adicione o contato a um pipeline para acompanhar etapa, valor e responsável.",
+      "VALUE": "Valor do negócio",
+      "ASSIGNEE": "Responsável",
+      "NO_ASSIGNEE": "Sem responsável",
+      "WON": "Ganho",
+      "LOST": "Perdido",
+      "WIN_LOST_NOTES": "Observações do fechamento"
+    },
+    "TIMELINE": {
+      "FILTER_ARIA": "Filtrar linha do tempo",
+      "LOAD_ERROR": "Não foi possível carregar a linha do tempo.",
+      "EMPTY_TITLE": "Nenhum evento ainda",
+      "EMPTY_HINT": "Submissões de formulário, movimentações no funil e atividades aparecerão aqui.",
+      "UNKNOWN_FORM": "Formulário",
+      "UNKNOWN_USER": "Usuário",
+      "UNKNOWN_INBOX": "Caixa de entrada",
+      "ASSIGNEE": "Responsável: {name}",
+      "PERFORMED_BY": "Por {name}",
+      "BY_USER": "por {name}",
+      "REOPENED_FROM": "Status anterior: {status}",
+      "UTM_SOURCE": "Origem: {source}",
+      "FILTERS": {
+        "ALL": "Todos",
+        "FORM_SUBMISSION": "Formulários",
+        "PIPELINE": "Funil",
+        "ACTIVITY": "Atividades",
+        "NOTE": "Observações",
+        "CONVERSATION_STARTED": "Conversas"
+      },
+      "EVENTS": {
+        "CONTACT_CREATED": "Contato criado",
+        "FORM_SUBMISSION": "Cadastro via {form}",
+        "PIPELINE_ENTERED": "Entrou no funil {pipeline}",
+        "PIPELINE_STAGE": "Etapa {stage} · {pipeline}",
+        "PIPELINE_STAGE_CHANGED": "De {from} para {to} · {pipeline}",
+        "PIPELINE_REOPENED": "Negócio reaberto · {pipeline}",
+        "DEAL_WON": "Negócio ganho · {pipeline}",
+        "DEAL_LOST": "Negócio perdido · {pipeline}",
+        "ACTIVITY": "Atividade",
+        "NOTE": "Nota de {user}",
+        "CONVERSATION": "Conversa iniciada · {inbox}"
+      },
+      "ACTIONS": {
+        "VIEW_FORM_CONTACTS": "Ver contatos do formulário",
+        "OPEN_PIPELINE": "Abrir funil",
+        "OPEN_CONVERSATION": "Abrir conversa",
+        "VIEW_ACTIVITY": "Ver atividade"
+      }
+    }
   },
   "REMINDER": {
     "ADD_BUTTON": {

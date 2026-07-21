@@ -12,6 +12,7 @@ import FormListToolbar from './FormListToolbar.vue';
 import FormListRow from './FormListRow.vue';
 import WorkflowCreateModal from '../workflows/WorkflowCreateModal.vue';
 import { useFormListFilters } from './useFormListFilters';
+import { buildContactsByFormRoute } from '../../contacts/utils/contactsNavigationHelper';
 
 const store = useStore();
 const getters = useStoreGetters();
@@ -83,11 +84,7 @@ const openDetail = form => {
 };
 
 const openSubmissions = form => {
-  router.push({
-    name: 'forms_show',
-    params: { formId: form.id },
-    query: { tab: 'submissions' },
-  });
+  router.push(buildContactsByFormRoute(route.params.accountId, form.id));
 };
 
 const onCreated = form => {

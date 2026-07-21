@@ -1,5 +1,38 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: account_forms
+#
+#  id                     :bigint           not null, primary key
+#  branding               :jsonb            not null
+#  definition             :jsonb            not null
+#  form_submissions_count :integer          default(0), not null
+#  name                   :string           not null
+#  settings               :jsonb            not null
+#  slug                   :string           not null
+#  status                 :integer          default("draft"), not null
+#  created_at             :datetime         not null
+#  updated_at             :datetime         not null
+#  account_id             :bigint           not null
+#  created_by_id          :bigint
+#  updated_by_id          :bigint
+#
+# Indexes
+#
+#  index_account_forms_on_account_id              (account_id)
+#  index_account_forms_on_account_id_and_slug     (account_id,slug) UNIQUE
+#  index_account_forms_on_account_id_and_status   (account_id,status)
+#  index_account_forms_on_created_by_id           (created_by_id)
+#  index_account_forms_on_form_submissions_count  (form_submissions_count)
+#  index_account_forms_on_updated_by_id           (updated_by_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_id => accounts.id)
+#  fk_rails_...  (created_by_id => users.id)
+#  fk_rails_...  (updated_by_id => users.id)
+#
 class AccountForm < ApplicationRecord
   DEFAULT_DEFINITION = {
     'fields' => [

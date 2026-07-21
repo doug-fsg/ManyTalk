@@ -27,6 +27,12 @@
     "VIEW_CONTACT": "Visualizar contato",
     "REMOVE_CARD": "Remover do Kanban",
     "LOADING_CONTACTS": "Carregando contatos...",
+    "CARD_MODAL": {
+      "NEW_ACTIVITY": "Nova atividade",
+      "SELECT_STAGE": "Selecionar etapa",
+      "STAGE_PREVIOUS": "Etapa anterior: {stage}",
+      "STAGE_NEXT": "Próxima etapa: {stage}"
+    },
     "ACTIONS": {
       "TITLE": "Ações",
       "NEW": "Novo Kanban",
@@ -110,9 +116,20 @@
       "CANCEL": "Cancelar"
     },
     "PARTIAL_CONTACTS_LOADED": "Alguns contatos podem não ser exibidos devido ao grande volume",
+    "CONTEXT_BAR": {
+      "PIPELINE": "Funil: {name}",
+      "GO_TO_ACTIVITIES": "Atividades",
+      "OVERDUE_COUNT": "{count} atrasada(s)",
+      "GO_TO_PIPELINE": "Ir para funil",
+      "GO_TO_PIPELINE_NAMED": "Ir para {name}",
+      "MY_TASKS": "Minhas tarefas",
+      "ASSIGNEE_FILTER": "Responsável: {name}"
+    },
     "CARD": {
       "HIDE_CONVERSATIONS": "Ocultar conversas",
       "VIEW_CONVERSATIONS": "Ver conversas",
+      "ACTIVITIES_BADGE_CLICK": "Clique para ver atividades",
+      "ACTIVITIES_BADGE_ARIA": "Ver {count} atividades pendentes",
       "LOADING": "Carregando...",
       "NO_CONVERSATIONS": "Nenhuma conversa encontrada",
       "NO_MESSAGES": "Sem mensagens",

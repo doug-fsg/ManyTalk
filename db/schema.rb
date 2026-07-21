@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_07_200000) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_20_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -468,6 +468,30 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_07_200000) do
     t.index ["inbox_id"], name: "index_contact_inboxes_on_inbox_id"
     t.index ["pubsub_token"], name: "index_contact_inboxes_on_pubsub_token", unique: true
     t.index ["source_id"], name: "index_contact_inboxes_on_source_id"
+  end
+
+  create_table "contact_pipeline_events", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "contact_id", null: false
+    t.bigint "contact_pipeline_position_id", null: false
+    t.bigint "pipeline_id", null: false
+    t.string "event_type", null: false
+    t.string "from_stage_id"
+    t.string "to_stage_id"
+    t.jsonb "metadata", default: {}, null: false
+    t.bigint "user_id"
+    t.datetime "occurred_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "occurred_at"], name: "index_contact_pipeline_events_on_account_and_occurred_at"
+    t.index ["account_id"], name: "index_contact_pipeline_events_on_account_id"
+    t.index ["contact_id", "occurred_at"], name: "index_contact_pipeline_events_on_contact_and_occurred_at"
+    t.index ["contact_id"], name: "index_contact_pipeline_events_on_contact_id"
+    t.index ["contact_pipeline_position_id", "occurred_at"], name: "index_contact_pipeline_events_on_position_and_occurred_at"
+    t.index ["contact_pipeline_position_id"], name: "index_contact_pipeline_events_on_contact_pipeline_position_id"
+    t.index ["event_type"], name: "index_contact_pipeline_events_on_event_type"
+    t.index ["pipeline_id"], name: "index_contact_pipeline_events_on_pipeline_id"
+    t.index ["user_id"], name: "index_contact_pipeline_events_on_user_id"
   end
 
   create_table "contact_pipeline_positions", force: :cascade do |t|
@@ -1190,6 +1214,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_07_200000) do
   add_foreign_key "activities", "users", column: "assignee_id"
   add_foreign_key "contact_inboxes", "contacts", on_delete: :cascade
   add_foreign_key "contact_inboxes", "inboxes", on_delete: :cascade
+  add_foreign_key "contact_pipeline_events", "accounts"
+  add_foreign_key "contact_pipeline_events", "contact_pipeline_positions"
+  add_foreign_key "contact_pipeline_events", "contacts"
+  add_foreign_key "contact_pipeline_events", "users"
   add_foreign_key "contact_pipeline_positions", "contacts"
   add_foreign_key "contact_pipeline_positions", "custom_attribute_definitions", column: "pipeline_id"
   add_foreign_key "contact_pipeline_positions", "users", column: "assignee_id"

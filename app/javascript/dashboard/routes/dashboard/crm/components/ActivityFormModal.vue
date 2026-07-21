@@ -3,8 +3,37 @@
     <woot-modal-header
       :header-title="$t(activity ? 'ACTIVITIES.EDIT' : 'ACTIVITIES.CREATE')"
     />
+    <div
+      v-if="!activity && form.activity_type === 'scheduled_message'"
+      class="px-6 pt-2 pb-0 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400"
+    >
+      <span
+        :class="[
+          'px-2 py-1 rounded-full font-medium',
+          currentStep === 1 ? 'bg-woot-50 text-woot-700 dark:bg-woot-900/30 dark:text-woot-300' : 'bg-slate-100 dark:bg-slate-700'
+        ]"
+      >
+        1. {{ $t('ACTIVITIES.FORM.STEP_WHEN') }}
+      </span>
+      <span
+        :class="[
+          'px-2 py-1 rounded-full font-medium',
+          currentStep === 2 ? 'bg-woot-50 text-woot-700 dark:bg-woot-900/30 dark:text-woot-300' : 'bg-slate-100 dark:bg-slate-700'
+        ]"
+      >
+        2. {{ $t('ACTIVITIES.FORM.STEP_CHANNEL') }}
+      </span>
+    </div>
     <form class="flex flex-col w-full space-y-4" @submit.prevent="handleSubmit">
       <div class="w-full space-y-4">
+        <div
+          v-if="pipelineContextLabel"
+          class="px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300"
+        >
+          {{ pipelineContextLabel }}
+        </div>
+
+        <template v-if="currentStep === 1">
         <div v-if="showContactSelector" class="space-y-2">
           <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
             {{ $t('ACTIVITIES.FORM.CONTACT') }} *
@@ -89,6 +118,32 @@
           </label>
         </template>
 
+        <div>
+          <label>
+            {{ $t('ACTIVITIES.FORM.SCHEDULED_AT') }}
+            <input v-model="form.scheduled_at" type="datetime-local" required class="mt-2" />
+          </label>
+          <div v-if="!activity" class="mt-3 flex flex-wrap gap-2">
+            <button
+              v-for="shortcut in scheduleShortcuts"
+              :key="shortcut.id"
+              type="button"
+              class="px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              @click="applyScheduleShortcut(shortcut.id)"
+            >
+              {{ shortcut.label }}
+            </button>
+          </div>
+          <div v-if="formattedScheduledDate" class="mt-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <p class="text-xs text-blue-700 dark:text-blue-300 flex items-center gap-1">
+              <fluent-icon icon="info" size="12" />
+              {{ formattedScheduledDate }}
+            </p>
+          </div>
+        </div>
+        </template>
+
+        <template v-if="currentStep === 2 || (isEditing && showMessageFields)">
         <div v-if="showMessageFields" class="space-y-4">
           <label>
             {{ $t('ACTIVITIES.FORM.INBOX') }}
@@ -137,23 +192,25 @@
             {{ isWhatsappInbox ? $t('ACTIVITIES.FORM.WHATSAPP_SCHEDULED_FOOTER') : $t('ACTIVITIES.FORM.SCHEDULED_MESSAGE_FOOTER') }}
           </p>
         </div>
-
-        <div>
-          <label>
-            {{ $t('ACTIVITIES.FORM.SCHEDULED_AT') }}
-            <input v-model="form.scheduled_at" type="datetime-local" required class="mt-2" />
-          </label>
-          <div v-if="formattedScheduledDate" class="mt-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <p class="text-xs text-blue-700 dark:text-blue-300 flex items-center gap-1">
-              <fluent-icon icon="info" size="12" />
-              {{ formattedScheduledDate }}
-            </p>
-          </div>
-        </div>
+        </template>
       </div>
 
       <div class="flex flex-row justify-end gap-2 py-2 px-0 w-full">
-        <woot-button type="submit" color-scheme="primary">
+        <woot-button
+          v-if="showBackButton"
+          variant="clear"
+          @click.prevent="goToPreviousStep"
+        >
+          {{ $t('ACTIVITIES.FORM.BACK') }}
+        </woot-button>
+        <woot-button
+          v-if="showNextButton"
+          color-scheme="primary"
+          @click.prevent="goToNextStep"
+        >
+          {{ $t('ACTIVITIES.FORM.NEXT') }}
+        </woot-button>
+        <woot-button v-if="showSubmitButton" type="submit" color-scheme="primary">
           {{ activity ? $t('ACTIVITIES.FORM.SUBMIT_UPDATE') : $t('ACTIVITIES.FORM.SUBMIT') }}
         </woot-button>
         <woot-button variant="clear" @click.prevent="$emit('cancel')">
@@ -174,6 +231,7 @@ import { INBOX_TYPES } from 'shared/mixins/inboxMixin';
 import { getMessageVariables } from '@chatwoot/utils';
 import { mapGetters } from 'vuex';
 import debounce from 'lodash/debounce';
+import { getStage } from '../utils/pipelinePositionsHelper';
 
 const DEFAULT_PAGE = 1;
 const SCHEDULABLE_CHANNELS = [
@@ -194,6 +252,7 @@ export default {
     activity: { type: Object, default: null },
     contactId: { type: Number, default: null },
     pipelineId: { type: [Number, String], default: null },
+    contact: { type: Object, default: null },
   },
   computed: {
     ...mapGetters({ currentUser: 'getCurrentUser' }),
@@ -263,9 +322,48 @@ export default {
     showMessageFields() {
       return this.form.activity_type === 'scheduled_message';
     },
+    isEditing() {
+      return Boolean(this.activity);
+    },
+    currentStepFieldsVisible() {
+      return this.isEditing || this.currentStep === 1;
+    },
+    showNextButton() {
+      return !this.isEditing
+        && this.currentStep === 1
+        && this.form.activity_type === 'scheduled_message';
+    },
+    showBackButton() {
+      return !this.isEditing
+        && this.currentStep === 2
+        && this.form.activity_type === 'scheduled_message';
+    },
+    showSubmitButton() {
+      if (this.isEditing) return true;
+      if (this.form.activity_type === 'task') return true;
+      return this.currentStep === 2;
+    },
+    pipelineContextLabel() {
+      if (!this.pipelineId || !this.effectiveContactId) return '';
+      const contact = this.contact
+        || this.$store.getters['contacts/getContact'](this.effectiveContactId);
+      const stage = contact ? getStage(contact, this.pipelineId) : null;
+      if (stage) {
+        return this.$t('ACTIVITIES.FORM.PIPELINE_CONTEXT', { stage });
+      }
+      return this.$t('ACTIVITIES.FORM.PIPELINE_LINKED');
+    },
+    scheduleShortcuts() {
+      return [
+        { id: 'today_17', label: this.$t('ACTIVITIES.FORM.QUICK_TODAY_17') },
+        { id: 'tomorrow_10', label: this.$t('ACTIVITIES.FORM.QUICK_TOMORROW_10') },
+        { id: 'followup_3d', label: this.$t('ACTIVITIES.FORM.QUICK_FOLLOWUP_3D') },
+      ];
+    },
   },
   data() {
     return {
+      currentStep: 1,
       form: {
         activity_type: 'task',
         title: '',
@@ -285,6 +383,7 @@ export default {
   },
   watch: {
     'form.activity_type'(newVal) {
+      this.currentStep = 1;
       if (newVal === 'task') {
         this.form.inbox_id = '';
         this.whatsappTemplateParams = null;
@@ -316,6 +415,58 @@ export default {
     }
   },
   methods: {
+    toDateTimeLocalValue(date) {
+      const offset = date.getTimezoneOffset();
+      const local = new Date(date.getTime() - offset * 60 * 1000);
+      return local.toISOString().slice(0, 16);
+    },
+    applyScheduleShortcut(shortcutId) {
+      const now = new Date();
+      let target = new Date(now);
+
+      if (shortcutId === 'today_17') {
+        target.setHours(17, 0, 0, 0);
+        if (target <= now) {
+          target.setDate(target.getDate() + 1);
+        }
+      } else if (shortcutId === 'tomorrow_10') {
+        target.setDate(target.getDate() + 1);
+        target.setHours(10, 0, 0, 0);
+      } else if (shortcutId === 'followup_3d') {
+        target.setDate(target.getDate() + 3);
+        target.setHours(10, 0, 0, 0);
+      }
+
+      this.form.scheduled_at = this.toDateTimeLocalValue(target);
+    },
+    validateStepOne() {
+      if (this.showContactSelector && !this.effectiveContactId) {
+        this.contactSearchError = this.$t('ACTIVITIES.FORM.CONTACT_REQUIRED');
+        return false;
+      }
+      this.contactSearchError = '';
+
+      if (!this.form.scheduled_at) {
+        this.$store.dispatch('notifications/show', {
+          type: 'error',
+          message: this.$t('ACTIVITIES.FORM.SCHEDULE_REQUIRED'),
+        });
+        return false;
+      }
+
+      if (this.form.activity_type === 'task' && !this.form.title?.trim()) {
+        return false;
+      }
+
+      return true;
+    },
+    goToNextStep() {
+      if (!this.validateStepOne()) return;
+      this.currentStep = 2;
+    },
+    goToPreviousStep() {
+      this.currentStep = 1;
+    },
     inboxChannelLabel(inbox) {
       const labels = {
         [INBOX_TYPES.WHATSAPP]: 'WhatsApp',
@@ -371,11 +522,14 @@ export default {
       this.$nextTick(() => this.$refs.contactSearchInput?.focus());
     },
     handleSubmit() {
-      if (this.showContactSelector && !this.effectiveContactId) {
-        this.contactSearchError = this.$t('ACTIVITIES.FORM.CONTACT_REQUIRED');
+      if (this.currentStep === 1 && this.showNextButton) {
+        this.goToNextStep();
         return;
       }
-      this.contactSearchError = '';
+
+      if (!this.validateStepOne()) {
+        return;
+      }
 
       if (this.form.activity_type === 'scheduled_message') {
         const content = (this.form.message_content || '').replace(/<[^>]*>/g, '').trim();

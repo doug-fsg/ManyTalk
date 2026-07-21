@@ -18,6 +18,7 @@
       :account-id="accountId"
       :inboxes="inboxes"
       :labels="labels"
+      :account-forms="accountForms"
       :teams="teams"
       :custom-views="customViews"
       :menu-config="activeSecondaryMenu"
@@ -76,6 +77,7 @@ export default {
       isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
       isOnChatwootCloud: 'globalConfig/isOnChatwootCloud',
       labels: 'labels/getLabelsOnSidebar',
+      accountForms: 'accountForms/getAccountForms',
       teams: 'teams/getMyTeams',
     }),
     activeCustomView() {
@@ -192,6 +194,7 @@ export default {
   },
   mounted() {
     this.$store.dispatch('labels/get');
+    this.$store.dispatch('accountForms/get');
     this.$store.dispatch('inboxes/get');
     this.$store.dispatch('notifications/unReadCount');
     this.$store.dispatch('teams/get');

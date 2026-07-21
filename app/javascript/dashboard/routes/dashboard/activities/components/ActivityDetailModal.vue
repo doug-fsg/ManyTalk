@@ -69,45 +69,32 @@
         </div>
       </section>
 
-      <section v-if="activity.contact" class="space-y-3">
-        <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-          {{ $t('ACTIVITIES.FORM.CONTACT') }}
-        </h3>
-        <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-          <div class="flex items-center gap-3 min-w-0">
-            <woot-thumbnail
-              :src="activity.contact.thumbnail || activity.contact.avatar_url"
-              :username="activity.contact.name"
-              size="36px"
-            />
-            <div class="min-w-0">
-              <p class="text-sm font-medium text-slate-900 dark:text-white truncate">
-                {{ activity.contact.name }}
-              </p>
-              <p v-if="contactSecondary" class="text-xs text-slate-500 dark:text-slate-400 truncate">
-                {{ contactSecondary }}
-              </p>
-            </div>
-          </div>
-          <router-link
-            v-if="contactUrl"
-            :to="contactUrl"
-            class="text-xs font-medium text-woot-500 hover:text-woot-600 dark:text-woot-400 whitespace-nowrap"
-          >
-            {{ $t('ACTIVITIES.DETAIL.VIEW_CONTACT') }}
-          </router-link>
-        </div>
-      </section>
-
       <section v-if="activity.pipeline" class="space-y-3">
         <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
           {{ $t('ACTIVITIES.DETAIL.PIPELINE') }}
         </h3>
-        <detail-row
-          icon="kanban"
-          :label="$t('ACTIVITIES.DETAIL.PIPELINE')"
-          :value="pipelineLabel"
-        />
+        <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="flex items-center justify-center w-9 h-9 rounded-lg bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 flex-shrink-0">
+              <fluent-icon icon="kanban" size="18" />
+            </div>
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-slate-900 dark:text-white truncate">
+                {{ activity.pipeline.name }}
+              </p>
+              <p v-if="pipelineStageLabel" class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                {{ pipelineStageLabel }}
+              </p>
+            </div>
+          </div>
+          <router-link
+            v-if="pipelineKanbanLink"
+            :to="pipelineKanbanLink"
+            class="text-xs font-medium text-woot-500 hover:text-woot-600 dark:text-woot-400 whitespace-nowrap flex-shrink-0"
+          >
+            {{ $t('ACTIVITIES.DETAIL.OPEN_IN_PIPELINE') }}
+          </router-link>
+        </div>
       </section>
 
       <section v-if="activity.inbox" class="space-y-3">
@@ -182,10 +169,10 @@
 
 <script>
 import FluentIcon from 'shared/components/FluentIcon/DashboardIcon.vue';
-import WootThumbnail from 'dashboard/components/widgets/Thumbnail.vue';
 import { format, parseISO, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import DetailRow from './ActivityDetailRow.vue';
+import { buildKanbanDeepLink } from '../../crm/utils/crmNavigationHelper';
 
 const FAILURE_REASON_KEYS = {
   outside_messaging_window: 'ACTIVITIES.DETAIL.FAILURE_OUTSIDE_WINDOW',
@@ -200,7 +187,6 @@ export default {
   name: 'ActivityDetailModal',
   components: {
     FluentIcon,
-    WootThumbnail,
     DetailRow,
   },
   props: {
@@ -265,21 +251,23 @@ export default {
       const date = parseISO(this.activity.created_at);
       return format(date, "d/MM/yyyy 'às' HH:mm", { locale: ptBR });
     },
-    contactSecondary() {
-      return this.activity.contact?.email || this.activity.contact?.phone_number || '';
-    },
-    contactUrl() {
-      if (!this.activity.contact?.id) return null;
-      return `/app/accounts/${this.accountId}/contacts/${this.activity.contact.id}`;
-    },
     conversationUrl() {
       if (!this.activity.conversation?.id) return null;
       return `/app/accounts/${this.accountId}/conversations/${this.activity.conversation.id}`;
     },
-    pipelineLabel() {
-      if (!this.activity.pipeline) return '';
-      const stage = this.activity.pipeline.stage_id;
-      return stage ? `${this.activity.pipeline.name} · ${stage}` : this.activity.pipeline.name;
+    pipelineStageLabel() {
+      if (!this.activity.pipeline?.stage_id) return '';
+      return this.$t('ACTIVITIES.DETAIL.STAGE', {
+        stage: this.activity.pipeline.stage_id,
+      });
+    },
+    pipelineKanbanLink() {
+      if (!this.activity.pipeline?.id || !this.activity.contact?.id) return null;
+      return buildKanbanDeepLink(this.accountId, {
+        contactId: this.activity.contact.id,
+        pipelineId: this.activity.pipeline.id,
+        tab: 'activities',
+      });
     },
     inboxLabel() {
       if (!this.activity.inbox) return '';

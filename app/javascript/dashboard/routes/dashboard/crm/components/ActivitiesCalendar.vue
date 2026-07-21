@@ -883,9 +883,19 @@ export default {
   },
   mounted() {
     this.$store.dispatch('agents/get');
+    this.applyRouteQueryFilters();
     this.loadActivities();
   },
   methods: {
+    applyRouteQueryFilters() {
+      const { assignee_id: assigneeId, status } = this.$route.query;
+      if (assigneeId) {
+        this.filters.assigneeId = assigneeId;
+      }
+      if (status === 'overdue') {
+        this.filters.status = 'overdue';
+      }
+    },
     buildLoadParams() {
       const monthStart = startOfMonth(this.currentDate);
       const monthEnd = endOfMonth(this.currentDate);

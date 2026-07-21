@@ -1,7 +1,14 @@
 /* global axios */
 import ApiClient from './ApiClient';
 
-export const buildContactParams = (page, sortAttr, label, search, perPage) => {
+export const buildContactParams = (
+  page,
+  sortAttr,
+  label,
+  search,
+  perPage,
+  accountFormId
+) => {
   let params = `include_contact_inboxes=false&page=${page}&sort=${sortAttr}`;
   if (perPage) {
     params = `${params}&per_page=${perPage}`;
@@ -12,6 +19,9 @@ export const buildContactParams = (page, sortAttr, label, search, perPage) => {
   if (label) {
     params = `${params}&labels[]=${label}`;
   }
+  if (accountFormId) {
+    params = `${params}&account_form_id=${accountFormId}`;
+  }
   return params;
 };
 
@@ -20,12 +30,14 @@ class ContactAPI extends ApiClient {
     super('contacts', { accountScoped: true });
   }
 
-  get(page, sortAttr = 'name', label = '') {
+  get(page, sortAttr = 'name', label = '', accountFormId = '') {
     let requestURL = `${this.url}?${buildContactParams(
       page,
       sortAttr,
       label,
-      ''
+      '',
+      null,
+      accountFormId
     )}`;
     return axios.get(requestURL);
   }
@@ -46,12 +58,14 @@ class ContactAPI extends ApiClient {
     return axios.post(`${this.url}/${contactId}/labels`, { labels });
   }
 
-  search(search = '', page = 1, sortAttr = 'name', label = '') {
+  search(search = '', page = 1, sortAttr = 'name', label = '', accountFormId = '') {
     let requestURL = `${this.url}/search?${buildContactParams(
       page,
       sortAttr,
       label,
-      search
+      search,
+      null,
+      accountFormId
     )}`;
     return axios.get(requestURL);
   }

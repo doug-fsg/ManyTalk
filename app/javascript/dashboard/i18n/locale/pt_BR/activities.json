@@ -57,7 +57,17 @@
       "SCHEDULED_TOMORROW": "Será executada amanhã às {time}",
       "SCHEDULED_YESTERDAY": "Estava agendada para ontem às {time}",
       "SCHEDULED_DAYS_AGO": "Estava agendada há {days} dias às {time}",
-      "SCHEDULED_FUTURE": "Será executada em {date} às {time}"
+      "SCHEDULED_FUTURE": "Será executada em {date} às {time}",
+      "STEP_WHEN": "O quê e quando",
+      "STEP_CHANNEL": "Canal e mensagem",
+      "NEXT": "Próximo",
+      "BACK": "Voltar",
+      "SCHEDULE_REQUIRED": "Informe quando a atividade deve acontecer.",
+      "PIPELINE_CONTEXT": "Vinculada ao funil · etapa: {stage}",
+      "PIPELINE_LINKED": "Vinculada ao funil atual",
+      "QUICK_TODAY_17": "Hoje 17h",
+      "QUICK_TOMORROW_10": "Amanhã 10h",
+      "QUICK_FOLLOWUP_3D": "Follow-up em 3 dias"
     },
     "ACTIONS": {
       "COMPLETE": "Concluir",
@@ -72,6 +82,9 @@
       "PIPELINE": "Pipeline",
       "CHANNEL": "Canal",
       "VIEW_CONTACT": "Ver contato",
+      "VIEW_FULL_PROFILE": "Ver perfil completo",
+      "OPEN_IN_PIPELINE": "Abrir no funil",
+      "STAGE": "Etapa: {stage}",
       "VIEW_CONVERSATION": "Ver conversa #{id}",
       "WHATSAPP_TEMPLATE": "Template WhatsApp: {name}",
       "CLOSE": "Fechar",

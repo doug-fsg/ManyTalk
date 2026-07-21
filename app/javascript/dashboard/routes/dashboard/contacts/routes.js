@@ -35,6 +35,17 @@ export const routes = [
     },
   },
   {
+    path: frontendURL('accounts/:accountId/forms/:formId/contacts'),
+    name: 'contacts_forms_dashboard',
+    meta: {
+      permissions: ['administrator', 'agent'],
+    },
+    component: ContactsView,
+    props: route => {
+      return { formId: route.params.formId };
+    },
+  },
+  {
     path: frontendURL('accounts/:accountId/contacts/:contactId'),
     name: 'contact_profile_dashboard',
     meta: {

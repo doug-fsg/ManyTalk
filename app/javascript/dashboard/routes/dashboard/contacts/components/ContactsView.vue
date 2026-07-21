@@ -115,6 +115,10 @@ export default {
   },
   props: {
     label: { type: String, default: '' },
+    formId: {
+      type: [String, Number],
+      default: '',
+    },
     segmentsId: {
       type: [String, Number],
       default: 0,
@@ -159,11 +163,15 @@ export default {
     hasActiveSegments() {
       return this.activeSegment && this.segmentsId !== 0;
     },
+    isContactsListDashboard() {
+      return [
+        'contacts_dashboard',
+        'contacts_labels_dashboard',
+        'contacts_forms_dashboard',
+      ].includes(this.$route.name);
+    },
     isContactAndLabelDashboard() {
-      return (
-        this.$route.name === 'contacts_dashboard' ||
-        this.$route.name === 'contacts_labels_dashboard'
-      );
+      return this.isContactsListDashboard;
     },
     pageTitle() {
       if (this.hasActiveSegments) {
@@ -171,6 +179,12 @@ export default {
       }
       if (this.label) {
         return `#${this.label}`;
+      }
+      if (this.formId) {
+        const form = this.$store.getters['accountForms/getAccountForm'](
+          this.formId
+        );
+        return form?.name || this.$t('CONTACTS_PAGE.FORM_FILTER');
       }
       return this.$t('CONTACTS_PAGE.HEADER');
     },
@@ -211,6 +225,12 @@ export default {
   },
   watch: {
     label() {
+      this.fetchContacts(DEFAULT_PAGE);
+      if (this.hasAppliedFilters) {
+        this.clearFilters();
+      }
+    },
+    formId() {
       this.fetchContacts(DEFAULT_PAGE);
       if (this.hasAppliedFilters) {
         this.clearFilters();
@@ -263,6 +283,7 @@ export default {
           page,
           sortAttr: this.getSortAttribute(),
           label: this.label,
+          accountFormId: this.formId,
         };
         if (!value) {
           this.$store.dispatch('contacts/get', requestParams);

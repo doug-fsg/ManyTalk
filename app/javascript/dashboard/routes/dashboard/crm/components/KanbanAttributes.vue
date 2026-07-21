@@ -317,6 +317,8 @@
       :pipeline-id="selectedAttribute ? selectedAttribute.id : null"
       :stage-color="getStageColor(getContactCurrentStage(selectedCardContact))"
       :available-stages="selectedAttribute ? selectedAttribute.attribute_values || [] : []"
+      :initial-tab="cardModalInitialTab"
+      :highlight-activity-id="cardModalHighlightActivityId"
       @close="handleCloseCardModal"
       @value-updated="handleDealValueUpdate"
       @stage-changed="handleStageChangeFromModal"
@@ -356,6 +358,7 @@ import {
   getCreatedAt,
   getWinLostStatus
 } from '../utils/pipelinePositionsHelper';
+import { parseOpenCardModalPayload } from '../utils/crmNavigationHelper';
 
 // Criar um barramento de eventos global compartilhado
 if (!window.bus) {
@@ -448,6 +451,8 @@ export default {
       // Modal de detalhes do card
       showCardModal: false,
       selectedCardContact: {},
+      cardModalInitialTab: null,
+      cardModalHighlightActivityId: null,
       // Paginação do modo lista
       listCurrentPage: 1,
       listItemsPerPage: 25,
@@ -474,6 +479,9 @@ export default {
     this.startCycleDetection();
     this.$el.addEventListener('scroll', this.updateScrollPosition);
     document.addEventListener('click', this.handleClickOutside);
+    this.$store.dispatch('agents/get').finally(() => {
+      this.applyCrmRouteQueryFilters();
+    });
 
     this.$nextTick(() => {
       this.updateTranslations();
@@ -834,6 +842,11 @@ export default {
         }
       },
     },
+    '$route.query': {
+      handler() {
+        this.tryOpenCardFromQuery();
+      },
+    },
   },
   methods: {
     async initializeComponent() {
@@ -858,6 +871,7 @@ export default {
           }
           await this.fetchContacts();
           this.setupColumns();
+          await this.tryOpenCardFromQuery();
         }
         // Se não há pipelines kanban, a tela vazia será mostrada automaticamente
       } catch (error) {
@@ -1749,12 +1763,23 @@ export default {
         });
     },
     openContact(contactId) {
-      // Abre a página de detalhes do contato
-      this.$router.push(
-        frontendURL(
-          `accounts/${this.$route.params.accountId}/contacts/${contactId}`
-        )
+      const parsedId = Number(contactId);
+      const contact = this.contacts.find(
+        c => c.id === parsedId || c.id === contactId
       );
+
+      if (contact) {
+        this.handleOpenCardModal(contact);
+        return;
+      }
+
+      ContactAPI.show(parsedId)
+        .then(response => {
+          this.handleOpenCardModal(response.data.payload);
+        })
+        .catch(() => {
+          useAlert(this.$t('KANBAN.ERRORS.LOAD_FAILED'));
+        });
     },
 
     closeFilterModal() {
@@ -2770,13 +2795,102 @@ export default {
         );
       }
     },
-    handleOpenCardModal(contact) {
-      this.selectedCardContact = contact;
+    handleOpenCardModal(payload, options = {}) {
+      const parsed = parseOpenCardModalPayload(payload);
+      const initialTab = options.initialTab ?? parsed.initialTab ?? null;
+      const highlightActivityId =
+        options.highlightActivityId ?? parsed.highlightActivityId ?? null;
+      const clearQuery = options.clearQuery ?? false;
+
+      this.cardModalInitialTab = initialTab;
+      this.cardModalHighlightActivityId = highlightActivityId;
+      this.selectedCardContact = parsed.contact;
       this.showCardModal = true;
+
+      if (
+        clearQuery
+        && (this.$route.query.contactId
+          || this.$route.query.pipelineId
+          || this.$route.query.tab)
+      ) {
+        this.$router
+          .replace({
+            name: 'kanban_view',
+            params: { accountId: this.$route.params.accountId },
+            query: {},
+          })
+          .catch(() => {});
+      }
     },
     handleCloseCardModal() {
       this.showCardModal = false;
       this.selectedCardContact = {};
+      this.cardModalInitialTab = null;
+      this.cardModalHighlightActivityId = null;
+    },
+    applyCrmRouteQueryFilters() {
+      const { assignee_id: assigneeId } = this.$route.query;
+      if (!assigneeId || assigneeId === 'all') return;
+
+      const parsedAssigneeId = Number(assigneeId);
+      if (Number.isNaN(parsedAssigneeId)) return;
+
+      const agents = this.$store.getters['agents/getAgents'] || [];
+      const agent = agents.find(a => a.id === parsedAssigneeId);
+      if (!agent) return;
+
+      const alreadySelected = this.kanbanFilters.assignees?.some(
+        a => a.id === parsedAssigneeId
+      );
+      if (alreadySelected) return;
+
+      this.kanbanFilters = {
+        ...this.kanbanFilters,
+        assignees: [
+          {
+            id: agent.id,
+            name: agent.available_name || agent.name,
+          },
+        ],
+      };
+    },
+    async tryOpenCardFromQuery() {
+      const { contactId, pipelineId, tab } = this.$route.query;
+      if (!contactId || this.showCardModal) return;
+
+      const parsedContactId = Number(contactId);
+      if (Number.isNaN(parsedContactId)) return;
+
+      const parsedPipelineId = pipelineId ? Number(pipelineId) : null;
+      if (
+        parsedPipelineId
+        && this.selectedAttribute?.id !== parsedPipelineId
+      ) {
+        const pipeline = this.listTypeAttributes.find(
+          attribute => attribute.id === parsedPipelineId
+        );
+        if (pipeline) {
+          this.selectedAttribute = pipeline;
+          this.saveSelectedPipeline(pipeline.id);
+          await this.fetchContacts();
+          this.setupColumns();
+        }
+      }
+
+      let contact = this.contacts.find(c => c.id === parsedContactId);
+      if (!contact) {
+        try {
+          const response = await ContactAPI.show(parsedContactId);
+          contact = response.data.payload;
+        } catch (error) {
+          return;
+        }
+      }
+
+      this.handleOpenCardModal(contact, {
+        initialTab: tab || null,
+        clearQuery: true,
+      });
     },
     handleShowAssignOwnerConfirmation({ contact, onConfirm, onCancel }) {
       this.assignOwnerModalContact = contact;

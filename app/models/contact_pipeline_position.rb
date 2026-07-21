@@ -38,6 +38,7 @@ class ContactPipelinePosition < ApplicationRecord
   belongs_to :assignee, class_name: 'User', optional: true
 
   has_many :activities, dependent: :nullify
+  has_many :contact_pipeline_events, dependent: :destroy
 
   validates :contact_id, presence: true
   validates :pipeline_id, presence: true
@@ -49,6 +50,7 @@ class ContactPipelinePosition < ApplicationRecord
   after_commit :dispatch_contact_updated_event, on: [:create, :update, :destroy]
   after_commit :enqueue_kanban_workflow_if_needed, on: [:create, :update]
   after_commit :dispatch_kanban_stage_changed_webhook, on: [:create, :update]
+  after_commit :record_pipeline_timeline_event, on: [:create, :update]
   after_commit :cleanup_legacy_kanban_json
   
   # Auto-atribuir dono ao criar card
@@ -220,6 +222,14 @@ class ContactPipelinePosition < ApplicationRecord
     Rails.logger.error("Error dispatching kanban stage changed webhook: #{e.class.name} - #{e.message}")
   end
 
+  def record_pipeline_timeline_event
+    ContactPipelineEvents::RecordService.new(self).perform
+  rescue StandardError => e
+    Rails.logger.error(
+      "Error recording pipeline timeline event for contact #{contact_id}, pipeline #{pipeline_id}: #{e.class.name} - #{e.message}"
+    )
+  end
+
   def cleanup_legacy_kanban_json
     return unless pipeline&.is_kanban?
 
@@ -235,7 +245,7 @@ class ContactPipelinePosition < ApplicationRecord
 
     # Recarregar o contato para garantir que pipeline_positions está atualizado
     contact.reload
-    
+
     # Disparar evento CONTACT_UPDATED para sincronização em tempo real
     Rails.configuration.dispatcher.dispatch(
       CONTACT_UPDATED,

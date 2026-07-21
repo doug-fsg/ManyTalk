@@ -23,7 +23,7 @@
       >
         {{ contact.additional_attributes.company }}
       </span>
-      <div class="hidden group-hover/card:flex gap-2 absolute top-0 right-0 z-10">
+      <div class="flex gap-2 absolute top-0 right-0 z-10 transition-opacity duration-150 md:opacity-0 md:pointer-events-none md:group-hover/card:opacity-100 md:group-hover/card:pointer-events-auto">
         <!-- Botões principais sempre visíveis -->
         <span 
           v-if="!isViewerMode"
@@ -120,7 +120,7 @@
           class="text-xs font-normal" 
           :class="{
             'text-slate-600 dark:text-slate-300': stageTimeClass === 'time-normal',
-            'text-yellow-500 dark:text-yellow-400': stageTimeClass === 'time-warning',
+            'text-orange-600 dark:text-orange-400': stageTimeClass === 'time-warning',
             'text-red-500 dark:text-red-400 font-medium': stageTimeClass === 'time-overdue'
           }"
           :title="stageTimeTooltip"
@@ -229,16 +229,18 @@
         </div>
         
         <!-- Badge de atividades pendentes -->
-        <div
+        <button
           v-if="pendingActivitiesCount > 0"
-          class="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium shadow-sm border transition-colors duration-200"
+          type="button"
+          class="flex items-center gap-1 px-2.5 py-1.5 min-h-[28px] rounded-full text-[10px] font-medium shadow-sm border transition-colors duration-200 cursor-pointer hover:ring-2 hover:ring-woot-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-woot-500"
           :class="activityBadgeClasses"
+          :aria-label="activityBadgeAriaLabel"
           v-tooltip="nextActivityTooltip"
-          @click.stop
+          @click.stop="openActivitiesTab"
         >
           <fluent-icon icon="calendar-clock" size="12" />
           <span class="font-semibold">{{ pendingActivitiesCount }}</span>
-        </div>
+        </button>
         
         <!-- Badge do agente responsável -->
         <div 
@@ -393,19 +395,26 @@ export default {
       return getNext(this.contact.id) || getNext(String(this.contact.id)) || null;
     },
     nextActivityTooltip() {
+      const clickHint = this.$t('KANBAN.CARD.ACTIVITIES_BADGE_CLICK');
+
       if (!this.nextActivity) {
-        return `${this.pendingActivitiesCount} atividade(s) pendente(s)`;
+        return `${clickHint} · ${this.pendingActivitiesCount} atividade(s) pendente(s)`;
       }
-      
+
       const scheduledDate = new Date(this.nextActivity.scheduled_at);
       const formattedDate = this.formatRelativeDate(scheduledDate);
       const title = this.nextActivity.title || 'Sem título';
-      
+
       if (this.pendingActivitiesCount === 1) {
-        return `${title} • ${formattedDate}`;
+        return `${clickHint} · ${title} • ${formattedDate}`;
       }
-      
-      return `${title} • ${formattedDate} (+${this.pendingActivitiesCount - 1})`;
+
+      return `${clickHint} · ${title} • ${formattedDate} (+${this.pendingActivitiesCount - 1})`;
+    },
+    activityBadgeAriaLabel() {
+      return this.$t('KANBAN.CARD.ACTIVITIES_BADGE_ARIA', {
+        count: this.pendingActivitiesCount,
+      });
     },
     // Retorna classes de cor do badge baseado no status da próxima atividade
     activityBadgeClasses() {
@@ -420,12 +429,12 @@ export default {
       
       // Atrasado (vermelho)
       if (diffHours < 0) {
-        return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800';
+        return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800 animate-pulse';
       }
       
-      // Próximo - menos de 24h (amarelo)
+      // Próximo - menos de 24h (laranja legível no light mode)
       if (diffHours < 24) {
-        return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800';
+        return 'bg-orange-50 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800';
       }
       
       // Futuro - mais de 24h (cinza)
@@ -746,6 +755,13 @@ export default {
     },
     openCardModal() {
       this.$emit('open-card-modal', this.contact);
+    },
+    openActivitiesTab() {
+      this.$emit('open-card-modal', {
+        contact: this.contact,
+        initialTab: 'activities',
+        highlightActivityId: this.nextActivity?.id || null,
+      });
     },
     async undoWinLostStatus() {
       // Obter dados atuais do pipeline_positions

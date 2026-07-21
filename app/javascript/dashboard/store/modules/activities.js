@@ -16,9 +16,11 @@ const state = {
 const getters = {
   getActivities: state => state.records,
   getActivitiesMeta: state => state.meta,
-  getPendingActivities: state => state.records.filter(a => a.status === 'pending'),
-  getActivitiesByStatus: state => status => state.records.filter(a => a.status === status),
-  getPendingCountByContactId: (state) => {
+  getPendingActivities: state =>
+    state.records.filter(a => a.status === 'pending'),
+  getActivitiesByStatus: state => status =>
+    state.records.filter(a => a.status === status),
+  getPendingCountByContactId: state => {
     const map = {};
     state.records.forEach(a => {
       if (a.status !== 'pending') return;
@@ -29,7 +31,20 @@ const getters = {
     });
     return contactId => map[contactId] || 0;
   },
-  getNextActivityByContactId: (state) => {
+  getOverdueCountByContactId: state => {
+    const map = {};
+    const now = Date.now();
+    state.records.forEach(a => {
+      if (a.status !== 'pending' || !a.scheduled_at) return;
+      if (new Date(a.scheduled_at).getTime() >= now) return;
+      const cid = a.contact_id ?? a.contact?.id;
+      if (cid != null) {
+        map[cid] = (map[cid] || 0) + 1;
+      }
+    });
+    return contactId => map[contactId] || 0;
+  },
+  getNextActivityByContactId: state => {
     const map = {};
     const pending = state.records.filter(a => a.status === 'pending');
     pending.forEach(a => {

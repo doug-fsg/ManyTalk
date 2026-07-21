@@ -7,6 +7,7 @@ const contacts = accountId => ({
     'contact_profile_dashboard',
     'contacts_segments_dashboard',
     'contacts_labels_dashboard',
+    'contacts_forms_dashboard',
   ],
   menuItems: [
     {

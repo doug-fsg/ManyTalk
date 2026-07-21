@@ -229,6 +229,7 @@
   },
   "CONTACTS_PAGE": {
     "HEADER": "Contacts",
+    "FORM_FILTER": "Form",
     "FIELDS": "Contact fields",
     "SEARCH_BUTTON": "Search",
     "SEARCH_INPUT_PLACEHOLDER": "Search for contacts",
@@ -257,7 +258,70 @@
   },
   "CONTACT_PROFILE": {
     "BACK_BUTTON": "Contacts",
-    "LOADING": "Loading contact profile..."
+    "LOADING": "Loading contact profile...",
+    "TABS": {
+      "TIMELINE": "Timeline",
+      "DEAL": "Deal",
+      "NOTES": "Notes",
+      "ACTIVITIES": "Activities"
+    },
+    "HEADER": {
+      "OPEN_IN_PIPELINE": "Open in pipeline",
+      "VIA_FORM": "via Form {form}",
+      "PENDING_ACTIVITIES": "{count} pending task(s)",
+      "OVERDUE_ACTIVITIES": "{count} overdue task(s)"
+    },
+    "DEAL": {
+      "NO_PIPELINE_TITLE": "Contact is not in a pipeline yet",
+      "NO_PIPELINE_HINT": "Add this contact to a pipeline to track stage, value, and owner.",
+      "VALUE": "Deal value",
+      "ASSIGNEE": "Owner",
+      "NO_ASSIGNEE": "Unassigned",
+      "WON": "Won",
+      "LOST": "Lost",
+      "WIN_LOST_NOTES": "Close notes"
+    },
+    "TIMELINE": {
+      "FILTER_ARIA": "Filter timeline",
+      "LOAD_ERROR": "Could not load timeline.",
+      "EMPTY_TITLE": "No events yet",
+      "EMPTY_HINT": "Form submissions, pipeline updates, and activities will appear here.",
+      "UNKNOWN_FORM": "Form",
+      "UNKNOWN_USER": "User",
+      "UNKNOWN_INBOX": "Inbox",
+      "ASSIGNEE": "Owner: {name}",
+      "PERFORMED_BY": "By {name}",
+      "BY_USER": "by {name}",
+      "REOPENED_FROM": "Previous status: {status}",
+      "UTM_SOURCE": "Source: {source}",
+      "FILTERS": {
+        "ALL": "All",
+        "FORM_SUBMISSION": "Forms",
+        "PIPELINE": "Pipeline",
+        "ACTIVITY": "Activities",
+        "NOTE": "Notes",
+        "CONVERSATION_STARTED": "Conversations"
+      },
+      "EVENTS": {
+        "CONTACT_CREATED": "Contact created",
+        "FORM_SUBMISSION": "Submitted via {form}",
+        "PIPELINE_ENTERED": "Entered pipeline {pipeline}",
+        "PIPELINE_STAGE": "Stage {stage} · {pipeline}",
+        "PIPELINE_STAGE_CHANGED": "From {from} to {to} · {pipeline}",
+        "PIPELINE_REOPENED": "Deal reopened · {pipeline}",
+        "DEAL_WON": "Deal won · {pipeline}",
+        "DEAL_LOST": "Deal lost · {pipeline}",
+        "ACTIVITY": "Activity",
+        "NOTE": "Note by {user}",
+        "CONVERSATION": "Conversation started · {inbox}"
+      },
+      "ACTIONS": {
+        "VIEW_FORM_CONTACTS": "View form contacts",
+        "OPEN_PIPELINE": "Open pipeline",
+        "OPEN_CONVERSATION": "Open conversation",
+        "VIEW_ACTIVITY": "View activity"
+      }
+    }
   },
   "REMINDER": {
     "ADD_BUTTON": {

@@ -9,16 +9,19 @@
       :class="{ 'h-auto overflow-visible flex-row flex-wrap': showAllStages }"
       >
       <!-- Pílulas dos pipelines -->
-      <div
+      <router-link
         v-for="(stage, index) in kanbanStages"
         :key="`pipeline-${stage.id}-${stage.stageName}`"
-        class="relative inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full tooltip-container"
+        :to="kanbanLinkForStage(stage)"
+        class="relative inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full tooltip-container cursor-pointer hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-woot-500"
         :class="[
           { hidden: !showAllStages && index > stagePosition },
           stage.statusType === 'won' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' :
           stage.statusType === 'lost' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' :
           'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300'
         ]"
+        :title="$t('ACTIVITIES.DETAIL.OPEN_IN_PIPELINE')"
+        @click.native.stop
       >
         <span class="truncate max-w-16">{{ stage.displayText }}</span>
         <fluent-icon
@@ -66,7 +69,7 @@
           <!-- Seta do tooltip - agora apontando para cima -->
           <div class="tooltip-arrow"></div>
         </div>
-      </div>
+      </router-link>
 
       <!-- Botão mostrar mais -->
       <woot-button
@@ -89,6 +92,7 @@
 
 <script>
 import { mapGetters } from 'vuex';
+import { buildKanbanDeepLink } from 'dashboard/routes/dashboard/crm/utils/crmNavigationHelper';
 
 export default {
   name: 'KanbanStageIndicator',
@@ -226,6 +230,15 @@ export default {
     }
   },
   methods: {
+    kanbanLinkForStage(stage) {
+      if (!this.contact?.id || !stage?.id) {
+        return { name: 'kanban_view', params: { accountId: String(this.accountId) } };
+      }
+      return buildKanbanDeepLink(this.accountId, {
+        contactId: this.contact.id,
+        pipelineId: stage.id,
+      });
+    },
     formatCurrency(value) {
       if (!value) return '';
       // Simples formatação de moeda - pode ser melhorada conforme necessário
@@ -282,7 +295,9 @@ export default {
 
       // Usar largura fixa do container para cálculos estáveis
       const containerWidth = stageContainer.clientWidth;
-      const stages = Array.from(stageContainer.querySelectorAll('.relative.inline-flex'));
+      const stages = Array.from(
+        stageContainer.querySelectorAll('a.tooltip-container, .tooltip-container')
+      );
       
       if (stages.length === 0) return;
       

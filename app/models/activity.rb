@@ -6,6 +6,7 @@
 #  activity_type                :string           not null
 #  description                  :text
 #  message_content              :text
+#  metadata                     :jsonb            not null
 #  scheduled_at                 :datetime         not null
 #  status                       :string           default("pending")
 #  title                        :string           not null
@@ -17,7 +18,6 @@
 #  contact_pipeline_position_id :bigint
 #  conversation_id              :bigint
 #  inbox_id                     :bigint
-#  metadata                     :jsonb            not null
 #  user_id                      :bigint           not null
 #
 # Indexes

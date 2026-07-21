@@ -130,6 +130,28 @@ RSpec.describe 'Contacts API', type: :request do
         expect(response_body['meta']['count']).to eq(2)
         expect(response_body['payload'].pluck('email')).to include(contact_with_label1.email, contact_with_label2.email)
       end
+
+      it 'filters resolved contacts based on account form submissions' do
+        account_form = create(:account_form, :published, account: account)
+        contact_with_submission = create(:contact, :with_email, account: account)
+        create(:contact, :with_email, account: account)
+        FormSubmission.create!(
+          account: account,
+          account_form: account_form,
+          contact: contact_with_submission,
+          payload: { name: 'Lead' }
+        )
+
+        get "/api/v1/accounts/#{account.id}/contacts",
+            params: { account_form_id: account_form.id },
+            headers: admin.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        response_body = response.parsed_body
+        expect(response_body['meta']['count']).to eq(1)
+        expect(response_body['payload'].first['id']).to eq(contact_with_submission.id)
+      end
     end
   end
 

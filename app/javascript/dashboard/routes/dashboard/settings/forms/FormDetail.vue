@@ -5,6 +5,7 @@ import { useAlert } from 'dashboard/composables';
 import { useI18n } from 'dashboard/composables/useI18n';
 import { useStore, useStoreGetters } from 'dashboard/composables/store';
 import AccountFormsAPI from 'dashboard/api/accountForms';
+import { buildContactsByFormRoute } from '../../contacts/utils/contactsNavigationHelper';
 
 import FormEditorHeader from './FormEditorHeader.vue';
 import FormFieldPalette from './FormFieldPalette.vue';
@@ -318,6 +319,10 @@ const exportCsv = async () => {
     });
   };
 
+  const viewFormContacts = () => {
+    router.push(buildContactsByFormRoute(accountId.value, formId.value));
+  };
+
 const switchTab = key => {
   activeTab.value = key;
   if (key === 'submissions' && !submissions.value.length) {
@@ -534,6 +539,17 @@ onMounted(async () => {
             {{ submissionsLabel }}
           </span>
           <div class="flex items-center gap-1">
+            <woot-button
+              v-if="submissionsMeta.total_count > 0"
+              variant="smooth"
+              color-scheme="primary"
+              size="tiny"
+              icon="people"
+              v-tooltip.top="$t('ACCOUNT_FORM.SUBMISSIONS.VIEW_CONTACTS_TOOLTIP')"
+              @click="viewFormContacts"
+            >
+              {{ $t('ACCOUNT_FORM.SUBMISSIONS.VIEW_CONTACTS') }}
+            </woot-button>
             <woot-button
               variant="smooth"
               color-scheme="secondary"

@@ -30,7 +30,11 @@
       <div
         v-for="activity in activities"
         :key="activity.id"
+        :ref="`activity-${activity.id}`"
         class="p-3 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 transition-all duration-200 cursor-pointer hover:border-slate-300 dark:hover:border-slate-500"
+        :class="{
+          'ring-2 ring-woot-500 ring-offset-2 dark:ring-offset-slate-800': highlightedActivityId === activity.id,
+        }"
         @click="openActivityDetail(activity)"
       >
         <div class="flex items-start justify-between gap-2">
@@ -132,6 +136,7 @@
       <activity-form-modal
         :activity="selectedActivity"
         :contact-id="contactId"
+        :contact="contact"
         :pipeline-id="pipelineId"
         @submit="handleSubmit"
         @cancel="closeForm"
@@ -147,6 +152,7 @@ import { useAlert } from 'dashboard/composables';
 import { formatUnixDate } from 'shared/helpers/DateHelper';
 import ActivityFormModal from './ActivityFormModal.vue';
 import ActivityDetailModal from '../../activities/components/ActivityDetailModal.vue';
+import { getPipelinePosition } from '../utils/pipelinePositionsHelper';
 
 export default {
   components: {
@@ -164,6 +170,14 @@ export default {
       type: [Number, String],
       required: true,
     },
+    contact: {
+      type: Object,
+      default: null,
+    },
+    highlightActivityId: {
+      type: [Number, String],
+      default: null,
+    },
   },
   data() {
     return {
@@ -172,6 +186,7 @@ export default {
       selectedActivity: null,
       loading: false,
       expandedActivities: {},
+      highlightedActivityId: null,
       statusClasses: {
         pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
         completed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
@@ -192,8 +207,28 @@ export default {
     contactId() {
       this.loadActivities();
     },
+    highlightActivityId: {
+      immediate: true,
+      handler(activityId) {
+        if (!activityId) return;
+        this.$nextTick(() => this.applyActivityHighlight(activityId));
+      },
+    },
   },
   methods: {
+    applyActivityHighlight(activityId) {
+      this.highlightedActivityId = activityId;
+      const ref = this.$refs[`activity-${activityId}`];
+      const element = Array.isArray(ref) ? ref[0] : ref;
+      if (element?.scrollIntoView) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      window.setTimeout(() => {
+        if (this.highlightedActivityId === activityId) {
+          this.highlightedActivityId = null;
+        }
+      }, 2000);
+    },
     async loadActivities() {
       this.loading = true;
       try {
@@ -205,6 +240,11 @@ export default {
         useAlert(this.$t('ACTIVITIES.ERRORS.LOAD_FAILED'));
       } finally {
         this.loading = false;
+        if (this.highlightActivityId) {
+          this.$nextTick(() => {
+            this.applyActivityHighlight(this.highlightActivityId);
+          });
+        }
       }
     },
     async handleComplete(activityId) {
@@ -310,10 +350,11 @@ export default {
       return !!this.expandedActivities[activityId];
     },
     getPipelinePositionId() {
-      // Buscar pipeline position do contato atual via props do modal pai
-      // O modal pai já tem o contact, então podemos usar um evento ou prop
-      // Por enquanto, retornar null e deixar o backend criar se necessário
-      return null;
+      const contact = this.contact
+        || this.$store.getters['contacts/getContact'](this.contactId);
+      if (!contact || !this.pipelineId) return null;
+      const position = getPipelinePosition(contact, this.pipelineId);
+      return position?.id || null;
     },
   },
 };

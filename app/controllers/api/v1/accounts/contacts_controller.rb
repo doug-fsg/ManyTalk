@@ -131,7 +131,18 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
     @resolved_contacts = Current.account.contacts.resolved_contacts
 
     @resolved_contacts = @resolved_contacts.tagged_with(params[:labels], any: true) if params[:labels].present?
+    @resolved_contacts = filter_by_account_form(@resolved_contacts) if params[:account_form_id].present?
     @resolved_contacts
+  end
+
+  def filter_by_account_form(relation)
+    form_id = params[:account_form_id].to_i
+    return relation.none if form_id.zero?
+
+    relation
+      .joins(:form_submissions)
+      .where(form_submissions: { account_form_id: form_id })
+      .distinct
   end
 
   def set_current_page
