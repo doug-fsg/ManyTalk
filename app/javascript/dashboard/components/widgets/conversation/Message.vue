@@ -2,7 +2,7 @@
   <li
     v-if="shouldRenderMessage"
     :id="`message${data.id}`"
-    :class="[alignBubble, 'group', messageRowClass]"
+    :class="[alignBubble, 'group']"
   >
     <div :class="messageRowContentClass">
       <div :class="wrapClass">
@@ -470,16 +470,10 @@ export default {
 
       return this.errorMessageTooltip;
     },
-    messageRowClass() {
-      if (!this.shouldShowWhatsAppDeliveryError) {
-        return '';
-      }
-
-      return this.isOutgoing || this.isTemplate ? 'items-end' : '';
-    },
     messageRowContentClass() {
       if (!this.shouldShowWhatsAppDeliveryError) {
-        return {};
+        // Preserve original layout: .wrap must stay a direct flex child of li.right/left
+        return 'contents';
       }
 
       return {

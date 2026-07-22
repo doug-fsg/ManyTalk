@@ -1,25 +1,12 @@
 import ContactAPI from 'dashboard/api/contacts';
+import { buildE164PhoneNumber } from 'shared/helpers/Validators';
 import { cleanPhoneNumber } from 'dashboard/routes/dashboard/settings/campaigns/utils/phoneValidation';
 
 export const MIN_TEXT_SEARCH_LENGTH = 2;
 export const MIN_PHONE_SEARCH_LENGTH = 3;
 
-export const buildFullPhoneNumber = (dialCode, localNumber) => {
-  const local = `${localNumber || ''}`.trim();
-
-  if (local.startsWith('+')) {
-    return normalizePhoneNumber(local);
-  }
-
-  const code = cleanPhoneNumber(dialCode);
-  const digits = cleanPhoneNumber(local);
-
-  if (!digits) {
-    return '';
-  }
-
-  return `+${code}${digits}`;
-};
+export const buildFullPhoneNumber = (dialCode, localNumber) =>
+  buildE164PhoneNumber(dialCode, localNumber);
 
 export const getCapitalizedNameFromEmail = email => {
   const name = email.match(/^([^@]*)@/)?.[1] || email.split('@')[0];

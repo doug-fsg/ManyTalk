@@ -1,23 +1,31 @@
 import { computed, getCurrentInstance } from 'vue';
 import Vue from 'vue';
-import VueI18n from 'vue-i18n';
 
-let i18nInstance = VueI18n;
+function resolveI18n(vm) {
+  return vm?.$i18n || vm?.$root?.$i18n || null;
+}
+
+function resolveLocale(vm) {
+  return (
+    resolveI18n(vm)?.locale ||
+    window.chatwootConfig?.selectedLocale ||
+    'en'
+  );
+}
 
 export function useI18n() {
-  if (!i18nInstance) throw new Error('vue-i18n not initialized');
-
-  const i18n = i18nInstance;
-
   const instance = getCurrentInstance();
   const vm = instance?.proxy || instance || new Vue({});
 
   const locale = computed({
     get() {
-      return i18n.locale;
+      return resolveLocale(vm);
     },
-    set(v) {
-      i18n.locale = v;
+    set(value) {
+      const i18n = resolveI18n(vm);
+      if (i18n) {
+        i18n.locale = value;
+      }
     },
   });
 

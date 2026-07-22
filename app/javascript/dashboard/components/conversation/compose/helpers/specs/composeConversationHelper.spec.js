@@ -29,6 +29,10 @@ describe('composeConversationHelper', () => {
       expect(buildFullPhoneNumber('+55', '11999999999')).toBe('+5511999999999');
     });
 
+    it('does not duplicate country code when local number already includes it', () => {
+      expect(buildFullPhoneNumber('+55', '554299098450')).toBe('+554299098450');
+    });
+
     it('uses international value when local starts with plus', () => {
       expect(buildFullPhoneNumber('+55', '+351912345678')).toBe('+351912345678');
     });

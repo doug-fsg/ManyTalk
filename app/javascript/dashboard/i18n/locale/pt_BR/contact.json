@@ -341,6 +341,28 @@
         "CONVERSATION": "Conversa iniciada · {inbox}"
       },
       "SCHEDULED_FOR": "Prevista para {date}",
+      "DEAL_VALUE": "Valor do negócio: {value}",
+      "DATE_TODAY": "Hoje",
+      "DATE_YESTERDAY": "Ontem",
+      "LOAD_MORE": "Carregar mais eventos",
+      "SUMMARY": {
+        "ORIGIN_LABEL": "Origem",
+        "PIPELINE_LABEL": "Funil",
+        "LAST_INTERACTION_LABEL": "Última interação",
+        "NEXT_ACTIVITY_LABEL": "Próxima atividade",
+        "CONTACT_CREATED": "Contato criado no sistema",
+        "VIA_FORM": "Primeiro contato via {form}",
+        "IN_PIPELINE": "No funil {pipeline}",
+        "NO_INTERACTION": "Nenhuma interação registrada",
+        "LAST_CONVERSATION": "Última conversa · {inbox}",
+        "LAST_ACTIVITY": "Última atividade · {title}",
+        "LAST_NOTE": "Última observação adicionada",
+        "NEXT_ACTIVITY": "Próxima: {title}"
+      },
+      "EMPTY_ACTIONS": {
+        "ADD_PIPELINE": "Adicionar ao funil",
+        "CREATE_ACTIVITY": "Criar atividade"
+      },
       "ACTIONS": {
         "VIEW_FORM_CONTACTS": "Ver contatos do formulário",
         "OPEN_PIPELINE": "Abrir funil",

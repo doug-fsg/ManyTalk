@@ -7,6 +7,7 @@
         },
         "PICKER": {
             "SEARCH_PLACEHOLDER": "Buscar plantillas",
+            "SYNCING": "Actualizando plantillas de Meta...",
             "NO_TEMPLATES_FOUND": "No se encontraron plantillas para",
             "LABELS": {
                 "LANGUAGE": "Idioma",

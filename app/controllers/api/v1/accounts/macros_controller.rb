@@ -1,14 +1,13 @@
 class Api::V1::Accounts::MacrosController < Api::V1::Accounts::BaseController
   before_action :fetch_macro, only: [:show, :update, :destroy, :execute]
+  before_action :ensure_macro_present, only: [:show, :update, :destroy, :execute]
   before_action :check_authorization, only: [:show, :update, :destroy, :execute]
 
   def index
     @macros = Macro.with_visibility(current_user, params)
   end
 
-  def show
-    head :not_found if @macro.nil?
-  end
+  def show; end
 
   def create
     @macro = Current.account.macros.new(macros_with_user.merge(created_by_id: current_user.id))
@@ -40,29 +39,43 @@ class Api::V1::Accounts::MacrosController < Api::V1::Accounts::BaseController
   end
 
   def execute
-    ::MacrosExecutionJob.perform_later(@macro, conversation_ids: params[:conversation_ids], user: Current.user)
+    ::MacrosExecutionJob.perform_now(
+      @macro,
+      conversation_ids: params[:conversation_ids],
+      user: Current.user,
+      raise_on_error: true
+    )
 
     head :ok
+  rescue StandardError => e
+    Rails.logger.error("[MacrosController#execute] #{e.message}")
+    render json: { error: e.message }, status: :unprocessable_entity
   end
 
   private
 
   def process_attachments
-    actions = @macro.actions.filter_map { |k, _v| k if k['action_name'] == 'send_attachment' }
+    actions = @macro.actions.filter_map { |action| action if action['action_name'] == 'send_attachment' }
     return if actions.blank?
 
-    actions.each do |action|
-      blob_id = action['action_params']
+    blob_ids = actions.flat_map { |action| Array.wrap(action['action_params']).flatten.compact }.uniq
+    @macro.files.purge
+
+    blob_ids.each do |blob_id|
       blob = ActiveStorage::Blob.find_by(id: blob_id)
-      @macro.files.attach(blob)
+      @macro.files.attach(blob) if blob.present?
     end
   end
 
   def permitted_params
     params.permit(
-      :name, :account_id, :visibility,
+      :name, :visibility,
       actions: [:action_name, { action_params: [] }]
     )
+  end
+
+  def ensure_macro_present
+    head :not_found if @macro.nil?
   end
 
   def macros_with_user

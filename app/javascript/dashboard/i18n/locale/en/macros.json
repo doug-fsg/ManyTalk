@@ -71,6 +71,16 @@
       "PREVIEW": "Preview Macro",
       "EXECUTED_SUCCESSFULLY": "Macro executed successfully"
     },
+    "ERRORS": {
+      "ACTION_PARAMETERS_REQUIRED": "Please fill all the required fields in this action",
+      "ATLEAST_ONE_ACTION_REQUIRED": "At least one action is required to create a macro"
+    },
+    "PREVIEW": {
+      "KANBAN_PIPELINE_NOT_SELECTED": "Pipeline not selected",
+      "KANBAN_STAGE_NOT_SELECTED": "{pipeline} (stage not selected)",
+      "KANBAN_PIPELINE_ID": "Pipeline ID: {id}",
+      "KANBAN_RESOLVE_ERROR": "Unable to resolve pipeline"
+    },
     "KANBAN": {
       "SELECT_PIPELINE": "Select pipeline",
       "SELECT_STAGE": "Select stage",

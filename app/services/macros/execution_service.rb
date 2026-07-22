@@ -1,10 +1,11 @@
 class Macros::ExecutionService < ActionService
-  def initialize(macro, conversation, user, contact_data = nil)
+  def initialize(macro, conversation, user, contact_data = nil, raise_on_error: false)
     super(conversation)
     @macro = macro
     @account = macro.account
     @user = user
     @contact_data = contact_data
+    @raise_on_error = raise_on_error
     Current.user = user
   end
 
@@ -21,6 +22,7 @@ class Macros::ExecutionService < ActionService
         wait_after_send_action(action[:action_name], index)
       rescue StandardError => e
         ChatwootExceptionTracker.new(e, account: @account).capture_exception
+        raise e if @raise_on_error
       end
     end
   ensure
@@ -126,6 +128,7 @@ class Macros::ExecutionService < ActionService
     create_kanban_activity_message(contact, kanban_attribute, selected_stage, old_stage)
   rescue StandardError => e
     ChatwootExceptionTracker.new(e, account: @account).capture_exception
+    raise e if @raise_on_error
   end
 
   private

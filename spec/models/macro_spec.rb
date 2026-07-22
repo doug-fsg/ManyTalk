@@ -40,13 +40,17 @@ RSpec.describe Macro do
     end
 
     context 'when user is agent' do
-      it 'set visibility always to agent' do
+      it 'respects visibility from params' do
         Current.user = agent
         Current.account = account
 
         expect(macro.visibility).to eq('personal')
 
         macro.set_visibility(agent, { visibility: :global })
+
+        expect(macro.visibility).to eq('global')
+
+        macro.set_visibility(agent, { visibility: :personal })
 
         expect(macro.visibility).to eq('personal')
       end
@@ -85,13 +89,38 @@ RSpec.describe Macro do
         Current.user = agent_2
         Current.account = account
 
-        macros_for_agent_2 = account.macros.global.count + agent_2.macros.personal.count
+        macros_for_agent_2 = account.macros.global.count +
+                             account.macros.personal.where(created_by_id: agent_2.id).count
         expect(described_class.with_visibility(agent_2, {}).count).to eq(macros_for_agent_2)
 
         Current.user = agent_1
 
-        macros_for_agent_1 = account.macros.global.count + agent_1.macros.personal.count
+        macros_for_agent_1 = account.macros.global.count +
+                             account.macros.personal.where(created_by_id: agent_1.id).count
         expect(described_class.with_visibility(agent_1, {}).count).to eq(macros_for_agent_1)
+      end
+    end
+
+    context 'when user belongs to multiple accounts' do
+      let(:other_account) { create(:account) }
+      let(:multi_account_agent) { create(:user, account: account, role: :agent) }
+
+      before do
+        create(:account_user, user: multi_account_agent, account: other_account, role: :agent)
+        create(:macro, account: other_account, created_by: multi_account_agent, updated_by: multi_account_agent,
+                       visibility: :personal, actions: [])
+        create(:macro, account: other_account, created_by: multi_account_agent, updated_by: multi_account_agent,
+                       visibility: :global, actions: [])
+      end
+
+      it 'does not include macros from other accounts' do
+        Current.user = multi_account_agent
+        Current.account = account
+
+        visible_macro_ids = described_class.with_visibility(multi_account_agent, {}).pluck(:id)
+        other_account_macro_ids = other_account.macros.pluck(:id)
+
+        expect(visible_macro_ids & other_account_macro_ids).to be_empty
       end
     end
   end

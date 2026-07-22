@@ -112,7 +112,7 @@ RSpec.describe 'Api::V1::Accounts::MacrosController', type: :request do
         expect(json_response['payload']['created_by']['id']).to eql(administrator.id)
       end
 
-      it 'sets visibility default to personal for agent' do
+      it 'allows agents to create public macros' do
         post "/api/v1/accounts/#{account.id}/macros",
              params: params,
              headers: agent.create_new_auth_token
@@ -122,7 +122,7 @@ RSpec.describe 'Api::V1::Accounts::MacrosController', type: :request do
         json_response = response.parsed_body
 
         expect(json_response['payload']['name']).to eql(params['name'])
-        expect(json_response['payload']['visibility']).to eql('personal')
+        expect(json_response['payload']['visibility']).to eql('global')
         expect(json_response['payload']['created_by']['id']).to eql(agent.id)
       end
 
@@ -158,6 +158,36 @@ RSpec.describe 'Api::V1::Accounts::MacrosController', type: :request do
         macro = account.macros.last
         expect(macro.files.presence).to be_truthy
         expect(macro.files.count).to eq(1)
+      end
+
+      it 'does not duplicate attachments when updating a macro' do
+        file = fixture_file_upload(Rails.root.join('spec/assets/avatar.png'), 'image/png')
+
+        post "/api/v1/accounts/#{account.id}/upload/",
+             headers: administrator.create_new_auth_token,
+             params: { attachment: file }
+
+        blob = response.parsed_body
+
+        params[:actions] = [
+          {
+            'action_name': :send_attachment,
+            'action_params': [blob['blob_id']]
+          }
+        ]
+
+        post "/api/v1/accounts/#{account.id}/macros",
+             headers: administrator.create_new_auth_token,
+             params: params
+
+        macro = account.macros.last
+
+        put "/api/v1/accounts/#{account.id}/macros/#{macro.id}",
+            headers: administrator.create_new_auth_token,
+            params: params.merge(name: 'Updated macro with attachment')
+
+        expect(response).to have_http_status(:success)
+        expect(macro.reload.files.count).to eq(1)
       end
     end
   end
@@ -372,15 +402,24 @@ RSpec.describe 'Api::V1::Accounts::MacrosController', type: :request do
         it 'Adds the private note' do
           expect(conversation.messages).to be_empty
 
-          perform_enqueued_jobs do
-            post "/api/v1/accounts/#{account.id}/macros/#{macro.id}/execute",
-                 params: { conversation_ids: [conversation.display_id] },
-                 headers: administrator.create_new_auth_token
-          end
+          post "/api/v1/accounts/#{account.id}/macros/#{macro.id}/execute",
+               params: { conversation_ids: [conversation.display_id] },
+               headers: administrator.create_new_auth_token
 
           expect(conversation.messages.last.content).to eq('We are sending greeting message to customer.')
           expect(conversation.messages.last.sender).to eq(administrator)
           expect(conversation.messages.last.private).to be_truthy
+        end
+
+        it 'returns an error when macro execution fails' do
+          allow(MacrosExecutionJob).to receive(:perform_now).and_raise(StandardError.new('Macro execution failed'))
+
+          post "/api/v1/accounts/#{account.id}/macros/#{macro.id}/execute",
+               params: { conversation_ids: [conversation.display_id] },
+               headers: administrator.create_new_auth_token
+
+          expect(response).to have_http_status(:unprocessable_entity)
+          expect(response.parsed_body['error']).to eq('Macro execution failed')
         end
 
         it 'Assign the team if team_ids are present' do

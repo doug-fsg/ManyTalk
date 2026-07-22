@@ -71,6 +71,16 @@
       "PREVIEW": "Previsualizar macro",
       "EXECUTED_SUCCESSFULLY": "Macro ejecutado correctamente"
     },
+    "ERRORS": {
+      "ACTION_PARAMETERS_REQUIRED": "Complete todos los campos obligatorios de esta acción",
+      "ATLEAST_ONE_ACTION_REQUIRED": "Se requiere al menos una acción para crear la macro"
+    },
+    "PREVIEW": {
+      "KANBAN_PIPELINE_NOT_SELECTED": "Pipeline no seleccionado",
+      "KANBAN_STAGE_NOT_SELECTED": "{pipeline} (etapa no seleccionada)",
+      "KANBAN_PIPELINE_ID": "ID del pipeline: {id}",
+      "KANBAN_RESOLVE_ERROR": "Error al resolver el pipeline"
+    },
     "KANBAN": {
       "SELECT_PIPELINE": "Seleccionar pipeline",
       "SELECT_STAGE": "Seleccionar etapa",

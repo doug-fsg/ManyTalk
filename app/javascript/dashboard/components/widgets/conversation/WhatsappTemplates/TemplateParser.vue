@@ -118,6 +118,7 @@
 import { mapGetters } from 'vuex';
 import { requiredIf } from 'vuelidate/lib/validators';
 import accountMixin from 'dashboard/mixins/account';
+import { useUISettings } from 'dashboard/composables/useUISettings';
 import {
   allKeysRequired,
   buildLegacyTemplateParameters,
@@ -128,11 +129,24 @@ import {
   replaceTemplateVariables,
   COMPONENT_TYPES,
 } from 'dashboard/helper/templateHelper';
+import {
+  applySavedTemplateDefaults,
+  buildTemplateDefaultsSettingsUpdate,
+  getSavedTemplateDefaults,
+} from 'dashboard/helper/whatsappTemplateDefaultsHelper';
 import TemplateVariableInput from './TemplateVariableInput.vue';
 
 export default {
   components: { TemplateVariableInput },
   mixins: [accountMixin],
+  setup() {
+    const { uiSettings, updateUISettings } = useUISettings();
+
+    return {
+      uiSettings,
+      updateUISettings,
+    };
+  },
   props: {
     template: {
       type: Object,
@@ -293,18 +307,36 @@ export default {
       this.$v.$touch();
       if (this.$v.$invalid) return;
 
+      this.persistTemplateDefaults();
       this.$emit('sendMessage', this.buildPayload());
     },
-    generateVariables() {
-      if (this.enhancedTemplatesEnabled) {
-        this.processedParams = buildTemplateParameters(
-          this.template,
-          true
-        );
+    persistTemplateDefaults() {
+      const settingsUpdate = buildTemplateDefaultsSettingsUpdate(
+        this.uiSettings,
+        this.template,
+        this.processedParams
+      );
+
+      if (!settingsUpdate) {
         return;
       }
 
-      this.processedParams = buildLegacyTemplateParameters(this.template);
+      this.updateUISettings(settingsUpdate);
+    },
+    generateVariables() {
+      const baseParams = this.enhancedTemplatesEnabled
+        ? buildTemplateParameters(this.template, true)
+        : buildLegacyTemplateParameters(this.template);
+
+      const savedDefaults = getSavedTemplateDefaults(
+        this.uiSettings,
+        this.template
+      );
+
+      this.processedParams = applySavedTemplateDefaults(
+        baseParams,
+        savedDefaults
+      );
     },
   },
 };

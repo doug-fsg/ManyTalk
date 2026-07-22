@@ -110,6 +110,7 @@ json.provider resource.channel.try(:provider)
   ### WhatsApp Channel
   if resource.whatsapp?
     json.message_templates resource.channel.try(:message_templates)
+    json.message_templates_last_updated resource.channel.try(:message_templates_last_updated)
     json.whatsapp_business_account_id resource.channel.try(:provider_config).try(:[], 'business_account_id')
     provider_config = resource.channel.try(:provider_config) || {}
     json.reauthorization_required(

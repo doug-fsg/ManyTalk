@@ -156,7 +156,10 @@ import {
 } from 'shared/helpers/CustomErrors';
 import { required, email } from 'vuelidate/lib/validators';
 import countries from 'shared/constants/countries.js';
-import { isPhoneNumberValid } from 'shared/helpers/Validators';
+import {
+  buildE164PhoneNumber,
+  isPhoneNumberValid,
+} from 'shared/helpers/Validators';
 import parsePhoneNumber from 'libphonenumber-js';
 
 export default {
@@ -253,9 +256,7 @@ export default {
       if (this.phoneNumber === '' && this.activeDialCode !== '') {
         return '';
       }
-      return this.activeDialCode
-        ? `${this.activeDialCode}${this.phoneNumber}`
-        : '';
+      return buildE164PhoneNumber(this.activeDialCode, this.phoneNumber);
     },
   },
   watch: {

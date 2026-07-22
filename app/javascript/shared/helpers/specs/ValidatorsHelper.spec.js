@@ -8,6 +8,7 @@ import {
   isPhoneNumberValid,
   isNumber,
   isDomain,
+  buildE164PhoneNumber,
 } from '../Validators';
 
 describe('#shouldBeUrl', () => {
@@ -50,6 +51,23 @@ describe('#isPhoneNumberValid', () => {
   it('should return wrong phone number', () => {
     expect(isPhoneNumberValid('12345A67890', '+1')).toEqual(false);
     expect(isPhoneNumberValid('12345A6789120', '+1')).toEqual(false);
+  });
+});
+
+describe('#buildE164PhoneNumber', () => {
+  it('combines dial code and local number', () => {
+    expect(buildE164PhoneNumber('+55', '42999098450')).toBe('+5542999098450');
+    expect(buildE164PhoneNumber('+1', '4155551234')).toBe('+14155551234');
+  });
+
+  it('does not duplicate country code when local number already includes it', () => {
+    expect(buildE164PhoneNumber('+55', '554299098450')).toBe('+554299098450');
+    expect(buildE164PhoneNumber('+1', '14155551234')).toBe('+14155551234');
+    expect(buildE164PhoneNumber('+351', '351912345678')).toBe('+351912345678');
+  });
+
+  it('uses international value when local starts with plus', () => {
+    expect(buildE164PhoneNumber('+55', '+351912345678')).toBe('+351912345678');
   });
 });
 

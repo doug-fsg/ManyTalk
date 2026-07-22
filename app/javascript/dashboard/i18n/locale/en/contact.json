@@ -341,6 +341,28 @@
         "CONVERSATION": "Conversation started · {inbox}"
       },
       "SCHEDULED_FOR": "Scheduled for {date}",
+      "DEAL_VALUE": "Deal value: {value}",
+      "DATE_TODAY": "Today",
+      "DATE_YESTERDAY": "Yesterday",
+      "LOAD_MORE": "Load more events",
+      "SUMMARY": {
+        "ORIGIN_LABEL": "Origin",
+        "PIPELINE_LABEL": "Pipeline",
+        "LAST_INTERACTION_LABEL": "Last interaction",
+        "NEXT_ACTIVITY_LABEL": "Next activity",
+        "CONTACT_CREATED": "Contact created in the system",
+        "VIA_FORM": "First contact via {form}",
+        "IN_PIPELINE": "In pipeline {pipeline}",
+        "NO_INTERACTION": "No interactions recorded yet",
+        "LAST_CONVERSATION": "Last conversation · {inbox}",
+        "LAST_ACTIVITY": "Last activity · {title}",
+        "LAST_NOTE": "Last note added",
+        "NEXT_ACTIVITY": "Next: {title}"
+      },
+      "EMPTY_ACTIONS": {
+        "ADD_PIPELINE": "Add to pipeline",
+        "CREATE_ACTIVITY": "Create activity"
+      },
       "ACTIONS": {
         "VIEW_FORM_CONTACTS": "View form contacts",
         "OPEN_PIPELINE": "Open pipeline",

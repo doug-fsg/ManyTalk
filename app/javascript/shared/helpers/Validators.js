@@ -1,5 +1,30 @@
 export const isPhoneE164 = value => !!value.match(/^\+[1-9]\d{1,14}$/);
 
+export const cleanPhoneDigits = value => `${value || ''}`.replace(/\D/g, '');
+
+// Combines dial code and local number without duplicating the country code.
+// Works for any country: +55 + 554299098450 => +554299098450
+export const buildE164PhoneNumber = (dialCode, localNumber) => {
+  const local = `${localNumber || ''}`.trim();
+
+  if (local.startsWith('+')) {
+    return local.replace(/\s/g, '');
+  }
+
+  const code = cleanPhoneDigits(dialCode);
+  const digits = cleanPhoneDigits(local);
+
+  if (!digits) {
+    return '';
+  }
+
+  if (code && digits.startsWith(code)) {
+    return `+${digits}`;
+  }
+
+  return code ? `+${code}${digits}` : `+${digits}`;
+};
+
 export const isPhoneNumberValid = (value, dialCode) => {
   const number = value.replace(dialCode, '');
   return !!number.match(/^[0-9]{1,14}$/);

@@ -10,6 +10,9 @@
         class="templates__search-input"
       />
     </div>
+    <p v-if="isSyncing" class="templates__sync-status">
+      {{ $t('WHATSAPP_TEMPLATES.PICKER.SYNCING') }}
+    </p>
     <div class="template__list-container" :class="{ 'template__list-container--compact': compact }">
       <whatsapp-template-guide
         v-if="showEmptyGuide"
@@ -65,6 +68,7 @@
 
 <script>
 import WhatsappTemplateGuide from './WhatsappTemplateGuide.vue';
+import whatsappTemplateGuideMixin from 'dashboard/mixins/whatsappTemplateGuideMixin';
 
 // TODO: Remove this when we support all formats
 const formatsToRemove = ['DOCUMENT', 'IMAGE', 'VIDEO'];
@@ -73,6 +77,7 @@ export default {
   components: {
     WhatsappTemplateGuide,
   },
+  mixins: [whatsappTemplateGuideMixin],
   props: {
     inboxId: {
       type: Number,
@@ -119,9 +124,13 @@ export default {
       return (
         this.isWhatsAppCloudInbox &&
         !this.query &&
-        this.whatsAppTemplateMessages.length === 0
+        this.whatsAppTemplateMessages.length === 0 &&
+        !this.isSyncing
       );
     },
+  },
+  mounted() {
+    this.maybeSyncWhatsAppTemplates();
   },
   methods: {
     getTemplatebody(template) {
@@ -143,6 +152,10 @@ export default {
   .templates__search-input {
     @apply bg-transparent border-0 text-xs h-9 m-0;
   }
+}
+
+.templates__sync-status {
+  @apply text-xs text-slate-500 dark:text-slate-400 mb-2;
 }
 .template__list-container {
   @apply bg-slate-25 dark:bg-slate-900 rounded-md max-h-[18.75rem] overflow-y-auto p-2.5;

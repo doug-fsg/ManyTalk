@@ -60,30 +60,14 @@ export default {
   methods: {
     async executeMacro(macro) {
       try {
-        console.log('[MACRO-ITEM] Executando macro:', {
-          macroId: macro.id,
-          macroName: macro.name,
-          conversationId: this.conversationId,
-          actions: macro.actions
-        });
-        
-        // Log específico para ações kanban
-        const kanbanActions = macro.actions.filter(a => a.action_name === 'change_kanban_stage');
-        if (kanbanActions.length > 0) {
-          console.log('[MACRO-ITEM] Ações kanban na macro:', kanbanActions);
-        }
-        
         this.isExecuting = true;
         await this.$store.dispatch('macros/execute', {
           macroId: macro.id,
           conversationIds: [this.conversationId],
         });
         this.$track(CONVERSATION_EVENTS.EXECUTED_A_MACRO);
-        
-        console.log('[MACRO-ITEM] Macro executada com sucesso');
         useAlert(this.$t('MACROS.EXECUTE.EXECUTED_SUCCESSFULLY'));
       } catch (error) {
-        console.error('[MACRO-ITEM] Erro ao executar macro:', error);
         useAlert(this.$t('MACROS.ERROR'));
       } finally {
         this.isExecuting = false;

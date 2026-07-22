@@ -58,6 +58,13 @@ export default {
         : this.$t('WHATSAPP_TEMPLATES.MODAL.SUBTITLE');
     },
   },
+  watch: {
+    show(isVisible) {
+      if (!isVisible) {
+        this.selectedWaTemplate = null;
+      }
+    },
+  },
   methods: {
     pickTemplate(template) {
       this.selectedWaTemplate = template;

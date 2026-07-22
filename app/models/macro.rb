@@ -33,15 +33,16 @@ class Macro < ApplicationRecord
   ACTIONS_ATTRS = %w[send_message add_label assign_team assign_agent mute_conversation change_status remove_label remove_assigned_team send_webhook_event
                      resolve_conversation snooze_conversation change_priority send_email_transcript send_attachment add_private_note change_kanban_stage].freeze
 
-  def set_visibility(user, params)
+  def set_visibility(_user, params)
     self.visibility = params[:visibility]
-    self.visibility = :personal if user.agent?
   end
 
   def self.with_visibility(user, _params)
-    records = Current.account.macros.global
-    records = records.or(personal.where(created_by_id: user.id))
-    records.order(:id)
+    account_macros = Current.account.macros
+    global_macros = account_macros.global
+    personal_macros = account_macros.personal.where(created_by_id: user.id)
+
+    global_macros.or(personal_macros).order(:id)
   end
 
   def self.current_page(params)

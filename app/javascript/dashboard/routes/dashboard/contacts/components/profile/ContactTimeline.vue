@@ -3,10 +3,17 @@ import { computed, toRef, watch } from 'vue';
 import { useI18n } from 'dashboard/composables/useI18n';
 import Spinner from 'shared/components/Spinner.vue';
 import ContactTimelineEvent from './ContactTimelineEvent.vue';
+import ContactTimelineSummary from './ContactTimelineSummary.vue';
 import {
   useContactTimeline,
   TIMELINE_FILTER_OPTIONS,
 } from '../../composables/useContactTimeline';
+import {
+  buildTimelineSummary,
+  getFilterCounts,
+  groupEventsByDate,
+  matchesTimelineFilter,
+} from '../../helpers/contactTimelineHelper';
 
 const props = defineProps({
   contactId: {
@@ -33,22 +40,45 @@ const props = defineProps({
     type: Boolean,
     default: null,
   },
+  externalLoadingMore: {
+    type: Boolean,
+    default: false,
+  },
+  externalHasMore: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-const emit = defineEmits(['open-activities', 'refresh']);
+const emit = defineEmits([
+  'open-activities',
+  'open-notes',
+  'open-deal',
+  'refresh',
+  'load-more',
+]);
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const contactIdRef = toRef(props, 'contactId');
 const usesExternalEvents = computed(() => props.externalEvents != null);
 
 const {
   loading: internalLoading,
+  loadingMore: internalLoadingMore,
   error,
   activeFilter,
   filteredEvents: internalFilteredEvents,
+  groupedEvents: internalGroupedEvents,
+  filterCounts: internalFilterCounts,
+  summary: internalSummary,
+  hasMore: internalHasMore,
   fetchTimeline,
+  loadMore: internalLoadMore,
   ALL_FILTER,
-} = useContactTimeline(contactIdRef);
+} = useContactTimeline(contactIdRef, {
+  localeCode: locale,
+  t,
+});
 
 watch(
   contactIdRef,
@@ -64,30 +94,56 @@ const loading = computed(() =>
   usesExternalEvents.value ? props.externalLoading : internalLoading.value
 );
 
+const loadingMore = computed(() =>
+  usesExternalEvents.value
+    ? props.externalLoadingMore
+    : internalLoadingMore.value
+);
+
+const hasMore = computed(() =>
+  usesExternalEvents.value ? props.externalHasMore : internalHasMore.value
+);
+
+const sourceEvents = computed(() =>
+  usesExternalEvents.value ? props.externalEvents || [] : internalFilteredEvents.value
+);
+
 const filteredEvents = computed(() => {
-  if (usesExternalEvents.value) {
-    if (activeFilter.value === ALL_FILTER) {
-      return props.externalEvents;
-    }
-
-    if (activeFilter.value === 'pipeline') {
-      return props.externalEvents.filter(event =>
-        [
-          'pipeline_entered',
-          'pipeline_stage_changed',
-          'pipeline_reopened',
-          'deal_won',
-          'deal_lost',
-        ].includes(event.type)
-      );
-    }
-
-    return props.externalEvents.filter(
-      event => event.type === activeFilter.value
-    );
+  if (!usesExternalEvents.value) {
+    return internalFilteredEvents.value;
   }
 
-  return internalFilteredEvents.value;
+  return sourceEvents.value.filter(event =>
+    matchesTimelineFilter(event, activeFilter.value, ALL_FILTER)
+  );
+});
+
+const groupedEvents = computed(() => {
+  if (!usesExternalEvents.value) {
+    return internalGroupedEvents.value;
+  }
+
+  return groupEventsByDate(filteredEvents.value, locale.value, t);
+});
+
+const filterCounts = computed(() => {
+  if (!usesExternalEvents.value) {
+    return internalFilterCounts.value;
+  }
+
+  return getFilterCounts(
+    props.externalEvents || [],
+    TIMELINE_FILTER_OPTIONS,
+    ALL_FILTER
+  );
+});
+
+const summary = computed(() => {
+  if (!usesExternalEvents.value) {
+    return internalSummary.value;
+  }
+
+  return buildTimelineSummary(props.externalEvents || [], t);
 });
 
 const filterOptions = computed(() =>
@@ -97,8 +153,17 @@ const filterOptions = computed(() =>
       value === ALL_FILTER
         ? t('CONTACT_PROFILE.TIMELINE.FILTERS.ALL')
         : t(`CONTACT_PROFILE.TIMELINE.FILTERS.${value.toUpperCase()}`),
+    count: filterCounts.value[value] || 0,
   }))
 );
+
+const isLastEventInTimeline = (groupIndex, eventIndex) => {
+  const lastGroup = groupedEvents.value[groupedEvents.value.length - 1];
+  if (!lastGroup) return true;
+
+  const isLastGroup = groupIndex === groupedEvents.value.length - 1;
+  return isLastGroup && eventIndex === lastGroup.events.length - 1;
+};
 
 const setFilter = value => {
   activeFilter.value = value;
@@ -106,6 +171,10 @@ const setFilter = value => {
 
 const onOpenActivities = activityId => {
   emit('open-activities', activityId);
+};
+
+const onOpenNotes = () => {
+  emit('open-notes');
 };
 
 const onRefresh = () => {
@@ -116,6 +185,14 @@ const onRefresh = () => {
   }
 };
 
+const onLoadMore = () => {
+  if (!usesExternalEvents.value) {
+    internalLoadMore();
+  } else {
+    emit('load-more');
+  }
+};
+
 defineExpose({
   refresh: fetchTimeline,
 });
@@ -123,9 +200,15 @@ defineExpose({
 
 <template>
   <div class="contact-timeline">
+    <ContactTimelineSummary
+      v-if="!compact && summary && filteredEvents.length"
+      :summary="summary"
+      :compact="compact"
+    />
+
     <div
       v-if="!compact"
-      class="mb-4 flex flex-wrap gap-2"
+      class="sticky top-0 z-[1] -mx-1 mb-4 flex flex-wrap gap-2 bg-slate-25 px-1 py-2 dark:bg-slate-800"
       role="tablist"
       :aria-label="$t('CONTACT_PROFILE.TIMELINE.FILTER_ARIA')"
     >
@@ -134,16 +217,26 @@ defineExpose({
         :key="option.value"
         type="button"
         role="tab"
-        class="rounded px-2 py-1 text-xs transition-colors duration-150"
+        class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs transition-colors duration-150"
         :class="
           activeFilter === option.value
-            ? 'bg-slate-200 font-medium text-slate-800 dark:bg-slate-700 dark:text-slate-100'
-            : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'
+            ? 'bg-white font-medium text-slate-900 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-700'
+            : 'text-slate-500 hover:bg-white/70 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-900/60 dark:hover:text-slate-200'
         "
         :aria-selected="activeFilter === option.value"
         @click="setFilter(option.value)"
       >
-        {{ option.label }}
+        <span>{{ option.label }}</span>
+        <span
+          class="rounded-full px-1.5 py-0.5 text-[10px] tabular-nums"
+          :class="
+            activeFilter === option.value
+              ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+              : 'bg-slate-100/80 text-slate-500 dark:bg-slate-700/80 dark:text-slate-400'
+          "
+        >
+          {{ option.count }}
+        </span>
       </button>
     </div>
 
@@ -158,25 +251,83 @@ defineExpose({
       {{ $t('CONTACT_PROFILE.TIMELINE.LOAD_ERROR') }}
     </div>
 
-    <div v-else-if="!filteredEvents.length" class="py-8 text-center">
-      <p class="text-sm text-slate-600 dark:text-slate-300">
+    <div
+      v-else-if="!filteredEvents.length"
+      class="rounded-xl border border-dashed border-slate-300 px-6 py-10 text-center dark:border-slate-600"
+    >
+      <p class="text-sm font-medium text-slate-700 dark:text-slate-200">
         {{ $t('CONTACT_PROFILE.TIMELINE.EMPTY_TITLE') }}
       </p>
       <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
         {{ $t('CONTACT_PROFILE.TIMELINE.EMPTY_HINT') }}
       </p>
+
+      <div
+        v-if="!compact"
+        class="mt-5 flex flex-wrap items-center justify-center gap-2"
+      >
+        <button
+          type="button"
+          class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          @click="emit('open-deal')"
+        >
+          {{ $t('CONTACT_PROFILE.TIMELINE.EMPTY_ACTIONS.ADD_PIPELINE') }}
+        </button>
+        <button
+          type="button"
+          class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          @click="emit('open-activities')"
+        >
+          {{ $t('CONTACT_PROFILE.TIMELINE.EMPTY_ACTIONS.CREATE_ACTIVITY') }}
+        </button>
+      </div>
     </div>
 
     <div v-else>
-      <ContactTimelineEvent
-        v-for="event in filteredEvents"
-        :key="event.id"
-        :event="event"
-        :account-id="accountId"
-        :contact-id="contactId"
-        @open-activities="onOpenActivities"
-        @refresh="onRefresh"
-      />
+      <div
+        v-for="(group, groupIndex) in groupedEvents"
+        :key="group.key"
+        class="mb-5 last:mb-0"
+      >
+        <div
+          class="mb-3 flex items-center gap-3"
+          role="heading"
+          aria-level="3"
+        >
+          <span
+            class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400"
+          >
+            {{ group.label }}
+          </span>
+          <span class="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+        </div>
+
+        <ol class="list-none p-0 m-0">
+          <ContactTimelineEvent
+            v-for="(event, eventIndex) in group.events"
+            :key="event.id"
+            :event="event"
+            :account-id="accountId"
+            :contact-id="contactId"
+            :is-last="isLastEventInTimeline(groupIndex, eventIndex)"
+            @open-activities="onOpenActivities"
+            @open-notes="onOpenNotes"
+            @refresh="onRefresh"
+          />
+        </ol>
+      </div>
+
+      <div v-if="hasMore" class="mt-2 flex justify-center">
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          :disabled="loadingMore"
+          @click="onLoadMore"
+        >
+          <Spinner v-if="loadingMore" size="tiny" />
+          <span>{{ $t('CONTACT_PROFILE.TIMELINE.LOAD_MORE') }}</span>
+        </button>
+      </div>
     </div>
   </div>
 </template>

@@ -44,6 +44,15 @@ RSpec.describe Macros::ExecutionService, type: :service do
 
           service.perform
         end
+
+        it 're-raises the exception when raise_on_error is enabled' do
+          service = described_class.new(macro, conversation, user, nil, raise_on_error: true)
+          allow(service).to receive(:assign_agent).and_raise(StandardError.new('Random error'))
+          allow(ChatwootExceptionTracker).to receive(:new).and_return(exception_tracker)
+
+          expect(exception_tracker).to receive(:capture_exception)
+          expect { service.perform }.to raise_error(StandardError, 'Random error')
+        end
       end
     end
   end

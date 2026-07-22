@@ -29,7 +29,7 @@ const props = defineProps({
 const route = useRoute();
 const store = useStore();
 const getters = useStoreGetters();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const selectedTabIndex = ref(0);
 const highlightActivityId = ref(null);
@@ -57,9 +57,15 @@ const {
 const {
   events: timelineEvents,
   loading: timelineLoading,
+  loadingMore: timelineLoadingMore,
+  hasMore: timelineHasMore,
   firstFormSubmission,
   fetchTimeline,
-} = useContactTimeline(contactIdRef);
+  loadMore: loadMoreTimeline,
+} = useContactTimeline(contactIdRef, {
+  localeCode: locale,
+  t,
+});
 
 const pendingActivitiesCount = computed(() => {
   if (!contact.value?.id) return 0;
@@ -156,6 +162,14 @@ const onOpenActivitiesFromTimeline = activityId => {
   selectedTabIndex.value = 3;
 };
 
+const onOpenNotesFromTimeline = () => {
+  selectedTabIndex.value = 2;
+};
+
+const onOpenDealFromTimeline = () => {
+  selectedTabIndex.value = 1;
+};
+
 const onActivitiesChanged = async () => {
   await fetchTimeline();
   if (contact.value?.id) {
@@ -239,8 +253,13 @@ const onActivitiesChanged = async () => {
               :highlight-pipeline-id="resolvedPipelineId"
               :external-events="timelineEvents"
               :external-loading="timelineLoading"
+              :external-loading-more="timelineLoadingMore"
+              :external-has-more="timelineHasMore"
               @open-activities="onOpenActivitiesFromTimeline"
+              @open-notes="onOpenNotesFromTimeline"
+              @open-deal="onOpenDealFromTimeline"
               @refresh="fetchTimeline"
+              @load-more="loadMoreTimeline"
             />
 
             <contact-deal-panel
