@@ -10,7 +10,7 @@
     </div>
     <div v-else>
       <div class="flex flex-row gap-2">
-        <div class="w-[50%]">
+        <div :class="hideContactField ? 'w-full' : 'w-[50%]'">
           <label>
             {{ $t('NEW_CONVERSATION.FORM.INBOX.LABEL') }}
           </label>
@@ -56,7 +56,7 @@
             </span>
           </label>
         </div>
-        <div class="w-[50%]">
+        <div v-if="!hideContactField" class="w-[50%]">
           <label>
             {{ $t('NEW_CONVERSATION.FORM.TO.LABEL') }}
             <div
@@ -220,7 +220,7 @@
         {{ $t('NEW_CONVERSATION.FORM.CANCEL') }}
       </button>
       <woot-button type="submit" :is-loading="conversationsUiFlags.isCreating">
-        {{ $t('NEW_CONVERSATION.FORM.SUBMIT') }}
+        {{ submitButtonLabel || $t('NEW_CONVERSATION.FORM.SUBMIT') }}
       </woot-button>
     </div>
 
@@ -287,6 +287,18 @@ export default {
       default: () => {},
     },
     channelType: {
+      type: String,
+      default: '',
+    },
+    hideContactField: {
+      type: Boolean,
+      default: false,
+    },
+    autoSelectSingleInbox: {
+      type: Boolean,
+      default: false,
+    },
+    submitButtonLabel: {
       type: String,
       default: '',
     },
@@ -452,12 +464,34 @@ export default {
     },
     targetInbox() {
       this.setSignature();
+      this.autoSelectInboxIfSingle();
+    },
+    inboxes: {
+      handler() {
+        this.autoSelectInboxIfSingle();
+      },
+      immediate: true,
+    },
+    'contact.id'() {
+      this.targetInbox = {};
+      this.$nextTick(() => {
+        this.autoSelectInboxIfSingle();
+      });
     },
   },
   mounted() {
     this.setSignature();
   },
   methods: {
+    autoSelectInboxIfSingle() {
+      if (!this.autoSelectSingleInbox || this.inboxes.length !== 1) {
+        return;
+      }
+
+      if (!this.targetInbox?.id) {
+        this.targetInbox = this.inboxes[0];
+      }
+    },
     setSignature() {
       if (this.messageSignature) {
         if (this.isSignatureEnabledForInbox) {

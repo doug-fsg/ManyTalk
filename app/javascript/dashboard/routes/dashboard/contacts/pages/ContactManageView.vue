@@ -155,6 +155,16 @@ const onOpenActivitiesFromTimeline = activityId => {
   highlightActivityId.value = activityId;
   selectedTabIndex.value = 3;
 };
+
+const onActivitiesChanged = async () => {
+  await fetchTimeline();
+  if (contact.value?.id) {
+    await store.dispatch('activities/get', {
+      params: { contact_id: contact.value.id },
+      merge: false,
+    });
+  }
+};
 </script>
 
 <template>
@@ -260,6 +270,7 @@ const onOpenActivitiesFromTimeline = activityId => {
               :contact="contact"
               :pipeline-id="activitiesPipelineId"
               :highlight-activity-id="highlightActivityId"
+              @changed="onActivitiesChanged"
             />
 
             <div

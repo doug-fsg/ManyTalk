@@ -4,6 +4,31 @@
     class="h-full overflow-auto w-48 flex flex-col bg-white dark:bg-slate-900 border-r dark:border-slate-800/50 rtl:border-r-0 rtl:border-l border-slate-50 text-sm px-2 pb-8"
   >
     <account-context @toggle-accounts="toggleAccountModal" />
+    <div v-if="showComposeButton" class="px-0 pt-2 pb-1">
+      <button
+        type="button"
+        class="group flex items-center w-full p-2 text-sm font-medium leading-4 rounded-xl cursor-pointer
+               text-slate-700 dark:text-slate-100
+               border border-slate-100 dark:border-slate-800/80
+               bg-slate-25/70 dark:bg-slate-800/40
+               hover:bg-woot-25/60 dark:hover:bg-slate-800
+               hover:border-woot-200 dark:hover:border-woot-700/40
+               hover:shadow-sm
+               transition-all duration-200 ease-smooth"
+        @click="showComposeModal = true"
+      >
+        <fluent-icon
+          icon="send"
+          class="compose-quick-send-icon min-w-[1rem] mr-1.5 rtl:mr-0 rtl:ml-1.5 text-slate-700 dark:text-slate-100 group-hover:text-woot-500 dark:group-hover:text-woot-400"
+          size="14"
+        />
+        {{ $t('COMPOSE_CONVERSATION.BUTTON_LABEL') }}
+      </button>
+    </div>
+    <compose-conversation-launcher
+      :show.sync="showComposeModal"
+      @close="showComposeModal = false"
+    />
     <transition-group
       name="menu-list"
       tag="ul"
@@ -27,6 +52,7 @@
 import { frontendURL } from '../../../helper/URLHelper';
 import SecondaryNavItem from './SecondaryNavItem.vue';
 import AccountContext from './AccountContext.vue';
+import ComposeConversationLauncher from 'dashboard/components/conversation/compose/ComposeConversationLauncher.vue';
 import { mapGetters } from 'vuex';
 import { FEATURE_FLAGS } from '../../../featureFlags';
 import { hasPermissions } from '../../../helper/permissionsHelper';
@@ -36,6 +62,12 @@ export default {
   components: {
     AccountContext,
     SecondaryNavItem,
+    ComposeConversationLauncher,
+  },
+  data() {
+    return {
+      showComposeModal: false,
+    };
   },
   props: {
     accountId: {
@@ -111,6 +143,9 @@ export default {
       });
     },
 
+    showComposeButton() {
+      return this.menuConfig.parentNav === 'conversations';
+    },
     hideAllInboxForAgents() {
     return (
       this.isFeatureEnabledonAccount(
@@ -331,3 +366,41 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+@keyframes compose-quick-send {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes compose-quick-send-rtl {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(-4px);
+  }
+}
+
+.group:hover .compose-quick-send-icon {
+  animation: compose-quick-send 0.9s ease-in-out infinite;
+}
+
+[dir='rtl'] .group:hover .compose-quick-send-icon {
+  animation-name: compose-quick-send-rtl;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .group:hover .compose-quick-send-icon {
+    animation: none;
+  }
+}
+</style>

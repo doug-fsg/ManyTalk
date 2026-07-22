@@ -150,6 +150,19 @@ describe Whatsapp::IncomingMessageService do
         expect(message.external_error).to eq('123: abc')
       end
 
+      it 'humanizes known whatsapp delivery errors' do
+        status_params = {
+          'statuses' => [{ 'recipient_id' => from, 'id' => from, 'status' => 'failed',
+                           'errors' => [{ code: 131_049, title: 'Healthy ecosystem engagement' }] }]
+        }.with_indifferent_access
+
+        message = Message.find_by!(source_id: from)
+        described_class.new(inbox: whatsapp_channel.inbox, params: status_params).perform
+        expect(message.reload.external_error).to eq(
+          I18n.t('conversations.messages.whatsapp.errors.marketing_limit_reached')
+        )
+      end
+
       it 'will not throw error if unsupported status' do
         status_params = {
           'statuses' => [{ 'recipient_id' => from, 'id' => from, 'status' => 'deleted',

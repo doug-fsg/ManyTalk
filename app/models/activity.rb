@@ -7,6 +7,7 @@
 #  description                  :text
 #  message_content              :text
 #  metadata                     :jsonb            not null
+#  completed_at                 :datetime
 #  scheduled_at                 :datetime         not null
 #  status                       :string           default("pending")
 #  title                        :string           not null
@@ -62,6 +63,9 @@ class Activity < ApplicationRecord
   validates :message_content, presence: true, if: -> { scheduled_message? }
   validates :inbox_id, presence: true, if: -> { scheduled_message? }
 
+  before_save :sync_completed_at, if: :will_save_change_to_status?
+  before_validation :sync_contact_from_pipeline_position
+
   scope :pending, -> { where(status: 'pending') }
   scope :completed, -> { where(status: 'completed') }
   scope :for_account, ->(account_id) { where(account_id: account_id) }
@@ -100,6 +104,22 @@ class Activity < ApplicationRecord
 
   def pending?
     status == 'pending'
+  end
+
+  private
+
+  def sync_completed_at
+    if status == 'completed'
+      self.completed_at ||= Time.current
+    else
+      self.completed_at = nil
+    end
+  end
+
+  def sync_contact_from_pipeline_position
+    return if contact_id.present? || contact_pipeline_position_id.blank?
+
+    self.contact_id = contact_pipeline_position&.contact_id
   end
 end
 

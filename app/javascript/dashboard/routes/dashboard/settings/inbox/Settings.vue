@@ -420,6 +420,10 @@
     <div v-if="selectedTabKey === 'whatsapp_health'" class="mx-8">
       <AccountHealth
         :health-data="healthData"
+        :pricing-data="pricingData"
+        :is-loading-pricing="isLoadingPricing"
+        :pricing-error="pricingError"
+        :pricing-error-code="pricingErrorCode"
         :is-registering-webhook="isRegisteringWebhook"
         @registerWebhook="registerWebhook"
       />
@@ -524,7 +528,11 @@ export default {
       selectedPortalSlug: '',
       showBusinessNameInput: false,
       healthData: null,
+      pricingData: null,
+      pricingError: '',
+      pricingErrorCode: '',
       isLoadingHealth: false,
+      isLoadingPricing: false,
       isRegisteringWebhook: false,
     };
   },
@@ -765,12 +773,39 @@ export default {
 
       try {
         this.isLoadingHealth = true;
-        const response = await InboxHealthAPI.getHealthStatus(this.inbox.id);
-        this.healthData = response.data;
-      } catch {
-        this.healthData = null;
+        this.isLoadingPricing = true;
+        this.pricingError = '';
+        this.pricingErrorCode = '';
+
+        const [healthResult, pricingResult] = await Promise.allSettled([
+          InboxHealthAPI.getHealthStatus(this.inbox.id),
+          InboxHealthAPI.getPricingSummary(this.inbox.id),
+        ]);
+
+        if (healthResult.status === 'fulfilled') {
+          this.healthData = healthResult.value.data;
+        } else {
+          this.healthData = null;
+        }
+
+        if (pricingResult.status === 'fulfilled') {
+          this.pricingData = pricingResult.value.data;
+          this.pricingError = '';
+          this.pricingErrorCode = '';
+        } else {
+          this.pricingData = null;
+          const errorResponse =
+            pricingResult.reason && pricingResult.reason.response
+              ? pricingResult.reason.response.data
+              : {};
+          this.pricingError =
+            errorResponse.error ||
+            this.$t('INBOX_MGMT.ACCOUNT_HEALTH.PRICING.LOAD_ERROR');
+          this.pricingErrorCode = errorResponse.error_code || '';
+        }
       } finally {
         this.isLoadingHealth = false;
+        this.isLoadingPricing = false;
       }
     },
     async registerWebhook() {

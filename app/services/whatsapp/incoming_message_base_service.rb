@@ -58,8 +58,7 @@ class Whatsapp::IncomingMessageBaseService
       message.status = status[:status]
     end
     if status[:status] == 'failed' && status[:errors].present?
-      error = status[:errors]&.first
-      message.external_error = "#{error[:code]}: #{error[:title]}"
+      message.external_error = Whatsapp::ErrorHumanizer.humanize_from_status_error(status[:errors]&.first)
     end
     message.save!
   end

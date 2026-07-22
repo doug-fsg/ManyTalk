@@ -176,28 +176,71 @@ module Contacts
     end
 
     def activity_events
-      @contact.activities
-              .includes(:assignee, :user)
-              .order(scheduled_at: :desc)
-              .map do |activity|
-        build_event(
-          id: "activity-#{activity.id}",
-          type: 'activity',
-          occurred_at: activity.scheduled_at,
-          meta: {
-            activity_id: activity.id,
-            activity_type: activity.activity_type,
-            status: activity.status,
-            title: activity.title,
-            description: activity.description,
-            assignee_id: activity.assignee_id,
-            assignee_name: activity.assignee&.available_name || activity.assignee&.name,
-            user_name: activity.user&.available_name || activity.user&.name,
-            conversation_id: activity.conversation_id,
-            contact_pipeline_position_id: activity.contact_pipeline_position_id
-          }
-        )
+      contact_activities.flat_map { |activity| build_activity_timeline_events(activity) }
+    end
+
+    def contact_activities
+      position_ids = @contact.contact_pipeline_positions.pluck(:id)
+
+      scope = Activity.where(account_id: @contact.account_id)
+                      .includes(:assignee, :user)
+
+      scope =
+        if position_ids.any?
+          scope.where(
+            'activities.contact_id = :contact_id OR activities.contact_pipeline_position_id IN (:position_ids)',
+            contact_id: @contact.id,
+            position_ids: position_ids
+          )
+        else
+          scope.where(contact_id: @contact.id)
+        end
+
+      scope.order(scheduled_at: :desc)
+    end
+
+    def build_activity_timeline_events(activity)
+      base_meta = activity_timeline_meta(activity)
+
+      if activity.status == 'completed'
+        completed_at = activity.completed_at || activity.updated_at
+        [
+          build_event(
+            id: "activity_completed-#{activity.id}",
+            type: 'activity',
+            occurred_at: completed_at,
+            meta: base_meta.merge(
+              timeline_moment: 'completed',
+              completed_at: completed_at.iso8601
+            )
+          )
+        ]
+      else
+        [
+          build_event(
+            id: "activity-#{activity.id}",
+            type: 'activity',
+            occurred_at: activity.scheduled_at,
+            meta: base_meta.merge(timeline_moment: 'scheduled')
+          )
+        ]
       end
+    end
+
+    def activity_timeline_meta(activity)
+      {
+        activity_id: activity.id,
+        activity_type: activity.activity_type,
+        status: activity.status,
+        title: activity.title,
+        description: activity.description,
+        scheduled_at: activity.scheduled_at&.iso8601,
+        assignee_id: activity.assignee_id,
+        assignee_name: activity.assignee&.available_name || activity.assignee&.name,
+        user_name: activity.user&.available_name || activity.user&.name,
+        conversation_id: activity.conversation_id,
+        contact_pipeline_position_id: activity.contact_pipeline_position_id
+      }
     end
 
     def note_events

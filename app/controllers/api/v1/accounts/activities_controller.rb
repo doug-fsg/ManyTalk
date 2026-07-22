@@ -61,6 +61,7 @@ class Api::V1::Accounts::ActivitiesController < Api::V1::Accounts::BaseControlle
     relation = apply_status_filter(relation)
     relation = relation.where(activity_type: params[:activity_type]) if params[:activity_type].present?
     relation = relation.where(assignee_id: params[:assignee_id]) if params[:assignee_id].present?
+    relation = relation.where(user_id: params[:user_id]) if params[:user_id].present?
 
     if params[:contact_ids].present?
       ids = params[:contact_ids].is_a?(Array) ? params[:contact_ids] : params[:contact_ids].to_s.split(',').map(&:to_i)

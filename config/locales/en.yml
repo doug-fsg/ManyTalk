@@ -159,6 +159,9 @@ en:
       whatsapp:
         errors:
           display_name_not_approved: 'WhatsApp: display name pending or number not registered.'
+          marketing_limit_reached: 'WhatsApp: Meta marketing limit reached for this contact. Wait 24h before resending.'
+        pricing:
+          cost_unavailable: 'Meta partner billing — cost unavailable via API.'
     activity:
       status:
         resolved: "Conversation was marked resolved by %{user_name}"

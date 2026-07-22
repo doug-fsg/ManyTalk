@@ -9,18 +9,19 @@
       "
     >
       <div
+        ref="countrySelector"
         class="cursor-pointer py-2 pr-1.5 pl-2 rounded-tl-lg rounded-bl-lg flex items-center justify-center gap-1.5 bg-slate-25 dark:bg-slate-700 h-10 w-14 transition-colors duration-150 ease-smooth hover:bg-slate-50 dark:hover:bg-slate-600"
         @click.prevent="toggleCountryDropdown"
       >
-        <h5 v-if="activeCountry" class="mb-0">
+        <span v-if="activeCountry" class="mb-0 text-base leading-none font-normal">
           {{ activeCountry.emoji }}
-        </h5>
+        </span>
         <fluent-icon v-else icon="globe" class="fluent-icon" size="16" />
         <fluent-icon icon="chevron-down" class="fluent-icon" size="12" />
       </div>
       <span
         v-if="activeDialCode"
-        class="flex bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-normal text-base leading-normal py-2 pl-2 pr-0"
+        class="flex bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-normal text-sm leading-normal py-2 pl-2 pr-0"
       >
         {{ activeDialCode }}
       </span>
@@ -28,11 +29,13 @@
         ref="phoneNumberInput"
         :value="phoneNumber"
         type="tel"
+        inputmode="tel"
         class="!mb-0 !rounded-tl-none !rounded-bl-none !border-0 font-normal !w-full dark:!bg-slate-900 text-base !px-1.5 placeholder:font-normal"
         :placeholder="placeholder"
         :readonly="readonly"
         :style="styles"
         @input="onChange"
+        @keydown="onPhoneKeydown"
         @blur="onBlur"
       />
     </div>
@@ -41,7 +44,9 @@
       ref="dropdown"
       v-on-clickaway="onOutsideClick"
       tabindex="0"
-      class="z-10 absolute h-60 w-[12.5rem] shadow-soft-xl overflow-y-auto top-10 rounded-xl px-0 pt-0 pb-1 bg-white dark:bg-slate-900 animate-scale-in"
+      :style="fixedCountryDropdown ? countryDropdownStyles : null"
+      class="h-60 w-[12.5rem] shadow-soft-xl overflow-y-auto rounded-xl px-0 pt-0 pb-1 bg-white dark:bg-slate-900 animate-scale-in"
+      :class="fixedCountryDropdown ? '' : 'z-10 absolute top-10'"
       @keydown.prevent.up="moveUp"
       @keydown.prevent.down="moveDown"
       @keydown.prevent.enter="
@@ -117,6 +122,18 @@ export default {
       type: Boolean,
       default: false,
     },
+    defaultCountryCode: {
+      type: String,
+      default: '',
+    },
+    fixedCountryDropdown: {
+      type: Boolean,
+      default: false,
+    },
+    digitsOnly: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
@@ -126,6 +143,7 @@ export default {
       activeCountryCode: '',
       activeDialCode: '',
       phoneNumber: this.value,
+      countryDropdownStyles: {},
     };
   },
   computed: {
@@ -175,11 +193,43 @@ export default {
         );
       }
     },
+    showDropdown(isOpen) {
+      if (isOpen && this.fixedCountryDropdown) {
+        this.$nextTick(() => {
+          this.updateCountryDropdownPosition();
+        });
+      }
+    },
   },
   mounted() {
     this.setActiveCountry();
+    this.applyDefaultCountry();
+
+    if (this.fixedCountryDropdown) {
+      window.addEventListener('resize', this.updateCountryDropdownPosition);
+      window.addEventListener('scroll', this.updateCountryDropdownPosition, true);
+    }
+  },
+  beforeDestroy() {
+    if (this.fixedCountryDropdown) {
+      window.removeEventListener('resize', this.updateCountryDropdownPosition);
+      window.removeEventListener('scroll', this.updateCountryDropdownPosition, true);
+    }
   },
   methods: {
+    applyDefaultCountry() {
+      if (this.phoneNumber || this.value || !this.defaultCountryCode) {
+        return;
+      }
+
+      const country = countries.find(item => item.id === this.defaultCountryCode);
+      if (!country) {
+        return;
+      }
+
+      this.activeCountryCode = country.id;
+      this.activeDialCode = country.dial_code;
+    },
     onOutsideClick(e) {
       if (
         this.showDropdown &&
@@ -190,8 +240,104 @@ export default {
       }
     },
     onChange(e) {
-      this.phoneNumber = e.target.value;
-      this.$emit('input', e.target.value, this.activeDialCode);
+      let { value } = e.target;
+
+      if (this.digitsOnly) {
+        if (value.includes('+')) {
+          this.syncFromInternationalInput(value);
+          e.target.value = this.phoneNumber;
+          this.$emit('input', this.phoneNumber, this.activeDialCode);
+          return;
+        }
+
+        value = value.replace(/\D/g, '');
+        e.target.value = value;
+      }
+
+      this.phoneNumber = value;
+      this.$emit('input', value, this.activeDialCode);
+    },
+    matchCountryByDigits(digits) {
+      const sortedCountries = [...countries].sort(
+        (a, b) =>
+          b.dial_code.replace(/\D/g, '').length -
+          a.dial_code.replace(/\D/g, '').length
+      );
+
+      return sortedCountries.find(country => {
+        const codeDigits = country.dial_code.replace(/\D/g, '');
+        return digits.startsWith(codeDigits);
+      });
+    },
+    syncFromInternationalInput(rawValue) {
+      const cleaned = rawValue.replace(/[^\d+]/g, '');
+
+      if (!cleaned.startsWith('+')) {
+        this.phoneNumber = cleaned.replace(/\D/g, '');
+        return;
+      }
+
+      const digits = cleaned.slice(1);
+
+      if (!digits) {
+        this.phoneNumber = '+';
+        return;
+      }
+
+      const country = this.matchCountryByDigits(digits);
+
+      if (country) {
+        const codeDigits = country.dial_code.replace(/\D/g, '');
+        this.activeCountryCode = country.id;
+        this.activeDialCode = country.dial_code;
+        this.phoneNumber = digits.slice(codeDigits.length) || '';
+        this.$emit('setCode', country.dial_code);
+        return;
+      }
+
+      this.phoneNumber = `+${digits}`;
+    },
+    onPhoneKeydown(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.$emit('enter');
+        return;
+      }
+
+      if (!this.digitsOnly) {
+        return;
+      }
+
+      const allowedKeys = [
+        'Backspace',
+        'Delete',
+        'Tab',
+        'ArrowLeft',
+        'ArrowRight',
+        'Home',
+        'End',
+      ];
+
+      if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) {
+        return;
+      }
+
+      if (e.key === '+') {
+        const input = e.target;
+        const atStart = input.selectionStart === 0;
+        const hasPlus = input.value.includes('+');
+
+        if (atStart && !hasPlus) {
+          return;
+        }
+
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key.length === 1 && !/\d/.test(e.key)) {
+        e.preventDefault();
+      }
     },
     onBlur(e) {
       this.$emit('blur', e.target.value);
@@ -247,9 +393,29 @@ export default {
       this.selectedIndex = -1;
       if (this.showDropdown) {
         this.$nextTick(() => {
+          this.updateCountryDropdownPosition();
           this.$refs.searchbar.focus();
         });
       }
+    },
+    updateCountryDropdownPosition() {
+      if (!this.fixedCountryDropdown || !this.showDropdown) {
+        return;
+      }
+
+      const selector = this.$refs.countrySelector;
+      if (!selector) {
+        return;
+      }
+
+      const rect = selector.getBoundingClientRect();
+      this.countryDropdownStyles = {
+        position: 'fixed',
+        top: `${rect.bottom + 4}px`,
+        left: `${rect.left}px`,
+        width: '12.5rem',
+        zIndex: 10001,
+      };
     },
     closeDropdown() {
       this.selectedIndex = -1;

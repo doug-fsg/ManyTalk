@@ -192,6 +192,30 @@
     "SUCCESS_MESSAGE": "Contato salvo com sucesso",
     "ERROR_MESSAGE": "Ocorreu um erro, por favor tente novamente"
   },
+  "COMPOSE_CONVERSATION": {
+    "BUTTON_LABEL": "Conversa rápida",
+    "TITLE": "Iniciar atendimento",
+    "DESC": "Digite o telefone ou busque um contato para começar rapidamente.",
+    "SEARCH_LABEL": "Para:",
+    "INPUT_PLACEHOLDER": "Telefone ou busque por nome/e-mail",
+    "PHONE_PLACEHOLDER": "(11) 99999-9999",
+    "NAME_SEARCH_PLACEHOLDER": "Buscar por nome ou e-mail",
+    "MODE_PHONE": "Telefone",
+    "MODE_NAME": "Nome",
+    "PHONE_HINT": "Digite o DDD e o número. O DDI +55 já vem selecionado.",
+    "NAME_SEARCH_HINT": "Digite pelo menos 2 caracteres para buscar por nome ou e-mail.",
+    "INPUT_HINT": "Digite um telefone para iniciar rápido, ou pelo menos 2 caracteres para buscar.",
+    "SEARCH_PLACEHOLDER": "Digite pelo menos 2 caracteres para buscar por nome, e-mail ou telefone",
+    "SEARCH_HINT": "Digite pelo menos 2 caracteres para ver os contatos correspondentes.",
+    "START_WITH": "Iniciar com {value}",
+    "CREATING_CONTACT": "Criando contato...",
+    "CREATE_ERROR": "Não foi possível criar o contato. Tente novamente.",
+    "START_BUTTON": "Iniciar atendimento",
+    "FULL_CONTACT_LINK": "Cadastro completo de contato",
+    "CREATE_CONTACT": "Criar novo contato",
+    "CHANGE_CONTACT": "Trocar contato",
+    "CONVERSATION_DESC": "Enviar mensagem para {name}"
+  },
   "NEW_CONVERSATION": {
     "BUTTON_LABEL": "Iniciar Conversa",
     "TITLE": "Nova conversa",
@@ -312,9 +336,11 @@
         "DEAL_WON": "Negócio ganho · {pipeline}",
         "DEAL_LOST": "Negócio perdido · {pipeline}",
         "ACTIVITY": "Atividade",
+        "ACTIVITY_COMPLETED": "Atividade concluída · {title}",
         "NOTE": "Nota de {user}",
         "CONVERSATION": "Conversa iniciada · {inbox}"
       },
+      "SCHEDULED_FOR": "Prevista para {date}",
       "ACTIONS": {
         "VIEW_FORM_CONTACTS": "Ver contatos do formulário",
         "OPEN_PIPELINE": "Abrir funil",

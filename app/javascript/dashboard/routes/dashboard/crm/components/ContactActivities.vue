@@ -16,6 +16,27 @@
       </woot-button>
     </div>
 
+    <!-- Mini filtros -->
+    <div
+      v-if="!loading && (activities.length || statusFilter !== 'all')"
+      class="flex flex-wrap gap-1.5 mb-3"
+    >
+      <button
+        v-for="option in statusFilterOptions"
+        :key="option.value"
+        type="button"
+        :class="[
+          'px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors',
+          statusFilter === option.value
+            ? 'bg-woot-500 text-white'
+            : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600',
+        ]"
+        @click="setStatusFilter(option.value)"
+      >
+        {{ $t(option.labelKey) }}
+      </button>
+    </div>
+
     <!-- Lista de atividades -->
     <div v-if="loading" class="flex items-center justify-center py-8">
       <spinner />
@@ -55,18 +76,30 @@
                 {{ activity.title }}
               </span>
             </div>
-            <div class="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 ml-8">
+            <div class="flex flex-col gap-1 text-[11px] text-slate-500 dark:text-slate-400 ml-8">
+              <span class="flex items-center gap-1">
+                <fluent-icon icon="calendar-clock" size="10" />
+                {{ $t('ACTIVITIES.DATES.SCHEDULED') }}: {{ formatActivityDateTime(activity.scheduled_at) }}
+              </span>
               <span class="flex items-center gap-1">
                 <fluent-icon icon="clock" size="10" />
-                {{ formatDate(activity.scheduled_at) }}
+                {{ $t('ACTIVITIES.DATES.CREATED') }}: {{ formatActivityDateTime(activity.created_at) }}
+              </span>
+              <span
+                v-if="activity.completed_at"
+                class="flex items-center gap-1 text-green-600 dark:text-green-400"
+              >
+                <fluent-icon icon="checkmark-circle" size="10" />
+                {{ $t('ACTIVITIES.DATES.COMPLETED') }}: {{ formatActivityDateTime(activity.completed_at) }}
               </span>
               <span
                 :class="[
-                  'px-1.5 py-0.5 rounded-full text-[10px] font-medium',
-                  statusClasses[activity.status]
+                  'inline-flex w-fit px-1.5 py-0.5 rounded-full text-[10px] font-medium',
+                  statusClasses[activity.status],
+                  isActivityOverdue(activity) ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : '',
                 ]"
               >
-                {{ $t(`ACTIVITIES.STATUS.${activity.status.toUpperCase()}`) }}
+                {{ activityStatusLabel(activity) }}
               </span>
             </div>
             
@@ -153,6 +186,11 @@ import { formatUnixDate } from 'shared/helpers/DateHelper';
 import ActivityFormModal from './ActivityFormModal.vue';
 import ActivityDetailModal from '../../activities/components/ActivityDetailModal.vue';
 import { getPipelinePosition } from '../utils/pipelinePositionsHelper';
+import {
+  formatActivityDateTime,
+  isActivityOverdue,
+  ACTIVITY_STATUS_FILTER_OPTIONS,
+} from 'dashboard/helper/activityDateHelper';
 
 export default {
   components: {
@@ -161,6 +199,7 @@ export default {
     ActivityFormModal,
     ActivityDetailModal,
   },
+  emits: ['changed'],
   props: {
     contactId: {
       type: Number,
@@ -187,6 +226,8 @@ export default {
       loading: false,
       expandedActivities: {},
       highlightedActivityId: null,
+      statusFilter: 'all',
+      statusFilterOptions: ACTIVITY_STATUS_FILTER_OPTIONS,
       statusClasses: {
         pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
         completed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
@@ -214,6 +255,9 @@ export default {
         this.$nextTick(() => this.applyActivityHighlight(activityId));
       },
     },
+    statusFilter() {
+      this.loadActivities();
+    },
   },
   methods: {
     applyActivityHighlight(activityId) {
@@ -232,8 +276,12 @@ export default {
     async loadActivities() {
       this.loading = true;
       try {
+        const params = { contact_id: this.contactId };
+        if (this.statusFilter !== 'all') {
+          params.status = this.statusFilter;
+        }
         await this.$store.dispatch('activities/get', {
-          params: { contact_id: this.contactId },
+          params,
           merge: false,
         });
       } catch (error) {
@@ -247,10 +295,23 @@ export default {
         }
       }
     },
+    setStatusFilter(value) {
+      this.statusFilter = value;
+    },
+    formatActivityDateTime,
+    isActivityOverdue,
+    activityStatusLabel(activity) {
+      if (isActivityOverdue(activity)) {
+        return this.$t('ACTIVITIES.FILTERS.OVERDUE');
+      }
+      const key = `ACTIVITIES.STATUS.${activity.status?.toUpperCase()}`;
+      return this.$t(key) !== key ? this.$t(key) : activity.status;
+    },
     async handleComplete(activityId) {
       try {
         await this.$store.dispatch('activities/complete', { activityId });
         await this.loadActivities();
+        this.$emit('changed');
       } catch (error) {
         useAlert(this.$t('ACTIVITIES.ERRORS.COMPLETE_FAILED'));
       }
@@ -286,6 +347,7 @@ export default {
         });
         this.closeForm();
         await this.loadActivities();
+        this.$emit('changed');
       } catch (error) {
         useAlert(this.$t('ACTIVITIES.ERRORS.SAVE_FAILED'));
       }
@@ -301,12 +363,13 @@ export default {
         this.closeForm();
         await this.loadActivities();
         useAlert(this.$t('ACTIVITIES.SUCCESS.DELETED'));
+        this.$emit('changed');
       } catch (error) {
         useAlert(this.$t('ACTIVITIES.ERRORS.DELETE_FAILED'));
       }
     },
     formatDate(date) {
-      return this.formatRelativeDate(new Date(date));
+      return formatActivityDateTime(date);
     },
     formatRelativeDate(date) {
       const now = new Date();

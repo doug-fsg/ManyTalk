@@ -2,9 +2,10 @@
   <li
     v-if="shouldRenderMessage"
     :id="`message${data.id}`"
-    :class="[alignBubble, 'group']"
+    :class="[alignBubble, 'group', messageRowClass]"
   >
-    <div :class="wrapClass">
+    <div :class="messageRowContentClass">
+      <div :class="wrapClass">
       <div
         v-if="isFailed && !data.source_id && !hasOneDayPassed && !isAnEmailInbox"
         class="message-failed--alert"
@@ -90,7 +91,7 @@
           :id="data.id"
           :sender="data.sender"
           :story-sender="storySender"
-          :external-error="errorMessageTooltip"
+          :external-error="bubbleExternalError"
           :story-id="`${storyId}`"
           :is-a-tweet="isATweet"
           :is-a-whatsapp-channel="isAWhatsAppChannel"
@@ -123,6 +124,20 @@
         >
           {{ sender.name }}
         </a>
+      </div>
+      </div>
+      <div
+        v-if="shouldShowWhatsAppDeliveryError"
+        class="whatsapp-delivery-error self-center mt-1"
+      >
+        <div class="activity-wrap">
+          <div class="is-text">
+            <span>{{ whatsappDeliveryErrorMessage }}</span>
+          </div>
+          <div class="message-text--metadata">
+            <span class="time">{{ whatsappDeliveryErrorTime }}</span>
+          </div>
+        </div>
       </div>
     </div>
     <div
@@ -165,6 +180,8 @@ import { ACCOUNT_EVENTS } from 'dashboard/helper/AnalyticsHelper/events';
 import { LOCAL_STORAGE_KEYS } from 'dashboard/constants/localStorage';
 import { LocalStorage } from 'shared/helpers/localStorage';
 import { getDayDifferenceFromNow } from 'shared/helpers/DateHelper';
+import { messageTimestamp } from 'shared/helpers/timeHelper';
+import { resolveWhatsappDeliveryError } from 'dashboard/helper/whatsappErrorHelper';
 import * as Sentry from '@sentry/browser';
 
 export default {
@@ -430,6 +447,46 @@ export default {
       }
       return '';
     },
+    shouldShowWhatsAppDeliveryError() {
+      return (
+        this.isFailed &&
+        this.isAWhatsAppChannel &&
+        (this.isOutgoing || this.isTemplate) &&
+        !!this.whatsappDeliveryErrorMessage
+      );
+    },
+    whatsappDeliveryErrorMessage() {
+      return resolveWhatsappDeliveryError(this.externalError, key =>
+        this.$t(key)
+      );
+    },
+    whatsappDeliveryErrorTime() {
+      return messageTimestamp(this.createdAt, 'LLL d, h:mm a');
+    },
+    bubbleExternalError() {
+      if (this.shouldShowWhatsAppDeliveryError) {
+        return '';
+      }
+
+      return this.errorMessageTooltip;
+    },
+    messageRowClass() {
+      if (!this.shouldShowWhatsAppDeliveryError) {
+        return '';
+      }
+
+      return this.isOutgoing || this.isTemplate ? 'items-end' : '';
+    },
+    messageRowContentClass() {
+      if (!this.shouldShowWhatsAppDeliveryError) {
+        return {};
+      }
+
+      return {
+        'flex flex-col w-full min-w-0': true,
+        'items-end': this.isOutgoing || this.isTemplate,
+      };
+    },
     wrapClass() {
       return {
         wrap: this.isBubble,
@@ -694,6 +751,20 @@ export default {
 
 .message-failed--alert {
   @apply text-red-900 dark:text-red-900 flex-grow text-right mt-1 mr-1 mb-0 ml-0;
+}
+
+.whatsapp-delivery-error {
+  .activity-wrap {
+    @apply max-w-[90%];
+  }
+
+  .message-text--metadata {
+    @apply items-center ml-2;
+
+    .time {
+      @apply text-slate-400 dark:text-slate-300 whitespace-nowrap m-0;
+    }
+  }
 }
 
 li.left,

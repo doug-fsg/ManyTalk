@@ -86,6 +86,11 @@ const title = computed(() => {
         pipeline: meta.pipeline_name,
       });
     case 'activity':
+      if (meta.timeline_moment === 'completed') {
+        return t('CONTACT_PROFILE.TIMELINE.EVENTS.ACTIVITY_COMPLETED', {
+          title: meta.title || t('CONTACT_PROFILE.TIMELINE.EVENTS.ACTIVITY'),
+        });
+      }
       return meta.title || t('CONTACT_PROFILE.TIMELINE.EVENTS.ACTIVITY');
     case 'conversation_started':
       return t('CONTACT_PROFILE.TIMELINE.EVENTS.CONVERSATION', {
@@ -132,7 +137,23 @@ const suffixParts = computed(() => {
   }
 
   if (props.event.type === 'activity' && meta.status) {
-    parts.push(t(`ACTIVITIES.STATUS.${meta.status.toUpperCase()}`));
+    if (meta.timeline_moment !== 'completed') {
+      parts.push(t(`ACTIVITIES.STATUS.${meta.status.toUpperCase()}`));
+    }
+  }
+
+  if (props.event.type === 'activity' && meta.timeline_moment === 'completed' && meta.scheduled_at) {
+    const scheduledDate = new Date(meta.scheduled_at);
+    parts.push(
+      t('CONTACT_PROFILE.TIMELINE.SCHEDULED_FOR', {
+        date: scheduledDate.toLocaleString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+      })
+    );
   }
 
   return parts.filter(Boolean);

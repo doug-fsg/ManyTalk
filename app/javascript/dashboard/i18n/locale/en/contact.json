@@ -192,6 +192,30 @@
     "SUCCESS_MESSAGE": "Contact saved successfully",
     "ERROR_MESSAGE": "There was an error, please try again"
   },
+  "COMPOSE_CONVERSATION": {
+    "BUTTON_LABEL": "Quick conversation",
+    "TITLE": "Start service",
+    "DESC": "Enter a phone number or search for a contact to start quickly.",
+    "SEARCH_LABEL": "To:",
+    "INPUT_PLACEHOLDER": "Phone number or search by name/email",
+    "PHONE_PLACEHOLDER": "(11) 99999-9999",
+    "NAME_SEARCH_PLACEHOLDER": "Search by name or email",
+    "MODE_PHONE": "Phone",
+    "MODE_NAME": "Name",
+    "PHONE_HINT": "Enter the area code and number. Country code +55 is set by default.",
+    "NAME_SEARCH_HINT": "Type at least 2 characters to search by name or email.",
+    "INPUT_HINT": "Type a phone number to start quickly, or at least 2 characters to search.",
+    "SEARCH_PLACEHOLDER": "Enter at least 2 characters to search by name, email, or phone number",
+    "SEARCH_HINT": "Type at least 2 characters to see matching contacts.",
+    "START_WITH": "Start with {value}",
+    "CREATING_CONTACT": "Creating contact...",
+    "CREATE_ERROR": "Could not create the contact. Please try again.",
+    "START_BUTTON": "Start service",
+    "FULL_CONTACT_LINK": "Full contact registration",
+    "CREATE_CONTACT": "Create new contact",
+    "CHANGE_CONTACT": "Change contact",
+    "CONVERSATION_DESC": "Send a message to {name}"
+  },
   "NEW_CONVERSATION": {
     "BUTTON_LABEL": "Start conversation",
     "TITLE": "New conversation",
@@ -312,9 +336,11 @@
         "DEAL_WON": "Deal won · {pipeline}",
         "DEAL_LOST": "Deal lost · {pipeline}",
         "ACTIVITY": "Activity",
+        "ACTIVITY_COMPLETED": "Activity completed · {title}",
         "NOTE": "Note by {user}",
         "CONVERSATION": "Conversation started · {inbox}"
       },
+      "SCHEDULED_FOR": "Scheduled for {date}",
       "ACTIONS": {
         "VIEW_FORM_CONTACTS": "View form contacts",
         "OPEN_PIPELINE": "Open pipeline",

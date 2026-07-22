@@ -46,6 +46,12 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <detail-row icon="calendar-clock" :label="$t('ACTIVITIES.FORM.SCHEDULED_AT')" :value="formattedScheduledAt" />
           <detail-row icon="clock" :label="$t('ACTIVITIES.DETAIL.CREATED_AT')" :value="formattedCreatedAt" />
+          <detail-row
+            v-if="activity.completed_at"
+            icon="checkmark-circle"
+            :label="$t('ACTIVITIES.DETAIL.COMPLETED_AT')"
+            :value="formattedCompletedAt"
+          />
         </div>
       </section>
 
@@ -249,6 +255,11 @@ export default {
     formattedCreatedAt() {
       if (!this.activity.created_at) return '—';
       const date = parseISO(this.activity.created_at);
+      return format(date, "d/MM/yyyy 'às' HH:mm", { locale: ptBR });
+    },
+    formattedCompletedAt() {
+      if (!this.activity.completed_at) return '—';
+      const date = parseISO(this.activity.completed_at);
       return format(date, "d/MM/yyyy 'às' HH:mm", { locale: ptBR });
     },
     conversationUrl() {

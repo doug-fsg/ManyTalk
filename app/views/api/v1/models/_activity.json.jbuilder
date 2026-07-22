@@ -8,6 +8,7 @@ json.scheduled_at activity.scheduled_at
 json.message_content activity.message_content if activity.scheduled_message?
 json.metadata activity.metadata || {}
 json.created_at activity.created_at
+json.completed_at activity.completed_at
 json.updated_at activity.updated_at
 
 json.inbox do

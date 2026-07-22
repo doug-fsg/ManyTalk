@@ -35,9 +35,12 @@
             {{ currentMonthLabel }}
           </h2>
 
-          <!-- Badge: quantidade de atividades no mês exibido (ex: fevereiro 2026 = 10 atividades) -->
-          <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300" title="Atividades neste mês">
-            {{ activitiesForCurrentMonth.length }}
+          <!-- Total filtrado -->
+          <span
+            class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300"
+            :title="$t('ACTIVITIES.FILTERS.TOTAL', { count: filteredTotalCount })"
+          >
+            {{ filteredTotalLabel }}
           </span>
         </div>
 
@@ -153,6 +156,7 @@
                       <option value="all">{{ $t('ACTIVITIES.FILTERS.ALL') }}</option>
                       <option value="pending">{{ $t('ACTIVITIES.STATUS.PENDING') }}</option>
                       <option value="completed">{{ $t('ACTIVITIES.STATUS.COMPLETED') }}</option>
+                      <option value="cancelled">{{ $t('ACTIVITIES.STATUS.CANCELLED') }}</option>
                       <option value="overdue">{{ $t('ACTIVITIES.FILTERS.OVERDUE') }}</option>
                       <option value="failed">{{ $t('ACTIVITIES.STATUS.FAILED') }}</option>
                     </select>
@@ -187,6 +191,46 @@
                         {{ agent.name }}
                       </option>
                     </select>
+                  </div>
+
+                  <!-- Filtro de criador -->
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
+                      {{ $t('ACTIVITIES.FILTERS.CREATED_BY') }}
+                    </label>
+                    <select
+                      v-model="filters.userId"
+                      class="w-full px-2 py-1 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 transition-colors duration-150 ease-smooth"
+                    >
+                      <option value="all">{{ $t('ACTIVITIES.FILTERS.ALL') }}</option>
+                      <option v-for="agent in agents" :key="`creator-${agent.id}`" :value="agent.id">
+                        {{ agent.name }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <!-- Filtro de intervalo de datas -->
+                  <div class="grid grid-cols-2 gap-2">
+                    <div>
+                      <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
+                        {{ $t('ACTIVITIES.FILTERS.DATE_FROM') }}
+                      </label>
+                      <input
+                        v-model="filters.dateFrom"
+                        type="date"
+                        class="w-full px-2 py-1 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 transition-colors duration-150 ease-smooth"
+                      >
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
+                        {{ $t('ACTIVITIES.FILTERS.DATE_TO') }}
+                      </label>
+                      <input
+                        v-model="filters.dateTo"
+                        type="date"
+                        class="w-full px-2 py-1 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-woot-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 transition-colors duration-150 ease-smooth"
+                      >
+                    </div>
                   </div>
 
                   <!-- Busca (estilo Kanban) -->
@@ -668,7 +712,9 @@ import {
   differenceInDays,
   startOfToday,
   isPast,
-  parseISO
+  parseISO,
+  startOfDay,
+  endOfDay,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -711,6 +757,9 @@ export default {
         status: 'all',
         type: 'all',
         assigneeId: 'all',
+        userId: 'all',
+        dateFrom: '',
+        dateTo: '',
       },
       searchQuery: '',
       searchTerm: '',
@@ -731,6 +780,7 @@ export default {
     ...mapGetters({
       agents: 'agents/getAgents',
       currentUser: 'getCurrentUser',
+      activitiesMeta: 'activities/getActivitiesMeta',
     }),
     activities() {
       if (!this.$store.state.activities) return [];
@@ -850,14 +900,37 @@ export default {
 
       return groups;
     },
+    filteredTotalCount() {
+      if (this.searchTerm) {
+        return this.filteredActivities.length;
+      }
+      return this.activitiesMeta?.count ?? this.filteredActivities.length;
+    },
+    filteredTotalLabel() {
+      const key = this.searchTerm
+        ? 'ACTIVITIES.FILTERS.TOTAL_SEARCH'
+        : 'ACTIVITIES.FILTERS.TOTAL';
+      return this.$t(key, { count: this.filteredTotalCount });
+    },
     hasActiveFilters() {
-      return this.filters.status !== 'all' || this.filters.type !== 'all' || this.filters.assigneeId !== 'all' || this.searchQuery !== '';
+      return (
+        this.filters.status !== 'all'
+        || this.filters.type !== 'all'
+        || this.filters.assigneeId !== 'all'
+        || this.filters.userId !== 'all'
+        || this.filters.dateFrom !== ''
+        || this.filters.dateTo !== ''
+        || this.searchQuery !== ''
+      );
     },
     activeFiltersCount() {
       let count = 0;
       if (this.filters.status !== 'all') count++;
       if (this.filters.type !== 'all') count++;
       if (this.filters.assigneeId !== 'all') count++;
+      if (this.filters.userId !== 'all') count++;
+      if (this.filters.dateFrom !== '') count++;
+      if (this.filters.dateTo !== '') count++;
       if (this.searchQuery !== '') count++;
       return count;
     },
@@ -880,6 +953,15 @@ export default {
     'filters.assigneeId'() {
       this.loadActivities();
     },
+    'filters.userId'() {
+      this.loadActivities();
+    },
+    'filters.dateFrom'() {
+      this.loadActivities();
+    },
+    'filters.dateTo'() {
+      this.loadActivities();
+    },
   },
   mounted() {
     this.$store.dispatch('agents/get');
@@ -897,17 +979,28 @@ export default {
       }
     },
     buildLoadParams() {
-      const monthStart = startOfMonth(this.currentDate);
-      const monthEnd = endOfMonth(this.currentDate);
-      const rangeStart = startOfWeek(monthStart);
-      const rangeEnd = endOfWeek(monthEnd);
-      const params = {
-        scheduled_from: rangeStart.toISOString(),
-        scheduled_to: rangeEnd.toISOString(),
-      };
+      const params = {};
+
+      if (this.filters.dateFrom || this.filters.dateTo) {
+        if (this.filters.dateFrom) {
+          params.scheduled_from = startOfDay(parseISO(this.filters.dateFrom)).toISOString();
+        }
+        if (this.filters.dateTo) {
+          params.scheduled_to = endOfDay(parseISO(this.filters.dateTo)).toISOString();
+        }
+      } else {
+        const monthStart = startOfMonth(this.currentDate);
+        const monthEnd = endOfMonth(this.currentDate);
+        const rangeStart = startOfWeek(monthStart);
+        const rangeEnd = endOfWeek(monthEnd);
+        params.scheduled_from = rangeStart.toISOString();
+        params.scheduled_to = rangeEnd.toISOString();
+      }
+
       if (this.filters.status !== 'all') params.status = this.filters.status;
       if (this.filters.type !== 'all') params.activity_type = this.filters.type;
       if (this.filters.assigneeId !== 'all') params.assignee_id = this.filters.assigneeId;
+      if (this.filters.userId !== 'all') params.user_id = this.filters.userId;
       return params;
     },
     async loadActivities() {
@@ -1115,6 +1208,9 @@ export default {
       this.filters.status = 'all';
       this.filters.type = 'all';
       this.filters.assigneeId = 'all';
+      this.filters.userId = 'all';
+      this.filters.dateFrom = '';
+      this.filters.dateTo = '';
       this.searchQuery = '';
       this.searchTerm = '';
       this.loadActivities();

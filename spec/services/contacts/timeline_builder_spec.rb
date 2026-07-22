@@ -82,6 +82,46 @@ RSpec.describe Contacts::TimelineBuilder do
     expect(types).to include('note', 'activity')
   end
 
+  it 'uses completed_at for completed activities on the timeline' do
+    user = create(:user, account: account)
+    completed_at = 10.minutes.ago.change(usec: 0)
+    activity = create(
+      :activity,
+      account: account,
+      user: user,
+      contact: contact,
+      title: 'Follow up',
+      scheduled_at: 2.days.from_now,
+      status: 'completed',
+      completed_at: completed_at
+    )
+
+    event = result[:events].find { |item| item[:id] == "activity_completed-#{activity.id}" }
+
+    expect(event).to be_present
+    expect(Time.zone.parse(event[:occurred_at])).to eq(completed_at)
+    expect(event[:meta][:timeline_moment]).to eq('completed')
+  end
+
+  it 'includes activities linked only via pipeline position' do
+    user = create(:user, account: account)
+    position = create(:contact_pipeline_position, contact: contact)
+    activity = create(
+      :activity,
+      account: account,
+      user: user,
+      contact: nil,
+      contact_pipeline_position: position,
+      title: 'Retornar ligação',
+      scheduled_at: 1.hour.from_now
+    )
+
+    event = result[:events].find { |item| item[:id] == "activity-#{activity.id}" }
+
+    expect(event).to be_present
+    expect(event[:meta][:activity_id]).to eq(activity.id)
+  end
+
   it 'filters by event type' do
     account_form = create(:account_form, :published, account: account)
     FormSubmission.create!(

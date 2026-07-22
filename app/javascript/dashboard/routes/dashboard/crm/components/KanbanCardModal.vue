@@ -285,6 +285,7 @@
           <div class="tab-content">
             <contact-timeline
               v-if="activeTab === 'timeline' && contact.id"
+              ref="contactTimeline"
               :contact-id="contact.id"
               :account-id="currentAccountId"
               :highlight-pipeline-id="pipelineId"
@@ -302,6 +303,7 @@
               :contact="contact"
               :pipeline-id="pipelineId"
               :highlight-activity-id="effectiveHighlightActivityId"
+              @changed="onActivitiesChanged"
             />
           </div>
         </div>
@@ -591,6 +593,9 @@ export default {
     openActivitiesFromTimeline(activityId) {
       this.localHighlightActivityId = activityId;
       this.setActiveTab('activities');
+    },
+    onActivitiesChanged() {
+      this.$refs.contactTimeline?.refresh?.();
     },
     onSelfAssign() {
       const {

@@ -228,6 +228,7 @@ Rails.application.routes.draw do
             delete :avatar, on: :member
             post :sync_templates, on: :member
             get :health, on: :member
+            get :pricing, on: :member
             post :register_webhook, on: :member
             post :register_phone, on: :member
             resource :csat_template, only: [:show, :create], controller: 'inbox_csat_templates'

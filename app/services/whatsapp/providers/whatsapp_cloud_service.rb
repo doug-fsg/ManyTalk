@@ -166,14 +166,10 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
     error = parsed.is_a?(Hash) ? parsed['error'] : nil
     return response.body if error.blank?
 
-    code = error['code']
-    details = error.dig('error_data', 'details') || error['message']
-
-    if code == 131_037
-      return I18n.t('conversations.messages.whatsapp.errors.display_name_not_approved')
-    end
-
-    details
+    Whatsapp::ErrorHumanizer.humanize(
+      code: error['code'],
+      details: error.dig('error_data', 'details') || error['message']
+    )
   end
 
   def template_body_parameters(template_info)

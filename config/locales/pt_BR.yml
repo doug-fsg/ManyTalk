@@ -138,6 +138,9 @@ pt_BR:
       whatsapp:
         errors:
           display_name_not_approved: 'WhatsApp: nome pendente ou número não registrado na Meta.'
+          marketing_limit_reached: 'WhatsApp: limite de marketing da Meta atingido para este contato. Aguarde 24h antes de reenviar.'
+        pricing:
+          cost_unavailable: 'Cobrança via parceiro Meta — custo indisponível via API.'
     activity:
       status:
         resolved: "Conversa foi marcada como resolvida por %{user_name}"

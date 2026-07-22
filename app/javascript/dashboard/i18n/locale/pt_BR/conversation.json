@@ -202,6 +202,10 @@
     "BOT": "Bot",
     "SEND_FAILED": "Não foi possível enviar a mensagem! Tente novamente",
     "TRY_AGAIN": "Tentar novamente",
+    "WHATSAPP_ERRORS": {
+      "MARKETING_LIMIT": "WhatsApp: limite de marketing da Meta atingido para este contato. Aguarde 24h antes de reenviar.",
+      "DISPLAY_NAME_NOT_APPROVED": "WhatsApp: nome pendente ou número não registrado na Meta."
+    },
     "ASSIGNMENT": {
       "SELECT_AGENT": "Selecione Atendentes",
       "REMOVE": "Excluir",

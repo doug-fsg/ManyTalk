@@ -22,7 +22,17 @@
       "ALL": "Todos",
       "STATUS": "Status",
       "TYPE": "Tipo",
-      "OVERDUE": "Atrasadas"
+      "OVERDUE": "Atrasadas",
+      "DATE_FROM": "Data inicial",
+      "DATE_TO": "Data final",
+      "CREATED_BY": "Criado por",
+      "TOTAL": "{count} atividade(s)",
+      "TOTAL_SEARCH": "{count} resultado(s)"
+    },
+    "DATES": {
+      "SCHEDULED": "Prevista",
+      "CREATED": "Criada",
+      "COMPLETED": "Concluída"
     },
     "FORM": {
       "TITLE": "Título",
@@ -79,6 +89,7 @@
       "PEOPLE": "Pessoas",
       "CREATED_BY": "Criado por",
       "CREATED_AT": "Criada em",
+      "COMPLETED_AT": "Concluída em",
       "PIPELINE": "Pipeline",
       "CHANNEL": "Canal",
       "VIEW_CONTACT": "Ver contato",

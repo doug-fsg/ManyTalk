@@ -2,9 +2,9 @@ module Api::V1::Accounts::Concerns::WhatsappHealthManagement
   extend ActiveSupport::Concern
 
   included do
-    skip_before_action :check_authorization, only: [:health, :register_webhook, :register_phone]
+    skip_before_action :check_authorization, only: [:health, :pricing, :register_webhook, :register_phone]
     before_action :check_admin_authorization?, only: [:register_webhook, :register_phone]
-    before_action :validate_whatsapp_cloud_channel, only: [:health, :register_webhook, :register_phone]
+    before_action :validate_whatsapp_cloud_channel, only: [:health, :pricing, :register_webhook, :register_phone]
   end
 
   def health
@@ -12,6 +12,17 @@ module Api::V1::Accounts::Concerns::WhatsappHealthManagement
     render json: health_data
   rescue StandardError => e
     Rails.logger.error "[INBOX HEALTH] Error fetching health data: #{e.message}"
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
+  def pricing
+    pricing_data = Whatsapp::PricingAnalyticsService.new(@inbox.channel).fetch_monthly_summary
+    render json: pricing_data
+  rescue Whatsapp::PricingAnalyticsService::CostUnavailableError => e
+    Rails.logger.error "[INBOX PRICING] Cost unavailable: #{e.message}"
+    render json: { error: e.message, error_code: 'partner_billing' }, status: :unprocessable_entity
+  rescue StandardError => e
+    Rails.logger.error "[INBOX PRICING] Error fetching pricing data: #{e.message}"
     render json: { error: e.message }, status: :unprocessable_entity
   end
 

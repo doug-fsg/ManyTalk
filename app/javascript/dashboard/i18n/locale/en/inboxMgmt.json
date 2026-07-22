@@ -872,25 +872,88 @@
     },
     "ACCOUNT_HEALTH": {
       "TITLE": "Account health",
-      "DESCRIPTION": "WhatsApp number status from Meta.",
-      "GO_TO_SETTINGS": "Open Meta",
-      "NO_DATA": "Could not load health data.",
+      "DESCRIPTION": "Track quality, limits, and status for your WhatsApp number on Meta.",
+      "GO_TO_SETTINGS": "Open WhatsApp Manager",
+      "NO_DATA": "Could not load data from Meta.",
+      "FOOTNOTE": "Values are updated by Meta and may take a few hours to reflect changes.",
+      "PRICING": {
+        "TITLE": "WhatsApp billing",
+        "DESCRIPTION": "Estimated summary for the current month. Official invoices live in Meta Business Suite.",
+        "VIEW_BILLING": "View invoice on Meta",
+        "LOADING": "Loading monthly spend...",
+        "LOAD_ERROR": "Could not load spend data.",
+        "TOTAL_COST": "Estimated spend",
+        "TOTAL_VOLUME": "Delivered messages",
+        "PERIOD": "Period",
+        "MESSAGES": "msgs",
+        "UNAVAILABLE": "Unavailable",
+        "NO_DATA": "No billing recorded for this month yet.",
+        "META_NOTE": "Approximate values in your WhatsApp account currency (WABA). Use the button above for the official invoice.",
+        "PARTNER_BILLING": {
+          "TITLE": "Billing managed by a Meta partner",
+          "BODY": "Your WhatsApp account bills through a partner (BSP), so ManyTalks cannot display API cost data.",
+          "STEP_1": "Check your invoice in Meta Business Suite or with your WhatsApp partner.",
+          "STEP_2": "If you have billing questions, contact whoever provisioned your WhatsApp Cloud account.",
+          "CTA": "Open Meta billing"
+        },
+        "CATEGORIES": {
+          "MARKETING": "Marketing",
+          "UTILITY": "Utility",
+          "AUTHENTICATION": "Authentication",
+          "AUTHENTICATION_INTERNATIONAL": "International authentication",
+          "SERVICE": "Service",
+          "MARKETING_LITE": "Marketing Lite",
+          "REFERRAL_CONVERSION": "Referral conversion",
+          "UNKNOWN": "Other"
+        }
+      },
+      "VALUES": {
+        "UNKNOWN": "Unavailable",
+        "NAME_STATUS": {
+          "APPROVED": "Approved",
+          "AVAILABLE_WITHOUT_REVIEW": "Available",
+          "DECLINED": "Declined",
+          "EXPIRED": "Expired",
+          "PENDING_REVIEW": "Under review",
+          "NONE": "Not set"
+        },
+        "VERIFICATION": {
+          "VERIFIED": "Verified",
+          "NOT_VERIFIED": "Not verified",
+          "EXPIRED": "Expired"
+        },
+        "QUALITY": {
+          "GREEN": "High",
+          "YELLOW": "Medium",
+          "RED": "Low",
+          "UNKNOWN": "Unavailable"
+        },
+        "MESSAGING_LIMIT": {
+          "TIER": "Up to {count} business-initiated conversations / 24h",
+          "UNLIMITED": "Unlimited"
+        },
+        "ACCOUNT_MODE": {
+          "LIVE": "Production",
+          "SANDBOX": "Test"
+        }
+      },
       "FIELDS": {
-        "DISPLAY_PHONE_NUMBER": { "LABEL": "Phone number" },
-        "VERIFIED_NAME": { "LABEL": "Verified name" },
+        "DISPLAY_PHONE_NUMBER": { "LABEL": "Connected number" },
+        "VERIFIED_NAME": { "LABEL": "Display name" },
         "DISPLAY_NAME_STATUS": { "LABEL": "Name status" },
-        "CODE_VERIFICATION_STATUS": { "LABEL": "Phone verification" },
-        "QUALITY_RATING": { "LABEL": "Quality rating" },
-        "MESSAGING_LIMIT_TIER": { "LABEL": "Messaging limit" },
+        "CODE_VERIFICATION_STATUS": { "LABEL": "Number verification" },
+        "QUALITY_RATING": { "LABEL": "Number quality" },
+        "MESSAGING_LIMIT_TIER": { "LABEL": "Sending limit" },
         "ACCOUNT_MODE": { "LABEL": "Account mode" }
       },
       "WEBHOOK": {
         "TITLE": "Webhook",
+        "DESCRIPTION": "Confirm Meta is sending events to ManyTalks.",
         "URL_MISMATCH": "Webhook URL does not match expected URL.",
-        "ACTION_REQUIRED": "Webhook is not configured correctly.",
+        "ACTION_REQUIRED": "Webhook is not configured correctly yet.",
         "REGISTER_BUTTON": "Register webhook",
-        "REGISTER_SUCCESS": "Webhook registered.",
-        "REGISTER_ERROR": "Failed to register webhook."
+        "REGISTER_SUCCESS": "Webhook registered successfully.",
+        "REGISTER_ERROR": "Could not register webhook."
       }
     },
     "CSAT": {

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_20_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_21_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -134,7 +134,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_20_120000) do
     t.datetime "updated_at", null: false
     t.bigint "inbox_id"
     t.jsonb "metadata", default: {}, null: false
+    t.datetime "completed_at"
     t.index ["account_id", "assignee_id"], name: "index_activities_on_account_id_and_assignee_id"
+    t.index ["account_id", "completed_at"], name: "index_activities_on_account_id_and_completed_at"
     t.index ["account_id", "scheduled_at"], name: "index_activities_on_account_id_and_scheduled_at"
     t.index ["account_id", "status"], name: "index_activities_on_account_id_and_status"
     t.index ["account_id"], name: "index_activities_on_account_id"
