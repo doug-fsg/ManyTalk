@@ -203,8 +203,10 @@
     "SEND_FAILED": "Couldn't send message! Try again",
     "TRY_AGAIN": "retry",
     "WHATSAPP_ERRORS": {
-      "MARKETING_LIMIT": "WhatsApp: Meta marketing limit reached for this contact. Wait 24h before resending.",
-      "DISPLAY_NAME_NOT_APPROVED": "WhatsApp: display name pending or number not registered."
+      "MARKETING_LIMIT": "Meta marketing limit reached. Wait 24h to resend.",
+      "DISPLAY_NAME_NOT_APPROVED": "WhatsApp: display name pending or number not registered.",
+      "MEDIA_FORMAT_NOT_SUPPORTED": "Unsupported format. Convert to MP3.",
+      "PAYMENT_ISSUE": "Meta payment issue. Check billing setup."
     },
     "ASSIGNMENT": {
       "SELECT_AGENT": "Select Agent",

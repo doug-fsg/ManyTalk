@@ -138,7 +138,9 @@ pt_BR:
       whatsapp:
         errors:
           display_name_not_approved: 'WhatsApp: nome pendente ou número não registrado na Meta.'
-          marketing_limit_reached: 'WhatsApp: limite de marketing da Meta atingido para este contato. Aguarde 24h antes de reenviar.'
+          marketing_limit_reached: 'Limite de marketing da Meta. Aguarde 24h para reenviar.'
+          media_format_not_supported: 'Formato não suportado. Converta para MP3.'
+          payment_issue: 'Problema de pagamento na Meta. Verifique a cobrança.'
         pricing:
           cost_unavailable: 'Cobrança via parceiro Meta — custo indisponível via API.'
     activity:

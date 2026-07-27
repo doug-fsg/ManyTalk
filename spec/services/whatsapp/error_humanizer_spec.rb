@@ -16,6 +16,18 @@ RSpec.describe Whatsapp::ErrorHumanizer do
       )
     end
 
+    it 'returns media format message for error 131053' do
+      expect(described_class.humanize(code: 131_053)).to eq(
+        I18n.t('conversations.messages.whatsapp.errors.media_format_not_supported')
+      )
+    end
+
+    it 'returns payment issue message for error 131042' do
+      expect(described_class.humanize(code: 131_042)).to eq(
+        I18n.t('conversations.messages.whatsapp.errors.payment_issue')
+      )
+    end
+
     it 'falls back to code and details for unknown codes' do
       expect(described_class.humanize(code: 999, details: 'Unknown error')).to eq('999: Unknown error')
     end

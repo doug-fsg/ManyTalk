@@ -9,6 +9,10 @@ module Whatsapp::ErrorHumanizer
       I18n.t('conversations.messages.whatsapp.errors.display_name_not_approved')
     when 131_049
       I18n.t('conversations.messages.whatsapp.errors.marketing_limit_reached')
+    when 131_042
+      I18n.t('conversations.messages.whatsapp.errors.payment_issue')
+    when 131_053
+      I18n.t('conversations.messages.whatsapp.errors.media_format_not_supported')
     else
       if details.present?
         "#{code}: #{details}"

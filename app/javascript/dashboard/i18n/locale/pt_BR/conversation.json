@@ -203,8 +203,10 @@
     "SEND_FAILED": "Não foi possível enviar a mensagem! Tente novamente",
     "TRY_AGAIN": "Tentar novamente",
     "WHATSAPP_ERRORS": {
-      "MARKETING_LIMIT": "WhatsApp: limite de marketing da Meta atingido para este contato. Aguarde 24h antes de reenviar.",
-      "DISPLAY_NAME_NOT_APPROVED": "WhatsApp: nome pendente ou número não registrado na Meta."
+      "MARKETING_LIMIT": "Limite de marketing da Meta. Aguarde 24h para reenviar.",
+      "DISPLAY_NAME_NOT_APPROVED": "WhatsApp: nome pendente ou número não registrado na Meta.",
+      "MEDIA_FORMAT_NOT_SUPPORTED": "Formato não suportado. Converta para MP3.",
+      "PAYMENT_ISSUE": "Problema de pagamento na Meta. Verifique a cobrança."
     },
     "ASSIGNMENT": {
       "SELECT_AGENT": "Selecione Atendentes",
