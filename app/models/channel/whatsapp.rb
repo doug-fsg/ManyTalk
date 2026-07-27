@@ -51,7 +51,7 @@ class Channel::Whatsapp < ApplicationRecord
   end
 
   def messaging_window_enabled?
-    provider_config['url'] == 'https://graph.facebook.com'
+    provider == 'whatsapp_cloud'
   end
 
   def mark_message_templates_updated

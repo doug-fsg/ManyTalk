@@ -61,4 +61,16 @@ RSpec.describe Channel::Whatsapp do
       expect(channel.provider_config['webhook_verify_token']).to eq '123'
     end
   end
+
+  describe '#messaging_window_enabled?' do
+    it 'returns true for whatsapp_cloud' do
+      channel = build(:channel_whatsapp, provider: 'whatsapp_cloud', provider_config: {})
+      expect(channel.messaging_window_enabled?).to be true
+    end
+
+    it 'returns false for other providers' do
+      channel = build(:channel_whatsapp, provider: 'default')
+      expect(channel.messaging_window_enabled?).to be false
+    end
+  end
 end
