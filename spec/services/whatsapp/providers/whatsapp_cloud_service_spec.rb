@@ -91,6 +91,78 @@ describe Whatsapp::Providers::WhatsappCloudService do
           .to_return(status: 200, body: whatsapp_response.to_json, headers: response_headers)
         expect(service.send_message('+123456789', message)).to eq 'message_id'
       end
+
+      it 'sends audio attachment without voice when feature is disabled (golden master)' do
+        attachment = message.attachments.new(account_id: message.account_id, file_type: :audio)
+        attachment.file.attach(io: Rails.root.join('spec/assets/sample.mp3').open, filename: 'sample.mp3', content_type: 'audio/mpeg')
+
+        stub_request(:post, 'https://graph.facebook.com/v13.0/123456789/messages')
+          .with(
+            body: hash_including({
+                                   messaging_product: 'whatsapp',
+                                   to: '+123456789',
+                                   type: 'audio',
+                                   audio: WebMock::API.hash_including({ link: anything })
+                                 })
+          )
+          .to_return(status: 200, body: whatsapp_response.to_json, headers: response_headers)
+
+        expect(service.send_message('+123456789', message)).to eq 'message_id'
+        expect(WebMock).to have_requested(:post, 'https://graph.facebook.com/v13.0/123456789/messages').with { |req|
+          !JSON.parse(req.body).dig('audio')&.key?('voice')
+        }
+      end
+
+      it 'sends ogg audio as voice note when whatsapp_voice_notes is enabled' do
+        whatsapp_channel.inbox.account.enable_features!('whatsapp_voice_notes')
+        attachment = message.attachments.new(account_id: message.account_id, file_type: :audio)
+        attachment.file.attach(io: Rails.root.join('spec/assets/sample.ogg').open, filename: 'sample.ogg', content_type: 'audio/ogg')
+
+        stub_request(:post, 'https://graph.facebook.com/v13.0/123456789/messages')
+          .with(
+            body: hash_including({
+                                   messaging_product: 'whatsapp',
+                                   to: '+123456789',
+                                   type: 'audio',
+                                   audio: WebMock::API.hash_including({ link: anything, voice: true })
+                                 })
+          )
+          .to_return(status: 200, body: whatsapp_response.to_json, headers: response_headers)
+
+        expect(service.send_message('+123456789', message)).to eq 'message_id'
+      end
+
+      it 'retries without voice when voice note send fails' do
+        whatsapp_channel.inbox.account.enable_features!('whatsapp_voice_notes')
+        attachment = message.attachments.new(account_id: message.account_id, file_type: :audio)
+        attachment.file.attach(io: Rails.root.join('spec/assets/sample.ogg').open, filename: 'sample.ogg', content_type: 'audio/ogg')
+
+        error_body = {
+          error: {
+            code: 131_053,
+            message: 'Media upload error',
+            error_data: { details: 'Media upload error' }
+          }
+        }.to_json
+
+        stub_request(:post, 'https://graph.facebook.com/v13.0/123456789/messages')
+          .to_return(
+            { status: 400, body: error_body, headers: response_headers },
+            { status: 200, body: whatsapp_response.to_json, headers: response_headers }
+          )
+
+        expect(service.send_message('+123456789', message)).to eq 'message_id'
+        expect(message.reload.status).not_to eq('failed')
+
+        expect(
+          a_request(:post, 'https://graph.facebook.com/v13.0/123456789/messages')
+            .with { |req| JSON.parse(req.body).dig('audio', 'voice') == true }
+        ).to have_been_made.once
+        expect(
+          a_request(:post, 'https://graph.facebook.com/v13.0/123456789/messages')
+            .with { |req| body = JSON.parse(req.body); body['type'] == 'audio' && !body.dig('audio')&.key?('voice') }
+        ).to have_been_made.once
+      end
     end
   end
 

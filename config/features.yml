@@ -129,3 +129,6 @@
   enabled: false
 - name: whatsapp_enhanced_templates
   enabled: false
+# TODO: remove whatsapp_voice_notes after production validation (temporary flag)
+- name: whatsapp_voice_notes
+  enabled: false

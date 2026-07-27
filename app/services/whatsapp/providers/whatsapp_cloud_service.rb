@@ -130,24 +130,62 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
   def send_attachment_message(phone_number, message)
     attachment = message.attachments.first
     type = %w[image audio video].include?(attachment.file_type) ? attachment.file_type : 'document'
-    type_content = {
-      'link': attachment.download_url
-    }
-    type_content['caption'] = message.content unless %w[audio sticker].include?(type)
-    type_content['filename'] = attachment.file.filename if type == 'document'
-    response = HTTParty.post(
+    voice = voice_note_eligible?(attachment)
+    normalize_whatsapp_ogg_mime!(attachment) if voice
+
+    type_content = attachment_type_content(attachment, message, type, voice: voice)
+    response = post_attachment_message(phone_number, message, type, type_content)
+
+    # Same OGG without voice = basic audio (no waveform). One retry only.
+    if !response.success? && voice
+      Rails.logger.info(
+        "[whatsapp_voice_notes] fallback without voice message_id=#{message.id} " \
+        "account_id=#{message.account_id}"
+      )
+      type_content = attachment_type_content(attachment, message, type, voice: false)
+      response = post_attachment_message(phone_number, message, type, type_content)
+    end
+
+    process_response(message, response)
+  end
+
+  def attachment_type_content(attachment, message, type, voice:)
+    type_content = { link: attachment.download_url }
+    type_content[:caption] = message.content unless %w[audio sticker].include?(type)
+    type_content[:filename] = attachment.file.filename if type == 'document'
+    type_content[:voice] = true if voice
+    type_content
+  end
+
+  def post_attachment_message(phone_number, message, type, type_content)
+    HTTParty.post(
       "#{phone_id_path}/messages",
       headers: api_headers,
       body: {
-        :messaging_product => 'whatsapp',
-        :context => whatsapp_reply_context(message),
-        'to' => phone_number,
-        'type' => type,
+        messaging_product: 'whatsapp',
+        context: whatsapp_reply_context(message),
+        to: phone_number,
+        type: type,
         type.to_s => type_content
       }.to_json
     )
+  end
 
-    process_response(message, response)
+  def voice_note_eligible?(attachment)
+    return false unless whatsapp_channel.inbox.account.feature_enabled?('whatsapp_voice_notes')
+    return false unless attachment&.audio?
+    return false unless attachment.file.attached?
+
+    content_type = attachment.file.content_type.to_s
+    content_type.include?('ogg') || content_type == 'audio/opus' ||
+      attachment.file.filename.to_s.downcase.end_with?('.ogg')
+  end
+
+  def normalize_whatsapp_ogg_mime!(attachment)
+    blob = attachment.file.blob
+    return unless blob.content_type == 'audio/opus'
+
+    blob.update_column(:content_type, 'audio/ogg') # rubocop:disable Rails/SkipsModelValidations
   end
 
   def process_response(message, response)

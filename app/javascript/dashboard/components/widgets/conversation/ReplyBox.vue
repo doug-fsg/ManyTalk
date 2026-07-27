@@ -173,6 +173,7 @@ import WootMessageEditor from 'dashboard/components/widgets/WootWriter/Editor.vu
 import WootAudioRecorder from 'dashboard/components/widgets/WootWriter/AudioRecorder.vue';
 import messageFormatterMixin from 'shared/mixins/messageFormatterMixin';
 import { AUDIO_FORMATS } from 'shared/constants/messages';
+import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import {
   getMessageVariables,
@@ -514,7 +515,17 @@ export default {
     editorStateId() {
       return `draft-${this.conversationIdByRoute}-${this.replyType}`;
     },
+    isWhatsappVoiceNotesEnabled() {
+      return this.isFeatureEnabledonAccount(
+        this.accountId,
+        FEATURE_FLAGS.WHATSAPP_VOICE_NOTES
+      );
+    },
     audioRecordFormat() {
+      // WhatsApp Cloud + flag: OGG Opus for native voice notes (before generic WA→MP3)
+      if (this.isAWhatsAppCloudChannel && this.isWhatsappVoiceNotesEnabled) {
+        return AUDIO_FORMATS.OGG;
+      }
       if (
         this.isAWhatsAppChannel ||
         this.isATelegramChannel ||

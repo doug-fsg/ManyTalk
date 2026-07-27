@@ -18,6 +18,7 @@ export const FEATURE_FLAGS = {
   REPORTS: 'reports',
   TEAM_MANAGEMENT: 'team_management',
   VOICE_RECORDER: 'voice_recorder',
+  WHATSAPP_VOICE_NOTES: 'whatsapp_voice_notes',
   AUDIT_LOGS: 'audit_logs',
   INSERT_ARTICLE_IN_REPLY: 'insert_article_in_reply',
   INBOX_VIEW: 'inbox_view',
