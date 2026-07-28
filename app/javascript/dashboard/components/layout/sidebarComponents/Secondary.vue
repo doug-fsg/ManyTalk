@@ -111,6 +111,7 @@ export default {
     ...mapGetters({
       isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
       currentRole: 'getCurrentRole',
+      labelSidebar: 'labelGroups/getSidebarLabelSections',
     }),
     hasSecondaryMenu() {
       const hideSecondaryForRoutes = ['workflows_new', 'workflows_edit'];
@@ -199,6 +200,7 @@ export default {
       };
     },
     labelSection() {
+      const sidebar = this.labelSidebar;
       return {
         icon: 'number-symbol',
         label: 'LABELS',
@@ -211,18 +213,16 @@ export default {
         showModalForNewItem: true,
         modalName: 'AddLabel',
         dataTestid: 'sidebar-new-label-button',
-        children: this.labels.map(label => ({
-          id: label.id,
-          label: label.title,
-          color: label.color,
-          truncateLabel: true,
-          toState: frontendURL(
-            `accounts/${this.accountId}/label/${label.title}`
-          ),
-        })),
+        useLabelSidebar: true,
+        labelMode: sidebar.mode,
+        labelSections: sidebar.sections,
+        labelItems: this.labels,
+        labelPathBuilder: label =>
+          frontendURL(`accounts/${this.accountId}/label/${label.title}`),
       };
     },
     contactLabelSection() {
+      const sidebar = this.labelSidebar;
       return {
         icon: 'number-symbol',
         label: 'TAGGED_WITH',
@@ -234,15 +234,14 @@ export default {
         toStateName: 'labels_list',
         showModalForNewItem: true,
         modalName: 'AddLabel',
-        children: this.labels.map(label => ({
-          id: label.id,
-          label: label.title,
-          color: label.color,
-          truncateLabel: true,
-          toState: frontendURL(
+        useLabelSidebar: true,
+        labelMode: sidebar.mode,
+        labelSections: sidebar.sections,
+        labelItems: this.labels,
+        labelPathBuilder: label =>
+          frontendURL(
             `accounts/${this.accountId}/labels/${label.title}/contacts`
           ),
-        })),
       };
     },
     contactFormSection() {

@@ -21,12 +21,14 @@ export default {
       description: '',
       title: '',
       showOnSidebar: true,
+      labelGroupId: '',
     };
   },
   validations,
   computed: {
     ...mapGetters({
       uiFlags: 'labels/getUIFlags',
+      labelGroups: 'labelGroups/getLabelGroups',
     }),
     labelTitleErrorMessage() {
       const errorMessage = getLabelTitleErrorMessage(this.v$);
@@ -36,6 +38,7 @@ export default {
   mounted() {
     this.color = getRandomColor();
     this.title = this.prefillTitle.toLowerCase();
+    this.$store.dispatch('labelGroups/get');
   },
   methods: {
     onClose() {
@@ -48,6 +51,7 @@ export default {
           description: this.description,
           title: this.title.toLowerCase(),
           show_on_sidebar: this.showOnSidebar,
+          label_group_id: this.labelGroupId || null,
         });
         useAlert(this.$t('LABEL_MGMT.ADD.API.SUCCESS_MESSAGE'));
         this.onClose();
@@ -89,13 +93,27 @@ export default {
         @input="v$.description.$touch"
       />
 
+      <label class="w-full">
+        {{ $t('LABEL_MGMT.GROUP.LABEL') }}
+        <select v-model="labelGroupId">
+          <option value="">{{ $t('LABEL_MGMT.GROUP.NONE') }}</option>
+          <option
+            v-for="group in labelGroups"
+            :key="group.id"
+            :value="String(group.id)"
+          >
+            {{ group.name }}
+          </option>
+        </select>
+      </label>
+
       <div class="w-full">
         <label>
           {{ $t('LABEL_MGMT.FORM.COLOR.LABEL') }}
           <woot-color-picker v-model="color" />
         </label>
       </div>
-      <div class="flex items-center w-full gap-2">
+      <div class="flex items-center w-full gap-2 mb-4">
         <input v-model="showOnSidebar" type="checkbox" :value="true" />
         <label for="conversation_creation">
           {{ $t('LABEL_MGMT.FORM.SHOW_ON_SIDEBAR.LABEL') }}

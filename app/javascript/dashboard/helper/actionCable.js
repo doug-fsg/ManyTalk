@@ -206,6 +206,7 @@ class ActionCableConnector extends BaseActionCableConnector {
   onCacheInvalidate = data => {
     const keys = data.cache_keys;
     this.app.$store.dispatch('labels/revalidate', { newKey: keys.label });
+    this.app.$store.dispatch('labelGroups/get');
     this.app.$store.dispatch('inboxes/revalidate', { newKey: keys.inbox });
     this.app.$store.dispatch('teams/revalidate', { newKey: keys.team });
   };

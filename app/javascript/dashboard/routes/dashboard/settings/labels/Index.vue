@@ -6,6 +6,7 @@ import { useStoreGetters, useStore } from 'dashboard/composables/store';
 
 import AddLabel from './AddLabel.vue';
 import EditLabel from './EditLabel.vue';
+import ManageLabelGroups from './ManageLabelGroups.vue';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import SettingsLayout from '../SettingsLayout.vue';
 
@@ -16,19 +17,39 @@ const { t } = useI18n();
 const loading = ref({});
 const showAddPopup = ref(false);
 const showEditPopup = ref(false);
+const showGroupsPopup = ref(false);
 const showDeleteConfirmationPopup = ref(false);
+const showDeleteGroupPopup = ref(false);
 const selectedLabel = ref({});
+const selectedGroup = ref({});
 
 const records = computed(() => getters['labels/getLabels'].value);
 const uiFlags = computed(() => getters['labels/getUIFlags'].value);
 
+const tableHeaders = computed(() => {
+  const base = t('LABEL_MGMT.LIST.TABLE_HEADER');
+  const headers = Array.isArray(base) ? [...base] : Object.values(base || {});
+  headers.push(t('LABEL_MGMT.GROUP.LABEL'));
+  return headers;
+});
+
 const deleteMessage = computed(() => ` ${selectedLabel.value.title}?`);
+const deleteGroupMessage = computed(() =>
+  selectedGroup.value.name ? ` ${selectedGroup.value.name}?` : ''
+);
 
 const openAddPopup = () => {
   showAddPopup.value = true;
 };
 const hideAddPopup = () => {
   showAddPopup.value = false;
+};
+
+const openGroupsPopup = () => {
+  showGroupsPopup.value = true;
+};
+const hideGroupsPopup = () => {
+  showGroupsPopup.value = false;
 };
 
 const openEditPopup = response => {
@@ -45,6 +66,15 @@ const openDeletePopup = response => {
 };
 const closeDeletePopup = () => {
   showDeleteConfirmationPopup.value = false;
+};
+
+const openDeleteGroupPopup = group => {
+  selectedGroup.value = group;
+  showDeleteGroupPopup.value = true;
+};
+const closeDeleteGroupPopup = () => {
+  showDeleteGroupPopup.value = false;
+  selectedGroup.value = {};
 };
 
 const deleteLabel = async id => {
@@ -66,8 +96,23 @@ const confirmDeletion = () => {
   deleteLabel(selectedLabel.value.id);
 };
 
+const confirmGroupDeletion = async () => {
+  const groupId = selectedGroup.value.id;
+  closeDeleteGroupPopup();
+  try {
+    await store.dispatch('labelGroups/delete', groupId);
+    useAlert(t('LABEL_MGMT.GROUP.API.DELETE_SUCCESS'));
+    store.dispatch('labels/get');
+  } catch (error) {
+    useAlert(error?.message || t('LABEL_MGMT.GROUP.API.DELETE_ERROR'));
+  }
+};
+
+const groupNameFor = label => label.label_group_name || '—';
+
 onBeforeMount(() => {
   store.dispatch('labels/get');
+  store.dispatch('labelGroups/get');
 });
 </script>
 
@@ -86,13 +131,21 @@ onBeforeMount(() => {
         feature-name="labels"
       >
         <template #actions>
-    <woot-button
+          <woot-button
             class="button nice rounded-lg"
-      icon="add-circle"
-      @click="openAddPopup"
-    >
-      {{ $t('LABEL_MGMT.HEADER_BTN_TXT') }}
-    </woot-button>
+            variant="smooth"
+            color-scheme="secondary"
+            @click="openGroupsPopup"
+          >
+            {{ $t('LABEL_MGMT.GROUP.MANAGE') }}
+          </woot-button>
+          <woot-button
+            class="button nice rounded-lg"
+            icon="add-circle"
+            @click="openAddPopup"
+          >
+            {{ $t('LABEL_MGMT.HEADER_BTN_TXT') }}
+          </woot-button>
         </template>
       </BaseSettingsHeader>
     </template>
@@ -100,36 +153,42 @@ onBeforeMount(() => {
       <table
         class="min-w-full overflow-x-auto divide-y divide-slate-75 dark:divide-slate-700"
       >
-          <thead>
-            <th
-              v-for="thHeader in $t('LABEL_MGMT.LIST.TABLE_HEADER')"
-              :key="thHeader"
+        <thead>
+          <th
+            v-for="thHeader in tableHeaders"
+            :key="thHeader"
             class="py-4 ltr:pr-4 rtl:pl-4 text-left font-semibold text-slate-700 dark:text-slate-300"
-            >
-              {{ thHeader }}
-            </th>
-          </thead>
+          >
+            {{ thHeader }}
+          </th>
+          <th
+            class="py-4 ltr:pr-4 rtl:pl-4 text-left font-semibold text-slate-700 dark:text-slate-300"
+          />
+        </thead>
         <tbody
           class="divide-y divide-slate-25 dark:divide-slate-800 flex-1 text-slate-700 dark:text-slate-100"
         >
-            <tr v-for="(label, index) in records" :key="label.title">
+          <tr v-for="(label, index) in records" :key="label.title">
             <td class="py-4 ltr:pr-4 rtl:pl-4">
               <span
                 class="font-medium break-words text-slate-700 dark:text-slate-100 mb-1"
               >
                 {{ label.title }}
               </span>
-              </td>
+            </td>
             <td class="py-4 ltr:pr-4 rtl:pl-4">{{ label.description }}</td>
             <td class="leading-6 py-4 ltr:pr-4 rtl:pl-4">
               <div class="flex items-center">
-                  <span
+                <span
                   class="rounded h-4 w-4 mr-1 rtl:mr-0 rtl:ml-1 border border-solid border-slate-50 dark:border-slate-700"
-                    :style="{ backgroundColor: label.color }"
-                  />
-                  {{ label.color }}
-                </div>
-              </td>
+                  :style="{ backgroundColor: label.color }"
+                />
+                {{ label.color }}
+              </div>
+            </td>
+            <td class="py-4 ltr:pr-4 rtl:pl-4">
+              {{ groupNameFor(label) }}
+            </td>
             <td class="py-4 min-w-xs">
               <div class="flex gap-1">
                 <woot-button
@@ -153,10 +212,10 @@ onBeforeMount(() => {
                   @click="openDeletePopup(label, index)"
                 />
               </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </template>
 
     <woot-modal :show="showAddPopup" :on-close="hideAddPopup">
@@ -167,13 +226,31 @@ onBeforeMount(() => {
       <EditLabel :selected-response="selectedLabel" @close="hideEditPopup" />
     </woot-modal>
 
+    <woot-modal :show="showGroupsPopup" :on-close="hideGroupsPopup">
+      <ManageLabelGroups
+        @close="hideGroupsPopup"
+        @delete="openDeleteGroupPopup"
+      />
+    </woot-modal>
+
     <woot-delete-modal
-      :show="showDeleteConfirmationPopup"
+      :show.sync="showDeleteConfirmationPopup"
       :on-close="closeDeletePopup"
       :on-confirm="confirmDeletion"
       :title="$t('LABEL_MGMT.DELETE.CONFIRM.TITLE')"
       :message="$t('LABEL_MGMT.DELETE.CONFIRM.MESSAGE')"
       :message-value="deleteMessage"
+      :confirm-text="$t('LABEL_MGMT.DELETE.CONFIRM.YES')"
+      :reject-text="$t('LABEL_MGMT.DELETE.CONFIRM.NO')"
+    />
+
+    <woot-delete-modal
+      :show.sync="showDeleteGroupPopup"
+      :on-close="closeDeleteGroupPopup"
+      :on-confirm="confirmGroupDeletion"
+      :title="$t('LABEL_MGMT.GROUP.DELETE_CONFIRM.TITLE')"
+      :message="$t('LABEL_MGMT.GROUP.DELETE_CONFIRM.MESSAGE')"
+      :message-value="deleteGroupMessage"
       :confirm-text="$t('LABEL_MGMT.DELETE.CONFIRM.YES')"
       :reject-text="$t('LABEL_MGMT.DELETE.CONFIRM.NO')"
     />

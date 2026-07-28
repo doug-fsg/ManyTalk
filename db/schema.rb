@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_21_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_27_204223) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -785,6 +785,16 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_21_120000) do
     t.jsonb "settings", default: {}
   end
 
+  create_table "label_groups", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "name", null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "name"], name: "index_label_groups_on_account_id_and_name", unique: true
+    t.index ["account_id"], name: "index_label_groups_on_account_id"
+  end
+
   create_table "labels", force: :cascade do |t|
     t.string "title"
     t.text "description"
@@ -793,7 +803,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_21_120000) do
     t.bigint "account_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "label_group_id"
     t.index ["account_id"], name: "index_labels_on_account_id"
+    t.index ["label_group_id"], name: "index_labels_on_label_group_id"
     t.index ["title", "account_id"], name: "index_labels_on_title_and_account_id", unique: true
   end
 
@@ -1144,12 +1156,12 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_21_120000) do
     t.string "enrollment_scope", default: "contact", null: false
     t.index ["account_id", "contact_id"], name: "index_we_on_account_id_and_contact_id"
     t.index ["account_id", "conversation_id"], name: "index_workflow_enrollments_on_account_id_and_conversation_id"
-    t.index ["account_id", "status"], name: "idx_we_in_progress_by_account", where: "((status)::text = ANY (ARRAY[('active'::character varying)::text, ('waiting'::character varying)::text, ('paused'::character varying)::text]))"
+    t.index ["account_id", "status"], name: "idx_we_in_progress_by_account", where: "((status)::text = ANY ((ARRAY['active'::character varying, 'waiting'::character varying, 'paused'::character varying])::text[]))"
     t.index ["account_id"], name: "index_workflow_enrollments_on_account_id"
     t.index ["contact_id"], name: "index_workflow_enrollments_on_contact_id"
     t.index ["conversation_id"], name: "index_workflow_enrollments_on_conversation_id"
-    t.index ["workflow_id", "contact_id"], name: "index_we_unique_active_contact_scope", unique: true, where: "(((status)::text = ANY (ARRAY[('active'::character varying)::text, ('waiting'::character varying)::text, ('paused'::character varying)::text])) AND ((enrollment_scope)::text = 'contact'::text))"
-    t.index ["workflow_id", "conversation_id"], name: "index_workflow_enrollments_unique_active", unique: true, where: "((status)::text = ANY (ARRAY[('active'::character varying)::text, ('waiting'::character varying)::text, ('paused'::character varying)::text]))"
+    t.index ["workflow_id", "contact_id"], name: "index_we_unique_active_contact_scope", unique: true, where: "(((status)::text = ANY ((ARRAY['active'::character varying, 'waiting'::character varying, 'paused'::character varying])::text[])) AND ((enrollment_scope)::text = 'contact'::text))"
+    t.index ["workflow_id", "conversation_id"], name: "index_workflow_enrollments_unique_active", unique: true, where: "((status)::text = ANY ((ARRAY['active'::character varying, 'waiting'::character varying, 'paused'::character varying])::text[]))"
     t.index ["workflow_id"], name: "index_workflow_enrollments_on_workflow_id"
   end
 
@@ -1228,6 +1240,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_21_120000) do
   add_foreign_key "form_submissions", "contacts", on_delete: :nullify
   add_foreign_key "form_submissions", "conversations"
   add_foreign_key "inboxes", "portals"
+  add_foreign_key "label_groups", "accounts"
+  add_foreign_key "labels", "label_groups", on_delete: :nullify
   add_foreign_key "workflow_enrollments", "accounts"
   add_foreign_key "workflow_enrollments", "conversations"
   add_foreign_key "workflow_enrollments", "users", column: "paused_by_id"

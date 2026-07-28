@@ -4,8 +4,9 @@ class Api::V1::Accounts::LabelsController < Api::V1::Accounts::BaseController
   before_action :check_authorization
 
   def index
-    @labels = policy_scope(Current.account.labels)
+    @labels = policy_scope(Current.account.labels.includes(:label_group))
   end
+
 
   def show; end
 
@@ -29,6 +30,7 @@ class Api::V1::Accounts::LabelsController < Api::V1::Accounts::BaseController
   end
 
   def permitted_params
-    params.require(:label).permit(:title, :description, :color, :show_on_sidebar)
+    params.require(:label).permit(:title, :description, :color, :show_on_sidebar, :label_group_id)
+
   end
 end

@@ -52,7 +52,14 @@
       </span>
     </router-link>
 
-    <ul v-if="hasSubMenu" class="mb-0 ml-0 list-none">
+    <label-sidebar-section
+      v-if="menuItem.useLabelSidebar"
+      :labels="menuItem.labelItems || []"
+      :sections="menuItem.labelSections || []"
+      :mode="menuItem.labelMode || 'flat'"
+      :path-builder="menuItem.labelPathBuilder"
+    />
+    <ul v-else-if="hasSubMenu" class="mb-0 ml-0 list-none">
       <secondary-child-nav-item
         v-for="child in menuItem.children"
         :key="child.id"
@@ -91,6 +98,28 @@
         </router-link>
       </Policy>
     </ul>
+    <Policy v-if="menuItem.useLabelSidebar && menuItem.newLink" :permissions="['administrator']">
+      <router-link
+        v-slot="{ href, navigate }"
+        :to="menuItem.toState"
+        custom
+      >
+        <li class="pl-1 list-none">
+          <a :href="href">
+            <woot-button
+              size="tiny"
+              variant="clear"
+              color-scheme="secondary"
+              icon="add"
+              :data-testid="menuItem.dataTestid"
+              @click="e => newLinkClick(e, navigate)"
+            >
+              {{ $t(`SIDEBAR.${menuItem.newLinkTag}`) }}
+            </woot-button>
+          </a>
+        </li>
+      </router-link>
+    </Policy>
   </li>
 </template>
 
@@ -104,6 +133,7 @@ import {
 } from 'dashboard/helper/inbox';
 
 import SecondaryChildNavItem from './SecondaryChildNavItem.vue';
+import LabelSidebarSection from './LabelSidebarSection.vue';
 import {
   isOnMentionsView,
   isOnUnattendedView,
@@ -111,7 +141,7 @@ import {
 import Policy from '../../policy.vue';
 
 export default {
-  components: { SecondaryChildNavItem, Policy },
+  components: { SecondaryChildNavItem, LabelSidebarSection, Policy },
   mixins: [configMixin],
   props: {
     menuItem: {
@@ -139,7 +169,7 @@ export default {
       return this.computedClass.includes('active-view');
     },
     hasSubMenu() {
-      return !!this.menuItem.children;
+      return !!this.menuItem.children || !!this.menuItem.useLabelSidebar;
     },
     isMenuItemVisible() {
       if (this.menuItem.globalConfigFlag) {

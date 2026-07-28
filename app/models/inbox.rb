@@ -10,6 +10,7 @@
 #  auto_assignment_config        :jsonb
 #  business_name                 :string
 #  channel_type                  :string
+#  csat_config                   :jsonb            not null
 #  csat_lock_period_days         :integer          default(14), not null
 #  csat_response_visible         :boolean          default(FALSE), not null
 #  csat_survey_enabled           :boolean          default(FALSE)

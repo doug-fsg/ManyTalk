@@ -76,6 +76,27 @@
         "YES": "Sí, eliminar ",
         "NO": "No, mantenerlo "
       }
+    },
+    "GROUP": {
+      "LABEL": "Grupo",
+      "NONE": "Sin grupo",
+      "MANAGE": "Gestionar grupos",
+      "PLACEHOLDER": "Nombre del grupo",
+      "ADD": "Añadir",
+      "EMPTY": "Aún no hay grupos.",
+      "HELP_SIDEBAR": "El grupo solo aparece en la barra si tiene una etiqueta marcada para mostrarse en la barra lateral.",
+      "DELETE_CONFIRM": {
+        "TITLE": "Eliminar grupo",
+        "MESSAGE": "Las etiquetas de este grupo pasan a Sin grupo."
+      },
+      "API": {
+        "CREATE_SUCCESS": "Grupo creado correctamente",
+        "CREATE_ERROR": "No se pudo crear el grupo",
+        "UPDATE_SUCCESS": "Grupo actualizado correctamente",
+        "UPDATE_ERROR": "No se pudo actualizar el grupo",
+        "DELETE_SUCCESS": "Grupo eliminado correctamente",
+        "DELETE_ERROR": "No se pudo eliminar el grupo"
+      }
     }
   }
 }

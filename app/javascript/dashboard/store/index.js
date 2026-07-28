@@ -38,6 +38,7 @@ import inboxMembers from './modules/inboxMembers';
 import integrations from './modules/integrations';
 import kanban from './modules/kanban';
 import labels from './modules/labels';
+import labelGroups from './modules/labelGroups';
 import macros from './modules/macros';
 import notifications from './modules/notifications';
 import portals from './modules/helpCenterPortals';
@@ -92,6 +93,7 @@ export default new Vuex.Store({
     integrations,
     kanban,
     labels,
+    labelGroups,
     macros,
     notifications,
     portals,

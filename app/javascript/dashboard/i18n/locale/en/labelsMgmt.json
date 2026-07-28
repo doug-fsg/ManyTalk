@@ -76,6 +76,27 @@
         "YES": "Yes, Delete ",
         "NO": "No, Keep "
       }
+    },
+    "GROUP": {
+      "LABEL": "Group",
+      "NONE": "Ungrouped",
+      "MANAGE": "Manage groups",
+      "PLACEHOLDER": "Group name",
+      "ADD": "Add",
+      "EMPTY": "No groups created yet.",
+      "HELP_SIDEBAR": "A group only appears in the sidebar if it has a label set to show on the sidebar.",
+      "DELETE_CONFIRM": {
+        "TITLE": "Delete group",
+        "MESSAGE": "Labels in this group will move to Ungrouped."
+      },
+      "API": {
+        "CREATE_SUCCESS": "Group created successfully",
+        "CREATE_ERROR": "Could not create the group",
+        "UPDATE_SUCCESS": "Group updated successfully",
+        "UPDATE_ERROR": "Could not update the group",
+        "DELETE_SUCCESS": "Group deleted successfully",
+        "DELETE_ERROR": "Could not delete the group"
+      }
     }
   }
 }

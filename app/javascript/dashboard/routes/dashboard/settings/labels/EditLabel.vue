@@ -20,12 +20,14 @@ export default {
       description: '',
       showOnSidebar: true,
       color: '',
+      labelGroupId: '',
     };
   },
   validations,
   computed: {
     ...mapGetters({
       uiFlags: 'labels/getUIFlags',
+      labelGroups: 'labelGroups/getLabelGroups',
     }),
     pageTitle() {
       return `${this.$t('LABEL_MGMT.EDIT.TITLE')} - ${
@@ -39,6 +41,7 @@ export default {
   },
   mounted() {
     this.setFormValues();
+    this.$store.dispatch('labelGroups/get');
   },
   methods: {
     onClose() {
@@ -49,6 +52,9 @@ export default {
       this.description = this.selectedResponse.description;
       this.showOnSidebar = this.selectedResponse.show_on_sidebar;
       this.color = this.selectedResponse.color;
+      this.labelGroupId = this.selectedResponse.label_group_id
+        ? String(this.selectedResponse.label_group_id)
+        : '';
     },
     editLabel() {
       this.$store
@@ -58,6 +64,7 @@ export default {
           description: this.description,
           title: this.title.toLowerCase(),
           show_on_sidebar: this.showOnSidebar,
+          label_group_id: this.labelGroupId || null,
         })
         .then(() => {
           useAlert(this.$t('LABEL_MGMT.EDIT.API.SUCCESS_MESSAGE'));
@@ -93,13 +100,27 @@ export default {
         @input="v$.description.$touch"
       />
 
+      <label class="w-full">
+        {{ $t('LABEL_MGMT.GROUP.LABEL') }}
+        <select v-model="labelGroupId">
+          <option value="">{{ $t('LABEL_MGMT.GROUP.NONE') }}</option>
+          <option
+            v-for="group in labelGroups"
+            :key="group.id"
+            :value="String(group.id)"
+          >
+            {{ group.name }}
+          </option>
+        </select>
+      </label>
+
       <div class="w-full">
         <label>
           {{ $t('LABEL_MGMT.FORM.COLOR.LABEL') }}
           <woot-color-picker v-model="color" />
         </label>
       </div>
-      <div class="flex items-center w-full gap-2">
+      <div class="flex items-center w-full gap-2 mb-4">
         <input v-model="showOnSidebar" type="checkbox" :value="true" />
         <label for="conversation_creation">
           {{ $t('LABEL_MGMT.FORM.SHOW_ON_SIDEBAR.LABEL') }}

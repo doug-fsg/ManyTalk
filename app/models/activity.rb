@@ -4,10 +4,10 @@
 #
 #  id                           :bigint           not null, primary key
 #  activity_type                :string           not null
+#  completed_at                 :datetime
 #  description                  :text
 #  message_content              :text
 #  metadata                     :jsonb            not null
-#  completed_at                 :datetime
 #  scheduled_at                 :datetime         not null
 #  status                       :string           default("pending")
 #  title                        :string           not null
@@ -25,6 +25,7 @@
 #
 #  index_activities_on_account_id                    (account_id)
 #  index_activities_on_account_id_and_assignee_id    (account_id,assignee_id)
+#  index_activities_on_account_id_and_completed_at   (account_id,completed_at)
 #  index_activities_on_account_id_and_scheduled_at   (account_id,scheduled_at)
 #  index_activities_on_account_id_and_status         (account_id,status)
 #  index_activities_on_assignee_id                   (assignee_id)

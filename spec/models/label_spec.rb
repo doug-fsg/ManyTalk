@@ -55,4 +55,23 @@ RSpec.describe Label do
       label.update(description: 'new-description')
     end
   end
+
+  describe 'label_group association' do
+    it 'accepts a label group from the same account' do
+      account = create(:account)
+      group = create(:label_group, account: account)
+      label = build(:label, account: account, label_group: group)
+
+      expect(label).to be_valid
+    end
+
+    it 'rejects a label group from another account' do
+      account = create(:account)
+      other_group = create(:label_group)
+      label = build(:label, account: account, label_group: other_group)
+
+      expect(label).not_to be_valid
+      expect(label.errors[:label_group_id]).to be_present
+    end
+  end
 end
