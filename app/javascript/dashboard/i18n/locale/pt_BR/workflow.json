@@ -263,6 +263,8 @@
       "BRANCH_TIMEOUT": "Sem resposta — prazo expirou",
       "EDGE_DUPLICATE_BRANCH": "Esta saída já possui uma conexão.",
       "EDGE_CONNECT_TRIGGER_FORBIDDEN": "Não é possível conectar no gatilho.",
+      "EDGE_CONNECT_SELF_FORBIDDEN": "Uma etapa não pode conectar a si mesma.",
+      "EDGE_CONNECT_NOT_ALLOWED": "Conexão não permitida. Arraste de uma saída até outra etapa.",
       "EDGE_INSERT_NODE": "Inserir nó aqui",
       "EDGE_INSERT_PICKER_TITLE": "Adicionar etapa",
       "EDGE_INSERT_PICKER_CLOSE": "Fechar",

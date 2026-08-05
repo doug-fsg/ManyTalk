@@ -36,3 +36,15 @@ export const registerWorkflowEdges = lf => {
   });
   lf.setDefaultEdgeType(WORKFLOW_EDGE_TYPE);
 };
+
+export const addWorkflowEdge = (
+  lf,
+  { sourceNodeId, targetNodeId, sourceAnchorId, targetAnchorId }
+) =>
+  lf?.addEdge({
+    type: WORKFLOW_EDGE_TYPE,
+    sourceNodeId,
+    targetNodeId,
+    sourceAnchorId,
+    targetAnchorId,
+  });

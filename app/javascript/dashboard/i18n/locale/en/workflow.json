@@ -254,6 +254,8 @@
       "BRANCH_TIMEOUT": "No reply — deadline expired",
       "EDGE_DUPLICATE_BRANCH": "This branch output already has a connection.",
       "EDGE_CONNECT_TRIGGER_FORBIDDEN": "You cannot connect into the trigger step.",
+      "EDGE_CONNECT_SELF_FORBIDDEN": "A step cannot connect to itself.",
+      "EDGE_CONNECT_NOT_ALLOWED": "This connection is not allowed. Drag from an output to another step.",
       "EDGE_INSERT_NODE": "Insert node here",
       "EDGE_INSERT_PICKER_TITLE": "Add step",
       "EDGE_INSERT_PICKER_CLOSE": "Close",

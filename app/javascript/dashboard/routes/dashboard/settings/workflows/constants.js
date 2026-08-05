@@ -430,6 +430,26 @@ export const AI_WAIT_FOR_INTENT_DEFAULTS = {
   unit: 'minutes',
 };
 
+export const WORKFLOW_AI_NODE_TYPES = ['ai_outreach', 'ai_conversation_analysis'];
+
+export const getWorkflowNodeDefaultData = type => {
+  const defaults = {
+    trigger: { event_name: 'conversation_created', conditions: [] },
+    wait: { duration: 1, unit: 'hours' },
+    wait_for_reply: {
+      duration: 24,
+      unit: 'hours',
+      wait_responder: 'contact',
+    },
+    condition: { conditions: [] },
+    action: { action_name: 'send_message', action_params: [''] },
+    ai_outreach: { ...AI_OUTREACH_DEFAULTS },
+    ai_conversation_analysis: { ...AI_ANALYSIS_DEFAULTS },
+    ai_wait_for_intent: { ...AI_WAIT_FOR_INTENT_DEFAULTS },
+  };
+  return defaults[type] || {};
+};
+
 export const DEFAULT_WORKFLOW_GRAPH = {
   nodes: [
     {

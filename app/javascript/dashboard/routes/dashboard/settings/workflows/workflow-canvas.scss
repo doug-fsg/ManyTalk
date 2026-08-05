@@ -359,17 +359,19 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   margin: 0;
   padding: 0;
-  border-radius: 4px;
+  border-radius: 6px;
   border: 1px solid #64748b;
   background: #1e293b;
   color: #f1f5f9;
   cursor: crosshair;
   transform: translate(-50%, -50%);
   touch-action: none;
+  /* Invisible hit padding beyond the visible control */
+  box-shadow: 0 0 0 8px transparent;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.12s ease;
 
   svg {

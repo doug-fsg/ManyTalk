@@ -10,16 +10,25 @@ import {
 
 const buildLf = ({ nodes = [], edges = [], canvasPoint = { x: 400, y: 300 } } = {}) => {
   const nodeMap = Object.fromEntries(nodes.map(n => [n.id, n]));
+  const getPointByClient = () => ({
+    canvasOverlayPosition: canvasPoint,
+    domOverlayPosition: { x: 0, y: 0 },
+  });
   return {
-    graphModel: { nodes },
+    graphModel: {
+      nodes,
+      getPointByClient,
+      rootEl: {
+        getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }),
+      },
+      transformModel: {
+        HtmlPointToCanvasPoint: ([x, y]) => [canvasPoint.x, canvasPoint.y],
+      },
+    },
     getGraphData: () => ({ edges, nodes }),
     getNodeModelById: id => nodeMap[id] || null,
     getNodeDataById: id => nodeMap[id] || null,
     getEdgeModelById: () => null,
-    getPointByClient: () => ({
-      canvasOverlayPosition: canvasPoint,
-      domOverlayPosition: { x: 0, y: 0 },
-    }),
   };
 };
 

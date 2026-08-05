@@ -260,16 +260,18 @@ class WorkflowCardModel extends HtmlNodeModel {
     return anchors;
   }
 
-  isAllowConnectedAsTarget(source, sourceAnchor, targetAnchor) {
+  isAllowConnectedAsTarget(source) {
     const wt = this.properties && this.properties.workflowNodeType;
     if (wt === 'trigger') return false;
-    if (targetAnchor && targetAnchor.id && !String(targetAnchor.id).endsWith('_in')) {
-      return false;
-    }
+    // LogicFlow 1.2 picks the nearest anchor on drop. On HTML cards the out
+    // port is often closer than `_in`, so rejecting non-`_in` made connections
+    // silently fail. Accept the node; WorkflowCanvas pins the edge to `_in`.
+    if (source && source.id === this.id) return false;
     return true;
   }
 
-  isAllowConnectedAsSource(target, sourceAnchor, targetAnchor) {
+  isAllowConnectedAsSource(target, sourceAnchor) {
+    if (target && target.id === this.id) return false;
     if (!sourceAnchor || !sourceAnchor.id) return true;
     const id = String(sourceAnchor.id);
     return (

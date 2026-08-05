@@ -16,9 +16,9 @@ const COLLISION_DISTANCE = 56;
 const MAX_COLLISION_NUDGES = 14;
 const CONNECT_DRAG_THRESHOLD_PX = 6;
 /** Graph-space radius to snap drop onto a node's input port */
-export const CONNECT_SNAP_DISTANCE = 72;
+export const CONNECT_SNAP_DISTANCE = 96;
 /** Extra padding around node body when hit-testing drop targets */
-export const CONNECT_NODE_HIT_PAD = 28;
+export const CONNECT_NODE_HIT_PAD = 40;
 
 export const CONNECT_DRAG_THRESHOLD = CONNECT_DRAG_THRESHOLD_PX;
 
@@ -27,27 +27,40 @@ export const snapToGrid = (value, grid = WORKFLOW_CANVAS_GRID_SIZE) =>
 
 /** LogicFlow expects client (viewport) coords; returns canvas graph point. */
 export const clientToCanvasPoint = (lf, clientX, clientY) => {
-  if (!lf || typeof lf.getPointByClient !== 'function') return null;
-  if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return null;
+  if (!lf || !Number.isFinite(clientX) || !Number.isFinite(clientY)) return null;
 
-  let result;
-  try {
-    result = lf.getPointByClient({ x: clientX, y: clientY });
-  } catch (e) {
-    result = null;
-  }
-  // Some LogicFlow builds accept (x, y) instead of an object.
-  if (!result && lf.getPointByClient.length >= 2) {
+  const getPointByClient =
+    typeof lf.getPointByClient === 'function'
+      ? lf.getPointByClient.bind(lf)
+      : typeof lf.graphModel?.getPointByClient === 'function'
+        ? lf.graphModel.getPointByClient.bind(lf.graphModel)
+        : null;
+
+  if (getPointByClient) {
     try {
-      result = lf.getPointByClient(clientX, clientY);
+      const result = getPointByClient({ x: clientX, y: clientY });
+      const point = result?.canvasOverlayPosition || result;
+      if (Number.isFinite(point?.x) && Number.isFinite(point?.y)) {
+        return { x: point.x, y: point.y };
+      }
     } catch (e) {
-      result = null;
+      /* fall through to manual transform */
     }
   }
 
-  const point = result?.canvasOverlayPosition || result;
-  if (!Number.isFinite(point?.x) || !Number.isFinite(point?.y)) return null;
-  return { x: point.x, y: point.y };
+  const rootEl = lf.graphModel?.rootEl || lf.container;
+  const transform = lf.graphModel?.transformModel;
+  if (!rootEl?.getBoundingClientRect || !transform?.HtmlPointToCanvasPoint) {
+    return null;
+  }
+
+  const rect = rootEl.getBoundingClientRect();
+  const [x, y] = transform.HtmlPointToCanvasPoint([
+    clientX - rect.left,
+    clientY - rect.top,
+  ]);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  return { x, y };
 };
 
 export const getViewportCenterPoint = (lf, hostEl) => {
@@ -64,9 +77,23 @@ export const getViewportCenterPoint = (lf, hostEl) => {
 const nodeTypeOf = node =>
   node?.properties?.workflowNodeType || node?.properties?.type || null;
 
-const listOutboundEdges = (lf, nodeId) => {
+const listOutboundEdges = (lf, nodeId, outboundIndex = null) => {
+  if (outboundIndex) return outboundIndex.get(nodeId) || [];
   const edges = lf?.getGraphData?.()?.edges || lf?.graphModel?.edges || [];
   return edges.filter(edge => edge.sourceNodeId === nodeId);
+};
+
+/** One graph read for all stub / placement lookups (avoids O(n) getGraphData). */
+export const buildOutboundEdgeIndex = lf => {
+  const edges = lf?.getGraphData?.()?.edges || lf?.graphModel?.edges || [];
+  const index = new Map();
+  edges.forEach(edge => {
+    const sourceId = edge?.sourceNodeId;
+    if (!sourceId) return;
+    if (!index.has(sourceId)) index.set(sourceId, []);
+    index.get(sourceId).push(edge);
+  });
+  return index;
 };
 
 const resolveEdgeSourceAnchorId = (edge, lf) => {
@@ -80,13 +107,13 @@ const resolveEdgeSourceAnchorId = (edge, lf) => {
  * All free outbound anchors on a node (branch may return 0–2).
  * Includes preferred Y offset for placing the next step.
  */
-export const getAllFreeOutboundAnchors = (lf, nodeId) => {
+export const getAllFreeOutboundAnchors = (lf, nodeId, outboundIndex = null) => {
   if (!lf || !nodeId) return [];
   const node = lf.getNodeModelById?.(nodeId) || lf.getNodeDataById?.(nodeId);
   if (!node) return [];
 
   const type = nodeTypeOf(node);
-  const outbound = listOutboundEdges(lf, nodeId);
+  const outbound = listOutboundEdges(lf, nodeId, outboundIndex);
   const used = new Set(
     outbound.map(edge => resolveEdgeSourceAnchorId(edge, lf)).filter(Boolean)
   );
@@ -118,8 +145,8 @@ export const getAllFreeOutboundAnchors = (lf, nodeId) => {
 };
 
 /** First free outbound anchor, or null. */
-export const getFreeOutboundAnchor = (lf, nodeId) => {
-  const all = getAllFreeOutboundAnchors(lf, nodeId);
+export const getFreeOutboundAnchor = (lf, nodeId, outboundIndex = null) => {
+  const all = getAllFreeOutboundAnchors(lf, nodeId, outboundIndex);
   return all[0] || null;
 };
 

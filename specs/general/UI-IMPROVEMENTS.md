@@ -774,3 +774,124 @@ app/javascript/dashboard/routes/dashboard/settings/workflows/WorkflowSimulateMod
 app/javascript/dashboard/routes/dashboard/settings/workflows/constants.js
 ```
 
+---
+
+## Workflow Canvas — Drag / Drop / Conectar nós (ago/2026)
+
+### Summary
+
+Auditoria focada em **desempenho e usabilidade de arrastar, soltar e conectar** no editor `/settings/automation/workflows/:id/edit` (`WorkflowCanvas` + LogicFlow `@logicflow/core@^1.2.28`), cruzada com a [documentação oficial do LogicFlow](https://docs.logic-flow.cn/docs/#/en/guide/start) (nós, âncoras, regras de conexão, `customTargetAnchor`, HtmlNode).
+
+**Veredito:** o fluxo “n8n-like” via stub `+` (click = picker, drag = conectar) é o caminho certo; porém convivem **dois sistemas de conexão** (stub custom + âncoras nativas do LF), com regras inconsistentes, falhas silenciosas e pelo menos um bug de integridade ao inserir nó de ramo no meio da aresta. Operador de atendimento sente “às vezes conecta, às vezes não”.
+
+**Stack relevante:** `HtmlNode` custom (`workflow-card`), edges `workflow-bezier`, overlay de stubs em `WorkflowCanvas.vue`, placement em `workflowNodePlacement.js`.
+
+---
+
+### Critical Issues
+
+#### Issue: Dois modelos mentais de conexão (stub `+` vs âncora nativa)
+**Current State**: Saídas livres mostram stub + `+` (overlay). No hover do nó, âncoras LF (`lf-anchor`) ficam `opacity: 1` e também aceitam drag nativo. Após 1 saída em nó linear, o stub some — mas a âncora nativa continua.
+**Problem**:
+- Stub: no máx. 1 saída (linear); hit-test generoso (`CONNECT_SNAP_DISTANCE=72`, `HIT_PAD=28`); força `targetAnchorId = *_in`.
+- Nativo: permite N saídas do mesmo `_out`; usa âncora mais próxima do cursor; falha se cair em `_out_*` (metade direita do card).
+- Mesmo gesto “arrastar fio” em pontos vizinhos → resultados diferentes ou falha muda.
+**Recommendation**: Um só caminho. Opções: (A) `hideAnchors: true` + só stub/`+`; ou (B) âncoras LF oficiais com `customTargetAnchor` → sempre `_in`, e remover stub. Preferir A alinhado ao restante do chrome n8n.
+**Impact**: Elimina “puxei e não grudou” e arestas duplicadas invisíveis na UX do stub.
+**Implementation Notes**: `initLogicFlow` / `applyReadOnlyMode`; CSS `.lf-anchor`; `onStubPlusPointerDown` / `connectStubToNode`. Doc LF: [Node · Anchor Points](https://docs.logic-flow.cn/docs/#/en/guide/basic/node) + `customTargetAnchor`.
+
+#### Issue: Conexão nativa falha em silêncio no corpo do nó
+**Current State**: Sem `customTargetAnchor`. LF escolhe âncora mais próxima do release. `isAllowConnectedAsTarget` rejeita alvo que não termina em `_in`. Não há listener `connection:not-allowed`.
+**Problem**: Soltar na metade direita / centro do card → âncora `_out` → rejeição. Mensagem padrão LF (“不允许连接”) só no evento; UI não mostra toast. Heurística Nielsen #1/#9 violada (sem feedback / sem recuperação).
+**Recommendation**:
+1. `customTargetAnchor: (node) => anchors.find(a => a.id.endsWith('_in'))`
+2. `lf.on('connection:not-allowed', …)` → `useAlert` em PT
+3. Highlight claro de porta de entrada durante drag (stub já tem `connectTargetHints`; nativo não)
+**Impact**: Conectar no card inteiro funciona; erro vira mensagem, não “sumiu o fio”.
+**Implementation Notes**: Construtor LogicFlow ([docs constructor](https://cdn.jsdelivr.net/npm/@logicflow/core@2.2.4/dist/docs/api/logicflow-constructor/index.en.md)); evento documentado em [Connection rules](https://cdn.jsdelivr.net/npm/@logicflow/core@2.2.4/dist/docs/tutorial/advanced/node.en.md).
+
+#### Issue: Inserir nó de ramo no meio da aresta usa âncora `_out` inexistente
+**Current State**: `insertNodeOnEdge` sempre faz `sourceAnchorId: workflowAnchorOutId(newId)` (`${id}_out`). Nós `condition` / `wait_for_reply` / `ai_wait_for_intent` só têm `_out_true` / `_out_false` em `getDefaultAnchor`.
+**Problem**: Aresta de saída do nó inserido aponta para âncora que **não existe**. Runtime: geometria quebrada / handle indefinido no export; no re-render `sourceHandleToAnchorId(..., undefined, branch)` cai no default `_out_true` — ramo “Senão/timeout” some sem o usuário perceber. Bug de integridade do grafo de atendimento.
+**Recommendation**: Se `isBranchNodeType(paletteItem.type)`, usar `workflowAnchorOutTrueId(newId)` na aresta continuada + criar stub livre no `_out_false` (ou pedir qual ramo continuar). Bloquear insert de branch na aresta até UX explícita, se preferir escopo menor.
+**Impact**: IF / aguardar resposta no meio do fluxo deixa de corromper o diagrama.
+**Implementation Notes**: `WorkflowCanvas.insertNodeOnEdge` ~L849; `workflowLogicFlowNodes.getDefaultAnchor`.
+
+#### Issue: `refreshOutputStubs` a cada frame de drag / transform (jank)
+**Current State**: `lf.on('node:drag')` e `lf.on('graph:transform')` chamam `refreshOutputStubs()` síncrono: para cada nó → `getAllFreeOutboundAnchors` + `getDefaultAnchor` + 2× `graphPointToOverlayPoint`, depois reatividade Vue em `outputStubs` + botões `+`.
+**Problem**: Com dezenas de nós, arrastar um card ou pan/zoom reflowa overlay HTML/SVG continuamente. HtmlNode já custa DOM (`setHtml` / `innerHTML`); overlay amplifica. Doc LF alerta que HtmlNode mal gerenciado degrada performance.
+**Recommendation**: RAF-throttle stubs; durante `node:drag` só atualizar stubs do nó movido; esconder stubs enquanto `dragging===true` e recalcular no `node:drop` / fim do transform; ou stubs em camada SVG do próprio LF.
+**Impact**: Drag/pan sentem “pesados” mesmo em fluxos médios de atendimento.
+**Implementation Notes**: Comentário no código já admite wheel non-passive do `@logicflow/core` (DevTools violation).
+
+---
+
+### High Priority (conexão / DnD)
+
+#### Issue: Drop da paleta auto-conecta no selecionado (surpresa espacial)
+**Current State**: `onCanvasDrop` → `buildConnectOptionsFromSelection` — se há nó selecionado com saída livre, cria aresta mesmo soltando longe.
+**Problem**: Usuário arrasta para “área vazia” esperando nó órfão; recebe fio atravessando o canvas. Viola expectativa de DnD (drop position = intent).
+**Recommendation**: Auto-conectar no drop só se distância ao source &lt; limiar (ex. 160px) ou se soltar sobre o stub/`+`. Clique na paleta mantém auto-connect (já é “próximo passo”).
+**Impact**: Menos arestas acidentais; drop volta a significar “colocar aqui”.
+
+#### Issue: Alvo `+` 20×20px e dual affordance no mesmo lugar
+**Current State**: `.workflow-stub-plus` 20px; âncora LF ~r=5 no bordo do card; stub length 36px.
+**Problem**: Touch / trackpad: hit target &lt; 44px (WCAG 2.5.5). Âncora nativa e stub competem na mesma região de saída.
+**Recommendation**: Plus ≥ 28–32px + padding invisível; esconder âncoras se stub for canônico.
+
+#### Issue: Sem prevenção de self-loop / ciclo na conexão nativa
+**Current State**: Stub bloqueia `stub.nodeId === target.id`. Override `isAllowConnectedAs*` não impede self-loop nem ciclos.
+**Problem**: Grafo de atendimento com loop pode travar enrollment / execução.
+**Recommendation**: `sourceRules`/`targetRules` (API oficial LF) + validação de ciclo no `edge:add` / save.
+
+#### Issue: Round-trip `sourceHandle` frágil (texto da aresta como handle)
+**Current State**: `logicFlowDataToGraph` ainda corrige text object `{value}` e labels PT (“Respondeu”, “Então”) → handles. Specs em `workflowGraphHelper.spec.js` documentam regressões.
+**Problem**: Qualquer `updateText` / locale muda comportamento de ramo. Sintoma clássico de “ Salvou e o Senão virou Então”.
+**Recommendation**: Persistência só via `sourceAnchorId` → `sourceHandle`; label só visual; nunca fallback de text → handle.
+
+---
+
+### Medium Priority
+
+| # | Melhoria | Por quê |
+|---|----------|---------|
+| 1 | `sourceRules`/`targetRules` com `message` PT em vez de só boolean override | Doc LF recomenda rules + `connection:not-allowed` |
+| 2 | Desabilitar `adjustEdge` / endpoints se não há UX para reposicionar | Edge model já `draggable: false`; alinhar editConfig |
+| 3 | Undo/Redo na toolbar (history LF existe, UI não) | Drag destrutivo sem escape óbvio |
+| 4 | Virtualizar / batch `setHtml` dos cards; evitar `lf.render` full em theme toggle | Theme hoje re-renderiza grafo inteiro |
+| 5 | Empty drop-zone hint enquanto `isDropActive` (“Solte para criar passo”) | Feedback de DnD da paleta |
+
+---
+
+### Positive Observations (preservar)
+
+- Stub: click = picker / drag = connect (`CONNECT_DRAG_THRESHOLD`) — padrão n8n correto
+- `clientToCanvasPoint` corrigido (evita drop off-screen) — regressão já documentada
+- Hit area de aresta 28px + toolbar no midpoint — bom para mouse
+- `isAllowConnectedAsTarget` bloqueia connect → trigger
+- Labels de ramo (Então / Senão / Respondeu) via `onEdgeAdded` — legível quando anchor resolve
+
+---
+
+### Priorização (só drag/connect)
+
+| Ordem | Item | Esforço | Severidade |
+|------:|------|---------|------------|
+| 1 | Fix `insertNodeOnEdge` para branch (`_out_true` / UX de ramo) | P | Crítico (dados) |
+| 2 | Unificar conexão (hideAnchors **ou** customTargetAnchor + matar stub nativo) | P–M | Crítico (UX) |
+| 3 | Toast em `connection:not-allowed` + `customTargetAnchor` → `_in` | P | Crítico (feedback) |
+| 4 | Throttle/ocultar stubs no drag | P | Alto (perf) |
+| 5 | Drop da paleta sem auto-edge à distância | P | Alto |
+| 6 | source-loop / ciclo nas rules | P | Alto |
+
+### Artefato (Code Archaeologist)
+
+```
+# Artifact: WorkflowCanvas.vue + workflowLogicFlowNodes.js
+# Age: LogicFlow 1.2.x HtmlNode + overlay Vue (pós-migração canvas)
+# Inputs: graph, pointer events, LF anchors
+# Outputs: edges com sourceAnchorId/sourceHandle, update:graph
+# Risks: dual connect paths; branch insert wrong anchor; silent native reject;
+#        stub refresh on every drag frame; text→handle contamination
+```
+

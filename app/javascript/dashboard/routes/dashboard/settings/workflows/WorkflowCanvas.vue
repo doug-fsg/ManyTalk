@@ -10,7 +10,7 @@ import {
   nextNodeId,
   workflowGraphSnapshot,
 } from 'dashboard/helper/workflowGraphHelper';
-import { WORKFLOW_CANVAS_GRID_SIZE, WORKFLOW_NODE_PALETTE, AI_OUTREACH_DEFAULTS, AI_ANALYSIS_DEFAULTS, AI_WAIT_FOR_INTENT_DEFAULTS } from './constants';
+import { WORKFLOW_CANVAS_GRID_SIZE, WORKFLOW_NODE_PALETTE, WORKFLOW_AI_NODE_TYPES, getWorkflowNodeDefaultData } from './constants';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import { mapGetters } from 'vuex';
 import WorkflowAiUpsellModal from './WorkflowAiUpsellModal.vue';
@@ -19,14 +19,12 @@ import {
   getLogicFlowTheme,
   WORKFLOW_LF_NODE_TYPE,
   WORKFLOW_NODE_WIDTH,
-  WORKFLOW_NODE_HEIGHT,
   isBranchNodeType,
   anchorIdToSourceHandle,
   sourceHandleLabel,
   workflowAnchorInId,
   workflowAnchorOutId,
   workflowAnchorOutTrueId,
-  workflowAnchorOutFalseId,
   isWorkflowCanvasDark,
   setWorkflowCanvasDarkMode,
   getWorkflowNodeVisual,
@@ -34,6 +32,7 @@ import {
 import {
   registerWorkflowEdges,
   WORKFLOW_EDGE_TYPE,
+  addWorkflowEdge,
 } from './workflowLogicFlowEdges';
 import {
   applyInitialCanvasViewport,
@@ -48,16 +47,20 @@ import {
 import {
   clientToCanvasPoint,
   CONNECT_DRAG_THRESHOLD,
-  CONNECT_NODE_HIT_PAD,
-  CONNECT_SNAP_DISTANCE,
   findClearPosition,
-  getAllFreeOutboundAnchors,
   getFreeOutboundAnchor,
   NODE_INSERT_GAP_X,
   NODE_STUB_LENGTH,
   offsetYForSourceAnchor,
   resolvePaletteInsertPlacement,
 } from './workflowNodePlacement';
+import {
+  buildConnectTargetHints as buildConnectTargetHintsForLf,
+  computeOutputStubs,
+  findConnectTargetAtClient as findConnectTargetAtClientOnLf,
+  hasDuplicateSourceAnchor,
+  resolveEdgeSourceAnchorId as resolveEdgeSourceAnchorIdOnLf,
+} from './workflowCanvasHelpers';
 
 export default {
   name: 'WorkflowCanvas',
@@ -84,18 +87,17 @@ export default {
       edgeToolbarHovering: false,
       edgeToolbarHideTimer: null,
       edgeInsertPicker: null,
-      /** n8n-style dangling stubs: [{ nodeId, sourceAnchorId, x1,y1,x2,y2, plusLeft, plusTop }] */
       outputStubs: [],
       connectPreview: null,
       stubPointer: null,
-      /** Input-port hints while dragging a connection: [{ nodeId, cx, cy }] */
       connectTargetHints: [],
       connectHoverNodeId: null,
-      /** Node hover trash overlay: { nodeId, left, top } or null */
       hoveredNode: null,
       nodeHoverTimer: null,
       zoomPercent: 100,
       showAiUpsellModal: false,
+      pinningEdgeTarget: false,
+      isNodeDragging: false,
     };
   },
   created() {
@@ -103,6 +105,8 @@ export default {
     this.debouncedResizeCanvas = debounce(this.resizeCanvasNow, 150);
     this.onStubPointerMove = this.onStubPointerMove.bind(this);
     this.onStubPointerUp = this.onStubPointerUp.bind(this);
+    this.stubRefreshRafId = null;
+    this.outputStubsSignature = '';
   },
   computed: {
     ...mapGetters({
@@ -118,7 +122,7 @@ export default {
     paletteGroups() {
       const groups = {};
       WORKFLOW_NODE_PALETTE.forEach(item => {
-        if (this.isAiNodeType(item.type) && !this.isAiFeatureEnabled) return;
+        if (WORKFLOW_AI_NODE_TYPES.includes(item.type) && !this.isAiFeatureEnabled) return;
         if (!groups[item.group]) groups[item.group] = [];
         groups[item.group].push(item);
       });
@@ -128,7 +132,7 @@ export default {
     insertablePaletteItems() {
       return WORKFLOW_NODE_PALETTE.filter(item => {
         if (item.type === 'trigger') return false;
-        if (this.isAiNodeType(item.type) && !this.isAiFeatureEnabled) return false;
+        if (WORKFLOW_AI_NODE_TYPES.includes(item.type) && !this.isAiFeatureEnabled) return false;
         return true;
       });
     },
@@ -139,7 +143,12 @@ export default {
       return classes.join(' ');
     },
     showOutputStubs() {
-      return !this.readOnly && this.outputStubs.length > 0;
+      return (
+        !this.readOnly &&
+        !this.isNodeDragging &&
+        !this.connectPreview &&
+        this.outputStubs.length > 0
+      );
     },
   },
   watch: {
@@ -180,7 +189,7 @@ export default {
     this.initLogicFlow();
     this.applyReadOnlyMode(this.readOnly);
     this.renderGraph();
-    this.resizeCanvas();
+    this.debouncedResizeCanvas();
     window.addEventListener('resize', this.debouncedResizeCanvas);
   },
   beforeDestroy() {
@@ -193,6 +202,7 @@ export default {
     if (this.themeObserver) this.themeObserver.disconnect();
     window.removeEventListener('resize', this.debouncedResizeCanvas);
     if (this.edgeToolbarHideTimer) clearTimeout(this.edgeToolbarHideTimer);
+    this.cancelScheduledStubRefresh();
     this.teardownStubPointerListeners();
     if (this.lf) {
       if (typeof this.lf.clearData === 'function') {
@@ -205,8 +215,20 @@ export default {
     }
   },
   methods: {
+    getWorkflowNodeVisual,
+
+    ensureAiAccess(type, { event, preventDefault = true } = {}) {
+      if (!WORKFLOW_AI_NODE_TYPES.includes(type) || this.isAiFeatureEnabled) {
+        return true;
+      }
+      if (preventDefault && event?.preventDefault) {
+        event.preventDefault();
+      }
+      this.showAiUpsellModal = true;
+      return false;
+    },
+
     initLogicFlow() {
-      // Wheel listener is non-passive in @logicflow/core (DevTools violation); upstream limitation.
       this.lf = new LogicFlow({
         container: this.$refs.canvas,
         grid: { visible: true, type: 'dot', size: WORKFLOW_CANVAS_GRID_SIZE },
@@ -236,6 +258,10 @@ export default {
       this.lf.on('edge:add', ({ data }) => {
         this.onEdgeAdded(data);
       });
+      this.lf.on('connection:not-allowed', ({ msg } = {}) => {
+        if (this.readOnly) return;
+        useAlert(msg || this.$t('WORKFLOW.EDITOR.EDGE_CONNECT_NOT_ALLOWED'));
+      });
 
       this.lf.on('edge:click', ({ data }) => {
         this.onEdgeSelected(data);
@@ -248,7 +274,7 @@ export default {
       });
       this.lf.on('graph:transform', () => {
         this.syncZoomLevel();
-        this.refreshOutputStubs();
+        this.scheduleRefreshOutputStubs();
         this.refreshNodeHoverPosition();
         if (this.edgeToolbar && this.edgeToolbar.edgeId) {
           this.updateEdgeToolbarPosition(this.edgeToolbar.edgeId);
@@ -261,9 +287,18 @@ export default {
         }
       });
 
-      this.lf.on('node:drag', () => {
-        this.refreshOutputStubs();
+      this.lf.on('node:dragstart', () => {
+        this.isNodeDragging = true;
         this.clearNodeHover();
+      });
+      this.lf.on('node:drop', () => {
+        this.isNodeDragging = false;
+        this.refreshOutputStubs();
+        if (this.edgeToolbar?.edgeId) {
+          this.updateEdgeToolbarPosition(this.edgeToolbar.edgeId);
+        }
+      });
+      this.lf.on('node:drag', () => {
         if (this.edgeToolbar && this.edgeToolbar.edgeId) {
           this.updateEdgeToolbarPosition(this.edgeToolbar.edgeId);
         }
@@ -439,10 +474,7 @@ export default {
 
     selectEdgeInsertType(paletteItem) {
       if (!paletteItem || this.readOnly) return;
-      if (this.isAiNodeType(paletteItem.type) && !this.isAiFeatureEnabled) {
-        this.showAiUpsellModal = true;
-        return;
-      }
+      if (!this.ensureAiAccess(paletteItem.type, { preventDefault: false })) return;
 
       if (this.edgeInsertPicker?.mode === 'node') {
         this.addNextStepFromNode(
@@ -480,50 +512,32 @@ export default {
       });
     },
 
+    cancelScheduledStubRefresh() {
+      if (this.stubRefreshRafId != null) {
+        cancelAnimationFrame(this.stubRefreshRafId);
+        this.stubRefreshRafId = null;
+      }
+    },
+
+    scheduleRefreshOutputStubs() {
+      if (this.stubRefreshRafId != null) return;
+      this.stubRefreshRafId = requestAnimationFrame(() => {
+        this.stubRefreshRafId = null;
+        this.refreshOutputStubs();
+      });
+    },
+
     refreshOutputStubs() {
       if (!this.lf || this.readOnly) {
-        this.outputStubs = [];
+        if (this.outputStubs.length) this.outputStubs = [];
+        this.outputStubsSignature = '';
         return;
       }
+      if (this.isNodeDragging) return;
 
-      const nodes = this.lf.graphModel?.nodes || [];
-      const stubs = [];
-
-      nodes.forEach(node => {
-        if (!node?.id || !Number.isFinite(node.x)) return;
-        const freeOuts = getAllFreeOutboundAnchors(this.lf, node.id);
-        if (!freeOuts.length) return;
-
-        const anchors =
-          typeof node.getDefaultAnchor === 'function' ? node.getDefaultAnchor() : [];
-
-        freeOuts.forEach(slot => {
-          const anchor = anchors.find(item => item.id === slot.sourceAnchorId);
-          if (!anchor) return;
-
-          const from = graphPointToOverlayPoint(this.lf, {
-            x: anchor.x,
-            y: anchor.y,
-          });
-          const to = graphPointToOverlayPoint(this.lf, {
-            x: anchor.x + NODE_STUB_LENGTH,
-            y: anchor.y,
-          });
-          if (!from || !to) return;
-
-          stubs.push({
-            nodeId: node.id,
-            sourceAnchorId: slot.sourceAnchorId,
-            x1: from.left,
-            y1: from.top,
-            x2: to.left,
-            y2: to.top,
-            plusLeft: to.left,
-            plusTop: to.top,
-          });
-        });
-      });
-
+      const { stubs, signature } = computeOutputStubs(this.lf);
+      if (signature === this.outputStubsSignature) return;
+      this.outputStubsSignature = signature;
       this.outputStubs = stubs;
     },
 
@@ -546,47 +560,13 @@ export default {
       this.connectHoverNodeId = null;
     },
 
-    buildConnectTargetHints(sourceNodeId) {
-      if (!this.lf) return [];
-      const nodes = this.lf.graphModel?.nodes || [];
-      const hints = [];
-
-      nodes.forEach(node => {
-        if (!node?.id || node.id === sourceNodeId) return;
-        if (node.properties?.workflowNodeType === 'trigger') return;
-        if (!Number.isFinite(node.x)) return;
-
-        const anchors =
-          typeof node.getDefaultAnchor === 'function' ? node.getDefaultAnchor() : [];
-        const input = anchors.find(item => String(item.id).endsWith('_in'));
-        if (!input) return;
-
-        const overlay = graphPointToOverlayPoint(this.lf, {
-          x: input.x,
-          y: input.y,
-        });
-        if (!overlay) return;
-
-        hints.push({
-          nodeId: node.id,
-          graphX: input.x,
-          graphY: input.y,
-          cx: overlay.left,
-          cy: overlay.top,
-        });
-      });
-
-      return hints;
-    },
-
     onNodeMouseEnter(data) {
       if (!data?.id || !this.lf) return;
       if (this.nodeHoverTimer) {
         clearTimeout(this.nodeHoverTimer);
         this.nodeHoverTimer = null;
       }
-      const nodeModel =
-        this.lf.getNodeModelById?.(data.id) || data;
+      const nodeModel = this.lf.getNodeModelById?.(data.id) || data;
       if (!nodeModel || !Number.isFinite(nodeModel.x)) return;
 
       const overlay = graphPointToOverlayPoint(this.lf, {
@@ -644,7 +624,6 @@ export default {
         this.selectedNode = null;
         this.$emit('node-selected', null);
       }
-      this.refreshOutputStubs();
       this.emitGraphChangeNow();
     },
 
@@ -689,7 +668,7 @@ export default {
 
       if (!state.dragging) {
         state.dragging = true;
-        this.connectTargetHints = this.buildConnectTargetHints(state.stub.nodeId);
+        this.connectTargetHints = buildConnectTargetHintsForLf(this.lf, state.stub.nodeId);
       }
 
       event.preventDefault();
@@ -697,7 +676,13 @@ export default {
       const wrapper = this.$refs.canvasWrapper?.getBoundingClientRect?.();
       if (!wrapper) return;
 
-      const target = this.findConnectTargetAtClient(event.clientX, event.clientY, state.stub.nodeId);
+      const target = findConnectTargetAtClientOnLf(
+        this.lf,
+        event.clientX,
+        event.clientY,
+        state.stub.nodeId,
+        this.connectTargetHints
+      );
       this.connectHoverNodeId = target?.id || null;
 
       let x2 = event.clientX - wrapper.left;
@@ -734,86 +719,43 @@ export default {
       }
 
       // Resolve target before teardown clears connectTargetHints.
-      const target = this.findConnectTargetAtClient(
+      const target = findConnectTargetAtClientOnLf(
+        this.lf,
         event.clientX,
         event.clientY,
-        stub.nodeId
+        stub.nodeId,
+        this.connectTargetHints
       );
       this.teardownStubPointerListeners();
       if (!target) return;
       this.connectStubToNode(stub, target);
     },
 
-    findConnectTargetAtClient(clientX, clientY, sourceNodeId) {
-      if (!this.lf) return null;
-      const point = clientToCanvasPoint(this.lf, clientX, clientY);
-      if (!point) return null;
-
-      let best = null;
-      let bestDist = Infinity;
-
-      // Prefer snapping to an input port when the cursor is near it.
-      this.connectTargetHints.forEach(hint => {
-        const dist = Math.hypot(point.x - hint.graphX, point.y - hint.graphY);
-        if (dist < CONNECT_SNAP_DISTANCE && dist < bestDist) {
-          bestDist = dist;
-          best = this.lf.getNodeModelById?.(hint.nodeId) || null;
-        }
-      });
-      if (best) return best;
-
-      const nodes = this.lf.graphModel?.nodes || [];
-      for (let i = nodes.length - 1; i >= 0; i -= 1) {
-        const node = nodes[i];
-        if (!node || node.id === sourceNodeId || !Number.isFinite(node.x)) continue;
-        if (node.properties?.workflowNodeType === 'trigger') continue;
-
-        const halfW = (node.width || WORKFLOW_NODE_WIDTH) / 2 + CONNECT_NODE_HIT_PAD;
-        const halfH = (node.height || WORKFLOW_NODE_HEIGHT) / 2 + CONNECT_NODE_HIT_PAD;
-        if (
-          point.x >= node.x - halfW &&
-          point.x <= node.x + halfW &&
-          point.y >= node.y - halfH &&
-          point.y <= node.y + halfH
-        ) {
-          return node;
-        }
-      }
-      return null;
-    },
-
     connectStubToNode(stub, targetNode) {
       if (!this.lf || !stub || !targetNode) return;
       if (stub.nodeId === targetNode.id) return;
 
-      const targetType = targetNode.properties?.workflowNodeType;
-      if (targetType === 'trigger') {
+      if (targetNode.properties?.workflowNodeType === 'trigger') {
         useAlert(this.$t('WORKFLOW.EDITOR.EDGE_CONNECT_TRIGGER_FORBIDDEN'));
         return;
       }
 
-      const existing = (this.lf.getGraphData()?.edges || []).some(edge => {
-        if (edge.sourceNodeId !== stub.nodeId) return false;
-        const model = this.lf.getEdgeModelById(edge.id);
-        const anchorId = edge.sourceAnchorId || model?.sourceAnchorId;
-        return anchorId === stub.sourceAnchorId;
-      });
-      if (existing) {
+      if (hasDuplicateSourceAnchor(this.lf, stub.nodeId, stub.sourceAnchorId)) {
         useAlert(this.$t('WORKFLOW.EDITOR.EDGE_DUPLICATE_BRANCH'));
         return;
       }
 
-      const edge = this.lf.addEdge({
-        type: WORKFLOW_EDGE_TYPE,
-        sourceNodeId: stub.nodeId,
-        targetNodeId: targetNode.id,
-        sourceAnchorId: stub.sourceAnchorId,
-        targetAnchorId: workflowAnchorInId(targetNode.id),
-      });
+      if (
+        !addWorkflowEdge(this.lf, {
+          sourceNodeId: stub.nodeId,
+          targetNodeId: targetNode.id,
+          sourceAnchorId: stub.sourceAnchorId,
+          targetAnchorId: workflowAnchorInId(targetNode.id),
+        })
+      ) {
+        return;
+      }
 
-      if (!edge) return;
-
-      this.refreshOutputStubs();
       this.emitGraphChangeNow();
     },
 
@@ -826,13 +768,12 @@ export default {
       const edgeData = edgeModel.getData ? edgeModel.getData() : edgeModel;
       const sourceId = edgeData.sourceNodeId;
       const targetId = edgeData.targetNodeId;
-      const sourceAnchorId = this.resolveEdgeSourceAnchorId(edgeData);
+      const sourceAnchorId = resolveEdgeSourceAnchorIdOnLf(this.lf, edgeData);
 
       const mx = (edgeModel.startPoint.x + edgeModel.endPoint.x) / 2;
       const my = (edgeModel.startPoint.y + edgeModel.endPoint.y) / 2;
-
       const newId = nextNodeId();
-      const defaultData = this.defaultNodeData(paletteItem.type);
+      const defaultData = getWorkflowNodeDefaultData(paletteItem.type);
 
       this.lf.addNode({
         id: newId,
@@ -845,23 +786,21 @@ export default {
 
       this.lf.deleteEdge(edgeId);
 
-      const targetAnchorId = workflowAnchorInId(targetId);
-      const newOutAnchorId = workflowAnchorOutId(newId);
+      const newOutAnchorId = isBranchNodeType(paletteItem.type)
+        ? workflowAnchorOutTrueId(newId)
+        : workflowAnchorOutId(newId);
 
-      this.lf.addEdge({
-        type: WORKFLOW_EDGE_TYPE,
+      addWorkflowEdge(this.lf, {
         sourceNodeId: sourceId,
         targetNodeId: newId,
         sourceAnchorId,
         targetAnchorId: workflowAnchorInId(newId),
       });
-
-      this.lf.addEdge({
-        type: WORKFLOW_EDGE_TYPE,
+      addWorkflowEdge(this.lf, {
         sourceNodeId: newId,
         targetNodeId: targetId,
         sourceAnchorId: newOutAnchorId,
-        targetAnchorId: targetAnchorId,
+        targetAnchorId: workflowAnchorInId(targetId),
       });
 
       const newNodeData = this.lf.getNodeDataById(newId);
@@ -874,105 +813,94 @@ export default {
     onEdgeAdded(edgeData) {
       if (!this.lf || !edgeData) return;
 
-      const sourceNode = this.lf.getNodeModelById(edgeData.sourceNodeId);
-      const srcType = sourceNode?.properties?.workflowNodeType;
-      if (!isBranchNodeType(srcType)) return;
-
-      const sourceAnchorId = this.resolveEdgeSourceAnchorId(edgeData);
-      const sourceHandle = anchorIdToSourceHandle(sourceAnchorId, srcType);
-      const label = sourceHandleLabel(sourceHandle, srcType);
-
-      const graphData = this.lf.getGraphData();
-      const duplicate = (graphData.edges || []).some(edge => {
-        if (edge.id === edgeData.id) return false;
-        if (edge.sourceNodeId !== edgeData.sourceNodeId) return false;
-
-        const otherAnchorId = this.resolveEdgeSourceAnchorId(edge);
-        if (!sourceAnchorId || !otherAnchorId) return false;
-
-        return sourceAnchorId === otherAnchorId;
-      });
-
-      if (duplicate) {
-        this.lf.deleteEdge(edgeData.id);
-        useAlert(this.$t('WORKFLOW.EDITOR.EDGE_DUPLICATE_BRANCH'));
+      if (!this.pinningEdgeTarget && !this.ensureEdgePinnedToInput(edgeData)) {
         return;
       }
 
+      const sourceNode = this.lf.getNodeModelById(edgeData.sourceNodeId);
+      const srcType = sourceNode?.properties?.workflowNodeType;
+      if (!isBranchNodeType(srcType)) {
+        this.refreshOutputStubs();
+        return;
+      }
+
+      const sourceAnchorId = resolveEdgeSourceAnchorIdOnLf(this.lf, edgeData);
+      if (
+        hasDuplicateSourceAnchor(
+          this.lf,
+          edgeData.sourceNodeId,
+          sourceAnchorId,
+          edgeData.id
+        )
+      ) {
+        this.lf.deleteEdge(edgeData.id);
+        useAlert(this.$t('WORKFLOW.EDITOR.EDGE_DUPLICATE_BRANCH'));
+        this.refreshOutputStubs();
+        return;
+      }
+
+      const label = sourceHandleLabel(
+        anchorIdToSourceHandle(sourceAnchorId, srcType),
+        srcType
+      );
       if (label && typeof this.lf.updateText === 'function') {
         this.lf.updateText(edgeData.id, label);
       }
+      this.refreshOutputStubs();
     },
 
-    resolveEdgeSourceAnchorId(edgeData) {
-      if (!this.lf || !edgeData) return null;
+    ensureEdgePinnedToInput(edgeData) {
+      if (!this.lf || !edgeData) return false;
 
-      const edgeModel = this.lf.getEdgeModelById(edgeData.id);
-      const edgeRecord = edgeModel?.getData?.() || edgeData;
-
-      let anchorId =
-        edgeRecord.sourceAnchorId ||
-        edgeModel?.sourceAnchorId ||
-        edgeData.sourceAnchorId;
-
-      if (anchorId) return anchorId;
-
-      const sourceNode = this.lf.getNodeModelById(edgeData.sourceNodeId);
-      if (!sourceNode || typeof sourceNode.getDefaultAnchor !== 'function') {
-        return this.inferBranchAnchorByUsage(edgeData.sourceNodeId, edgeData.id);
+      if (edgeData.sourceNodeId === edgeData.targetNodeId) {
+        this.lf.deleteEdge(edgeData.id);
+        useAlert(this.$t('WORKFLOW.EDITOR.EDGE_CONNECT_SELF_FORBIDDEN'));
+        return false;
       }
 
-      const startPoint = edgeModel?.startPoint || edgeRecord.startPoint;
-      if (!startPoint) return this.inferBranchAnchorByUsage(edgeData.sourceNodeId, edgeData.id);
+      const targetNode = this.lf.getNodeModelById(edgeData.targetNodeId);
+      if (targetNode?.properties?.workflowNodeType === 'trigger') {
+        this.lf.deleteEdge(edgeData.id);
+        useAlert(this.$t('WORKFLOW.EDITOR.EDGE_CONNECT_TRIGGER_FORBIDDEN'));
+        return false;
+      }
 
-      const outAnchors = sourceNode
-        .getDefaultAnchor()
-        .filter(anchor => String(anchor.id).endsWith('_out') || String(anchor.id).includes('_out_'));
+      const sourceAnchorId = resolveEdgeSourceAnchorIdOnLf(this.lf, edgeData);
+      if (sourceAnchorId && String(sourceAnchorId).endsWith('_in')) {
+        this.lf.deleteEdge(edgeData.id);
+        useAlert(this.$t('WORKFLOW.EDITOR.EDGE_CONNECT_NOT_ALLOWED'));
+        return false;
+      }
 
-      if (outAnchors.length === 0) return null;
+      const targetIn = workflowAnchorInId(edgeData.targetNodeId);
+      const currentTarget =
+        edgeData.targetAnchorId ||
+        this.lf.getEdgeModelById(edgeData.id)?.targetAnchorId;
 
-      let closest = outAnchors[0];
-      let minDistance = Infinity;
-      outAnchors.forEach(anchor => {
-        const distance = Math.hypot(anchor.x - startPoint.x, anchor.y - startPoint.y);
-        if (distance < minDistance) {
-          minDistance = distance;
-          closest = anchor;
+      if (currentTarget === targetIn) return true;
+
+      this.pinningEdgeTarget = true;
+      try {
+        this.lf.deleteEdge(edgeData.id);
+        if (
+          addWorkflowEdge(this.lf, {
+            sourceNodeId: edgeData.sourceNodeId,
+            targetNodeId: edgeData.targetNodeId,
+            sourceAnchorId: sourceAnchorId || edgeData.sourceAnchorId,
+            targetAnchorId: targetIn,
+          })
+        ) {
+          this.emitGraphChangeNow();
         }
-      });
-
-      if (edgeModel && closest?.id) {
-        edgeModel.sourceAnchorId = closest.id;
+      } finally {
+        this.pinningEdgeTarget = false;
       }
-
-      return closest?.id || null;
-    },
-
-    inferBranchAnchorByUsage(sourceNodeId, currentEdgeId) {
-      const trueId = workflowAnchorOutTrueId(sourceNodeId);
-      const falseId = workflowAnchorOutFalseId(sourceNodeId);
-      const graphData = this.lf.getGraphData();
-      const used = new Set();
-
-      (graphData.edges || []).forEach(edge => {
-        if (edge.id === currentEdgeId || edge.sourceNodeId !== sourceNodeId) return;
-        const edgeModel = this.lf.getEdgeModelById(edge.id);
-        const anchorId = edge.sourceAnchorId || edgeModel?.sourceAnchorId;
-        if (anchorId) used.add(anchorId);
-      });
-
-      if (!used.has(trueId)) return trueId;
-      if (!used.has(falseId)) return falseId;
-      return null;
+      return false;
     },
 
     onPaletteDragStart(item, event) {
       if (this.readOnly) return;
-      if (this.isAiNodeType(item.type) && !this.isAiFeatureEnabled) {
-        event.preventDefault();
-        this.showAiUpsellModal = true;
-        return;
-      }
+      if (!this.ensureAiAccess(item.type, { event })) return;
       this.dragPaletteType = item.type;
       event.dataTransfer.setData('application/workflow-node-type', item.type);
       event.dataTransfer.effectAllowed = 'copy';
@@ -998,17 +926,11 @@ export default {
         this.dragPaletteType;
       this.dragPaletteType = null;
       if (!type) return;
-
-      if (this.isAiNodeType(type) && !this.isAiFeatureEnabled) {
-        this.showAiUpsellModal = true;
-        return;
-      }
+      if (!this.ensureAiAccess(type)) return;
 
       const paletteItem = WORKFLOW_NODE_PALETTE.find(p => p.type === type);
       if (!paletteItem) return;
 
-      // LogicFlow getPointByClient expects raw clientX/Y and returns
-      // { canvasOverlayPosition } — relative subtraction was placing nodes off-screen.
       const point = clientToCanvasPoint(this.lf, event.clientX, event.clientY);
       if (!point) return;
 
@@ -1025,12 +947,10 @@ export default {
     },
 
     rerenderNodesForTheme() {
-      if (!this.lf) return;
-      const data = this.lf.getGraphData();
-      this.suspendGraphSync = true;
-      this.lf.render(data);
-      this.$nextTick(() => {
-        this.suspendGraphSync = false;
+      if (!this.lf?.graphModel?.nodes) return;
+      this.lf.graphModel.nodes.forEach(nodeModel => {
+        if (!nodeModel?.id) return;
+        this.lf.setProperties(nodeModel.id, { ...(nodeModel.properties || {}) });
       });
     },
 
@@ -1051,10 +971,6 @@ export default {
       } else {
         this.refreshOutputStubs();
       }
-    },
-
-    resizeCanvas() {
-      this.debouncedResizeCanvas();
     },
 
     resizeCanvasNow() {
@@ -1101,10 +1017,6 @@ export default {
       });
     },
 
-    emitGraphChange() {
-      this.debouncedEmitGraphChange();
-    },
-
     emitGraphChangeNow() {
       if (this.suspendGraphSync || !this.lf) return;
       const graph = exportGraphFromLogicFlow(this.lf, this.graph);
@@ -1123,10 +1035,6 @@ export default {
       return exportGraphFromLogicFlow(this.lf, this.graph);
     },
 
-    isAiNodeType(type) {
-      return type === 'ai_outreach' || type === 'ai_conversation_analysis';
-    },
-
     buildConnectOptionsFromSelection(newNodeType) {
       if (newNodeType === 'trigger' || !this.selectedNode?.id) {
         return { connectFromId: null, sourceAnchorId: null };
@@ -1140,10 +1048,7 @@ export default {
     },
 
     addNode(paletteItem) {
-      if (this.isAiNodeType(paletteItem.type) && !this.isAiFeatureEnabled) {
-        this.showAiUpsellModal = true;
-        return;
-      }
+      if (!this.ensureAiAccess(paletteItem.type, { preventDefault: false })) return;
       const placement = resolvePaletteInsertPlacement({
         lf: this.lf,
         selectedNodeId: this.selectedNode?.id || null,
@@ -1162,7 +1067,7 @@ export default {
       if (!Number.isFinite(x) || !Number.isFinite(y)) return;
 
       const id = nextNodeId();
-      const defaultData = this.defaultNodeData(paletteItem.type);
+      const defaultData = getWorkflowNodeDefaultData(paletteItem.type);
       const node = {
         id,
         type: WORKFLOW_LF_NODE_TYPE,
@@ -1176,8 +1081,7 @@ export default {
       const connectFromId = options.connectFromId;
       const sourceAnchorId = options.sourceAnchorId;
       if (connectFromId && paletteItem.type !== 'trigger') {
-        this.lf.addEdge({
-          type: WORKFLOW_EDGE_TYPE,
+        addWorkflowEdge(this.lf, {
           sourceNodeId: connectFromId,
           targetNodeId: id,
           sourceAnchorId: sourceAnchorId || workflowAnchorOutId(connectFromId),
@@ -1198,24 +1102,6 @@ export default {
       }
 
       this.emitGraphChangeNow();
-    },
-
-    defaultNodeData(type) {
-      const defaults = {
-        trigger: { event_name: 'conversation_created', conditions: [] },
-        wait: { duration: 1, unit: 'hours' },
-        wait_for_reply: {
-          duration: 24,
-          unit: 'hours',
-          wait_responder: 'contact',
-        },
-        condition: { conditions: [] },
-        action: { action_name: 'send_message', action_params: [''] },
-        ai_outreach: { ...AI_OUTREACH_DEFAULTS },
-        ai_conversation_analysis: { ...AI_ANALYSIS_DEFAULTS },
-        ai_wait_for_intent: { ...AI_WAIT_FOR_INTENT_DEFAULTS },
-      };
-      return defaults[type] || {};
     },
 
     updateSelectedNodeProperties(props) {
@@ -1239,10 +1125,6 @@ export default {
 
     paletteItemTitle(item) {
       return 'Clique para adicionar: ' + (item.label || '');
-    },
-
-    nodeColor(type) {
-      return getWorkflowNodeVisual(type);
     },
 
     fitView() {
@@ -1349,11 +1231,11 @@ export default {
                 >
                   <span
                     class="inline-flex items-center justify-center w-5 h-5 rounded-md flex-shrink-0"
-                    :style="{ background: nodeColor(item.type).bg }"
+                    :style="{ background: getWorkflowNodeVisual(item.type).bg }"
                   >
                     <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        :d="nodeColor(item.type).icon" />
+                        :d="getWorkflowNodeVisual(item.type).icon" />
                     </svg>
                   </span>
                   <span class="truncate text-left">{{ item.label }}</span>
@@ -1377,7 +1259,7 @@ export default {
               >
                 <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    :d="nodeColor('ai_outreach').icon" />
+                    :d="getWorkflowNodeVisual('ai_outreach').icon" />
                 </svg>
               </span>
               <span class="flex flex-col items-start gap-0.5 min-w-0 text-left">
@@ -1563,7 +1445,7 @@ export default {
             >
               <span
                 class="workflow-edge-insert-picker__icon"
-                :style="{ background: nodeColor(item.type).bg }"
+                :style="{ background: getWorkflowNodeVisual(item.type).bg }"
                 aria-hidden="true"
               >
                 <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1571,7 +1453,7 @@ export default {
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    :d="nodeColor(item.type).icon"
+                    :d="getWorkflowNodeVisual(item.type).icon"
                   />
                 </svg>
               </span>
