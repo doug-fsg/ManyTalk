@@ -67,15 +67,15 @@ export const getters = {
     const messagesTemplates =
       whatsAppMessageTemplates || apiInboxMessageTemplates;
 
+    const templateList = Array.isArray(messagesTemplates) ? messagesTemplates : [];
+
     // filtering out the whatsapp templates with media
-    if (messagesTemplates instanceof Array) {
-      return messagesTemplates.filter(template => {
-        return !template.components.some(
-          i => i.format === 'IMAGE' || i.format === 'VIDEO'
-        );
-      });
-    }
-    return [];
+    return templateList.filter(template => {
+      const components = template.components || [];
+      return !components.some(
+        i => i.format === 'IMAGE' || i.format === 'VIDEO'
+      );
+    });
   },
   getNewConversationInboxes($state) {
     return $state.records.filter(inbox => {
@@ -278,9 +278,8 @@ export const actions = {
     commit(types.default.SET_INBOXES_UI_FLAG, { isSyncingTemplates: true });
     try {
       const response = await InboxesAPI.syncTemplates(inboxId);
-      commit(types.default.EDIT_INBOXES, response.data);
+      commit(types.default.SET_INBOX_ITEM, response.data);
     } catch (error) {
-      throwErrorMessage(error);
       throw error;
     } finally {
       commit(types.default.SET_INBOXES_UI_FLAG, { isSyncingTemplates: false });
@@ -319,7 +318,7 @@ export const mutations = {
     $state.uiFlags = { ...$state.uiFlags, ...uiFlag };
   },
   [types.default.SET_INBOXES]: MutationHelpers.set,
-  [types.default.SET_INBOXES_ITEM]: MutationHelpers.setSingleRecord,
+  [types.default.SET_INBOX_ITEM]: MutationHelpers.setSingleRecord,
   [types.default.ADD_INBOXES]: MutationHelpers.create,
   [types.default.EDIT_INBOXES]: MutationHelpers.update,
   [types.default.DELETE_INBOXES]: MutationHelpers.destroy,

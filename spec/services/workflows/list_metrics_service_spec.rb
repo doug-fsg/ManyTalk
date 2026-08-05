@@ -21,7 +21,7 @@ RSpec.describe Workflows::ListMetricsService do
       workflow_ids: [workflow.id]
     ).build
 
-    expect(result[workflow.id]).to eq(active_count: 0, reply_rate_30d: nil)
+    expect(result[workflow.id]).to eq(active_count: 0, reply_rate_30d: nil, completion_rate_30d: nil)
   end
 
   it 'counts active enrollments for administrator' do
@@ -52,5 +52,20 @@ RSpec.describe Workflows::ListMetricsService do
     ).build
 
     expect(result[workflow.id][:active_count]).to eq(1)
+  end
+
+  it 'calculates completion rate for completed enrollments' do
+    conversation = create(:conversation, account: account, inbox: inbox)
+    create(:workflow_enrollment, account: account, workflow: workflow, conversation: conversation, status: 'completed')
+    create(:workflow_enrollment, account: account, workflow: workflow, conversation: create(:conversation, account: account, inbox: inbox),
+                                status: 'cancelled')
+
+    result = described_class.new(
+      account: account,
+      user: admin,
+      workflow_ids: [workflow.id]
+    ).build
+
+    expect(result[workflow.id][:completion_rate_30d]).to eq(50.0)
   end
 end

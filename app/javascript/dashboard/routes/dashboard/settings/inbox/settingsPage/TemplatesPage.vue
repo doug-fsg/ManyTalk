@@ -32,14 +32,22 @@ export default {
       :title="$t('WHATSAPP_TEMPLATES.GUIDE.TAB_SYNC_TITLE')"
       :sub-title="$t('WHATSAPP_TEMPLATES.GUIDE.TAB_SYNC_SUBTITLE')"
     >
-      <p class="template-count">
+      <p class="template-count font-semibold">
         {{
           $t('WHATSAPP_TEMPLATES.GUIDE.TEMPLATES_COUNT', {
             count: approvedTemplatesCount,
           })
         }}
       </p>
+      <p v-if="pendingTemplatesCount > 0" class="template-count">
+        {{
+          $t('WHATSAPP_TEMPLATES.GUIDE.PENDING_TEMPLATES_COUNT', {
+            count: pendingTemplatesCount,
+          })
+        }}
+      </p>
       <woot-button
+        variant="smooth"
         :is-loading="isSyncing"
         :disabled="isSyncing"
         @click="syncWhatsAppTemplates"

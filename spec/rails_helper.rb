@@ -37,6 +37,19 @@ begin
 rescue ActiveRecord::PendingMigrationError => e
   puts e.to_s.strip
   exit 1
+rescue ActiveRecord::StatementInvalid => e
+  if e.message.include?('PG::ObjectInUse') || e.cause.is_a?(PG::ObjectInUse)
+    warn <<~WARNING
+
+      Test database could not be prepared (#{e.message.strip}).
+      Stop Rails, Sidekiq, and other connections to the development database, then run:
+        RAILS_ENV=test bundle exec rails db:test:prepare
+
+    WARNING
+    exit 1
+  end
+
+  raise
 end
 RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods

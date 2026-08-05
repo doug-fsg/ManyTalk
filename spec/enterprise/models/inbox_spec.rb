@@ -103,15 +103,16 @@ RSpec.describe Inbox do
     let(:inbox) { channel.inbox }
 
     before do
-      stub_request(:get, 'https://graph.facebook.com/v14.0//message_templates?access_token=test_key')
+      stub_request(:get, 'https://graph.facebook.com/v22.0/123456789/message_templates')
         .with(
           headers: {
+            'Authorization' => 'Bearer test_key',
             'Accept' => '*/*',
             'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3',
             'User-Agent' => 'Ruby'
           }
         )
-        .to_return(status: 200, body: '', headers: {})
+        .to_return(status: 200, body: { data: [] }.to_json, headers: {})
     end
 
     context 'when inbox is created' do

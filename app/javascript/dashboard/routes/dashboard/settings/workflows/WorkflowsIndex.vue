@@ -5,6 +5,7 @@ import { useI18n } from 'dashboard/composables/useI18n';
 import { useStore, useStoreGetters } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
 import ConfirmationModal from 'dashboard/components/widgets/modal/ConfirmationModal.vue';
+import WorkflowActivateConfirmModal from './WorkflowActivateConfirmModal.vue';
 import WorkflowCreateModal from './WorkflowCreateModal.vue';
 import WorkflowCard from './WorkflowCard.vue';
 import SettingsLayout from '../SettingsLayout.vue';
@@ -14,7 +15,7 @@ const store = useStore();
 const getters = useStoreGetters();
 const router = useRouter();
 const { t } = useI18n();
-const confirmDialog = ref(null);
+const activateConfirmDialog = ref(null);
 const deleteConfirmDialog = ref(null);
 const selectedWorkflow = ref(null);
 const loading = ref({});
@@ -35,9 +36,11 @@ const openNew = () => {
 const openEdit = workflow =>
   router.push({ name: 'workflows_edit', params: { workflowId: workflow.id } });
 
-const toggleWorkflow = async ({ id, active }) => {
-  if (!active) {
-    const ok = await confirmDialog.value?.showConfirmation();
+const toggleWorkflow = async ({ id, activating, conflictingAutomations }) => {
+  if (activating) {
+    const ok = await activateConfirmDialog.value?.showConfirmation({
+      conflictingAutomations,
+    });
     if (!ok) return;
   }
 
@@ -137,11 +140,7 @@ const requestDeleteWorkflow = async workflow => {
       </div>
     </template>
 
-    <ConfirmationModal
-      ref="confirmDialog"
-      :title="$t('WORKFLOW.ACTIVATE_MODAL.TITLE')"
-      :description="$t('WORKFLOW.ACTIVATE_MODAL.DESCRIPTION')"
-    />
+    <WorkflowActivateConfirmModal ref="activateConfirmDialog" />
     <ConfirmationModal
       ref="deleteConfirmDialog"
       :title="$t('WORKFLOW.DELETE_MODAL.TITLE')"

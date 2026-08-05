@@ -13,6 +13,7 @@ if local_assigns[:metrics]
   json.metrics do
     json.active_count metrics[:active_count] || 0
     json.reply_rate_30d metrics[:reply_rate_30d]
+    json.completion_rate_30d metrics[:completion_rate_30d]
   end
 end
 json.conflicting_automations workflow.conflicting_automation_names

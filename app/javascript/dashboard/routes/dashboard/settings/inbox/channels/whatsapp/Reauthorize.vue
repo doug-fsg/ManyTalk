@@ -123,7 +123,9 @@ export default {
       ) {
         await this.reauthorizeWhatsApp({
           code: authCode,
-          business_id: existingConfig.business_account_id,
+          business_id:
+            existingConfig.meta_business_id ||
+            existingConfig.business_account_id,
           waba_id: existingConfig.business_account_id,
           phone_number_id: existingConfig.phone_number_id,
         });

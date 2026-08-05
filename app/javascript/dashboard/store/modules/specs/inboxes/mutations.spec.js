@@ -11,12 +11,12 @@ describe('#mutations', () => {
     });
   });
 
-  describe('#SET_INBOXES_ITEM', () => {
+  describe('#SET_INBOX_ITEM', () => {
     it('push inbox if inbox doesnot exist to the store', () => {
       const state = {
         records: [],
       };
-      mutations[types.default.SET_INBOXES_ITEM](state, inboxList[0]);
+      mutations[types.default.SET_INBOX_ITEM](state, inboxList[0]);
       expect(state.records).toEqual([inboxList[0]]);
     });
 
@@ -35,7 +35,7 @@ describe('#mutations', () => {
           },
         ],
       };
-      mutations[types.default.SET_INBOXES_ITEM](state, inboxList[0]);
+      mutations[types.default.SET_INBOX_ITEM](state, inboxList[0]);
       expect(state.records).toEqual([inboxList[0]]);
     });
   });

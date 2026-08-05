@@ -1,10 +1,22 @@
 import { useAlert } from 'dashboard/composables';
+import { parseAPIErrorResponse } from 'dashboard/store/utils/api';
 import {
   buildWhatsAppTemplatesUrl,
   getInboxWabaId,
 } from 'dashboard/constants/whatsappTemplateGuide';
 
 const TEMPLATE_SYNC_STALE_MS = 15 * 60 * 1000;
+
+const getSyncErrorMessage = (error, fallback) => {
+  const parsed = parseAPIErrorResponse(error);
+  if (typeof parsed === 'string' && parsed.trim()) {
+    return parsed;
+  }
+  if (typeof error?.message === 'string' && error.message.trim()) {
+    return error.message;
+  }
+  return fallback;
+};
 
 export default {
   props: {
@@ -28,10 +40,19 @@ export default {
     isSyncing() {
       return this.$store.getters['inboxes/getUIFlags'].isSyncingTemplates;
     },
+    messageTemplates() {
+      const templates = this.inbox?.message_templates;
+      return Array.isArray(templates) ? templates : [];
+    },
     approvedTemplatesCount() {
-      return this.$store.getters['inboxes/getWhatsAppTemplates'](
-        this.inboxId
-      ).filter(template => template.status?.toLowerCase() === 'approved').length;
+      return this.messageTemplates.filter(
+        template => template.status?.toLowerCase() === 'approved'
+      ).length;
+    },
+    pendingTemplatesCount() {
+      return this.messageTemplates.filter(
+        template => template.status?.toLowerCase() === 'pending'
+      ).length;
     },
     settingsTemplatesUrl() {
       return `/app/accounts/${this.$store.getters.getCurrentAccountId}/settings/inboxes/${this.inboxId}?tab=whatsapp_templates`;
@@ -61,12 +82,18 @@ export default {
           this.inboxId
         );
         if (!silent) {
-          useAlert(this.$t('WHATSAPP_TEMPLATES.GUIDE.SYNC_SUCCESS'));
+          useAlert(
+            this.$t('WHATSAPP_TEMPLATES.GUIDE.SYNC_SUCCESS', {
+              count: this.approvedTemplatesCount,
+            })
+          );
         }
         this.$emit('synced');
-      } catch {
+      } catch (error) {
         if (!silent) {
-          useAlert(this.$t('WHATSAPP_TEMPLATES.GUIDE.SYNC_ERROR'));
+          useAlert(
+            getSyncErrorMessage(error, this.$t('WHATSAPP_TEMPLATES.GUIDE.SYNC_ERROR'))
+          );
         }
       }
     },
@@ -80,10 +107,16 @@ export default {
           'inboxes/syncWhatsAppTemplates',
           this.inboxId
         );
-        useAlert(this.$t('WHATSAPP_TEMPLATES.GUIDE.SYNC_SUCCESS'));
+        useAlert(
+          this.$t('WHATSAPP_TEMPLATES.GUIDE.SYNC_SUCCESS', {
+            count: this.approvedTemplatesCount,
+          })
+        );
         this.$emit('synced');
-      } catch {
-        useAlert(this.$t('WHATSAPP_TEMPLATES.GUIDE.SYNC_ERROR'));
+      } catch (error) {
+        useAlert(
+          getSyncErrorMessage(error, this.$t('WHATSAPP_TEMPLATES.GUIDE.SYNC_ERROR'))
+        );
       }
     },
   },

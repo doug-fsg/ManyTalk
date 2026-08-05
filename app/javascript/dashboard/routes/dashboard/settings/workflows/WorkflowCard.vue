@@ -21,6 +21,10 @@ const activeCount = computed(() => props.workflow.metrics?.active_count ?? 0);
 
 const replyRate = computed(() => props.workflow.metrics?.reply_rate_30d ?? null);
 
+const completionRate = computed(
+  () => props.workflow.metrics?.completion_rate_30d ?? null
+);
+
 const conflictingAutomations = computed(
   () => props.workflow.conflicting_automations ?? []
 );
@@ -36,7 +40,11 @@ const metricsTooltip = computed(() => {
     replyRate.value != null
       ? t('WORKFLOW.LIST.METRICS_REPLY_RATE', { rate: replyRate.value })
       : t('WORKFLOW.LIST.METRICS_REPLY_EMPTY');
-  return `${running} · ${rate}\n${t('WORKFLOW.LIST.METRICS_PERIOD')}`;
+  const completion =
+    completionRate.value != null
+      ? t('WORKFLOW.LIST.METRICS_COMPLETION_RATE', { rate: completionRate.value })
+      : t('WORKFLOW.LIST.METRICS_COMPLETION_EMPTY');
+  return `${running} · ${rate} · ${completion}\n${t('WORKFLOW.LIST.METRICS_PERIOD')}`;
 });
 
 const TRIGGER_LABEL_I18N_KEYS = {
@@ -75,7 +83,8 @@ const toggle = () => {
   emit('toggle', {
     id: props.workflow.id,
     name: props.workflow.name,
-    active: props.workflow.active,
+    activating: !props.workflow.active,
+    conflictingAutomations: conflictingAutomations.value,
   });
 };
 </script>
@@ -144,6 +153,12 @@ const toggle = () => {
         <fluent-icon icon="arrow-reply" size="14" class="text-slate-400 dark:text-slate-500" aria-hidden="true" />
         <span class="font-medium">{{ replyRate != null ? replyRate + '%' : '—' }}</span>
         <span class="text-xs text-slate-400 dark:text-slate-500">{{ $t('WORKFLOW.LIST.METRICS_LABEL_RATE') }}</span>
+      </span>
+      <span class="text-slate-200 dark:text-slate-700" aria-hidden="true">·</span>
+      <span class="inline-flex items-center gap-1 text-sm text-slate-700 dark:text-slate-300">
+        <fluent-icon icon="checkmark-circle" size="14" class="text-slate-400 dark:text-slate-500" aria-hidden="true" />
+        <span class="font-medium">{{ completionRate != null ? completionRate + '%' : '—' }}</span>
+        <span class="text-xs text-slate-400 dark:text-slate-500">{{ $t('WORKFLOW.LIST.METRICS_LABEL_COMPLETION') }}</span>
       </span>
     </div>
 

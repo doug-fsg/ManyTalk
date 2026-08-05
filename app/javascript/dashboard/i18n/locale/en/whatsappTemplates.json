@@ -36,9 +36,10 @@
             "TAB_SYNC_SUBTITLE": "Import approved templates into this inbox.",
             "CREATE_TEMPLATES": "Create Templates",
             "SYNC_BUTTON": "Sync",
-            "SYNC_SUCCESS": "Templates synced.",
+            "SYNC_SUCCESS": "%{count} approved template(s) synced.",
             "SYNC_ERROR": "Sync failed.",
             "TEMPLATES_COUNT": "%{count} approved template(s)",
+            "PENDING_TEMPLATES_COUNT": "%{count} template(s) pending approval",
             "PICKER_EMPTY": "No approved templates.",
             "PICKER_SETTINGS_LINK": "Configure in Templates"
         }

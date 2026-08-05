@@ -19,6 +19,14 @@ export default {
       type: Object,
       default: () => ({}),
     },
+    healthData: {
+      type: Object,
+      default: null,
+    },
+    isRegisteringWebhook: {
+      type: Boolean,
+      default: false,
+    },
   },
   setup() {
     return { v$: useVuelidate() };
@@ -31,6 +39,34 @@ export default {
   },
   validations: {
     whatsAppInboxAPIKey: { required },
+  },
+  computed: {
+    showWebhookSection() {
+      return (
+        this.isAWhatsAppCloudChannel &&
+        this.healthData?.webhook_configuration !== undefined
+      );
+    },
+    webhookUrl() {
+      const config = this.healthData?.webhook_configuration;
+      if (!config) return '';
+
+      return (
+        config.phone_number ||
+        config.whatsapp_business_account ||
+        config.application ||
+        ''
+      );
+    },
+    webhookConfigured() {
+      return Boolean(this.webhookUrl);
+    },
+    webhookUrlMismatch() {
+      return (
+        this.webhookConfigured &&
+        this.webhookUrl !== this.healthData?.expected_webhook_url
+      );
+    },
   },
   watch: {
     inbox() {
@@ -195,6 +231,30 @@ export default {
   <div v-else-if="isAWhatsAppChannel && !isATwilioChannel">
     <div v-if="inbox.provider_config" class="mx-8">
       <SettingsSection
+        v-if="showWebhookSection"
+        :title="$t('INBOX_MGMT.ACCOUNT_HEALTH.WEBHOOK.TITLE')"
+        :sub-title="
+          webhookUrlMismatch
+            ? $t('INBOX_MGMT.ACCOUNT_HEALTH.WEBHOOK.URL_MISMATCH')
+            : $t('INBOX_MGMT.ACCOUNT_HEALTH.WEBHOOK.DESCRIPTION')
+        "
+      >
+        <p v-if="webhookConfigured" class="webhook-url">
+          {{ webhookUrl }}
+        </p>
+        <p v-else class="webhook-url">
+          {{ $t('INBOX_MGMT.ACCOUNT_HEALTH.WEBHOOK.ACTION_REQUIRED') }}
+        </p>
+        <woot-button
+          :is-loading="isRegisteringWebhook"
+          :disabled="isRegisteringWebhook"
+          @click="$emit('registerWebhook')"
+        >
+          {{ $t('INBOX_MGMT.ACCOUNT_HEALTH.WEBHOOK.REGISTER_BUTTON') }}
+        </woot-button>
+      </SettingsSection>
+
+      <SettingsSection
         :title="$t('INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_WEBHOOK_TITLE')"
         :sub-title="$t('INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_WEBHOOK_SUBHEADER')"
       >
@@ -242,5 +302,9 @@ export default {
   ::v-deep input {
     margin-bottom: 0;
   }
+}
+
+.webhook-url {
+  @apply text-sm text-slate-700 dark:text-slate-200 mb-3 break-all;
 }
 </style>

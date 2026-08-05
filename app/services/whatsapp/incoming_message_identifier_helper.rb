@@ -24,8 +24,8 @@ module Whatsapp::IncomingMessageIdentifierHelper
   def outgoing_message_source_ids(message)
     [
       whatsapp_phone_source_id(message[:to].presence),
-      whatsapp_source_id(message[:to_user_id].presence),
-      whatsapp_source_id(message[:to_parent_user_id].presence)
+      whatsapp_phone_source_id(message[:to_user_id].presence),
+      whatsapp_phone_source_id(message[:to_parent_user_id].presence)
     ].compact_blank.uniq
   end
 

@@ -8,11 +8,42 @@
 
 ## Limites atuais
 
-- Editar diagrama exige fluxo **inativo**
+- Editar **diagrama** exige fluxo **inativo** (use **Duplicar** ou desative para alterar nós)
+- Editar **configurações** (cancelamento, re-enrollment, labels) funciona com fluxo **ativo**
 - Máx. **15** ações `send_message` por fluxo
 - Máx. **10** nós `wait` (combinado `wait` + `wait_for_reply`) por fluxo
 - Cancelamento: resposta do cliente e conversa resolvida (configurável por fluxo)
-- ⚠️ v1 e v2 com o mesmo gatilho podem executar simultaneamente — revise suas Automações clássicas para evitar duplicidades
+- ⚠️ v1 e v2 com o mesmo gatilho podem executar simultaneamente — o sistema alerta **antes de ativar**
+
+## Guia operacional — Fluxo + Automações v1 + IA
+
+### Tríade (não competir)
+
+| Camada | Quando usar |
+|--------|-------------|
+| **Automações v1** | Regra instantânea (assign, label, mensagem imediata) |
+| **Fluxo v2** | Cadência ao longo de dias (espera, IF, follow-up) |
+| **IA (n8n)** | Decisão por mensagem recebida |
+
+### Checklist antes de ativar um fluxo
+
+1. **Simular** no editor (botão play) — validar ramificações sem enviar mensagens
+2. **Revisar conflitos** — se houver Automação v1 com o mesmo gatilho, desative a v1 ou ajuste condições
+3. **Configurar cancelamentos** (engrenagem → Configurações):
+   - `Cancelar quando atendente responder` — **ligado** em follow-up e vendas
+   - `Cancelar por labels` — ex.: `humano-ativo`, `ia-ativo` (n8n aplica a label ao assumir)
+   - `Pausar quando cliente responder` — padrão ligado
+4. **Re-enrollment** — ligar em fluxos de reativação/recompra (template “Reativação 30d”)
+
+### Padrão IA (n8n) + fluxo
+
+```
+Fluxo envia cadência → n8n responde mensagens → label ia-ativo cancela/pausa fluxo
+Agente assume → cancel_on_agent_reply ou label humano-ativo
+Retomar cadência → iniciar enrollment manual na Régua ou via API
+```
+
+Ver também: [`inteligencia-artificial.md`](./inteligencia-artificial.md), [`fluxo-de-atendimento-melhorias.md`](./fluxo-de-atendimento-melhorias.md).
 
 ## API
 

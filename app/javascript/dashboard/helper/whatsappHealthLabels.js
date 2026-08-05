@@ -28,8 +28,11 @@ const ACCOUNT_MODE_KEYS = {
 
 const PARTNER_BILLING_PATTERNS = [
   /cost is not shown for businesses who bill through a partner/i,
+  /cost is not shown/i,
   /bill through a partner/i,
   /solution partner/i,
+  /meta partner billing/i,
+  /cobrança via parceiro meta/i,
   /custo indisponível via api/i,
   /cost unavailable via api/i,
 ];

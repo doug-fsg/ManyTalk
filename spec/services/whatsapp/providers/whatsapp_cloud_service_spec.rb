@@ -19,7 +19,8 @@ describe Whatsapp::Providers::WhatsappCloudService do
   let(:whatsapp_response) { { messages: [{ id: 'message_id' }] } }
 
   before do
-    stub_request(:get, 'https://graph.facebook.com/v14.0/123456789/message_templates?access_token=test_key')
+    stub_request(:get, 'https://graph.facebook.com/v22.0/123456789/message_templates')
+      .with(headers: { 'Authorization' => 'Bearer test_key' })
   end
 
   describe '#send_message' do
@@ -270,20 +271,15 @@ describe Whatsapp::Providers::WhatsappCloudService do
   describe '#sync_templates' do
     context 'when called' do
       it 'updated the message templates' do
-        stub_request(:get, 'https://graph.facebook.com/v14.0/123456789/message_templates?access_token=test_key')
+        stub_request(:get, 'https://graph.facebook.com/v22.0/123456789/message_templates')
+          .with(headers: { 'Authorization' => 'Bearer test_key' })
           .to_return(
-            { status: 200, headers: response_headers,
-              body: { data: [
-                { id: '123456789', name: 'test_template' }
-              ], paging: { next: 'https://graph.facebook.com/v14.0/123456789/message_templates?access_token=test_key' } }.to_json },
-            { status: 200, headers: response_headers,
-              body: { data: [
-                { id: '123456789', name: 'next_template' }
-              ], paging: { next: 'https://graph.facebook.com/v14.0/123456789/message_templates?access_token=test_key' } }.to_json },
-            { status: 200, headers: response_headers,
-              body: { data: [
-                { id: '123456789', name: 'last_template' }
-              ], paging: { prev: 'https://graph.facebook.com/v14.0/123456789/message_templates?access_token=test_key' } }.to_json }
+            status: 200, headers: response_headers,
+            body: { data: [
+              { id: '123456789', name: 'test_template' },
+              { id: '123456789', name: 'next_template' },
+              { id: '123456789', name: 'last_template' }
+            ] }.to_json
           )
 
         timstamp = whatsapp_channel.reload.message_templates_last_updated
@@ -294,13 +290,18 @@ describe Whatsapp::Providers::WhatsappCloudService do
         expect(whatsapp_channel.reload.message_templates_last_updated).not_to eq(timstamp)
       end
 
-      it 'updates message_templates_last_updated even when template request fails' do
-        stub_request(:get, 'https://graph.facebook.com/v14.0/123456789/message_templates?access_token=test_key')
-          .to_return(status: 401)
+      it 'raises when template request fails' do
+        stub_request(:get, 'https://graph.facebook.com/v22.0/123456789/message_templates')
+          .with(headers: { 'Authorization' => 'Bearer test_key' })
+          .to_return(
+            status: 401,
+            headers: response_headers,
+            body: { error: { message: 'Invalid OAuth access token.' } }.to_json
+          )
 
         timstamp = whatsapp_channel.reload.message_templates_last_updated
-        subject.sync_templates
-        expect(whatsapp_channel.reload.message_templates_last_updated).not_to eq(timstamp)
+        expect { subject.sync_templates }.to raise_error(StandardError, 'Invalid OAuth access token.')
+        expect(whatsapp_channel.reload.message_templates_last_updated).to eq(timstamp)
       end
     end
   end
@@ -308,13 +309,16 @@ describe Whatsapp::Providers::WhatsappCloudService do
   describe '#validate_provider_config' do
     context 'when called' do
       it 'returns true if valid' do
-        stub_request(:get, 'https://graph.facebook.com/v14.0/123456789/message_templates?access_token=test_key')
+        stub_request(:get, 'https://graph.facebook.com/v22.0/123456789/message_templates')
+          .with(headers: { 'Authorization' => 'Bearer test_key' })
         expect(subject.validate_provider_config?).to be(true)
         expect(whatsapp_channel.errors.present?).to be(false)
       end
 
       it 'returns false if invalid' do
-        stub_request(:get, 'https://graph.facebook.com/v14.0/123456789/message_templates?access_token=test_key').to_return(status: 401)
+        stub_request(:get, 'https://graph.facebook.com/v22.0/123456789/message_templates')
+          .with(headers: { 'Authorization' => 'Bearer test_key' })
+          .to_return(status: 401)
         expect(subject.validate_provider_config?).to be(false)
       end
     end

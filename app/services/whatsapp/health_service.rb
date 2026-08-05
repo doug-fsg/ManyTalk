@@ -11,6 +11,7 @@ class Whatsapp::HealthService
 
   def fetch_health_status
     validate_channel!
+    ensure_meta_business_id!
     fetch_phone_health_data
   end
 
@@ -20,6 +21,39 @@ class Whatsapp::HealthService
     raise ArgumentError, 'Channel is required' if @channel.blank?
     raise ArgumentError, 'API key is missing' if @access_token.blank?
     raise ArgumentError, 'Phone number ID is missing' if @channel.provider_config['phone_number_id'].blank?
+  end
+
+  def waba_id
+    @channel.provider_config['business_account_id']
+  end
+
+  def meta_business_id
+    @channel.provider_config['meta_business_id']
+  end
+
+  # Older channels (and buggy reauth) may miss meta_business_id.
+  # Fetch owner portfolio ID from WABA and persist it — no reconnect needed.
+  def ensure_meta_business_id!
+    return if meta_business_id.present?
+    return if waba_id.blank?
+
+    response = HTTParty.get(
+      "#{BASE_URI}/#{@api_version}/#{waba_id}",
+      query: {
+        fields: 'owner_business_info',
+        access_token: @access_token
+      }
+    )
+    return unless response.success?
+
+    owner_id = response.dig('owner_business_info', 'id')
+    return if owner_id.blank?
+
+    config = @channel.provider_config.merge('meta_business_id' => owner_id)
+    @channel.update_column(:provider_config, config) # rubocop:disable Rails/SkipsModelValidations
+    @channel.reload
+  rescue StandardError => e
+    Rails.logger.warn "[WHATSAPP HEALTH] Could not backfill meta_business_id: #{e.message}"
   end
 
   def fetch_phone_health_data
@@ -84,7 +118,8 @@ class Whatsapp::HealthService
       last_onboarded_time: response['last_onboarded_time'],
       platform_type: response['platform_type'],
       certificate: response['certificate'],
-      business_id: @channel.provider_config['business_account_id']
+      business_id: meta_business_id,
+      waba_id: waba_id
     }
   end
 

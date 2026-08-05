@@ -19,7 +19,6 @@ module Api::V1::Accounts::Concerns::WhatsappHealthManagement
     pricing_data = Whatsapp::PricingAnalyticsService.new(@inbox.channel).fetch_monthly_summary
     render json: pricing_data
   rescue Whatsapp::PricingAnalyticsService::CostUnavailableError => e
-    Rails.logger.error "[INBOX PRICING] Cost unavailable: #{e.message}"
     render json: { error: e.message, error_code: 'partner_billing' }, status: :unprocessable_entity
   rescue StandardError => e
     Rails.logger.error "[INBOX PRICING] Error fetching pricing data: #{e.message}"

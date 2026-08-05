@@ -18,3 +18,16 @@ export const getInboxWabaId = inbox => {
     null
   );
 };
+
+export const buildWhatsAppBillingUrl = wabaId => {
+  if (!wabaId) {
+    return 'https://business.facebook.com/billing_hub/accounts';
+  }
+
+  const params = new URLSearchParams({
+    account_type: 'whatsapp-business-account',
+    asset_id: String(wabaId),
+  });
+
+  return `https://business.facebook.com/billing_hub/accounts?${params.toString()}`;
+};

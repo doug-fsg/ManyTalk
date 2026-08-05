@@ -13,13 +13,14 @@ module Workflows
       ids.index_with { default_metrics }.tap do |result|
         active_counts.each { |workflow_id, count| result[workflow_id][:active_count] = count }
         reply_rates.each { |workflow_id, rate| result[workflow_id][:reply_rate_30d] = rate }
+        completion_rates.each { |workflow_id, rate| result[workflow_id][:completion_rate_30d] = rate }
       end
     end
 
     private
 
     def default_metrics
-      { active_count: 0, reply_rate_30d: nil }
+      { active_count: 0, reply_rate_30d: nil, completion_rate_30d: nil }
     end
 
     def active_counts
@@ -29,11 +30,7 @@ module Workflows
     end
 
     def reply_rates
-      scope = account.workflow_enrollments.includes(:conversation)
-                     .where(workflow_id: workflow_ids, created_at: METRICS_PERIOD.ago..)
-      scope = scope.joins(:conversation).where(conversations: { inbox_id: assigned_inbox_ids }) unless administrator?
-
-      scope.group_by(&:workflow_id).transform_values do |enrollments|
+      historical_enrollments.transform_values do |enrollments|
         total = enrollments.size
         next nil if total.zero?
 
@@ -42,8 +39,30 @@ module Workflows
       end
     end
 
+    def completion_rates
+      historical_enrollments.transform_values do |enrollments|
+        total = enrollments.size
+        next nil if total.zero?
+
+        completed = enrollments.count { |enrollment| enrollment.status == 'completed' }
+        (completed.to_f / total * 100).round(1)
+      end
+    end
+
+    def historical_enrollments
+      scope = account.workflow_enrollments.includes(:conversation)
+                     .where(workflow_id: workflow_ids, created_at: METRICS_PERIOD.ago..)
+      scope = scope.joins(:conversation).where(conversations: { inbox_id: assigned_inbox_ids }) unless administrator?
+
+      scope.group_by(&:workflow_id)
+    end
+
     def assigned_inbox_ids
-      @assigned_inbox_ids ||= user.assigned_inboxes.where(account_id: account.id).pluck(:id)
+      @assigned_inbox_ids ||= if administrator?
+                                account.inboxes.pluck(:id)
+                              else
+                                user.inboxes.where(account_id: account.id).pluck(:id)
+                              end
     end
 
     def administrator?

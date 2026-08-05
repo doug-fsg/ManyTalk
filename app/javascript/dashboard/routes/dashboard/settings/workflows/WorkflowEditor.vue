@@ -18,6 +18,8 @@ import WorkflowPropertiesPanel from './WorkflowPropertiesPanel.vue';
 import WorkflowFlowSettingsPanel from './WorkflowFlowSettingsPanel.vue';
 import WorkflowValidationBanner from './WorkflowValidationBanner.vue';
 import WorkflowSimulateModal from './WorkflowSimulateModal.vue';
+import WorkflowActivateConfirmModal from './WorkflowActivateConfirmModal.vue';
+import ConfirmationModal from 'dashboard/components/widgets/modal/ConfirmationModal.vue';
 import {
   emptyGraph,
   serializeGraphForApi,
@@ -54,6 +56,9 @@ const canvasRef = ref(null);
 const graphRevision = ref(0);
 const showFlowSettings = ref(false);
 const showSimulate = ref(false);
+const activateConfirmRef = ref(null);
+const deactivateConfirmRef = ref(null);
+const conflictingAutomations = ref([]);
 const isTogglingActive = ref(false);
 
 const workflowId = computed(() => route.params.workflowId);
@@ -126,6 +131,7 @@ const loadWorkflow = async () => {
       active: isActive,
       graph: normalizeWorkflowGraph(data.graph || emptyGraph()),
     };
+    conflictingAutomations.value = data?.conflicting_automations ?? [];
     syncActiveState(isActive);
     graphRevision.value += 1;
     isDirty.value = false;
@@ -210,16 +216,15 @@ const markDirty = () => {
   if (nameError.value) nameError.value = false;
 };
 
-const onWorkflowActiveInput = async value => {
-  if (!isEdit.value) {
-    workflow.value.active = value;
-    markDirty();
-    return;
-  }
+const confirmActivation = async () =>
+  activateConfirmRef.value?.showConfirmation({
+    conflictingAutomations: conflictingAutomations.value,
+  });
 
+const persistActiveState = async value => {
   if (isTogglingActive.value || value === activeSaved.value) {
     workflow.value.active = value;
-    return;
+    return false;
   }
 
   isTogglingActive.value = true;
@@ -234,13 +239,48 @@ const onWorkflowActiveInput = async value => {
     workflow.value.active = Boolean(updated.active);
     syncActiveState(updated.active);
     useAlert(t('WORKFLOW.TOGGLE.SUCCESS'));
+    return true;
   } catch {
     workflow.value.active = previousActive;
     syncActiveState(previousActive);
     useAlert(t('WORKFLOW.TOGGLE.ERROR'));
+    return false;
   } finally {
     isTogglingActive.value = false;
   }
+};
+
+const onWorkflowActiveInput = async value => {
+  if (!isEdit.value) {
+    workflow.value.active = value;
+    markDirty();
+    return;
+  }
+
+  if (isTogglingActive.value || value === activeSaved.value) {
+    workflow.value.active = value;
+    return;
+  }
+
+  if (value && !(await confirmActivation())) {
+    workflow.value.active = activeSaved.value;
+    return;
+  }
+
+  await persistActiveState(value);
+};
+
+/** One-click path out of readonly: confirm → deactivate → canvas unlocks. */
+const deactivateToEdit = async () => {
+  if (!isFlowActive.value || isTogglingActive.value) return;
+  const ok = await deactivateConfirmRef.value?.showConfirmation();
+  if (!ok) return;
+  await persistActiveState(false);
+};
+
+const onValidationFocusError = nodeId => {
+  if (!nodeId || !canvasRef.value?.focusNode) return;
+  canvasRef.value.focusNode(nodeId);
 };
 const onGraphUpdate = graph => {
   if (readOnlyGraph.value) return;
@@ -306,6 +346,11 @@ const save = async (activate = false) => {
 
   const isActiveOnServer = isFlowActive.value;
   const canUpdateGraph = !isActiveOnServer;
+  const canUpdateSettingsOnly = isActiveOnServer;
+
+  if (activate && !isActiveOnServer && !(await confirmActivation())) {
+    return;
+  }
 
   isSaving.value = true;
   try {
@@ -316,7 +361,9 @@ const save = async (activate = false) => {
       canUpdateGraph && canvasRef.value?.getGraphForSave
         ? canvasRef.value.getGraphForSave()
         : workflow.value.graph;
-    const graph = canUpdateGraph ? serializeGraphForApi(rawGraph) : null;
+    const graph = canUpdateGraph || canUpdateSettingsOnly
+      ? serializeGraphForApi(rawGraph)
+      : null;
 
     if (canUpdateGraph) {
       const validationResponse = await WorkflowsAPI.validate(graph);
@@ -336,7 +383,7 @@ const save = async (activate = false) => {
     } else if (!isActiveOnServer) {
       payload.active = workflow.value.active;
     }
-    if (canUpdateGraph) {
+    if (canUpdateGraph || canUpdateSettingsOnly) {
       payload.graph = graph;
     }
 
@@ -556,22 +603,40 @@ const activeStatusLabel = computed(() =>
 
     <div
       v-if="isFlowActive"
-      class="flex-shrink-0 flex items-center gap-1.5 px-4 py-1.5 text-xs border-b border-amber-200/70 dark:border-amber-800/40 bg-amber-50/70 dark:bg-amber-950/25 text-amber-900/90 dark:text-amber-200/90"
+      class="flex-shrink-0 flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-2 text-xs border-b border-amber-200/70 dark:border-amber-800/40 bg-amber-50/70 dark:bg-amber-950/25 text-amber-900/90 dark:text-amber-200/90"
       role="status"
     >
-      <fluent-icon
-        icon="info"
-        size="14"
-        class="text-amber-600 dark:text-amber-400 flex-shrink-0"
-        aria-hidden="true"
-      />
-      <span>{{ $t('WORKFLOW.EDITOR.ACTIVE_READONLY') }}</span>
+      <span class="flex items-center gap-1.5 min-w-0 flex-1">
+        <fluent-icon
+          icon="info"
+          size="14"
+          class="text-amber-600 dark:text-amber-400 flex-shrink-0"
+          aria-hidden="true"
+        />
+        <span class="min-w-0">
+          <span class="font-medium">{{ $t('WORKFLOW.EDITOR.ACTIVE_READONLY') }}</span>
+          <span class="text-amber-700/80 dark:text-amber-300/80">
+            {{ ' ' }}{{ $t('WORKFLOW.EDITOR.ACTIVE_SETTINGS_HINT') }}
+          </span>
+        </span>
+      </span>
+      <woot-button
+        size="tiny"
+        color-scheme="warning"
+        variant="smooth"
+        :is-loading="isTogglingActive"
+        class="shrink-0"
+        @click="deactivateToEdit"
+      >
+        {{ $t('WORKFLOW.EDITOR.DEACTIVATE_TO_EDIT') }}
+      </woot-button>
     </div>
 
     <WorkflowValidationBanner
       v-if="validationErrors.length"
-      :error-count="validationErrors.length"
+      :errors="validationErrors"
       @dismiss="dismissValidationErrors"
+      @focus-error="onValidationFocusError"
     />
 
     <div
@@ -621,18 +686,28 @@ const activeStatusLabel = computed(() =>
       :show.sync="showFlowSettings"
       :on-close="closeFlowSettings"
       :close-on-backdrop-click="true"
+      size="medium"
     >
-      <div class="flex flex-col w-full max-w-md">
+      <div
+        class="flex flex-col w-full h-[32rem] max-h-[min(32rem,80vh)]"
+      >
         <woot-modal-header
           :header-title="$t('WORKFLOW.EDITOR.FLOW_SETTINGS')"
           :header-content="$t('WORKFLOW.EDITOR.FLOW_SETTINGS_HINT')"
         />
-        <div class="px-8 pb-8">
+        <div class="flex-1 min-h-0 px-8 overflow-hidden">
           <WorkflowFlowSettingsPanel
             :graph-settings="workflow.graph.settings"
-            :read-only="readOnlyGraph"
+            :read-only="false"
             @update-settings="onUpdateSettings"
           />
+        </div>
+        <div
+          class="flex shrink-0 justify-end px-8 py-4 border-t border-slate-75 dark:border-slate-700/50"
+        >
+          <woot-button size="small" @click="closeFlowSettings">
+            {{ $t('WORKFLOW.EDITOR.FLOW_SETTINGS_DONE') }}
+          </woot-button>
         </div>
       </div>
     </woot-modal>
@@ -642,6 +717,16 @@ const activeStatusLabel = computed(() =>
       :show="showSimulate"
       :workflow-id="workflowId"
       @close="showSimulate = false"
+    />
+
+    <WorkflowActivateConfirmModal ref="activateConfirmRef" />
+
+    <ConfirmationModal
+      ref="deactivateConfirmRef"
+      :title="$t('WORKFLOW.EDITOR.DEACTIVATE_TO_EDIT_TITLE')"
+      :description="$t('WORKFLOW.EDITOR.DEACTIVATE_TO_EDIT_DESC')"
+      :confirm-label="$t('WORKFLOW.EDITOR.DEACTIVATE_TO_EDIT')"
+      :cancel-label="$t('WORKFLOW.ACTIVATE_MODAL.CANCEL')"
     />
   </div>
 </template>

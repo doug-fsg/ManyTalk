@@ -8,10 +8,6 @@ module Workflows
       deactivating = params.key?(:active) && !ActiveModel::Type::Boolean.new.cast(params[:active])
       activating   = params.key?(:active) && ActiveModel::Type::Boolean.new.cast(params[:active]) && !workflow.active?
 
-      if workflow.active? && graph_changed? && !deactivating
-        return failure([I18n.t('workflows.errors.deactivate_to_edit')])
-      end
-
       attrs = {
         name: params[:name],
         description: params[:description],
@@ -19,7 +15,13 @@ module Workflows
       }
       attrs[:active] = params[:active] if params.key?(:active)
 
-      if graph_changed? && (!workflow.active? || deactivating)
+      if workflow.active? && graph_changed? && !deactivating
+        if settings_only_change?
+          attrs[:graph] = merged_settings_graph
+        else
+          return failure([I18n.t('workflows.errors.deactivate_to_edit')])
+        end
+      elsif graph_changed? && (!workflow.active? || deactivating)
         graph = normalize_graph(params[:graph])
         validation = GraphValidationService.new(graph: graph, account: workflow.account).perform
         return failure(GraphValidationService.error_messages(validation[:errors])) unless validation[:valid]
@@ -42,6 +44,30 @@ module Workflows
 
     def graph_changed?
       params.key?(:graph) && params[:graph].present?
+    end
+
+    def settings_only_change?
+      return false unless graph_changed?
+
+      structural_graph_equal?(normalize_graph(params[:graph]), workflow.graph)
+    end
+
+    def merged_settings_graph
+      incoming = normalize_graph(params[:graph])
+      graph = workflow.graph.deep_dup
+      graph['settings'] = incoming['settings']
+      graph
+    end
+
+    def structural_graph_equal?(left, right)
+      strip_layout(left) == strip_layout(right)
+    end
+
+    def strip_layout(graph)
+      {
+        'nodes' => (graph['nodes'] || []).map { |node| node.except('x', 'y', 'position') },
+        'edges' => graph['edges'] || []
+      }
     end
 
     def normalize_graph(raw_graph)

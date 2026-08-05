@@ -512,3 +512,265 @@ app/javascript/dashboard/routes/dashboard/settings/workflows/WorkflowCreateModal
 app/javascript/dashboard/routes/dashboard/settings/reports/WorkflowReports.vue
 app/javascript/dashboard/routes/dashboard/crm/components/KanbanDashboard.vue
 ```
+
+---
+
+## Workflow — Modal "Configurações do fluxo" (ago/2026)
+
+### Summary
+
+Revisão do modal global de settings no editor de fluxo (`WorkflowFlowSettingsPanel.vue`). Problema: lista longa de toggles com labels encurtados demais; operadores não entendiam escopo, pausa vs cancelamento e re-entrada.
+
+### Implementado
+
+- **Abas no topo** (`woot-tabs`, padrão Canais de Entrada): Cliente · Inscrição · Equipe · Re-entrada
+- **Cards de radio** para escolhas mutuamente exclusivas (resposta do cliente; vínculo por conversa/contato)
+- **Label + uma linha de contexto** por controle (`*_DESC`), sem tooltips nem parágrafos
+- **Subtítulo único** no header do modal (`FLOW_SETTINGS_HINT`)
+- Modal `max-w-xl`, corpo scrollável, botão **Concluído**
+
+### Positive Observations
+
+- Chips de etiqueta com estado selecionado claro
+- `woot-switch` alinhado ao restante do dashboard
+- Separação por domínio mental (cliente vs inscrição vs equipe) reduz carga cognitiva (Miller/Hick)
+
+### Medium Priority (futuro)
+
+- Badge nas abas quando há configuração não-padrão (ex.: re-entrada ativa)
+- Link discreto "Gerenciar etiquetas" na aba Equipe quando lista vazia
+
+---
+
+## WhatsApp — Sincronização de templates (ago/2026)
+
+### Summary
+
+Revisão da aba **Templates** em Configurações do inbox WhatsApp Cloud (`TemplatesPage.vue`). Após correção do sync backend, a contagem passou a refletir templates aprovados, mas o botão **Sincronizar** exibia "Falha ao sincronizar." mesmo com dados corretos — erro de confiança (heurística #9: reconhecer, diagnosticar e recuperar de erros).
+
+### Critical Issues
+
+#### Issue: Falso erro após sync bem-sucedido
+**Current State**: Toast genérico "Falha ao sincronizar." ao clicar em Sincronizar, embora a contagem mostre templates corretos.
+**Problem**: O usuário não sabe se os dados estão atualizados; tende a clicar repetidamente ou desconfiar da integração Meta.
+**Recommendation**: Corrigir falha técnica (`update!` revalidava credenciais contra a Meta após fetch) e exibir mensagem de sucesso com contagem + erro específico da API quando falhar.
+**Impact**: Feedback confiável; menos cliques redundantes e menos suporte.
+**Implementation Notes**: Backend usa `update_columns` no sync; frontend usa `parseAPIErrorResponse` no toast.
+
+### High Priority Improvements
+
+#### Issue: Mensagens de feedback genéricas
+**Current State**: Sucesso = "Templates sincronizados."; erro = "Falha ao sincronizar."
+**Problem**: Não confirma quantos templates foram importados nem orienta correção (token, WABA, permissão).
+**Recommendation**: Sucesso: `N template(s) sincronizado(s).`; erro: mensagem retornada pela API quando disponível.
+**Impact**: Usuário entende resultado imediato da ação.
+
+#### Issue: Falta de contexto temporal
+**Current State**: Contagem estática sem "última sincronização".
+**Problem**: Dificulta saber se precisa sincronizar de novo.
+**Recommendation**: Exibir `Última sincronização: há X min` abaixo da contagem, usando `message_templates_last_updated`.
+**Impact**: Reduz syncs desnecessários (heurística #8 — minimalismo).
+
+### Medium Priority Enhancements
+
+- Desabilitar botão Sincronizar quando sync recente (< 1 min) com tooltip "Aguarde antes de sincronizar novamente"
+- Estado inline no botão: loading → sucesso breve (check) antes de voltar ao normal
+- Link "Abrir no Gerenciador da Meta" com ícone externo mais evidente ao lado de "Criar Templates"
+
+### Positive Observations
+
+- Separação clara entre **Criar** (Meta) e **Sincronizar** (Chatwoot)
+- Contagem `N template(s) aprovado(s)` dá visibilidade imediata do estado do inbox
+- Botão com `is-loading` durante sync — boa prevenção de double-submit
+
+---
+
+## WhatsApp — Saúde da conta / Cobrança BSP (ago/2026)
+
+### Summary
+
+Revisão da aba **Saúde da conta** (`AccountHealth.vue` + `WhatsappPricingSummary.vue`) para contas **Embedded Signup / Tech Provider**. Logs repetiam erro da Meta sobre custo indisponível para BSP; a UI tratava como falha genérica em vez de estado esperado.
+
+### Critical Issues
+
+#### Issue: Erros de log para cenário BSP esperado
+**Current State**: Backend logava `[WHATSAPP PRICING] Error` e `[INBOX PRICING] Error` a cada abertura da aba.
+**Problem**: Polui logs de produção e sugere incidente quando o comportamento é normal para Tech Provider.
+**Recommendation**: Detectar BSP/Embedded Signup cedo; não logar como erro; exibir card informativo na UI.
+**Impact**: Operação mais limpa; admins entendem que cobrança fica na Meta/BSP.
+**Implementation Notes**: `cost_unavailable_error?` ampliado; skip de API para `source: embedded_signup`.
+
+### High Priority Improvements
+
+#### Issue: Mensagem de erro genérica "Não foi possível carregar os gastos"
+**Current State**: Falha de detecção do erro Meta → sem `error_code: partner_billing`.
+**Problem**: Usuário pensa que integração quebrou.
+**Recommendation**: Card neutro "Cobrança via parceiro Meta" + CTA para Business Suite (implementado).
+**Impact**: Confiança e orientação clara.
+
+### Medium Priority Enhancements
+
+- Carregar pricing só ao abrir aba Saúde (lazy), não em todo `watch` do inbox
+- Exibir badge "Via parceiro Meta" no título da seção Cobrança quando Embedded Signup
+
+### Positive Observations
+
+- `WhatsappPricingSummary` já tinha layout dedicado para BSP — faltava só acionar corretamente
+- Botão "Abrir faturamento na Meta" é a ação certa para este perfil de conta
+
+---
+
+## Workflow Editor — Usabilidade do fluxo de atendimento (ago/2026)
+
+### Summary
+
+Revisão do editor em `/settings/automation/workflows/:id/edit` (`WorkflowEditor` + `WorkflowCanvas` + `WorkflowPropertiesPanel`), com foco **100% na usabilidade do operador** — não em visual cosmético.
+
+**Como o fluxo funciona hoje (modelo mental real):**
+1. Gatilho (evento) → nós no canvas (espera / condição / ação / IA)
+2. Configuração no painel direito ao clicar no nó
+3. Salvar (rascunho) ou Salvar e ativar; fluxo **ativo trava o diagrama** até desativar
+4. Simular em modal separado; settings globais em outro modal
+
+**Benchmark usado:** Zapier (step-first + test), Make (draft/publish), n8n (canvas + inspector persistente), ManyChat / Typebot (fluxo conversacional legível), Intercom Workflows (linguagem humana + erros no passo).
+
+**Diagnóstico central:** o editor é **poderoso e visualmente competente**, mas pede mentalidade de “engenheiro de grafo”. Grandes players escondem o grafo atrás de **próximo passo óbvio**, **erro no passo**, **publicar sem medo** e **testar sem sair do contexto**.
+
+**Design system (ui-ux-pro-max):** estilo Flat / AI-native leve, tipografia Plus Jakarta Sans, anti-patterns = chrome pesado + feedback lento. Priorizar progressive disclosure, error recovery e feedback de loading (UX guidelines).
+
+---
+
+### Critical Issues
+
+#### Issue: Ativo = canvas bloqueado (ciclo desativar → editar → reativar)
+**Status**: ✅ Mitigado (ago/2026) — CTA **Desativar para Editar** com confirmação one-click; badge readonly duplicado no canvas removido. Draft/publish completo continua no roadmap.
+**Current State**: Banner único + botão primário desativa e destrava o diagrama; settings seguem editáveis.
+**Problem**: Operador tem medo de mexer em fluxo em produção.
+**Recommendation (próximo)**: Modelo **Rascunho / Publicado** com versão.
+**Impact**: Sai do readonly em 1 confirmação, sem caçar o toggle.
+**Implementation Notes**: `deactivateToEdit` + `ConfirmationModal` em `WorkflowEditor.vue`.
+
+#### Issue: Erros de validação são “há N erros”, não “o que fazer”
+**Status**: ✅ Implementado (ago/2026)
+**Current State**: Banner com lista clicável, prev/next, foco no nó + painel.
+**Problem**: Contagem sem lista não ensina o próximo clique.
+**Recommendation**: Mantido — lista humanizada + navegação.
+**Impact**: Erro → diagnóstico → recuperação no passo.
+**Implementation Notes**: `WorkflowValidationBanner.vue` + `@focus-error`.
+
+#### Issue: Inserir nó na aresta sempre cria “Ação”
+**Status**: ✅ Implementado (ago/2026)
+**Current State**: `+` abre picker de tipo (exceto gatilho); clique na aresta também mostra toolbar (touch-friendly).
+**Problem**: Forçar ação quebrava o fluxo mental.
+**Recommendation**: Mantido — popover no `+`.
+**Impact**: Construção linear do fluxo.
+**Implementation Notes**: `openEdgeInsertPicker` / `insertNodeOnEdge` em `WorkflowCanvas.vue`.
+
+---
+
+### High Priority Improvements
+
+#### Issue: Painel de propriedades some ao desmarcar nó
+**Current State**: `v-if="selectedNode"` — sem seleção, só canvas.
+**Problem**: Perde âncora de contexto. n8n/Make mantêm inspector com empty state (“Selecione um passo” + atalhos).
+**Recommendation**: Painel sempre visível; empty state com: último nó editado, checklist do fluxo (gatilho? ramos conectados?), atalho “Adicionar passo”.
+**Impact**: Menos “sumiu tudo, e agora?”.
+
+#### Issue: Catálogo de ações é `<select>` plano
+**Current State**: `WORKFLOW_ACTION_TYPES` num select longo; labels mistos PT hardcoded vs i18n.
+**Problem**: Hick’s Law — muitas opções sem busca/agrupamento. Zapier: search + categorias (Mensagem, CRM, Equipe…).
+**Recommendation**: Combobox com busca + grupos (Mensagens · Atribuição · CRM · Integrações · IA). Remover strings hardcoded do panel (`Atendente`, `Pipeline e Estágio`, etc.) → i18n.
+**Impact**: Achados de ação 3–5× mais rápidos; menos erro de escolha.
+
+#### Issue: Dualidade Salvar / Salvar e ativar / Toggle Active
+**Current State**: Três controles de “estado de vida” do fluxo na toolbar.
+**Problem**: Modelo mental confuso: “salvei mas não está ativo?”, “ativei sem salvar o grafo?”.
+**Recommendation** (se draft/publish ainda não vier):
+- Um primário: **Salvar**
+- Um secundário claro: **Ativar** / **Desativar** (não misturar com save)
+- Remover “Salvar e ativar” **ou** torná-lo o único caminho de go-live
+**Impact**: Menos estados inconsistentes na cabeça do usuário.
+
+#### Issue: Simulação desconectada do canvas
+**Current State**: `WorkflowSimulateModal` — timeline em modal; canvas não destaca o passo atual.
+**Problem**: Operador não “vê” o caminho no diagrama. n8n/Typebot highlightam nós durante o teste.
+**Recommendation**: Painel lateral de simulação; highlight + scroll-to-node a cada step; decisões de branch inline no nó (não só no modal).
+**Impact**: Confiança antes de ativar (“eu entendi o que vai acontecer”).
+
+#### Issue: Toolbar da aresta só no hover
+**Status**: ✅ Parcial (ago/2026) — clique na aresta mostra toolbar; botões compactos no midpoint; âncoras idle ocultas; `+`/lixeira no hover do nó (estilo ManyChat/n8n).
+**Current State**: `hideAnchors: true` + chrome de nó (`+` próximo passo, lixeira); toolbar de aresta 20px no meio da linha.
+**Problem**: Bolinhas de porta confundiam operadores de atendimento.
+**Impact**: Conectar = “próximo passo”, não “arrastar fio entre dots”.
+
+#### Issue: Clique na paleta joga nó em posição aleatória
+**Status**: ✅ Implementado (ago/2026)
+**Current State**: Clique insere à direita do selecionado (ou folha com saída livre / centro da viewport) com auto-conexão; drop usa `clientToCanvasPoint` corretamente.
+**Problem**: Antes: coords absolutas `(300±random)` + drop com `getPointByClient` errado → nó longe da área de trabalho.
+**Impact**: Construir atendimento vira “adicionar próximo passo”.
+**Implementation Notes**: `workflowNodePlacement.js` + `WorkflowCanvas.addNode` / `onCanvasDrop`.
+
+---
+
+### Medium Priority Enhancements
+
+| # | Melhoria | Por quê (benchmark) |
+|---|----------|---------------------|
+| 1 | Undo/Redo visível na toolbar (+ tooltip Ctrl/Cmd+Z) | LogicFlow pode ter history; hoje é invisível |
+| 2 | Outline / lista de passos (minimap leve) | Fluxos longos de atendimento; Make tem overview |
+| 3 | Testar passo (não só WhatsApp externo) | Zapier “Test step” reduz medo de publicar |
+| 4 | Linguagem humana na paleta: “Se (IF)” → “Se… então” | ManyChat evita jargão de programador |
+| 5 | Empty state do canvas novo: 3 CTAs (gatilho WhatsApp / form / CRM) | Onboarding sem tour forçado |
+| 6 | Banner readonly duplicado (faixa + pill no canvas) → um só + CTA “Desativar para editar” | Menos chrome (anti-pattern do design system) |
+| 7 | Descrição do fluxo editável (hoje quase só nome na toolbar) | Operador nomeia mal; descrição ajuda equipe |
+| 8 | Atalho Cmd/Ctrl+S documentado + feedback “Salvo” mais forte | Expectativa de apps modernos |
+| 9 | Condições: modo simples (1–2 filtros) + “Avançado” | Progressive disclosure; FilterInput assusta |
+| 10 | Deep link `?nodeId=` para abrir nó com erro/share | Deep linking guideline (Medium) |
+
+---
+
+### Low Priority Suggestions
+
+- Agrupar nós de IA sob um único “Assistente” com subtipo (reduz paleta)
+- Preview da mensagem no card do nó (ManyChat mostra 1ª linha no bubble)
+- Contador “N passos · M ramos” no header
+- Preferência “encaixar ao adicionar” (auto-layout leve, sem forçar)
+
+---
+
+### Positive Observations (preservar)
+
+- Status Salvo / Não salvo / Salvando na toolbar — bom feedback de dirty state
+- Highlight de nós inválidos + focus no primeiro erro ao salvar
+- Confirmação de ativação com conflito de automações legadas (`WorkflowActivateConfirmModal`)
+- Settings do fluxo já melhorados (abas Cliente · Inscrição · Equipe · Re-entrada)
+- `prefers-reduced-motion` respeitado nas transitions do editor
+- Inserir/`+` na aresta e zoom/fit — base certa de canvas moderno
+- Teste de WhatsApp externo no painel — padrão “test step” a expandir
+
+---
+
+### Priorização sugerida (ROI usabilidade)
+
+| Ordem | Item | Esforço | Ganho usuário |
+|------:|------|---------|---------------|
+| 1 | Lista clicável de erros de validação | P | Alto |
+| 2 | Picker de tipo no `+` da aresta | P | Alto |
+| 3 | ~~Inserir próximo ao selecionado + auto-conectar~~ ✅ | — | — |
+| 4 | Simplificar Salvar vs Ativar (ou draft/publish) | M–G | Crítico |
+| 5 | Combobox de ações com busca/grupos | M | Alto |
+| 6 | Simulação ligada ao canvas | M | Alto |
+| 7 | Inspector persistente (empty state) | P | Médio |
+| 8 | Edge toolbar por click (não só hover) | P | Médio |
+
+### Arquivos principais
+
+```
+app/javascript/dashboard/routes/dashboard/settings/workflows/WorkflowEditor.vue
+app/javascript/dashboard/routes/dashboard/settings/workflows/WorkflowCanvas.vue
+app/javascript/dashboard/routes/dashboard/settings/workflows/WorkflowPropertiesPanel.vue
+app/javascript/dashboard/routes/dashboard/settings/workflows/WorkflowValidationBanner.vue
+app/javascript/dashboard/routes/dashboard/settings/workflows/WorkflowSimulateModal.vue
+app/javascript/dashboard/routes/dashboard/settings/workflows/constants.js
+```
+

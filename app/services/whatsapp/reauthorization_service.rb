@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
 class Whatsapp::ReauthorizationService
-  def initialize(account:, inbox_id:, phone_number_id:, business_id:)
+  def initialize(account:, inbox_id:, phone_number_id:, business_id:, waba_id: nil)
     @account = account
     @inbox_id = inbox_id
     @phone_number_id = phone_number_id
     @business_id = business_id
+    @waba_id = waba_id
   end
 
   def perform(access_token, phone_info)
@@ -29,12 +30,14 @@ class Whatsapp::ReauthorizationService
 
   def update_channel_config(channel, access_token, phone_info)
     current_config = channel.provider_config || {}
+    waba_id = @waba_id.presence || current_config['business_account_id']
     channel.provider_config = current_config.merge(
       'api_key' => access_token,
       'phone_number_id' => @phone_number_id,
-      'business_account_id' => @business_id,
+      'business_account_id' => waba_id,
+      'meta_business_id' => @business_id,
       'source' => 'embedded_signup'
-    )
+    ).compact
     channel.save!
 
     # Update inbox name if business name changed

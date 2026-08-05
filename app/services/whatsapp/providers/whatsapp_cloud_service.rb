@@ -25,21 +25,29 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
   end
 
   def sync_templates
-    # ensuring that channels with wrong provider config wouldn't keep trying to sync templates
-    whatsapp_channel.mark_message_templates_updated
-    templates = fetch_whatsapp_templates("#{business_account_path}/message_templates?access_token=#{whatsapp_channel.provider_config['api_key']}")
-    whatsapp_channel.update(message_templates: templates, message_templates_last_updated: Time.now.utc) if templates.present?
+    templates = fetch_whatsapp_templates
+    whatsapp_channel.update_columns(
+      message_templates: templates,
+      message_templates_last_updated: Time.now.utc
+    )
   end
 
-  def fetch_whatsapp_templates(url)
-    response = HTTParty.get(url)
-    return [] unless response.success?
+  def fetch_whatsapp_templates(url = nil)
+    url ||= "#{business_account_path}/message_templates"
+    headers = url.include?('access_token=') ? {} : api_headers
+    response = HTTParty.get(url, headers: headers)
 
-    next_url = next_url(response)
+    unless response.success?
+      Rails.logger.error "[WHATSAPP] Template sync failed for channel #{whatsapp_channel.id}: #{response.code} - #{response.body}"
+      raise StandardError, template_sync_error_message(response)
+    end
 
-    return response['data'] + fetch_whatsapp_templates(next_url) if next_url.present?
+    data = response['data'] || []
+    next_page = next_url(response)
 
-    response['data']
+    return data + fetch_whatsapp_templates(next_page) if next_page.present?
+
+    data
   end
 
   def next_url(response)
@@ -47,7 +55,7 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
   end
 
   def validate_provider_config?
-    response = HTTParty.get("#{business_account_path}/message_templates?access_token=#{whatsapp_channel.provider_config['api_key']}")
+    response = HTTParty.get("#{business_account_path}/message_templates", headers: api_headers)
     response.success?
   end
 
@@ -100,7 +108,17 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
   end
 
   def business_account_path
-    "#{api_base_path}/v14.0/#{whatsapp_channel.provider_config['business_account_id']}"
+    "#{api_base_path}/#{api_version}/#{whatsapp_channel.provider_config['business_account_id']}"
+  end
+
+  def api_version
+    GlobalConfigService.load('WHATSAPP_API_VERSION', 'v22.0')
+  end
+
+  def template_sync_error_message(response)
+    parsed = response.parsed_response
+    error = parsed.is_a?(Hash) ? parsed['error'] : nil
+    error&.dig('message') || 'Failed to sync WhatsApp templates'
   end
 
   def send_text_message(phone_number, message)

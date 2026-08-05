@@ -36,9 +36,10 @@
             "TAB_SYNC_SUBTITLE": "Importe las plantillas aprobadas a este inbox.",
             "CREATE_TEMPLATES": "Crear Templates",
             "SYNC_BUTTON": "Sincronizar",
-            "SYNC_SUCCESS": "Plantillas sincronizadas.",
+            "SYNC_SUCCESS": "%{count} plantilla(s) aprobada(s) sincronizada(s).",
             "SYNC_ERROR": "Error al sincronizar.",
             "TEMPLATES_COUNT": "%{count} plantilla(s) aprobada(s)",
+            "PENDING_TEMPLATES_COUNT": "%{count} plantilla(s) pendiente(s) de aprobación",
             "PICKER_EMPTY": "Ninguna plantilla aprobada.",
             "PICKER_SETTINGS_LINK": "Configurar en Templates"
         }

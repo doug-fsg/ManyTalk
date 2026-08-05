@@ -18,6 +18,8 @@ import {
   registerWorkflowNodes,
   getLogicFlowTheme,
   WORKFLOW_LF_NODE_TYPE,
+  WORKFLOW_NODE_WIDTH,
+  WORKFLOW_NODE_HEIGHT,
   isBranchNodeType,
   anchorIdToSourceHandle,
   sourceHandleLabel,
@@ -43,6 +45,19 @@ import {
   resetCanvasZoom,
   zoomCanvasByStep,
 } from './workflowCanvasViewport';
+import {
+  clientToCanvasPoint,
+  CONNECT_DRAG_THRESHOLD,
+  CONNECT_NODE_HIT_PAD,
+  CONNECT_SNAP_DISTANCE,
+  findClearPosition,
+  getAllFreeOutboundAnchors,
+  getFreeOutboundAnchor,
+  NODE_INSERT_GAP_X,
+  NODE_STUB_LENGTH,
+  offsetYForSourceAnchor,
+  resolvePaletteInsertPlacement,
+} from './workflowNodePlacement';
 
 export default {
   name: 'WorkflowCanvas',
@@ -68,6 +83,17 @@ export default {
       edgeToolbar: null,
       edgeToolbarHovering: false,
       edgeToolbarHideTimer: null,
+      edgeInsertPicker: null,
+      /** n8n-style dangling stubs: [{ nodeId, sourceAnchorId, x1,y1,x2,y2, plusLeft, plusTop }] */
+      outputStubs: [],
+      connectPreview: null,
+      stubPointer: null,
+      /** Input-port hints while dragging a connection: [{ nodeId, cx, cy }] */
+      connectTargetHints: [],
+      connectHoverNodeId: null,
+      /** Node hover trash overlay: { nodeId, left, top } or null */
+      hoveredNode: null,
+      nodeHoverTimer: null,
       zoomPercent: 100,
       showAiUpsellModal: false,
     };
@@ -75,6 +101,8 @@ export default {
   created() {
     this.debouncedEmitGraphChange = debounce(this.emitGraphChangeNow, 300);
     this.debouncedResizeCanvas = debounce(this.resizeCanvasNow, 150);
+    this.onStubPointerMove = this.onStubPointerMove.bind(this);
+    this.onStubPointerUp = this.onStubPointerUp.bind(this);
   },
   computed: {
     ...mapGetters({
@@ -96,10 +124,22 @@ export default {
       });
       return groups;
     },
+    /** Mid-edge insert: never add a second trigger. */
+    insertablePaletteItems() {
+      return WORKFLOW_NODE_PALETTE.filter(item => {
+        if (item.type === 'trigger') return false;
+        if (this.isAiNodeType(item.type) && !this.isAiFeatureEnabled) return false;
+        return true;
+      });
+    },
     canvasHostClass() {
       const classes = [this.isDarkMode ? 'workflow-canvas--dark' : 'workflow-canvas--light'];
       if (this.isDropActive) classes.push('workflow-canvas-host--drop-active');
+      if (this.connectPreview) classes.push('workflow-canvas-host--connecting');
       return classes.join(' ');
+    },
+    showOutputStubs() {
+      return !this.readOnly && this.outputStubs.length > 0;
     },
   },
   watch: {
@@ -153,6 +193,7 @@ export default {
     if (this.themeObserver) this.themeObserver.disconnect();
     window.removeEventListener('resize', this.debouncedResizeCanvas);
     if (this.edgeToolbarHideTimer) clearTimeout(this.edgeToolbarHideTimer);
+    this.teardownStubPointerListeners();
     if (this.lf) {
       if (typeof this.lf.clearData === 'function') {
         this.lf.clearData();
@@ -196,6 +237,9 @@ export default {
         this.onEdgeAdded(data);
       });
 
+      this.lf.on('edge:click', ({ data }) => {
+        this.onEdgeSelected(data);
+      });
       this.lf.on('edge:mouseenter', ({ data }) => {
         this.onEdgeMouseEnter(data);
       });
@@ -204,14 +248,50 @@ export default {
       });
       this.lf.on('graph:transform', () => {
         this.syncZoomLevel();
+        this.refreshOutputStubs();
+        this.refreshNodeHoverPosition();
+        if (this.edgeToolbar && this.edgeToolbar.edgeId) {
+          this.updateEdgeToolbarPosition(this.edgeToolbar.edgeId);
+        }
+        if (this.edgeInsertPicker?.mode === 'edge' && this.edgeInsertPicker.edgeId) {
+          this.updateEdgeInsertPickerPosition(this.edgeInsertPicker.edgeId);
+        }
+        if (this.edgeInsertPicker?.mode === 'node') {
+          this.updateNodeInsertPickerPosition();
+        }
+      });
+
+      this.lf.on('node:drag', () => {
+        this.refreshOutputStubs();
+        this.clearNodeHover();
         if (this.edgeToolbar && this.edgeToolbar.edgeId) {
           this.updateEdgeToolbarPosition(this.edgeToolbar.edgeId);
         }
       });
+
+      this.lf.on('node:mouseenter', ({ data }) => {
+        if (!this.readOnly) this.onNodeMouseEnter(data);
+      });
+      this.lf.on('node:mouseleave', () => {
+        this.scheduleHideNodeHover();
+      });
+    },
+
+    onEdgeSelected(edgeData) {
+      if (this.readOnly || !edgeData) return;
+      if (this.edgeToolbarHideTimer) {
+        clearTimeout(this.edgeToolbarHideTimer);
+        this.edgeToolbarHideTimer = null;
+      }
+      this.edgeInsertPicker = null;
+      this.edgeToolbar = { edgeId: edgeData.id };
+      this.updateEdgeToolbarPosition(edgeData.id);
     },
 
     onEdgeMouseEnter(edgeData) {
-      if (this.readOnly || !edgeData) return;
+      if (this.readOnly || !edgeData || this.edgeInsertPicker || this.connectPreview) {
+        return;
+      }
       if (this.edgeToolbarHideTimer) {
         clearTimeout(this.edgeToolbarHideTimer);
         this.edgeToolbarHideTimer = null;
@@ -221,16 +301,19 @@ export default {
     },
 
     scheduleHideEdgeToolbar() {
-      if (this.edgeToolbarHovering) return;
+      if (this.edgeToolbarHovering || this.edgeInsertPicker) return;
       if (this.edgeToolbarHideTimer) clearTimeout(this.edgeToolbarHideTimer);
       this.edgeToolbarHideTimer = setTimeout(() => {
-        if (!this.edgeToolbarHovering) this.edgeToolbar = null;
+        if (!this.edgeToolbarHovering && !this.edgeInsertPicker) {
+          this.edgeToolbar = null;
+        }
       }, 320);
     },
 
     hideEdgeToolbar() {
       this.edgeToolbarHovering = false;
       this.edgeToolbar = null;
+      this.edgeInsertPicker = null;
       if (this.edgeToolbarHideTimer) {
         clearTimeout(this.edgeToolbarHideTimer);
         this.edgeToolbarHideTimer = null;
@@ -258,10 +341,485 @@ export default {
       this.emitGraphChangeNow();
     },
 
-    insertNodeOnHoveredEdge() {
-      if (!this.lf || !this.edgeToolbar || this.readOnly) return;
+    focusInsertPicker() {
+      this.$nextTick(() => {
+        const picker = this.$el?.querySelector?.('.workflow-edge-insert-picker');
+        if (picker && typeof picker.focus === 'function') picker.focus();
+      });
+    },
 
+    openEdgeInsertPicker() {
+      if (!this.lf || !this.edgeToolbar || this.readOnly) return;
       const edgeId = this.edgeToolbar.edgeId;
+      this.edgeInsertPicker = { mode: 'edge', edgeId };
+      this.updateEdgeInsertPickerPosition(edgeId);
+      this.focusInsertPicker();
+    },
+
+    openNodeNextStepPicker(nodeId, sourceAnchorId) {
+      if (!this.lf || !nodeId || this.readOnly) return;
+      this.hideEdgeToolbar();
+      this.edgeInsertPicker = {
+        mode: 'node',
+        nodeId,
+        sourceAnchorId,
+      };
+      this.updateNodeInsertPickerPosition();
+      this.focusInsertPicker();
+    },
+
+    closeEdgeInsertPicker() {
+      const picker = this.edgeInsertPicker;
+      this.edgeInsertPicker = null;
+      if (!picker || this.readOnly) return;
+
+      if (picker.mode === 'edge' && picker.edgeId) {
+        this.edgeToolbar = { edgeId: picker.edgeId };
+        this.updateEdgeToolbarPosition(picker.edgeId);
+      }
+    },
+
+    onEdgeInsertPickerKeydown(event) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.closeEdgeInsertPicker();
+      }
+    },
+
+    updateEdgeInsertPickerPosition(edgeId) {
+      if (!this.lf || !this.$refs.canvasWrapper) return;
+      const edgeModel = this.lf.getEdgeModelById(edgeId);
+      const graphPoint = getEdgeGraphMidpoint(edgeModel);
+      const overlay = graphPointToOverlayPoint(this.lf, graphPoint);
+      if (!overlay) return;
+
+      this.edgeInsertPicker = {
+        ...(this.edgeInsertPicker || {}),
+        mode: 'edge',
+        edgeId,
+        left: overlay.left,
+        top: overlay.top,
+      };
+    },
+
+    updateNodeInsertPickerPosition() {
+      if (!this.lf || !this.edgeInsertPicker || this.edgeInsertPicker.mode !== 'node') {
+        return;
+      }
+      const { nodeId, sourceAnchorId } = this.edgeInsertPicker;
+      const stub = this.outputStubs.find(
+        item => item.nodeId === nodeId && item.sourceAnchorId === sourceAnchorId
+      );
+      if (stub) {
+        this.edgeInsertPicker = {
+          ...this.edgeInsertPicker,
+          left: stub.plusLeft + 14,
+          top: stub.plusTop,
+        };
+        return;
+      }
+
+      const model = this.lf.getNodeModelById(nodeId);
+      if (!model) return;
+      const anchors =
+        typeof model.getDefaultAnchor === 'function' ? model.getDefaultAnchor() : [];
+      const anchor = anchors.find(item => item.id === sourceAnchorId);
+      const graphPoint = anchor
+        ? { x: anchor.x + NODE_STUB_LENGTH, y: anchor.y }
+        : { x: model.x + model.width / 2 + NODE_STUB_LENGTH, y: model.y };
+      const overlay = graphPointToOverlayPoint(this.lf, graphPoint);
+      if (!overlay) return;
+
+      this.edgeInsertPicker = {
+        ...this.edgeInsertPicker,
+        left: overlay.left + 14,
+        top: overlay.top,
+      };
+    },
+
+    selectEdgeInsertType(paletteItem) {
+      if (!paletteItem || this.readOnly) return;
+      if (this.isAiNodeType(paletteItem.type) && !this.isAiFeatureEnabled) {
+        this.showAiUpsellModal = true;
+        return;
+      }
+
+      if (this.edgeInsertPicker?.mode === 'node') {
+        this.addNextStepFromNode(
+          this.edgeInsertPicker.nodeId,
+          this.edgeInsertPicker.sourceAnchorId,
+          paletteItem
+        );
+        return;
+      }
+
+      const edgeId = this.edgeInsertPicker?.edgeId || this.edgeToolbar?.edgeId;
+      if (!edgeId) return;
+      this.insertNodeOnEdge(edgeId, paletteItem);
+    },
+
+    addNextStepFromNode(nodeId, sourceAnchorId, paletteItem) {
+      if (!this.lf || this.readOnly || !nodeId || !paletteItem) return;
+      if (paletteItem.type === 'trigger') return;
+
+      const source = this.lf.getNodeModelById(nodeId);
+      if (!source) return;
+
+      const offsetY = offsetYForSourceAnchor(sourceAnchorId);
+      const target = findClearPosition(
+        this.lf,
+        source.x + WORKFLOW_NODE_WIDTH + NODE_INSERT_GAP_X,
+        source.y + offsetY
+      );
+
+      this.edgeInsertPicker = null;
+      this.addNodeAt(paletteItem, target.x, target.y, {
+        connectFromId: nodeId,
+        sourceAnchorId: sourceAnchorId || workflowAnchorOutId(nodeId),
+        focus: true,
+      });
+    },
+
+    refreshOutputStubs() {
+      if (!this.lf || this.readOnly) {
+        this.outputStubs = [];
+        return;
+      }
+
+      const nodes = this.lf.graphModel?.nodes || [];
+      const stubs = [];
+
+      nodes.forEach(node => {
+        if (!node?.id || !Number.isFinite(node.x)) return;
+        const freeOuts = getAllFreeOutboundAnchors(this.lf, node.id);
+        if (!freeOuts.length) return;
+
+        const anchors =
+          typeof node.getDefaultAnchor === 'function' ? node.getDefaultAnchor() : [];
+
+        freeOuts.forEach(slot => {
+          const anchor = anchors.find(item => item.id === slot.sourceAnchorId);
+          if (!anchor) return;
+
+          const from = graphPointToOverlayPoint(this.lf, {
+            x: anchor.x,
+            y: anchor.y,
+          });
+          const to = graphPointToOverlayPoint(this.lf, {
+            x: anchor.x + NODE_STUB_LENGTH,
+            y: anchor.y,
+          });
+          if (!from || !to) return;
+
+          stubs.push({
+            nodeId: node.id,
+            sourceAnchorId: slot.sourceAnchorId,
+            x1: from.left,
+            y1: from.top,
+            x2: to.left,
+            y2: to.top,
+            plusLeft: to.left,
+            plusTop: to.top,
+          });
+        });
+      });
+
+      this.outputStubs = stubs;
+    },
+
+    teardownStubPointerListeners() {
+      window.removeEventListener('pointermove', this.onStubPointerMove);
+      window.removeEventListener('pointerup', this.onStubPointerUp);
+      window.removeEventListener('pointercancel', this.onStubPointerUp);
+      const captureEl = this.stubPointer?.captureEl;
+      const pointerId = this.stubPointer?.pointerId;
+      if (captureEl && pointerId != null) {
+        try {
+          captureEl.releasePointerCapture(pointerId);
+        } catch (e) {
+          /* ignore */
+        }
+      }
+      this.stubPointer = null;
+      this.connectPreview = null;
+      this.connectTargetHints = [];
+      this.connectHoverNodeId = null;
+    },
+
+    buildConnectTargetHints(sourceNodeId) {
+      if (!this.lf) return [];
+      const nodes = this.lf.graphModel?.nodes || [];
+      const hints = [];
+
+      nodes.forEach(node => {
+        if (!node?.id || node.id === sourceNodeId) return;
+        if (node.properties?.workflowNodeType === 'trigger') return;
+        if (!Number.isFinite(node.x)) return;
+
+        const anchors =
+          typeof node.getDefaultAnchor === 'function' ? node.getDefaultAnchor() : [];
+        const input = anchors.find(item => String(item.id).endsWith('_in'));
+        if (!input) return;
+
+        const overlay = graphPointToOverlayPoint(this.lf, {
+          x: input.x,
+          y: input.y,
+        });
+        if (!overlay) return;
+
+        hints.push({
+          nodeId: node.id,
+          graphX: input.x,
+          graphY: input.y,
+          cx: overlay.left,
+          cy: overlay.top,
+        });
+      });
+
+      return hints;
+    },
+
+    onNodeMouseEnter(data) {
+      if (!data?.id || !this.lf) return;
+      if (this.nodeHoverTimer) {
+        clearTimeout(this.nodeHoverTimer);
+        this.nodeHoverTimer = null;
+      }
+      const nodeModel =
+        this.lf.getNodeModelById?.(data.id) || data;
+      if (!nodeModel || !Number.isFinite(nodeModel.x)) return;
+
+      const overlay = graphPointToOverlayPoint(this.lf, {
+        x: nodeModel.x,
+        y: nodeModel.y - (nodeModel.height || 84) / 2,
+      });
+      if (!overlay) return;
+
+      this.hoveredNode = {
+        nodeId: data.id,
+        left: overlay.left,
+        top: overlay.top,
+      };
+    },
+
+    scheduleHideNodeHover() {
+      if (this.nodeHoverTimer) clearTimeout(this.nodeHoverTimer);
+      this.nodeHoverTimer = setTimeout(() => {
+        this.hoveredNode = null;
+        this.nodeHoverTimer = null;
+      }, 280);
+    },
+
+    keepNodeHover() {
+      if (this.nodeHoverTimer) {
+        clearTimeout(this.nodeHoverTimer);
+        this.nodeHoverTimer = null;
+      }
+    },
+
+    clearNodeHover() {
+      if (this.nodeHoverTimer) clearTimeout(this.nodeHoverTimer);
+      this.nodeHoverTimer = null;
+      this.hoveredNode = null;
+    },
+
+    refreshNodeHoverPosition() {
+      if (!this.hoveredNode || !this.lf) return;
+      const nodeModel = this.lf.getNodeModelById?.(this.hoveredNode.nodeId);
+      if (!nodeModel || !Number.isFinite(nodeModel.x)) return;
+      const overlay = graphPointToOverlayPoint(this.lf, {
+        x: nodeModel.x,
+        y: nodeModel.y - (nodeModel.height || 84) / 2,
+      });
+      if (!overlay) return;
+      this.hoveredNode = { ...this.hoveredNode, left: overlay.left, top: overlay.top };
+    },
+
+    deleteHoveredNode() {
+      if (!this.lf || !this.hoveredNode || this.readOnly) return;
+      const { nodeId } = this.hoveredNode;
+      this.clearNodeHover();
+      this.lf.deleteNode(nodeId);
+      if (this.selectedNode?.id === nodeId) {
+        this.selectedNode = null;
+        this.$emit('node-selected', null);
+      }
+      this.refreshOutputStubs();
+      this.emitGraphChangeNow();
+    },
+
+    onStubPlusPointerDown(stub, event) {
+      if (this.readOnly || event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      this.hideEdgeToolbar();
+      this.clearNodeHover();
+
+      const target = event.currentTarget;
+      if (target && typeof target.setPointerCapture === 'function') {
+        try {
+          target.setPointerCapture(event.pointerId);
+        } catch (e) {
+          /* ignore */
+        }
+      }
+
+      this.stubPointer = {
+        stub,
+        startX: event.clientX,
+        startY: event.clientY,
+        dragging: false,
+        pointerId: event.pointerId,
+        captureEl: target,
+      };
+      window.addEventListener('pointermove', this.onStubPointerMove, { passive: false });
+      window.addEventListener('pointerup', this.onStubPointerUp);
+      window.addEventListener('pointercancel', this.onStubPointerUp);
+    },
+
+    onStubPointerMove(event) {
+      const state = this.stubPointer;
+      if (!state) return;
+
+      const dist = Math.hypot(
+        event.clientX - state.startX,
+        event.clientY - state.startY
+      );
+      if (!state.dragging && dist < CONNECT_DRAG_THRESHOLD) return;
+
+      if (!state.dragging) {
+        state.dragging = true;
+        this.connectTargetHints = this.buildConnectTargetHints(state.stub.nodeId);
+      }
+
+      event.preventDefault();
+
+      const wrapper = this.$refs.canvasWrapper?.getBoundingClientRect?.();
+      if (!wrapper) return;
+
+      const target = this.findConnectTargetAtClient(event.clientX, event.clientY, state.stub.nodeId);
+      this.connectHoverNodeId = target?.id || null;
+
+      let x2 = event.clientX - wrapper.left;
+      let y2 = event.clientY - wrapper.top;
+      if (target) {
+        const hint = this.connectTargetHints.find(item => item.nodeId === target.id);
+        if (hint) {
+          x2 = hint.cx;
+          y2 = hint.cy;
+        }
+      }
+
+      this.connectPreview = {
+        x1: state.stub.x1,
+        y1: state.stub.y1,
+        x2,
+        y2,
+      };
+    },
+
+    onStubPointerUp(event) {
+      const state = this.stubPointer;
+      const wasDragging = Boolean(state?.dragging);
+      const stub = state?.stub;
+      if (!state || !stub || this.readOnly) {
+        this.teardownStubPointerListeners();
+        return;
+      }
+
+      if (!wasDragging) {
+        this.teardownStubPointerListeners();
+        this.openNodeNextStepPicker(stub.nodeId, stub.sourceAnchorId);
+        return;
+      }
+
+      // Resolve target before teardown clears connectTargetHints.
+      const target = this.findConnectTargetAtClient(
+        event.clientX,
+        event.clientY,
+        stub.nodeId
+      );
+      this.teardownStubPointerListeners();
+      if (!target) return;
+      this.connectStubToNode(stub, target);
+    },
+
+    findConnectTargetAtClient(clientX, clientY, sourceNodeId) {
+      if (!this.lf) return null;
+      const point = clientToCanvasPoint(this.lf, clientX, clientY);
+      if (!point) return null;
+
+      let best = null;
+      let bestDist = Infinity;
+
+      // Prefer snapping to an input port when the cursor is near it.
+      this.connectTargetHints.forEach(hint => {
+        const dist = Math.hypot(point.x - hint.graphX, point.y - hint.graphY);
+        if (dist < CONNECT_SNAP_DISTANCE && dist < bestDist) {
+          bestDist = dist;
+          best = this.lf.getNodeModelById?.(hint.nodeId) || null;
+        }
+      });
+      if (best) return best;
+
+      const nodes = this.lf.graphModel?.nodes || [];
+      for (let i = nodes.length - 1; i >= 0; i -= 1) {
+        const node = nodes[i];
+        if (!node || node.id === sourceNodeId || !Number.isFinite(node.x)) continue;
+        if (node.properties?.workflowNodeType === 'trigger') continue;
+
+        const halfW = (node.width || WORKFLOW_NODE_WIDTH) / 2 + CONNECT_NODE_HIT_PAD;
+        const halfH = (node.height || WORKFLOW_NODE_HEIGHT) / 2 + CONNECT_NODE_HIT_PAD;
+        if (
+          point.x >= node.x - halfW &&
+          point.x <= node.x + halfW &&
+          point.y >= node.y - halfH &&
+          point.y <= node.y + halfH
+        ) {
+          return node;
+        }
+      }
+      return null;
+    },
+
+    connectStubToNode(stub, targetNode) {
+      if (!this.lf || !stub || !targetNode) return;
+      if (stub.nodeId === targetNode.id) return;
+
+      const targetType = targetNode.properties?.workflowNodeType;
+      if (targetType === 'trigger') {
+        useAlert(this.$t('WORKFLOW.EDITOR.EDGE_CONNECT_TRIGGER_FORBIDDEN'));
+        return;
+      }
+
+      const existing = (this.lf.getGraphData()?.edges || []).some(edge => {
+        if (edge.sourceNodeId !== stub.nodeId) return false;
+        const model = this.lf.getEdgeModelById(edge.id);
+        const anchorId = edge.sourceAnchorId || model?.sourceAnchorId;
+        return anchorId === stub.sourceAnchorId;
+      });
+      if (existing) {
+        useAlert(this.$t('WORKFLOW.EDITOR.EDGE_DUPLICATE_BRANCH'));
+        return;
+      }
+
+      const edge = this.lf.addEdge({
+        type: WORKFLOW_EDGE_TYPE,
+        sourceNodeId: stub.nodeId,
+        targetNodeId: targetNode.id,
+        sourceAnchorId: stub.sourceAnchorId,
+        targetAnchorId: workflowAnchorInId(targetNode.id),
+      });
+
+      if (!edge) return;
+
+      this.refreshOutputStubs();
+      this.emitGraphChangeNow();
+    },
+
+    insertNodeOnEdge(edgeId, paletteItem) {
+      if (!this.lf || this.readOnly || !paletteItem) return;
+
       const edgeModel = this.lf.getEdgeModelById(edgeId);
       if (!edgeModel) return;
 
@@ -270,14 +828,9 @@ export default {
       const targetId = edgeData.targetNodeId;
       const sourceAnchorId = this.resolveEdgeSourceAnchorId(edgeData);
 
-      const mx =
-        (edgeModel.startPoint.x + edgeModel.endPoint.x) / 2;
-      const my =
-        (edgeModel.startPoint.y + edgeModel.endPoint.y) / 2;
+      const mx = (edgeModel.startPoint.x + edgeModel.endPoint.x) / 2;
+      const my = (edgeModel.startPoint.y + edgeModel.endPoint.y) / 2;
 
-      const paletteItem =
-        WORKFLOW_NODE_PALETTE.find(item => item.type === 'action') ||
-        WORKFLOW_NODE_PALETTE[WORKFLOW_NODE_PALETTE.length - 1];
       const newId = nextNodeId();
       const defaultData = this.defaultNodeData(paletteItem.type);
 
@@ -295,7 +848,7 @@ export default {
       const targetAnchorId = workflowAnchorInId(targetId);
       const newOutAnchorId = workflowAnchorOutId(newId);
 
-      this.lf.createEdge({
+      this.lf.addEdge({
         type: WORKFLOW_EDGE_TYPE,
         sourceNodeId: sourceId,
         targetNodeId: newId,
@@ -303,7 +856,7 @@ export default {
         targetAnchorId: workflowAnchorInId(newId),
       });
 
-      this.lf.createEdge({
+      this.lf.addEdge({
         type: WORKFLOW_EDGE_TYPE,
         sourceNodeId: newId,
         targetNodeId: targetId,
@@ -454,12 +1007,16 @@ export default {
       const paletteItem = WORKFLOW_NODE_PALETTE.find(p => p.type === type);
       if (!paletteItem) return;
 
-      const rect = this.$refs.canvas.getBoundingClientRect();
-      const point = this.lf.getPointByClient({
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top,
+      // LogicFlow getPointByClient expects raw clientX/Y and returns
+      // { canvasOverlayPosition } — relative subtraction was placing nodes off-screen.
+      const point = clientToCanvasPoint(this.lf, event.clientX, event.clientY);
+      if (!point) return;
+
+      const connectOpts = this.buildConnectOptionsFromSelection(paletteItem.type);
+      this.addNodeAt(paletteItem, point.x, point.y, {
+        ...connectOpts,
+        focus: false,
       });
-      this.addNodeAt(paletteItem, point.x, point.y);
     },
 
     applyTheme() {
@@ -479,10 +1036,20 @@ export default {
 
     applyReadOnlyMode(readOnly) {
       if (!this.lf) return;
-      this.lf.updateEditConfig({ isSilentMode: readOnly });
+      this.lf.updateEditConfig({
+        isSilentMode: readOnly,
+        hideAnchors: true,
+      });
       if (this.lf.keyboard) {
         if (readOnly) this.lf.keyboard.disable();
         else this.lf.keyboard.enable(true);
+      }
+      if (readOnly) {
+        this.hideEdgeToolbar();
+        this.outputStubs = [];
+        this.teardownStubPointerListeners();
+      } else {
+        this.refreshOutputStubs();
       }
     },
 
@@ -512,6 +1079,7 @@ export default {
         this.lastSyncedGraphSnapshot = workflowGraphSnapshot(graph);
         this.applyInvalidHighlights();
         this.zoomPercent = applyInitialCanvasViewport(this.lf);
+        this.refreshOutputStubs();
         this.suspendGraphSync = false;
       });
     },
@@ -541,10 +1109,14 @@ export default {
       if (this.suspendGraphSync || !this.lf) return;
       const graph = exportGraphFromLogicFlow(this.lf, this.graph);
       const snapshot = workflowGraphSnapshot(graph);
-      if (snapshot === this.lastSyncedGraphSnapshot) return;
+      if (snapshot === this.lastSyncedGraphSnapshot) {
+        this.refreshOutputStubs();
+        return;
+      }
 
       this.lastSyncedGraphSnapshot = snapshot;
       this.$emit('update:graph', graph);
+      this.refreshOutputStubs();
     },
 
     getGraphForSave() {
@@ -555,20 +1127,40 @@ export default {
       return type === 'ai_outreach' || type === 'ai_conversation_analysis';
     },
 
+    buildConnectOptionsFromSelection(newNodeType) {
+      if (newNodeType === 'trigger' || !this.selectedNode?.id) {
+        return { connectFromId: null, sourceAnchorId: null };
+      }
+      const freeOut = getFreeOutboundAnchor(this.lf, this.selectedNode.id);
+      if (!freeOut) return { connectFromId: null, sourceAnchorId: null };
+      return {
+        connectFromId: this.selectedNode.id,
+        sourceAnchorId: freeOut.sourceAnchorId,
+      };
+    },
+
     addNode(paletteItem) {
       if (this.isAiNodeType(paletteItem.type) && !this.isAiFeatureEnabled) {
         this.showAiUpsellModal = true;
         return;
       }
-      this.addNodeAt(
-        paletteItem,
-        300 + Math.random() * 120,
-        200 + Math.random() * 120
-      );
+      const placement = resolvePaletteInsertPlacement({
+        lf: this.lf,
+        selectedNodeId: this.selectedNode?.id || null,
+        newNodeType: paletteItem.type,
+        hostEl: this.$refs.canvasHost || this.$refs.canvas,
+      });
+      this.addNodeAt(paletteItem, placement.x, placement.y, {
+        connectFromId: placement.connectFromId,
+        sourceAnchorId: placement.sourceAnchorId,
+        focus: true,
+      });
     },
 
-    addNodeAt(paletteItem, x, y) {
+    addNodeAt(paletteItem, x, y, options = {}) {
       if (!this.lf || this.readOnly) return;
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+
       const id = nextNodeId();
       const defaultData = this.defaultNodeData(paletteItem.type);
       const node = {
@@ -580,6 +1172,31 @@ export default {
         properties: { workflowNodeType: paletteItem.type, ...defaultData },
       };
       this.lf.addNode(node);
+
+      const connectFromId = options.connectFromId;
+      const sourceAnchorId = options.sourceAnchorId;
+      if (connectFromId && paletteItem.type !== 'trigger') {
+        this.lf.addEdge({
+          type: WORKFLOW_EDGE_TYPE,
+          sourceNodeId: connectFromId,
+          targetNodeId: id,
+          sourceAnchorId: sourceAnchorId || workflowAnchorOutId(connectFromId),
+          targetAnchorId: workflowAnchorInId(id),
+        });
+      }
+
+      const newNodeData = this.lf.getNodeDataById
+        ? this.lf.getNodeDataById(id)
+        : node;
+      this.selectedNode = newNodeData;
+      this.$emit('node-selected', newNodeData);
+      if (typeof this.lf.selectElementById === 'function') {
+        this.lf.selectElementById(id);
+      }
+      if (options.focus !== false && typeof this.lf.focusOn === 'function') {
+        this.lf.focusOn({ id });
+      }
+
       this.emitGraphChangeNow();
     },
 
@@ -804,7 +1421,7 @@ export default {
       <div class="workflow-canvas-drop-overlay" aria-hidden="true" />
 
       <div
-        v-if="edgeToolbar && !readOnly"
+        v-if="edgeToolbar && !readOnly && !edgeInsertPicker"
         class="workflow-edge-toolbar"
         :style="{ left: `${edgeToolbar.left}px`, top: `${edgeToolbar.top}px` }"
         @mouseenter="edgeToolbarHovering = true"
@@ -815,10 +1432,10 @@ export default {
           class="workflow-edge-toolbar__btn"
           :title="$t('WORKFLOW.EDITOR.EDGE_INSERT_NODE')"
           :aria-label="$t('WORKFLOW.EDITOR.EDGE_INSERT_NODE')"
-          @click.stop="insertNodeOnHoveredEdge"
+          @click.stop="openEdgeInsertPicker"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M12 4v16m8-8H4" />
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
           </svg>
         </button>
         <button
@@ -828,10 +1445,140 @@ export default {
           :aria-label="$t('WORKFLOW.EDITOR.EDGE_DELETE')"
           @click.stop="deleteHoveredEdge"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
         </button>
+      </div>
+
+      <!-- n8n stub: traço + "+" (click = picker, drag = connect) -->
+      <svg
+        v-if="showOutputStubs || connectPreview"
+        class="workflow-output-stubs"
+        aria-hidden="true"
+      >
+        <line
+          v-for="stub in outputStubs"
+          :key="`line-${stub.nodeId}-${stub.sourceAnchorId}`"
+          :x1="stub.x1"
+          :y1="stub.y1"
+          :x2="stub.x2"
+          :y2="stub.y2"
+          class="workflow-output-stubs__line"
+        />
+        <circle
+          v-for="stub in outputStubs"
+          :key="`dot-${stub.nodeId}-${stub.sourceAnchorId}`"
+          :cx="stub.x1"
+          :cy="stub.y1"
+          r="5"
+          class="workflow-output-stubs__dot"
+        />
+        <circle
+          v-for="hint in connectTargetHints"
+          :key="`hint-${hint.nodeId}`"
+          :cx="hint.cx"
+          :cy="hint.cy"
+          :r="connectHoverNodeId === hint.nodeId ? 7 : 5"
+          class="workflow-output-stubs__target-dot"
+          :class="{ 'is-active': connectHoverNodeId === hint.nodeId }"
+        />
+        <line
+          v-if="connectPreview"
+          :x1="connectPreview.x1"
+          :y1="connectPreview.y1"
+          :x2="connectPreview.x2"
+          :y2="connectPreview.y2"
+          class="workflow-output-stubs__preview"
+        />
+      </svg>
+      <button
+        v-for="stub in outputStubs"
+        v-show="showOutputStubs"
+        :key="`plus-${stub.nodeId}-${stub.sourceAnchorId}`"
+        type="button"
+        class="workflow-stub-plus"
+        :class="{ 'is-connecting': !!connectPreview }"
+        :style="{ left: `${stub.plusLeft}px`, top: `${stub.plusTop}px` }"
+        :title="$t('WORKFLOW.EDITOR.NODE_ADD_NEXT')"
+        :aria-label="$t('WORKFLOW.EDITOR.NODE_ADD_NEXT')"
+        @pointerdown="onStubPlusPointerDown(stub, $event)"
+      >
+        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
+
+      <!-- Node hover trash -->
+      <button
+        v-if="hoveredNode && !readOnly"
+        type="button"
+        class="workflow-node-trash"
+        :style="{ left: `${hoveredNode.left}px`, top: `${hoveredNode.top}px` }"
+        :title="$t('WORKFLOW.EDITOR.NODE_DELETE')"
+        :aria-label="$t('WORKFLOW.EDITOR.NODE_DELETE')"
+        @mouseenter="keepNodeHover"
+        @mouseleave="scheduleHideNodeHover"
+        @click.stop="deleteHoveredNode"
+      >
+        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      </button>
+
+      <div
+        v-if="edgeInsertPicker && !readOnly"
+        class="workflow-edge-insert-picker"
+        :class="{ 'workflow-edge-insert-picker--node': edgeInsertPicker.mode === 'node' }"
+        :style="{ left: `${edgeInsertPicker.left}px`, top: `${edgeInsertPicker.top}px` }"
+        role="dialog"
+        tabindex="-1"
+        :aria-label="$t('WORKFLOW.EDITOR.EDGE_INSERT_PICKER_TITLE')"
+        @mouseenter="edgeToolbarHovering = true"
+        @mouseleave="edgeToolbarHovering = false"
+        @keydown="onEdgeInsertPickerKeydown"
+      >
+        <div class="workflow-edge-insert-picker__header">
+          <span class="workflow-edge-insert-picker__title">
+            {{ $t('WORKFLOW.EDITOR.EDGE_INSERT_PICKER_TITLE') }}
+          </span>
+          <button
+            type="button"
+            class="workflow-edge-insert-picker__close"
+            :aria-label="$t('WORKFLOW.EDITOR.EDGE_INSERT_PICKER_CLOSE')"
+            @click.stop="closeEdgeInsertPicker"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <ul class="workflow-edge-insert-picker__list" role="listbox">
+          <li v-for="item in insertablePaletteItems" :key="item.type">
+            <button
+              type="button"
+              class="workflow-edge-insert-picker__item"
+              role="option"
+              @click.stop="selectEdgeInsertType(item)"
+            >
+              <span
+                class="workflow-edge-insert-picker__icon"
+                :style="{ background: nodeColor(item.type).bg }"
+                aria-hidden="true"
+              >
+                <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    :d="nodeColor(item.type).icon"
+                  />
+                </svg>
+              </span>
+              <span class="truncate">{{ item.label }}</span>
+            </button>
+          </li>
+        </ul>
       </div>
 
       <div class="workflow-canvas-zoom-controls">
@@ -885,14 +1632,6 @@ export default {
         </button>
       </div>
 
-      <div
-        v-if="readOnly"
-        role="status"
-        aria-live="polite"
-        class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-amber-100 dark:bg-amber-900/80 text-amber-800 dark:text-amber-200 text-xs font-medium rounded-full border border-amber-200 dark:border-amber-700 z-10 pointer-events-none"
-      >
-        {{ $t('WORKFLOW.EDITOR.ACTIVE_READONLY') }}
-      </div>
     </div>
 
     <WorkflowAiUpsellModal

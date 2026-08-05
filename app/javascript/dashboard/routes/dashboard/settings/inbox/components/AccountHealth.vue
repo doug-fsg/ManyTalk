@@ -57,10 +57,6 @@ export default {
       type: String,
       default: '',
     },
-    isRegisteringWebhook: {
-      type: Boolean,
-      default: false,
-    },
   },
   computed: {
     healthItems() {
@@ -136,34 +132,11 @@ export default {
         },
       ];
     },
-    showWebhookSection() {
-      const webhookConfiguration = this.healthData && this.healthData.webhook_configuration;
-      return webhookConfiguration !== undefined;
-    },
-    webhookUrl() {
-      if (!this.healthData || !this.healthData.webhook_configuration) return '';
-
-      const config = this.healthData.webhook_configuration;
-      return (
-        config.phone_number ||
-        config.whatsapp_business_account ||
-        config.application ||
-        ''
-      );
-    },
-    webhookConfigured() {
-      return Boolean(this.webhookUrl);
-    },
-    webhookUrlMismatch() {
-      if (!this.healthData) return false;
-
-      return (
-        this.webhookConfigured &&
-        this.webhookUrl !== this.healthData.expected_webhook_url
-      );
-    },
     businessId() {
       return (this.healthData && this.healthData.business_id) || '';
+    },
+    wabaId() {
+      return (this.healthData && this.healthData.waba_id) || '';
     },
   },
   methods: {
@@ -206,8 +179,7 @@ export default {
       :pricing-data="pricingData"
       :is-loading="isLoadingPricing"
       :error-message="pricingError"
-      :error-code="pricingErrorCode"
-      :business-id="businessId"
+      :waba-id="wabaId"
     />
 
     <SettingsSection
@@ -233,30 +205,6 @@ export default {
       <p class="health-footnote">
         {{ $t('INBOX_MGMT.ACCOUNT_HEALTH.FOOTNOTE') }}
       </p>
-    </SettingsSection>
-
-    <SettingsSection
-      v-if="showWebhookSection"
-      :title="$t('INBOX_MGMT.ACCOUNT_HEALTH.WEBHOOK.TITLE')"
-      :sub-title="
-        webhookUrlMismatch
-          ? $t('INBOX_MGMT.ACCOUNT_HEALTH.WEBHOOK.URL_MISMATCH')
-          : $t('INBOX_MGMT.ACCOUNT_HEALTH.WEBHOOK.DESCRIPTION')
-      "
-    >
-      <p v-if="webhookConfigured" class="health-webhook-url">
-        {{ webhookUrl }}
-      </p>
-      <p v-else class="health-webhook-url">
-        {{ $t('INBOX_MGMT.ACCOUNT_HEALTH.WEBHOOK.ACTION_REQUIRED') }}
-      </p>
-      <woot-button
-        :is-loading="isRegisteringWebhook"
-        :disabled="isRegisteringWebhook"
-        @click="$emit('registerWebhook')"
-      >
-        {{ $t('INBOX_MGMT.ACCOUNT_HEALTH.WEBHOOK.REGISTER_BUTTON') }}
-      </woot-button>
     </SettingsSection>
   </div>
 </template>
@@ -285,9 +233,5 @@ export default {
 
 .health-footnote {
   @apply text-xs mt-4;
-}
-
-.health-webhook-url {
-  @apply text-sm text-slate-700 dark:text-slate-200 mb-3 break-all;
 }
 </style>

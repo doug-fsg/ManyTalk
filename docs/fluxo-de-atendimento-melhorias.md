@@ -6,19 +6,106 @@
 
 ## Sumário
 
-1. [Diagnóstico](#diagnóstico)
-2. [Reposicionamento](#reposicionamento)
-3. [Jobs reais que o fluxo deve resolver](#jobs-reais-que-o-fluxo-deve-resolver)
-4. [Priorização MoSCoW](#priorização-moscow)
-5. [Mapa estratégico: Fluxo × 5 Prioridades](#mapa-estratégico-fluxo--5-prioridades)
-6. [Integração com IA (n8n)](#integração-com-ia-n8n)
-7. [Métricas que importam](#métricas-que-importam)
-8. [Mudanças de experiência (UX)](#mudanças-de-experiência-ux)
-9. [Roadmap em 3 fases](#roadmap-em-3-fases)
-10. [Priorização RICE](#priorização-rice)
-11. [O que não construir](#o-que-não-construir)
-12. [Recomendações de implementação](#recomendações-de-implementação)
-13. [Decisões em aberto](#decisões-em-aberto)
+1. [Status atual (revisão ago/2026)](#status-atual-revisão-ago2026)
+2. [Histórico entregue](#histórico-entregue)
+3. [Backlog ativo](#backlog-ativo)
+4. [Diagnóstico](#diagnóstico)
+5. [Reposicionamento](#reposicionamento)
+6. [Jobs reais que o fluxo deve resolver](#jobs-reais-que-o-fluxo-deve-resolver)
+7. [Priorização MoSCoW (referência histórica)](#priorização-moscow-referência-histórica)
+8. [Mapa estratégico: Fluxo × 5 Prioridades](#mapa-estratégico-fluxo--5-prioridades)
+9. [Integração com IA (n8n)](#integração-com-ia-n8n)
+10. [Métricas que importam](#métricas-que-importam)
+11. [Mudanças de experiência (UX)](#mudanças-de-experiência-ux)
+12. [Roadmap (histórico + próximo ciclo)](#roadmap-histórico--próximo-ciclo)
+13. [Priorização RICE (backlog ativo)](#priorização-rice-backlog-ativo)
+14. [O que não construir](#o-que-não-construir)
+15. [Recomendações de implementação](#recomendações-de-implementação)
+16. [Decisões em aberto](#decisões-em-aberto)
+
+---
+
+## Status atual (revisão ago/2026)
+
+**Veredito:** o motor do Fluxo de Atendimento está **maduro e operacional**. A Fase A (confiança) foi **~90% entregue**. O gap restante não é reconstruir features — é **polimento operacional**, **defaults sensatos** e **conexão com as Prioridades 1–4** do [Sistema Operacional de Relacionamento](./sistema-operacional-de-relacionamento.md).
+
+| Área | Situação |
+|------|----------|
+| Cadência temporal (`wait`, `wait_for_reply`, IF) | ✅ Entregue |
+| Régua + timeline de execução | ✅ Entregue |
+| Simulação (`dry_run`) | ✅ Entregue |
+| Re-enrollment configurável | ✅ Entregue |
+| Cancel on agent / labels | ✅ Entregue |
+| Conflito v1/v2 | ⚠️ Parcial — alerta pós-ativação; falta aviso pré-ativação |
+| Métricas | ⚠️ Parcial — relatórios existem; card da listagem só mostra reply rate |
+| Versionamento / draft | ❌ Descartado — clone + desativar resolve |
+| Nó handoff dedicado | ❌ Descartado — labels + n8n + settings cobrem |
+
+---
+
+## Histórico entregue
+
+Itens do backlog original que **já foram implementados** (referência para não reabrir):
+
+| ID | Entrega | Evidência no produto |
+|----|---------|----------------------|
+| **M2** | Log de execução por enrollment | `TimelineBuilder` + `ReguaTimeline` — status, horário, `error_message` por nó |
+| **M3** | Simulação dry-run | `DryRunService` + `WorkflowSimulateModal` no editor |
+| **M4** | Re-enrollment | Settings: `allow_reenrollment`, `reenrollment_min_interval_days`, `max_enrollments_per_contact`, `reenrollment_on_cancel` |
+| **M6** | Cancel on agent / labels | Settings + backend em `WorkflowEnrollment` / `OrchestratorService` |
+| **M1** | Detector conflito v1/v2 | `conflicting_automation_names` + banner em `WorkflowCard` (fluxo **já ativo**) |
+| **S5** | Métricas de processo (base) | `WorkflowReports` — ativos, concluídos, cancelados, reply rate, métricas por etapa |
+| **S6** | Templates (base) | `TemplateFactory` — galeria com categorias + 3 templates |
+| **S7** | UX nós IA (base) | `WorkflowAiUpsellModal` quando feature `inteligencia_artificial` desabilitada |
+| — | Gatilho `form_submitted` | Trigger + validação + `ProcessFormSubmittedJob` |
+| — | Nó `ai_wait_for_intent` | Classificação via webhook + pré-filtro + ramos `intent_detected` / `timeout` |
+| — | CRM Kanban | Gatilhos `contact_kanban_stage_changed` / `_idle` + condições kanban no IF |
+| — | Controles na Régua | Pausar, retomar, cancelar, pular etapa, rebind de conversa |
+| — | Validação de grafo | Bloqueio de ativação com grafo inválido |
+| — | Clone de fluxo | Workaround para editar processo ativo sem versionamento |
+| — | `external_whatsapp` | Webhook `workflow.external_whatsapp` + teste no editor |
+| — | A/B test (backend) | `AbVariantSelector` em `action_service` — editor não exposto |
+
+Referência técnica: [`fluxo-de-trabalho.md`](./fluxo-de-trabalho.md), [`workflow-graph-schema.md`](./workflow-graph-schema.md).
+
+---
+
+## Backlog ativo
+
+Itens **pendentes e justificados** após revisão (ago/2026). Esforço: **S** · **M** · **L**.
+
+### 🔴 Urgente / crítico
+
+| ID | Item | Status |
+|----|------|--------|
+| **B1** | Conflito v1/v2 **antes** de ativar | ✅ `WorkflowActivateConfirmModal` |
+| **B2** | Defaults operacionais nos templates | ✅ `TemplateFactory` + guia em `fluxo-de-trabalho.md` |
+| **B3** | Editar **settings** com fluxo ativo | ✅ `UpdateService` + UI |
+
+### 🟡 Importante (próximo ciclo)
+
+| ID | Item | Status |
+|----|------|--------|
+| **B4** | Taxa de conclusão na listagem | ✅ `ListMetricsService` + `WorkflowCard` |
+| **B5** | Relatório agregado de falhas | 📋 Pendente |
+| **B6** | Badge n8n nos nós de IA (feature ativa) | 📋 Pendente |
+| **B7** | Template “Reativação” com re-enrollment | ✅ `reactivation_30d` |
+
+### 🔵 Dependem das Prioridades globais (não backlog do fluxo)
+
+| ID | Item | Dependência |
+|----|------|-------------|
+| **S1** | Condições origem/campanha | Prioridade 1 — origem persistida no contato/conversa |
+| **S2** | Condições lead score | Prioridade 2 — score visível e persistido |
+| **S4** | Nó `create_task` | Prioridade 3 — detecção de compromissos |
+| **C2** | Memória no payload | Prioridade 4 — modelo de memória por contato |
+| **C3** | Gatilhos `score_changed`, `commitment_detected` | Prioridades 2 e 3 |
+
+### Sprint sugerido (~1 sprint)
+
+```
+B2 → B1 → B3 → B4
+```
 
 ---
 
@@ -36,17 +123,17 @@ O **Fluxo de Atendimento não é inútil** — o motor técnico é real e funcio
 
 O risco não é “não funciona” — é **posicionamento errado**, **falta de confiança operacional** e **desconexão** da visão de Sistema Operacional de Relacionamento e da IA via n8n.
 
-### Por que parece feature inútil hoje
+### Por que parecia feature inútil (ago/2026 — situação atualizada)
 
-| Sintoma | Causa raiz |
-|---------|------------|
-| Gestor compara com n8n e acha incompleto | Expectativa desalinhada — fluxo é **cadência temporal**, não orquestrador genérico |
-| Mensagens duplicadas | Automações clássicas (v1) + Fluxos (v2) no mesmo gatilho |
-| “Ativei e não sei se funcionou” | Falhas de ação silenciosas; métricas superficiais |
-| Medo de editar fluxo ao vivo | Fluxo ativo = diagrama bloqueado |
-| IA nos nós “não funciona” | Usuário espera ChatGPT nativo; na prática exige webhook n8n |
-| Cliente não reentra no fluxo | Re-enrollment restrito; relacionamento é longo |
-| IA reativa e fluxo temporal não conversam | Duas ilhas: n8n (mensagem) vs Fluxo (tempo) |
+| Sintoma | Causa raiz | Status |
+|---------|------------|--------|
+| Gestor compara com n8n e acha incompleto | Expectativa desalinhada — fluxo é **cadência temporal**, não orquestrador genérico | 📋 Comunicação / doc |
+| Mensagens duplicadas | Automações v1 + Fluxos v2 no mesmo gatilho | ⚠️ Alerta existe; falta aviso **pré-ativação** (B1) |
+| “Ativei e não sei se funcionou” | Falhas silenciosas; métricas superficiais | ✅ Timeline na Régua; ⚠️ falta agregado gestor (B5) e conclusão no card (B4) |
+| Medo de editar fluxo ao vivo | Fluxo ativo = diagrama bloqueado | ✅ Clone resolve; ⚠️ settings também bloqueados (B3) |
+| IA nos nós “não funciona” | Usuário espera ChatGPT nativo; exige webhook n8n | ⚠️ Upsell quando off; falta badge quando on (B6) |
+| Cliente não reentra no fluxo | Re-enrollment off por default | ✅ Configurável; falta template/guia (B2, B7) |
+| IA reativa e fluxo temporal não conversam | n8n vs Fluxo como ilhas | ✅ `cancel_on_labels` + API; documentar padrão |
 
 ### O que já funciona bem (preservar)
 
@@ -104,30 +191,35 @@ Processos completos — não “automações bonitas”.
 
 | Job do gestor / operação | Fluxo resolve hoje? | Gap |
 |--------------------------|---------------------|-----|
-| Cobrar resposta em D+1, D+3, D+7 | ✅ Forte | Confiança / observabilidade |
-| Nutrir lead até oportunidade | ⚠️ Parcial | Sem origem/score no gatilho |
-| Vendedor dispara régua na conversa | ✅ Forte | Métricas de conversão fracas |
-| CRM mudou estágio → jornada | ✅ Forte | Desconectado da jornada completa |
-| IA atende → humano assume no momento certo | ❌ | Sem handoff integrado |
-| Ex-cliente volta → reengajar | ❌ | Re-enrollment bloqueado |
-| Saber se o processo gera resultado | ⚠️ | Só reply rate 30d |
-| Experiência diferente por campanha | ❌ | Prioridade 1 ainda não no fluxo |
-| Priorizar lead quente no fluxo | ❌ | Prioridade 2 ainda não no fluxo |
-| Compromisso na conversa → follow-up | ❌ | Prioridade 3 (tarefas) ausente |
+| Cobrar resposta em D+1, D+3, D+7 | ✅ Forte | — |
+| Nutrir lead até oportunidade | ⚠️ Parcial | Origem/score — Prioridades 1–2 (S1, S2) |
+| Vendedor dispara régua na conversa | ✅ Forte | Conclusão % visível na listagem (B4) |
+| CRM mudou estágio → jornada | ✅ Forte | — |
+| IA atende → humano assume no momento certo | ✅ Via labels + settings | Documentar padrão n8n; defaults nos templates (B2) |
+| Ex-cliente volta → reengajar | ✅ Configurável | Template + defaults (B7, B2) |
+| Saber se o processo gera resultado | ⚠️ Parcial | Conclusão no card (B4); agregado falhas (B5) |
+| Experiência diferente por campanha | ❌ | Prioridade 1 global (S1) |
+| Priorizar lead quente no fluxo | ❌ | Prioridade 2 global (S2) |
+| Compromisso na conversa → follow-up | ❌ | Prioridade 3 global (S4) |
 
 ---
 
-## Priorização MoSCoW
+## Priorização MoSCoW (referência histórica)
+
+> Specs originais preservadas abaixo. Para backlog vigente, ver [Backlog ativo](#backlog-ativo).  
+> Legenda de status: ✅ Entregue · ⚠️ Parcial · 📋 Backlog ativo · ❌ Descartado · 🔵 Depende de prioridade global
 
 Legenda de esforço: **S** (pequeno) · **M** (médio) · **L** (grande)
 
 ---
 
-### 🔴 MUST — sem isso continua feature de vitrine
+### 🔴 MUST — confiança operacional (Fase A)
 
 ---
 
-#### M1. Detector de conflito Automações × Fluxos
+#### M1. Detector de conflito Automações × Fluxos — ⚠️ Parcial → **B1**
+
+**Status:** banner no card quando fluxo **já está ativo**. Pendente: aviso **antes** de ativar.
 
 **Problema:** v1 e v2 com o mesmo gatilho executam simultaneamente — mensagens, labels e assigns duplicados. Documentado em [`fluxo-de-trabalho.md`](./fluxo-de-trabalho.md).
 
@@ -152,7 +244,9 @@ And há link direto para editar cada automação conflitante
 
 ---
 
-#### M2. Log de execução por enrollment (visível)
+#### M2. Log de execução por enrollment (visível) — ✅ Entregue
+
+**Status:** timeline na Régua com status, horários e erros legíveis. Pendente opcional: relatório agregado de falhas (**B5**).
 
 **Problema:** ação falha → log no servidor; fluxo continua; usuário não vê.
 
@@ -177,7 +271,9 @@ And gestor vê relatório agregado de falhas por fluxo (últimos 30 dias)
 
 ---
 
-#### M3. Modo simulação / dry-run
+#### M3. Modo simulação / dry-run — ✅ Entregue
+
+**Status:** `WorkflowSimulateModal` + API `dry_run` no editor.
 
 **Problema:** medo de ativar fluxo errado em produção.
 
@@ -201,19 +297,17 @@ And nenhuma mensagem real é enviada ao cliente (modo padrão)
 
 ---
 
-#### M4. Regras de re-enrollment
+#### M4. Regras de re-enrollment — ✅ Entregue
 
-**Problema:** um enrollment por workflow/contato impede recompra, reativação e ciclos de relacionamento ([Prioridade 5](./sistema-operacional-de-relacionamento.md)).
+**Status:** settings completos na UI. Pendente: template “Reativação” (**B7**) e defaults (**B2**).
 
-**User story:**  
-Como **gestor**, quero **configurar quando um contato pode entrar novamente no mesmo fluxo**, para **operar retenção e recompra**.
+**Settings implementados:**
 
-**Settings propostos:**
-
-| Setting | Descrição | Default sugerido |
-|---------|-----------|------------------|
-| `allow_reenrollment_after_days` | Dias após conclusão/cancelamento | `30` |
-| `max_enrollments_per_contact` | Limite total | `5` |
+| Setting | Descrição | Default atual |
+|---------|-----------|---------------|
+| `allow_reenrollment` | Permite reentrada | `false` |
+| `reenrollment_min_interval_days` | Dias mínimos entre enrollments | `30` |
+| `max_enrollments_per_contact` | Limite total (`0` = ilimitado) | `0` |
 | `reenrollment_on_cancel` | Permite reinício após cancel manual | `true` |
 
 **Acceptance criteria:**
@@ -233,52 +327,15 @@ And enrollment anterior está completed
 
 ---
 
-#### M5. Edição sem desativar (draft / versionamento)
+#### M5. Edição sem desativar (draft / versionamento) — ❌ Descartado
 
-**Problema:** fluxo ativo bloqueia diagrama — inviável em operação contínua.
-
-**User story:**  
-Como **gestor**, quero **editar rascunho enquanto a versão publicada roda**, para **corrigir processos sem interromper enrollments ativos**.
-
-**Acceptance criteria:**
-
-```gherkin
-Given fluxo v2 ativo com 50 enrollments em andamento
-When edito e salvo rascunho v3
-Then enrollments ativos continuam em v2
-When publico v3
-Then novos enrollments usam v3
-And vejo indicador "Versão publicada: v3" na listagem
-```
-
-| Atributo | Valor |
-|----------|-------|
-| Esforço | L |
-| Impacto | Crítico (operação) |
+**Decisão (ago/2026):** clone + desativar/editar/reativar resolve para o volume atual. Esforço L com retorno marginal. Pendência real menor: editar **settings** com fluxo ativo (**B3**).
 
 ---
 
-#### M6. Cancelar fluxo quando humano ou IA assume
+#### M6. Cancelar fluxo quando humano ou IA assume — ✅ Entregue
 
-**Problema:** fluxo automático compete com agente ou bot.
-
-**User story:**  
-Como **agente**, quero **que o fluxo pare quando assumo a conversa**, para **não enviar mensagens automáticas enquanto atendo**.
-
-**Settings propostos:**
-
-| Setting | Descrição |
-|---------|-----------|
-| `cancel_on_agent_reply` | Cancela quando atendente envia mensagem |
-| `cancel_on_labels` | Lista de labels que cancelam (ex.: `humano-ativo`, `escalado-ia`) |
-| `pause_on_handoff` | Pausa em vez de cancelar (retomável) |
-
-**Integração n8n:** fluxo n8n aplica label → enrollment cancela/pausa.
-
-| Atributo | Valor |
-|----------|-------|
-| Esforço | S–M |
-| Impacto | Alto (experiência cliente) |
+**Status:** `cancel_on_agent_reply`, `cancel_on_labels` na UI e backend. Pendente: defaults nos templates (**B2**).
 
 ---
 
@@ -286,7 +343,7 @@ Como **agente**, quero **que o fluxo pare quando assumo a conversa**, para **nã
 
 ---
 
-#### S1. Gatilhos e condições por Origem/Campanha (Prioridade 1)
+#### S1. Gatilhos e condições por Origem/Campanha (Prioridade 1) — 🔵 Depende P1
 
 **User story:**  
 Como **gestor de marketing/operação**, quero **iniciar fluxos diferentes conforme campanha, anúncio ou promessa de captação**, para **honrar a expectativa do lead na entrada**.
@@ -313,7 +370,7 @@ Como **gestor de marketing/operação**, quero **iniciar fluxos diferentes confo
 
 ---
 
-#### S2. Condições por Lead Score (Prioridade 2)
+#### S2. Condições por Lead Score (Prioridade 2) — 🔵 Depende P2
 
 **User story:**  
 Como **gestor comercial**, quero **ramificar fluxo por score de IA (ex.: ≥80 quente, 40–79 morno, <40 frio)**, para **priorizar esforço humano e cadências adequadas**.
@@ -340,12 +397,9 @@ Trigger (conversation_created)
 
 ---
 
-#### S3. Nó Handoff — IA / humano (ponte com n8n)
+#### S3. Nó Handoff — IA / humano (ponte com n8n) — ❌ Descartado
 
-**Problema:** [`inteligencia-artificial.md`](./inteligencia-artificial.md) descreve IA reativa; fluxo descreve tempo — precisam conversar.
-
-**User story:**  
-Como **gestor**, quero **um passo do fluxo que entregue a conversa para IA ou fila humana com contexto**, para **orquestrar bot + humano + cadência**.
+**Decisão (ago/2026):** `cancel_on_labels` + assign via ação + n8n via API cobrem o caso. Nó dedicado seria conveniência, não bloqueio. Manter spec abaixo como referência histórica.
 
 **Tipos de nó propostos:**
 
@@ -379,7 +433,7 @@ Como **gestor**, quero **um passo do fluxo que entregue a conversa para IA ou fi
 
 ---
 
-#### S4. Nó Criar Tarefa (Prioridade 3)
+#### S4. Nó Criar Tarefa (Prioridade 3) — 🔵 Depende P3
 
 **User story:**  
 Como **gestor comercial**, quero **que o fluxo crie tarefa com prazo** (ex.: D+1 após timeout, ou após detectar compromisso), para **não perder follow-ups em alto volume**.
@@ -402,9 +456,9 @@ Como **gestor comercial**, quero **que o fluxo crie tarefa com prazo** (ex.: D+1
 
 ---
 
-#### S5. Métricas de processo (não só reply rate)
+#### S5. Métricas de processo (não só reply rate) — ⚠️ Parcial → **B4**, **B5**
 
-**Problema:** `reply_rate_30d` não prova valor de negócio.
+**Status:** relatórios com ativos, concluídos, cancelados, reply rate e métricas por etapa. Pendente: conclusão % no card; agregado de falhas; conversão CRM/receita (fase 2).
 
 **Métricas propostas por fluxo:**
 
@@ -427,9 +481,9 @@ Como **gestor comercial**, quero **que o fluxo crie tarefa com prazo** (ex.: D+1
 
 ---
 
-#### S6. Biblioteca de templates por estágio de relação (Prioridade 5)
+#### S6. Biblioteca de templates por estágio de relação — ⚠️ Parcial → **B7**
 
-Categorizar templates além de “atendimento/vendas” — alinhar à jornada:
+**Status:** galeria + 3 templates (`follow_up_basic`, `crm_stage_changed`, `welcome_conversation`). Pendente: template reativação + expansão por jornada quando P1/P5 avançarem.
 
 | Categoria | Template | Gatilho típico |
 |-----------|----------|----------------|
@@ -447,9 +501,9 @@ Categorizar templates além de “atendimento/vendas” — alinhar à jornada:
 
 ---
 
-#### S7. Clarificar nós de IA no editor
+#### S7. Clarificar nós de IA no editor — ⚠️ Parcial → **B6**
 
-**Problema:** usuário configura `ai_outreach` achando que é IA nativa.
+**Status:** upsell modal quando feature off. Pendente: badge + doc + health quando feature on.
 
 **Melhorias UX:**
 
@@ -469,18 +523,13 @@ Categorizar templates além de “atendimento/vendas” — alinhar à jornada:
 
 ---
 
-#### C1. Nó Webhook Request (wait for response)
+#### C1. Nó Webhook Request (wait for response) — ❌ Descartado
 
-POST para URL externa (n8n, ERP) com payload do enrollment; aguarda JSON de resposta para ramificar.
-
-**Casos:** consultar estoque, score externo, aprovação manual, pagamento confirmado.
-
-| Esforço | L |
-|---------|---|
+Território do n8n — não duplicar.
 
 ---
 
-#### C2. Injetar Memória de Relacionamento (Prioridade 4)
+#### C2. Injetar Memória de Relacionamento (Prioridade 4) — 🔵 Depende P4
 
 Antes de `send_message` ou nós de IA, incluir no payload / interpolar variáveis:
 
@@ -495,7 +544,7 @@ Antes de `send_message` ou nós de IA, incluir no payload / interpolar variávei
 
 ---
 
-#### C3. Gatilhos de sistema alimentados por IA
+#### C3. Gatilhos de sistema alimentados por IA — 🔵 Depende P2/P3
 
 | Evento | Origem | Uso no fluxo |
 |--------|--------|--------------|
@@ -508,30 +557,19 @@ Antes de `send_message` ou nós de IA, incluir no payload / interpolar variávei
 
 ---
 
-#### C4. Switch multi-ramo (além de IF binário)
+#### C4. Switch multi-ramo (além de IF binário) — ❌ Descartado
 
-Nó com N saídas (ex.: score bands, origem, estágio CRM) — evita cadeias longas de IF encadeados.
-
-| Esforço | M–L |
-|---------|-----|
+Cadeia de IFs atende casos atuais; só reavaliar com demanda comprovada.
 
 ---
 
-#### C5. Horário respeitando timezone/preferência do contato
-
-Além de `respect_business_hours` do inbox — usar preferência de contato da memória (Prioridade 4).
-
-| Esforço | M |
-|---------|---|
+#### C5. Horário respeitando timezone/preferência do contato — 🔵 Depende P4
 
 ---
 
-#### C6. A/B test nativo em `send_message` (expandir)
+#### C6. A/B test nativo em `send_message` (expandir) — 📋 Backlog baixo
 
-Já existe base (`ab_test`, `AbVariantSelector`) — expor no editor com métricas de conversão por variante.
-
-| Esforço | S–M |
-|---------|-----|
+Backend existe (`AbVariantSelector`); expor no editor só com demanda comprovada.
 
 ---
 
@@ -581,23 +619,24 @@ Arquitetura atual ([`inteligencia-artificial.md`](./inteligencia-artificial.md))
 
 ### Padrões de integração recomendados
 
-| Padrão | Descrição |
-|--------|-----------|
-| **Fluxo → IA** | Nó `handoff_ai` pausa enrollment; n8n responde via API; label `ia-ativo` |
-| **IA → Fluxo** | n8n inicia enrollment manual via API ou aplica label que dispara gatilho |
-| **Fluxo + IA proativa** | Nó `ai_outreach` envia `workflow.ai_outreach` com prompt do passo |
-| **Cancelamento mútuo** | Label `humano-ativo` cancela fluxo; fluxo ativo sinaliza n8n para não competir |
-| **Memória compartilhada** (futuro) | n8n grava memória; fluxo lê no próximo passo |
+| Padrão | Descrição | Status |
+|--------|-----------|--------|
+| **Fluxo → IA** | n8n responde via API; label `ia-ativo` cancela/pausa fluxo | ✅ Via `cancel_on_labels` |
+| **IA → Fluxo** | n8n inicia enrollment via API ou label dispara gatilho | ✅ Via API + automações |
+| **Fluxo + IA proativa** | Nó `ai_outreach` envia `workflow.ai_outreach` | ✅ Entregue |
+| **Cancelamento mútuo** | Label `humano-ativo` cancela fluxo | ✅ Entregue |
+| **Memória compartilhada** (futuro) | n8n grava memória; fluxo lê no próximo passo | 🔵 Prioridade 4 |
 
 ### Eventos webhook a documentar (novos)
 
-| Evento | Direção | Uso |
-|--------|---------|-----|
-| `workflow.handoff` | ManyTalks → n8n | Entregar conversa para IA com contexto |
-| `workflow.ai_outreach` | ManyTalks → n8n | Mensagem proativa (existente) |
-| `workflow.ai_conversation_analysis` | ManyTalks → n8n | Análise (existente) |
-| `workflow.resume` | n8n → ManyTalks API | Retomar enrollment pausado |
-| `workflow.external_whatsapp` | ManyTalks → n8n | Envio WhatsApp externo (existente) |
+| Evento | Direção | Uso | Status |
+|--------|---------|-----|--------|
+| `workflow.handoff` | ManyTalks → n8n | Entregar conversa para IA com contexto | ❌ Não implementado (descartado — usar labels) |
+| `workflow.ai_outreach` | ManyTalks → n8n | Mensagem proativa | ✅ |
+| `workflow.ai_conversation_analysis` | ManyTalks → n8n | Análise | ✅ |
+| `workflow.ai_wait_for_intent` | ManyTalks → n8n | Classificação de intenção | ✅ |
+| `workflow.resume` | n8n → ManyTalks API | Retomar enrollment pausado | 📋 Backlog baixo |
+| `workflow.external_whatsapp` | ManyTalks → n8n | Envio WhatsApp externo | ✅ |
 
 ---
 
@@ -626,97 +665,91 @@ Arquitetura atual ([`inteligencia-artificial.md`](./inteligencia-artificial.md))
 
 ## Mudanças de experiência (UX)
 
-| Área | Hoje | Proposta |
-|------|------|----------|
-| Nome na UI | Fluxo de Atendimento | **Processos de Relacionamento** (ou subtítulo explicativo) |
-| Comparação mental | “Tipo n8n” | “Cadência HubSpot / régua comercial” |
-| Ativar fluxo | Trava edição | Rascunho + publicar versão |
-| Listagem | Reply rate 30d | Funil: iniciou → respondeu → concluiu → converteu |
-| Nó IA | Parece nativo | Badge + link doc + health check webhook |
-| Conflito v1 | Só doc | Alerta visual na ativação |
-| Régua | Timeline básica | Timeline com ✅❌ e erros legíveis |
-| Criar fluxo | Templates genéricos | Galeria por jornada + origem |
-| Empty state | “Crie automação” | “Monte um processo: ex. follow-up 3 toques” |
+| Área | Antes (spec original) | Hoje | Pendente |
+|------|----------------------|------|----------|
+| Nome na UI | Fluxo de Atendimento | Fluxo de Atendimento | Subtítulo explicativo (opcional) |
+| Comparação mental | “Tipo n8n” | Doc + simulação | Guia operacional (B2) |
+| Ativar fluxo | Trava edição | Diagrama bloqueado; clone resolve | Settings editáveis (B3) |
+| Listagem | Reply rate 30d | Reply rate + ativos | Conclusão % (B4) |
+| Nó IA | Parece nativo | Upsell quando off | Badge quando on (B6) |
+| Conflito v1 | Só doc | Banner pós-ativação | Aviso pré-ativação (B1) |
+| Régua | Timeline básica | Timeline com erros | Agregado falhas (B5) |
+| Criar fluxo | Templates genéricos | Galeria + 3 templates | Template reativação (B7) |
 
 ---
 
-## Roadmap em 3 fases
+## Roadmap (histórico + próximo ciclo)
 
-### Fase A — Confiança (4–6 semanas)
+### Fase A — Confiança — ✅ Concluída (ago/2026)
 
-**Objetivo:** gestor ativa fluxo sem medo de quebrar produção.
+| # | Entrega | ID | Status |
+|---|---------|-----|--------|
+| A1 | Detector conflito Automações × Fluxos | M1 | ⚠️ Parcial → B1 |
+| A2 | Log de execução na Régua | M2 | ✅ |
+| A3 | `cancel_on_agent_reply` + cancel por labels | M6 | ✅ |
+| A4 | UX nos nós de IA | S7 | ⚠️ Parcial → B6 |
+| A5 | Simulação básica (dry-run) | M3 | ✅ |
 
-| # | Entrega | ID |
-|---|---------|-----|
-| A1 | Detector conflito Automações × Fluxos | M1 |
-| A2 | Log de execução na Régua + relatório falhas | M2 |
-| A3 | `cancel_on_agent_reply` + cancel por labels | M6 |
-| A4 | Badge e doc nos nós de IA | S7 |
-| A5 | Simulação básica (dry-run) | M3 |
-
-**Definition of Done (fase):**
-
-- Zero tickets “mensagem duplicada v1+v2” sem alerta prévio
-- 100% falhas de ação visíveis na Régua
-- Simulação disponível antes de toggle ativo
+**Itens adicionais entregues fora do plano original:** `form_submitted`, `ai_wait_for_intent`, relatórios, clone, `external_whatsapp`.
 
 ---
 
-### Fase B — Relacionamento (6–8 semanas)
+### Próximo ciclo — Polimento operacional (~1 sprint)
 
-**Objetivo:** fluxo = processo comercial mensurável.
-
-| # | Entrega | ID |
-|---|---------|-----|
-| B1 | Re-enrollment configurável | M4 |
-| B2 | Draft / versionamento | M5 |
-| B3 | Nó handoff IA + humano | S3 |
-| B4 | Métricas de funil do fluxo | S5 |
-| B5 | Condições origem + score (quando P1/P2 prontos) | S1, S2 |
-| B6 | Templates por estágio de jornada | S6 |
-
-**Definition of Done (fase):**
-
-- Gestor mede conclusão e handoff por fluxo
-- Handoff n8n documentado e usado em 1 template oficial
-- Re-enrollment habilitado em template “Reativação”
+| # | Entrega | ID | Prioridade |
+|---|---------|-----|------------|
+| N1 | Defaults + guia operacional | B2 | 🔴 Crítico |
+| N2 | Conflito v1/v2 pré-ativação | B1 | 🔴 Crítico |
+| N3 | Settings editáveis com fluxo ativo | B3 | 🔴 Crítico |
+| N4 | Taxa de conclusão no card | B4 | 🟡 Importante |
+| N5 | Template reativação | B7 | 🟡 Importante |
+| N6 | Badge n8n (feature on) | B6 | 🟡 Importante |
+| N7 | Relatório agregado de falhas | B5 | 🟡 Importante |
 
 ---
 
-### Fase C — Diferenciação (8+ semanas)
+### Fase B — Relacionamento — 🔵 Adiada (depende Prioridades 1–2)
 
-**Objetivo:** difícil de copiar sem conversa + tempo + contexto.
-
-| # | Entrega | ID |
-|---|---------|-----|
-| C1 | Nó create_task | S4 |
-| C2 | Webhook wait-response | C1 |
-| C3 | Memória no payload / interpolação | C2 |
-| C4 | Gatilhos `score_changed`, `commitment_detected` | C3 |
-| C5 | Switch multi-ramo | C4 |
-| C6 | A/B test exposto + métricas | C6 |
+| # | Entrega | ID | Status |
+|---|---------|-----|--------|
+| B1 | Re-enrollment configurável | M4 | ✅ |
+| B2 | Draft / versionamento | M5 | ❌ Descartado |
+| B3 | Nó handoff IA + humano | S3 | ❌ Descartado |
+| B4 | Métricas de funil do fluxo | S5 | ⚠️ Parcial |
+| B5 | Condições origem + score | S1, S2 | 🔵 Depende P1/P2 |
+| B6 | Templates por estágio de jornada | S6 | ⚠️ Parcial |
 
 ---
 
-## Priorização RICE
+### Fase C — Diferenciação — 🔵 Adiada (depende Prioridades 3–4)
+
+| # | Entrega | ID | Status |
+|---|---------|-----|--------|
+| C1 | Nó create_task | S4 | 🔵 Depende P3 |
+| C2 | Webhook wait-response | C1 | ❌ Descartado |
+| C3 | Memória no payload | C2 | 🔵 Depende P4 |
+| C4 | Gatilhos IA sistema | C3 | 🔵 Depende P2/P3 |
+| C5 | Switch multi-ramo | C4 | ❌ Descartado |
+| C6 | A/B test exposto | C6 | 📋 Backlog baixo |
+
+---
+
+## Priorização RICE (backlog ativo)
 
 Fórmula: `(Reach × Impact × Confidence) / Effort`  
 Impacto: 1–3. Esforço: 1=S, 2=M, 3=L. Confidence: 0–1.
 
 | Rank | Item | R | I | C | E | Score |
 |------|------|---|---|---|---|-------|
-| 1 | M2 Log execução | 10 | 3 | 0.95 | 2 | **14.3** |
-| 2 | M1 Conflito v1/v2 | 10 | 3 | 0.90 | 2 | **13.5** |
-| 3 | M4 Re-enrollment | 8 | 3 | 0.85 | 2 | **10.2** |
-| 4 | M6 Cancel agent/label | 9 | 3 | 0.90 | 1 | **24.3** |
-| 5 | S3 Handoff IA/humano | 8 | 3 | 0.80 | 2 | **9.6** |
-| 6 | M3 Simulação | 7 | 2 | 0.90 | 3 | **4.2** |
-| 7 | M5 Versionamento | 8 | 3 | 0.75 | 3 | **6.0** |
-| 8 | S5 Métricas funil | 7 | 2 | 0.85 | 2 | **5.9** |
-| 9 | S7 UX nós IA | 9 | 2 | 0.95 | 1 | **17.1** |
-| 10 | S1 Origem campanha | 6 | 3 | 0.70 | 2 | **6.3** |
+| 1 | B2 Defaults + guia | 10 | 3 | 0.95 | 1 | **28.5** |
+| 2 | B1 Conflito pré-ativação | 10 | 3 | 0.90 | 1 | **27.0** |
+| 3 | B3 Settings com fluxo ativo | 9 | 3 | 0.85 | 2 | **11.5** |
+| 4 | B4 Conclusão no card | 7 | 2 | 0.90 | 1 | **12.6** |
+| 5 | B7 Template reativação | 6 | 2 | 0.90 | 1 | **10.8** |
+| 6 | B6 Badge n8n (on) | 8 | 2 | 0.85 | 1 | **13.6** |
+| 7 | B5 Relatório falhas agregado | 6 | 2 | 0.80 | 2 | **4.8** |
 
-**Recomendação de sprint imediato:** M6 → S7 → M1 → M2 (quick wins + confiança).
+**Sprint imediato:** B2 → B1 → B3 → B4
 
 ---
 
@@ -729,7 +762,12 @@ Impacto: 1–3. Esforço: 1=S, 2=M, 3=L. Confidence: 0–1.
 | Sub-workflows aninhados | Complexidade; só com demanda comprovada |
 | 50 tipos de nó | Confunde gestor; viola MVP |
 | Loops no grafo | Acíclico é decisão de design válida |
-| Editor fluxo ativo editável sem versionamento | Corrompe enrollments em andamento |
+| **M5 — Versionamento / draft** | Clone + desativar resolve; esforço L, retorno marginal |
+| **S3 — Nó handoff dedicado** | Labels + n8n + settings cobrem |
+| **C1 — Webhook wait-response** | Território n8n |
+| **C4 — Switch multi-ramo** | IF encadeado basta hoje |
+| Bloqueio hard na ativação por conflito | Alerta pré-ativação (B1) suficiente |
+| Rename para “Processos de Relacionamento” | Cosmético; subtítulo basta |
 
 ---
 
@@ -739,12 +777,9 @@ Impacto: 1–3. Esforço: 1=S, 2=M, 3=L. Confidence: 0–1.
 
 | Fase | Melhor agent | Skill |
 |------|--------------|-------|
-| A — confiança, logs, conflito | Backend + Frontend Specialist | `systematic-debugging` |
-| A — simulação | Backend Specialist | `testing-patterns` |
-| B — handoff / webhooks | Backend Specialist | `api-patterns` |
-| B — versionamento UX | Frontend Specialist | `architecture` |
-| B — métricas | Backend + Performance | `performance-profiling` |
-| C — memória / score | Backend + PO | alinhar PRD Prioridades 2 e 4 |
+| Próximo ciclo — B1, B3, B4, B5 | Backend + Frontend Specialist | `systematic-debugging` |
+| Próximo ciclo — B2, B6, B7 | Frontend + PO (conteúdo) | `documentation-templates` |
+| Prioridades 1–4 (S1–S4, C2–C3) | Backend + PO | alinhar PRDs globais |
 | QA contínuo | QA Automation Engineer | `tdd-workflow` |
 
 ### Rastreabilidade de documentos
@@ -761,41 +796,64 @@ Impacto: 1–3. Esforço: 1=S, 2=M, 3=L. Confidence: 0–1.
 
 ## Decisões em aberto
 
-| # | Decisão | Opções | Default recomendado |
+| # | Decisão | Opções | Decisão (ago/2026) |
 |---|---------|--------|---------------------|
-| 1 | Nome na UI | Manter “Fluxo de Atendimento” vs “Processos de Relacionamento” | Subtítulo explicativo primeiro; rename depois |
-| 2 | Handoff pausa vs cancela | Pausar enrollment vs cancelar ao passar para IA | **Pausar** — permite retomar cadência |
-| 3 | Score mid-flow | Reavaliar IFs quando score muda vs congelar no enrollment | **Congelar** no MVP; reavaliar na v2 |
-| 4 | Simulação | Zero side effects vs inbox sandbox | **Zero side effects** |
-| 5 | Versionamento | Cópia de grafo vs tabela `workflow_versions` | Tabela dedicada |
-| 6 | Métrica norte | Conclusão vs conversão CRM vs receita | **Conclusão** no MVP; CRM na Fase B |
+| 1 | Nome na UI | Manter “Fluxo de Atendimento” vs “Processos de Relacionamento” | **Manter** + subtítulo explicativo |
+| 2 | Handoff pausa vs cancela | Pausar vs cancelar ao passar para IA | **Labels cancelam** — padrão documentado |
+| 3 | Score mid-flow | Reavaliar IFs vs congelar | **Congelar** — reavaliar quando P2 existir |
+| 4 | Simulação | Zero side effects vs inbox sandbox | ✅ **Zero side effects** (implementado) |
+| 5 | Versionamento | Cópia de grafo vs tabela `workflow_versions` | ❌ **Descartado** — clone + desativar |
+| 6 | Métrica norte | Conclusão vs conversão CRM vs receita | **Conclusão** no card (B4); CRM na fase P1/P2 |
 
 ---
 
-## Apêndice: User stories consolidadas (backlog)
+## Apêndice: Backlog consolidado
+
+### Entregue (histórico)
+
+| ID | Story | Entregue em |
+|----|-------|-------------|
+| M2 | Log execução visível (Régua) | Fase A |
+| M3 | Simulação dry-run | Fase A |
+| M4 | Re-enrollment | Fase A |
+| M6 | Cancel on agent / label | Fase A |
+| M1 | Conflito v1/v2 (banner pós-ativação) | Fase A (parcial) |
+| S5 | Métricas base + relatórios | Fase A (parcial) |
+| S6 | Templates galeria (3) | Fase A (parcial) |
+| S7 | UX nós IA (upsell) | Fase A (parcial) |
+
+### Backlog ativo
 
 | ID | Story | Prioridade |
 |----|-------|------------|
-| M1 | Conflito Automações × Fluxos | Must |
-| M2 | Log execução visível | Must |
-| M3 | Simulação dry-run | Must |
-| M4 | Re-enrollment | Must |
-| M5 | Draft / versionamento | Must |
-| M6 | Cancel on agent / label | Must |
-| S1 | Condições origem/campanha | Should |
-| S2 | Condições lead score | Should |
-| S3 | Nó handoff IA/humano | Should |
-| S4 | Nó create_task | Should |
-| S5 | Métricas de funil | Should |
-| S6 | Templates por jornada | Should |
-| S7 | UX nós IA | Should |
-| C1 | Webhook wait-response | Could |
-| C2 | Memória no fluxo | Could |
-| C3 | Gatilhos IA sistema | Could |
-| C4 | Switch multi-ramo | Could |
-| C5 | Timezone contato | Could |
-| C6 | A/B test exposto | Could |
+| B1 | Conflito v1/v2 **pré-ativação** | 🔴 Crítico |
+| B2 | Defaults operacionais + guia | 🔴 Crítico |
+| B3 | Settings editáveis com fluxo ativo | 🔴 Crítico |
+| B4 | Taxa de conclusão no card | 🟡 Importante |
+| B5 | Relatório agregado de falhas | 🟡 Importante |
+| B6 | Badge n8n (feature on) | 🟡 Importante |
+| B7 | Template reativação | 🟡 Importante |
+
+### Adiado / depende prioridade global
+
+| ID | Story | Prioridade |
+|----|-------|------------|
+| S1 | Condições origem/campanha | P1 |
+| S2 | Condições lead score | P2 |
+| S4 | Nó create_task | P3 |
+| C2 | Memória no fluxo | P4 |
+| C3 | Gatilhos IA sistema | P2/P3 |
+| C6 | A/B test exposto | Backlog baixo |
+
+### Descartado
+
+| ID | Story | Motivo |
+|----|-------|--------|
+| M5 | Draft / versionamento | Clone + desativar |
+| S3 | Nó handoff IA/humano | Labels + n8n |
+| C1 | Webhook wait-response | n8n |
+| C4 | Switch multi-ramo | IF encadeado |
 
 ---
 
-*Documento vivo — revisar após Fase A e alinhamento com PRDs das Prioridades 1–5.*
+*Documento vivo — última revisão: ago/2026 (pós-Fase A).*

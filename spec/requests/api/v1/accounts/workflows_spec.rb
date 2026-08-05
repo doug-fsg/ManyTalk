@@ -2,9 +2,10 @@
 
 require 'rails_helper'
 
-RSpec.describe 'Api::V1::Accounts::WorkflowsController', type: :request do
+RSpec.describe 'Api::V1::Accounts::Workflows' do
   let(:account) { create(:account) }
   let(:agent) { create(:user, account: account, role: :agent) }
+  let(:agent_headers) { agent.create_new_auth_token.except('Authorization') }
 
   before { account.enable_features!('workflows') }
 
@@ -28,13 +29,20 @@ RSpec.describe 'Api::V1::Accounts::WorkflowsController', type: :request do
   describe 'GET /api/v1/accounts/:account_id/workflows/templates' do
     it 'lists available templates' do
       get "/api/v1/accounts/#{account.id}/workflows/templates",
-          headers: agent.create_new_auth_token,
+          headers: agent_headers,
           as: :json
 
       expect(response).to have_http_status(:success)
       payload = response.parsed_body['payload']
-      expect(payload.length).to eq(3)
+      expect(payload.length).to eq(4)
       expect(payload.first).to include('key', 'name', 'description', 'category', 'trigger_event', 'step_count')
+    end
+
+    context 'when unauthenticated' do
+      it 'returns unauthorized' do
+        get "/api/v1/accounts/#{account.id}/workflows/templates", as: :json
+        expect(response).to have_http_status(:unauthorized)
+      end
     end
   end
 
@@ -43,7 +51,7 @@ RSpec.describe 'Api::V1::Accounts::WorkflowsController', type: :request do
       expect do
         post "/api/v1/accounts/#{account.id}/workflows/from_template",
              params: { template_key: 'follow_up_basic' },
-             headers: agent.create_new_auth_token,
+             headers: agent_headers,
              as: :json
       end.to change(Workflow, :count).by(1)
 
@@ -56,7 +64,7 @@ RSpec.describe 'Api::V1::Accounts::WorkflowsController', type: :request do
     it 'returns 422 for invalid template key' do
       post "/api/v1/accounts/#{account.id}/workflows/from_template",
            params: { template_key: 'invalid' },
-           headers: agent.create_new_auth_token,
+           headers: agent_headers,
            as: :json
 
       expect(response).to have_http_status(:unprocessable_entity)
@@ -67,7 +75,7 @@ RSpec.describe 'Api::V1::Accounts::WorkflowsController', type: :request do
     it 'returns valid for minimal graph' do
       post "/api/v1/accounts/#{account.id}/workflows/validate",
            params: { graph: graph_payload },
-           headers: agent.create_new_auth_token,
+           headers: agent_headers,
            as: :json
 
       expect(response).to have_http_status(:success)
@@ -79,7 +87,7 @@ RSpec.describe 'Api::V1::Accounts::WorkflowsController', type: :request do
     it 'returns structured errors for invalid graph' do
       post "/api/v1/accounts/#{account.id}/workflows/validate",
            params: { graph: { nodes: [], edges: [] } },
-           headers: agent.create_new_auth_token,
+           headers: agent_headers,
            as: :json
 
       expect(response).to have_http_status(:success)
@@ -120,7 +128,7 @@ RSpec.describe 'Api::V1::Accounts::WorkflowsController', type: :request do
 
       post "/api/v1/accounts/#{account.id}/workflows/validate",
            params: { graph: form_graph },
-           headers: agent.create_new_auth_token,
+           headers: agent_headers,
            as: :json
 
       expect(response).to have_http_status(:success)
@@ -135,12 +143,12 @@ RSpec.describe 'Api::V1::Accounts::WorkflowsController', type: :request do
       create(:workflow, account: account, name: 'Fluxo com métricas')
 
       get "/api/v1/accounts/#{account.id}/workflows",
-          headers: agent.create_new_auth_token,
+          headers: agent_headers,
           as: :json
 
       expect(response).to have_http_status(:success)
       workflow = response.parsed_body['payload'].first
-      expect(workflow['metrics']).to include('active_count', 'reply_rate_30d')
+      expect(workflow['metrics']).to include('active_count', 'reply_rate_30d', 'completion_rate_30d')
     end
   end
 
@@ -154,7 +162,7 @@ RSpec.describe 'Api::V1::Accounts::WorkflowsController', type: :request do
                active: false,
                graph: graph_payload
              },
-             headers: agent.create_new_auth_token,
+             headers: agent_headers,
              as: :json
       end.to change(Workflow, :count).by(1)
 
@@ -167,7 +175,7 @@ RSpec.describe 'Api::V1::Accounts::WorkflowsController', type: :request do
     it 'returns 422 when graph is missing' do
       post "/api/v1/accounts/#{account.id}/workflows",
            params: { name: 'Sem grafo', active: false },
-           headers: agent.create_new_auth_token,
+           headers: agent_headers,
            as: :json
 
       expect(response).to have_http_status(:unprocessable_entity)
@@ -186,7 +194,7 @@ RSpec.describe 'Api::V1::Accounts::WorkflowsController', type: :request do
 
       expect do
         delete "/api/v1/accounts/#{account.id}/workflows/#{workflow.id}",
-               headers: agent.create_new_auth_token,
+               headers: agent_headers,
                as: :json
       end.to change(Workflow, :count).by(-1)
          .and change(WorkflowEnrollment, :count).by(-1)

@@ -6,6 +6,22 @@ module Workflows
   class TemplateFactory
     CATEGORIES = %w[atendimento vendas operacional marketing].freeze
 
+    # Defaults operacionais para templates comerciais / follow-up
+    FOLLOW_UP_SETTINGS = Constants::DEFAULT_SETTINGS.merge(
+      'cancel_on_agent_reply' => true,
+      'pause_on_contact_reply' => true
+    ).freeze
+
+    REACTIVATION_SETTINGS = Constants::DEFAULT_SETTINGS.merge(
+      'allow_reenrollment' => true,
+      'reenrollment_min_interval_days' => 30,
+      'max_enrollments_per_contact' => 5,
+      'reenrollment_on_cancel' => true,
+      'cancel_on_agent_reply' => true,
+      'pause_on_contact_reply' => true,
+      'allow_manual_start_only' => true
+    ).freeze
+
     TEMPLATES = {
       'follow_up_basic' => {
         name: 'Follow-up básico (3 etapas)',
@@ -28,7 +44,7 @@ module Workflows
             { 'source' => 'action_2', 'target' => 'wait_reply_2' },
             { 'source' => 'wait_reply_2', 'target' => 'action_3', 'sourceHandle' => 'timeout' }
           ],
-          'settings' => Constants::DEFAULT_SETTINGS
+          'settings' => FOLLOW_UP_SETTINGS
         }
       },
       'crm_stage_changed' => {
@@ -65,7 +81,7 @@ module Workflows
             { 'source' => 'trigger_1', 'target' => 'wait_1' },
             { 'source' => 'wait_1', 'target' => 'action_1' }
           ],
-          'settings' => Constants::DEFAULT_SETTINGS
+          'settings' => FOLLOW_UP_SETTINGS
         }
       },
       'welcome_conversation' => {
@@ -112,7 +128,50 @@ module Workflows
             { 'source' => 'action_1', 'target' => 'wait_1' },
             { 'source' => 'wait_1', 'target' => 'action_2' }
           ],
-          'settings' => Constants::DEFAULT_SETTINGS
+          'settings' => FOLLOW_UP_SETTINGS.merge(
+            'cancel_on_agent_reply' => false,
+            'pause_on_contact_reply' => true
+          )
+        }
+      },
+      'reactivation_30d' => {
+        name: 'Reativação (30 dias)',
+        description: 'Régua manual para reengajar ex-clientes ou contatos inativos. Permite reentrada após 30 dias.',
+        category: 'vendas',
+        trigger_event: 'manual',
+        graph: {
+          'nodes' => [
+            { 'id' => 'trigger_1', 'type' => 'trigger', 'data' => { 'event_name' => 'manual' } },
+            {
+              'id' => 'action_1',
+              'type' => 'action',
+              'data' => {
+                'label' => 'Mensagem de reativação',
+                'action_name' => 'send_message',
+                'action_params' => ['Olá! Faz um tempo que não conversamos. Posso ajudar com algo novo?']
+              }
+            },
+            {
+              'id' => 'wait_reply_1',
+              'type' => 'wait_for_reply',
+              'data' => { 'label' => 'Aguardar resposta — 48h', 'duration' => 48, 'unit' => 'hours' }
+            },
+            {
+              'id' => 'action_2',
+              'type' => 'action',
+              'data' => {
+                'label' => 'Segundo toque',
+                'action_name' => 'send_message',
+                'action_params' => ['Oi! Passando para saber se ainda posso ajudar. Fico à disposição.']
+              }
+            }
+          ],
+          'edges' => [
+            { 'source' => 'trigger_1', 'target' => 'action_1' },
+            { 'source' => 'action_1', 'target' => 'wait_reply_1' },
+            { 'source' => 'wait_reply_1', 'target' => 'action_2', 'sourceHandle' => 'timeout' }
+          ],
+          'settings' => REACTIVATION_SETTINGS
         }
       }
     }.freeze

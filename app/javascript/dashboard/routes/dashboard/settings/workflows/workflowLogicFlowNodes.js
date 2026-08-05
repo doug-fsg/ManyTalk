@@ -370,10 +370,16 @@ export const getLogicFlowTheme = isDark => ({
     hoverStroke: isDark ? 'rgba(248, 250, 252, 0.55)' : '#94a3b8',
     selectedStroke: isDark ? 'rgba(255, 255, 255, 0.65)' : '#6366f1',
   },
+  // Anchor dots: visible small circles like n8n (show on node hover via CSS).
   anchor: {
-    stroke: isDark ? '#64748b' : '#cbd5e1',
+    stroke: isDark ? '#64748b' : '#94a3b8',
     fill: isDark ? '#1e293b' : '#ffffff',
     r: 5,
+    hover: {
+      fill: '#3b82f6',
+      stroke: '#3b82f6',
+      r: 6,
+    },
   },
   outline: {
     fill: 'none',

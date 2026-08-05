@@ -412,7 +412,12 @@
       <CollaboratorsPage :inbox="inbox" />
     </div>
     <div v-if="selectedTabKey === 'configuration'">
-      <ConfigurationPage :inbox="inbox" />
+      <ConfigurationPage
+        :inbox="inbox"
+        :health-data="healthData"
+        :is-registering-webhook="isRegisteringWebhook"
+        @registerWebhook="registerWebhook"
+      />
     </div>
     <div v-if="selectedTabKey === 'whatsapp_templates'" class="mx-8">
       <TemplatesPage :inbox-id="inbox.id" />
@@ -424,8 +429,6 @@
         :is-loading-pricing="isLoadingPricing"
         :pricing-error="pricingError"
         :pricing-error-code="pricingErrorCode"
-        :is-registering-webhook="isRegisteringWebhook"
-        @registerWebhook="registerWebhook"
       />
     </div>
     <div v-if="selectedTabKey === 'csat'" class="mx-8">
