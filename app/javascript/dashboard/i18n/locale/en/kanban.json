@@ -181,6 +181,17 @@
       "CLEAR_ALL": "Clear all",
       "APPLY": "Apply"
     },
+    "SORT": {
+      "TITLE": "Sort",
+      "NAME_ASC": "Name (A-Z)",
+      "NAME_DESC": "Name (Z-A)",
+      "POSITION": "Manual order",
+      "DEAL_VALUE_DESC": "Deal value (high to low)",
+      "DEAL_VALUE_ASC": "Deal value (low to high)",
+      "NEWEST": "Newest first",
+      "OLDEST": "Oldest first",
+      "TIME_IN_STAGE": "Longest in stage"
+    },
     "DASHBOARD": {
       "TITLE": "Pipeline Dashboard",
       "TOTAL_CARDS": "Total Items",

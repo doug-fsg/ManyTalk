@@ -11,8 +11,8 @@ class Contacts::FilterService < FilterService
   def perform
     @contacts = query_builder(@filters['contacts'])
     
-    # Filtrar por assignee se não for admin e houver pipeline kanban nos filtros
-    unless @user.administrator?
+    # Filtrar por assignee se não for admin/supervisor do pipeline
+    unless pipeline_admin_access?
       @contacts = filter_by_assignee(@contacts)
     end
 
@@ -170,6 +170,15 @@ class Contacts::FilterService < FilterService
       kanban_pipeline_ids,
       @user.id
     )
+  end
+
+  def pipeline_admin_access?
+    return true if @user.administrator?
+
+    get_kanban_pipeline_ids_from_filters.any? do |pipeline_id|
+      pipeline = @account.custom_attribute_definitions.find_by(id: pipeline_id, is_kanban: true)
+      pipeline&.user_permission(@user) == :admin
+    end
   end
 
   def equals_to_filter_string(filter_operator, current_index)

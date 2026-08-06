@@ -69,7 +69,7 @@ class CacheEnabledApiClient extends ApiClient {
     try {
       await this.dataManager.initDb();
 
-      this.dataManager.replace({
+      await this.dataManager.replace({
         modelName: this.cacheModelName,
         data: this.extractDataFromResponse(response),
       });

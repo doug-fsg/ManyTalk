@@ -110,6 +110,12 @@
           @win-lost-filter="handleWinLostFilter"
         />
 
+        <!-- Sort -->
+        <kanban-sort
+          :sort-by="sortBy"
+          @sort-changed="handleSortChanged"
+        />
+
         <!-- Search -->
         <div class="hidden md:flex items-center gap-2">
           <button
@@ -213,11 +219,14 @@
 <script>
 import { directive as onClickaway } from 'vue-clickaway';
 import KanbanFilters from './KanbanFilters.vue';
+import KanbanSort from './KanbanSort.vue';
+import { DEFAULT_KANBAN_SORT } from '../utils/kanbanSortHelper';
 
 export default {
   name: 'KanbanHeader',
   components: {
     KanbanFilters,
+    KanbanSort,
   },
   directives: {
     onClickaway,
@@ -259,6 +268,10 @@ export default {
     showAssigneeFilter: {
       type: Boolean,
       default: false,
+    },
+    sortBy: {
+      type: String,
+      default: DEFAULT_KANBAN_SORT,
     },
   },
   data() {
@@ -350,6 +363,9 @@ export default {
     },
     handleFiltersChanged(filters) {
       this.$emit('filters-changed', filters);
+    },
+    handleSortChanged(sortBy) {
+      this.$emit('sort-changed', sortBy);
     },
     updateBadgePosition() {
       this.$nextTick(() => {

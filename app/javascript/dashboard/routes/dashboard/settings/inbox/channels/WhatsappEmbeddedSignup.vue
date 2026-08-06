@@ -23,6 +23,8 @@ export default {
       authCode: null,
       businessData: null,
       isAuthenticating: false,
+      // Prevents double create when Meta sends FINISH + FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING
+      signupCompleted: false,
     };
   },
   computed: {
@@ -73,6 +75,8 @@ export default {
     handleSignupSuccess(inboxData) {
       this.isProcessing = false;
       this.isAuthenticating = false;
+      this.signupCompleted = true;
+      this.cleanupMessageListener();
 
       if (inboxData && inboxData.id) {
         useAlert(this.$t('INBOX_MGMT.FINISH.MESSAGE'));
@@ -91,6 +95,11 @@ export default {
       }
     },
     async completeSignupFlow(businessDataParam) {
+      // Re-entry guard: Meta may emit multiple finish events for one session
+      if (this.isProcessing || this.signupCompleted) {
+        return;
+      }
+
       if (!this.authCodeReceived || !this.authCode) {
         this.handleSignupError({
           error: this.$t('INBOX_MGMT.ADD.WHATSAPP.EMBEDDED_SIGNUP.AUTH_NOT_COMPLETED'),
@@ -103,9 +112,14 @@ export default {
         'INBOX_MGMT.ADD.WHATSAPP.EMBEDDED_SIGNUP.PROCESSING'
       );
 
+      // Consume auth code immediately so a concurrent finish event cannot reuse it
+      const authCode = this.authCode;
+      this.authCode = null;
+      this.authCodeReceived = false;
+
       try {
         const params = {
-          code: this.authCode,
+          code: authCode,
           business_id: businessDataParam.business_id,
           waba_id: businessDataParam.waba_id,
           phone_number_id: businessDataParam?.phone_number_id || '',
@@ -116,7 +130,6 @@ export default {
           params
         );
 
-        this.authCode = null;
         this.handleSignupSuccess(responseData);
       } catch (error) {
         const errorMessage =
@@ -126,6 +139,10 @@ export default {
       }
     },
     async handleEmbeddedSignupData(data) {
+      if (this.signupCompleted || this.isProcessing) {
+        return;
+      }
+
       if (
         data.event === 'FINISH' ||
         data.event === 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING'

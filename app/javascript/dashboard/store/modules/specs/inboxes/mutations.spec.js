@@ -48,6 +48,16 @@ describe('#mutations', () => {
       mutations[types.default.ADD_INBOXES](state, inboxList[0]);
       expect(state.records).toEqual([inboxList[0]]);
     });
+
+    it('does not duplicate when the same inbox id is added twice', () => {
+      const state = {
+        records: [inboxList[0]],
+      };
+      const updatedInbox = { ...inboxList[0], name: 'Updated Inbox' };
+      mutations[types.default.ADD_INBOXES](state, updatedInbox);
+      expect(state.records).toHaveLength(1);
+      expect(state.records[0]).toEqual(updatedInbox);
+    });
   });
   describe('#EDIT_INBOXES', () => {
     it('update inbox in the store', () => {

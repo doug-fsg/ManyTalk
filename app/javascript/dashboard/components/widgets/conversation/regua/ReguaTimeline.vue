@@ -59,6 +59,10 @@ import {
   displayTimelineStatus,
   displayWorkflowStepLabel,
 } from 'dashboard/helper/workflowDisplayLabels';
+import {
+  actionDetailsTextForItem,
+  actionDetailsTooltipForItem,
+} from './reguaTimelineHelpers';
 
 const props = defineProps({
   timeline: { type: Array, default: () => [] },
@@ -69,20 +73,8 @@ const { t } = useI18n();
 
 const stepLabel = item => displayWorkflowStepLabel(item, t);
 
-const actionDetailsText = item => {
-  const details = item && item.action_details;
-  if (!Array.isArray(details) || !details.length) return '';
-  return details.join('\n');
-};
-
-const actionDetailsTooltip = item => {
-  const content = actionDetailsText(item);
-  if (!content) return null;
-  return {
-    content,
-    classes: ['regua-action-tooltip'],
-  };
-};
+const actionDetailsText = actionDetailsTextForItem;
+const actionDetailsTooltip = actionDetailsTooltipForItem;
 
 const dotClass = item => {
   if (item.node_id === props.currentNodeId) return 'bg-woot-500';

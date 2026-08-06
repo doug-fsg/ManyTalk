@@ -61,4 +61,11 @@ RSpec.describe Workflows::TimelineBuilder do
 
     expect(action_step[:action_details]).to eq(['Enviar uma mensagem: Hi'])
   end
+
+  it 'omits action_details for non-action steps' do
+    result = described_class.new(enrollment).build
+    wait_step = result[:timeline].find { |s| s[:node_id] == 'wait_1' }
+
+    expect(wait_step[:action_details]).to eq([])
+  end
 end

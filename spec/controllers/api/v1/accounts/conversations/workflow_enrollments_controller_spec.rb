@@ -108,6 +108,28 @@ RSpec.describe 'Conversations::WorkflowEnrollments API', type: :request do
         body = response.parsed_body
         expect(body['enrollment']).to be_nil
       end
+
+      it 'returns human labels and action_details in active enrollment payload' do
+        enrollment = create(:workflow_enrollment, account: account, conversation: conversation,
+                                                  workflow: workflow, status: 'waiting',
+                                                  current_node_id: 'wait_1')
+        create(:workflow_step_execution,
+               workflow_enrollment: enrollment,
+               node_id: 'trigger_1',
+               status: 'completed',
+               executed_at: 2.hours.ago)
+
+        get url, headers: agent.create_new_auth_token, as: :json
+
+        expect(response).to have_http_status(:ok)
+        body = response.parsed_body
+        expect(body['current_node_label']).to eq('Espera · 6 hora(s)')
+        expect(body['current_node_type']).to eq('wait')
+
+        action_step = body['timeline'].find { |step| step['node_id'] == 'action_1' }
+        expect(action_step['label']).to eq('Enviar uma mensagem')
+        expect(action_step['action_details']).to eq(['Enviar uma mensagem: Hello'])
+      end
     end
   end
 

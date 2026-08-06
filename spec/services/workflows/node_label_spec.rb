@@ -66,5 +66,43 @@ RSpec.describe Workflows::NodeLabel do
         ['Enviar uma mensagem: Oi', 'Adicionar uma etiqueta: vip']
       )
     end
+
+    it 'truncates long message previews' do
+      long_text = 'a' * 100
+      node = {
+        'type' => 'action',
+        'data' => { 'action_name' => 'send_message', 'action_params' => [long_text] }
+      }
+      detail = described_class.action_details(node).first
+      expect(detail).to start_with('Enviar uma mensagem: ')
+      expect(detail).to end_with('…')
+      expect(detail.split(': ', 2).last.length).to be <= 72
+    end
+
+    it 'describes label actions with comma-separated values' do
+      node = {
+        'type' => 'action',
+        'data' => { 'action_name' => 'add_label', 'action_params' => %w[vip premium] }
+      }
+      expect(described_class.action_details(node)).to eq(
+        ['Adicionar uma etiqueta: vip, premium']
+      )
+    end
+
+    it 'returns action title only when there are no params' do
+      node = {
+        'type' => 'action',
+        'data' => { 'action_name' => 'resolve_conversation', 'action_params' => [] }
+      }
+      expect(described_class.action_details(node)).to eq(['Resolver conversa'])
+    end
+
+    it 'describes attachment count' do
+      node = {
+        'type' => 'action',
+        'data' => { 'action_name' => 'send_attachment', 'action_params' => %w[a b] }
+      }
+      expect(described_class.action_details(node)).to eq(['Enviar anexo: 2 arquivo(s)'])
+    end
   end
 end

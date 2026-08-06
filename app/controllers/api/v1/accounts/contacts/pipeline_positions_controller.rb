@@ -33,11 +33,7 @@ class Api::V1::Accounts::Contacts::PipelinePositionsController < Api::V1::Accoun
   # Estatísticas agregadas por stage
   def stats
     pipeline_id = params[:pipeline_id].to_i
-    # Usar joins explícito para garantir que funciona corretamente
-    positions = ContactPipelinePosition
-      .joins(:contact)
-      .where(contacts: { account_id: Current.account.id })
-      .where(pipeline_id: pipeline_id)
+    positions = scoped_pipeline_positions(pipeline_id)
 
     stage_stats = positions
       .group(:stage_id)
@@ -60,12 +56,9 @@ class Api::V1::Accounts::Contacts::PipelinePositionsController < Api::V1::Accoun
   # Estatísticas completas do dashboard
   def dashboard_stats
     pipeline_id = params[:pipeline_id].to_i
-    # Usar joins explícito para garantir que funciona corretamente
     # IMPORTANTE: Todos os dados vêm SOMENTE de contact_pipeline_positions (sem JSON de contacts)
-    positions_relation = ContactPipelinePosition
-      .joins(:contact)
-      .where(contacts: { account_id: Current.account.id })
-      .where(pipeline_id: pipeline_id)
+    # Agentes veem apenas cards próprios ou sem responsável (mesma regra da listagem)
+    positions_relation = scoped_pipeline_positions(pipeline_id)
 
     # Estatísticas gerais usando SQL
     total_cards = positions_relation.count
@@ -227,6 +220,28 @@ class Api::V1::Accounts::Contacts::PipelinePositionsController < Api::V1::Accoun
     unless @pipeline
       render json: { error: 'Pipeline not found' }, status: :not_found
     end
+  end
+
+  # Posições do pipeline respeitando a mesma visibilidade da listagem:
+  # admin global / supervisor do pipeline → todos; demais → próprios ou sem dono
+  def scoped_pipeline_positions(pipeline_id)
+    positions = ContactPipelinePosition
+      .joins(:contact)
+      .where(contacts: { account_id: Current.account.id })
+      .where(pipeline_id: pipeline_id)
+
+    return positions if pipeline_admin_access?
+
+    positions.where(
+      'contact_pipeline_positions.assignee_id = ? OR contact_pipeline_positions.assignee_id IS NULL',
+      Current.user.id
+    )
+  end
+
+  def pipeline_admin_access?
+    return true if Current.user&.administrator?
+
+    @pipeline&.user_permission(Current.user) == :admin
   end
 
   def check_pipeline_edit_permission

@@ -332,7 +332,9 @@ export const mutations = {
   },
   [types.default.SET_INBOXES]: MutationHelpers.set,
   [types.default.SET_INBOX_ITEM]: MutationHelpers.setSingleRecord,
-  [types.default.ADD_INBOXES]: MutationHelpers.create,
+  // Upsert by id — prevents duplicate rows when create is dispatched twice
+  // (e.g. Meta FINISH + FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING) before refresh/revalidate
+  [types.default.ADD_INBOXES]: MutationHelpers.setSingleRecord,
   [types.default.EDIT_INBOXES]: MutationHelpers.update,
   [types.default.DELETE_INBOXES]: MutationHelpers.destroy,
 };

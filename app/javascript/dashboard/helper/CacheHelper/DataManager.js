@@ -41,7 +41,9 @@ export class DataManager {
   async replace({ modelName, data }) {
     this.validateModel(modelName);
 
-    this.db.clear(modelName);
+    // Must await clear before add — otherwise concurrent clear/add races
+    // can leave stale rows or ConstraintError duplicates in IndexedDB
+    await this.db.clear(modelName);
     return this.push({ modelName, data });
   }
 

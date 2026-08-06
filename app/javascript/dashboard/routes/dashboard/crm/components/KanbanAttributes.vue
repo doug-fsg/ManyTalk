@@ -12,6 +12,7 @@
       :pipeline-id="selectedAttribute ? selectedAttribute.id : null"
       :filters="kanbanFilters"
       :show-assignee-filter="isAdmin"
+      :sort-by="sortBy"
       @update:current-view="currentView = $event"
       @select-pipeline="selectPipeline"
       @search="handleSearch"
@@ -20,6 +21,7 @@
       @delete-kanban="deleteKanban"
       @win-lost-filter="handleWinLostFilter"
       @filters-changed="handleFiltersChanged"
+      @sort-changed="handleSortChanged"
     />
 
     <div v-if="showPipelineDropdown" class="pipeline-dropdown">
@@ -358,6 +360,11 @@ import {
   getCreatedAt,
   getWinLostStatus
 } from '../utils/pipelinePositionsHelper';
+import {
+  DEFAULT_KANBAN_SORT,
+  isValidKanbanSort,
+  sortKanbanContacts,
+} from '../utils/kanbanSortHelper';
 import { parseOpenCardModalPayload } from '../utils/crmNavigationHelper';
 
 // Criar um barramento de eventos global compartilhado
@@ -430,6 +437,8 @@ export default {
       hasMoreContacts: false,
       // Estatísticas agregadas por coluna (totais reais do backend)
       columnStats: {}, // Formato: { [stageId]: { count: number, total_value: number } }
+      // Ordenação visual dos cards nas colunas (padrão: nome)
+      sortBy: DEFAULT_KANBAN_SORT,
       showWinLostModal: false,
       winLostModalContact: {},
       winLostModalStatus: 'won',
@@ -464,6 +473,7 @@ export default {
     };
   },
   created() {
+    this.restoreKanbanSort();
     this.initializeComponent();
   },
   mounted() {
@@ -510,18 +520,24 @@ export default {
       attributes: 'attributes/getAttributes',
       contacts: 'contacts/getContacts',
       uiFlags: 'attributes/getUIFlags',
-      canEditPipeline: 'kanban/canEditPipeline',
-      canViewPipeline: 'kanban/canViewPipeline',
       getPipelinePermission: 'kanban/getPipelinePermission',
     }),
+    // Permissão efetiva do pipeline atual (API user_permission)
+    // supervisor é serializado como 'admin' no backend
+    currentPipelinePermission() {
+      if (!this.selectedAttribute) return null;
+      if (this.selectedAttribute.user_permission) {
+        return this.selectedAttribute.user_permission;
+      }
+      return this.getPipelinePermission(this.selectedAttribute.id);
+    },
     isViewerMode() {
-      if (!this.selectedAttribute) return false;
-      const permission = this.getPipelinePermission(this.selectedAttribute.id);
-      return permission === 'viewer';
+      return this.currentPipelinePermission === 'viewer';
     },
     canEditCurrentPipeline() {
       if (!this.selectedAttribute) return true;
-      return this.canEditPipeline(this.selectedAttribute.id);
+      const permission = this.currentPipelinePermission;
+      return permission === 'admin' || permission === 'editor' || permission === 'supervisor';
     },
     isDarkMode() {
       return this.$store.getters['theme/isDarkMode'];
@@ -744,16 +760,12 @@ export default {
       return this.$store.getters.getCurrentUser;
     },
     isAdmin() {
-      // Verifica se o usuário atual é administrador global
+      // Admin global ou supervisor/admin do pipeline (vê todos os cards e totais)
       if (this.currentUser && this.currentUser.role === 'administrator') {
         return true;
       }
-      // Verifica se o usuário tem permissão de supervisor no pipeline atual
-      if (this.selectedAttribute) {
-        const permission = this.getPipelinePermission(this.selectedAttribute.id);
-        return permission === 'supervisor' || permission === 'admin';
-      }
-      return false;
+      const permission = this.currentPipelinePermission;
+      return permission === 'admin' || permission === 'supervisor';
     },
     // Otimização: Criar índice de contatos por coluna uma vez, evitando refazer filtros
     // Agora usa pipeline_positions em vez de custom_attributes
@@ -1564,29 +1576,11 @@ export default {
         // Usar uma cor consistente para cada valor (já carregada no colorMap acima)
         const color = this.getStageColor(stageName);
         // Usar índice pré-calculado em vez de filtrar todos os contatos
-        let contacts = this.contactsByColumn[stageName] || [];
-
-        // Ordenar por position quando disponível (vindo de contact_pipeline_positions)
-        // Se não tiver position, manter ordem atual (que já reflete ordem do drag)
-        contacts = [...contacts].sort((a, b) => {
-          const posA = this.getContactPosition(a.id, this.selectedAttribute.id, stageName);
-          const posB = this.getContactPosition(b.id, this.selectedAttribute.id, stageName);
-          
-          // Se ambos têm position, ordenar por position
-          if (posA !== null && posB !== null && posA !== undefined && posB !== undefined) {
-            return posA - posB;
-          }
-          
-          // Se apenas um tem position, ele vem primeiro
-          if (posA !== null && posA !== undefined) return -1;
-          if (posB !== null && posB !== undefined) return 1;
-          
-          // Se nenhum tem position, manter ordem atual (created_at ou ordem de inserção)
-          // Mas ordenar por created_at como fallback para consistência
-          const createdA = a.created_at || 0;
-          const createdB = b.created_at || 0;
-          return createdA - createdB;
-        });
+        const contacts = sortKanbanContacts(
+          this.contactsByColumn[stageName] || [],
+          this.sortBy,
+          this.selectedAttribute.id
+        );
 
         this.columns.push({
           id: `column-${stageName}`,
@@ -2238,6 +2232,47 @@ export default {
         localStorage.removeItem(LOCAL_STORAGE_KEYS.KANBAN_SELECTED_PIPELINE);
       } catch (error) {
         console.warn('[Kanban] Erro ao limpar pipeline do localStorage:', error);
+      }
+    },
+    saveKanbanSort(sortBy) {
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEYS.KANBAN_COLUMN_SORT, sortBy);
+      } catch (error) {
+        console.warn('[Kanban] Erro ao salvar ordenação no localStorage:', error);
+      }
+    },
+    restoreKanbanSort() {
+      try {
+        const saved = localStorage.getItem(LOCAL_STORAGE_KEYS.KANBAN_COLUMN_SORT);
+        if (saved && isValidKanbanSort(saved)) {
+          this.sortBy = saved;
+        } else {
+          this.sortBy = DEFAULT_KANBAN_SORT;
+        }
+      } catch (error) {
+        this.sortBy = DEFAULT_KANBAN_SORT;
+      }
+    },
+    handleSortChanged(sortBy) {
+      if (!isValidKanbanSort(sortBy) || sortBy === this.sortBy) return;
+      this.sortBy = sortBy;
+      this.saveKanbanSort(sortBy);
+      this.applySortToColumns();
+    },
+    applySortToColumns() {
+      if (!this.selectedAttribute || !this.columns.length) return;
+
+      this.columns = this.columns.map(column => ({
+        ...column,
+        items: sortKanbanContacts(
+          column.items,
+          this.sortBy,
+          this.selectedAttribute.id
+        ),
+      }));
+
+      if (this.hasActiveColumnFilters) {
+        this.applyFiltersToColumns();
       }
     },
     selectPipeline(pipeline) {

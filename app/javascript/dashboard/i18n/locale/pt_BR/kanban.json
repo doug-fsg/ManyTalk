@@ -212,6 +212,17 @@
       "CLEAR_ALL": "Limpar todos",
       "APPLY": "Aplicar"
     },
+    "SORT": {
+      "TITLE": "Ordenar",
+      "NAME_ASC": "Nome (A-Z)",
+      "NAME_DESC": "Nome (Z-A)",
+      "POSITION": "Ordem manual",
+      "DEAL_VALUE_DESC": "Valor (maior → menor)",
+      "DEAL_VALUE_ASC": "Valor (menor → maior)",
+      "NEWEST": "Mais recentes",
+      "OLDEST": "Mais antigos",
+      "TIME_IN_STAGE": "Mais tempo na etapa"
+    },
     "DASHBOARD": {
       "TITLE": "Dashboard do Pipeline",
       "TOTAL_CARDS": "Total de Itens",
