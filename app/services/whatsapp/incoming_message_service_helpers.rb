@@ -53,6 +53,8 @@ module Whatsapp::IncomingMessageServiceHelpers
   end
 
   # ref: https://github.com/chatwoot/chatwoot/issues/5840
+  # Brazil mobiles may arrive with or without the extra 9 after DDD.
+  # Canonical with-9 form: 55 + DDD(2) + 9 + 8 digits = 13 digits.
   def normalised_brazil_mobile_number(phone_number)
     # DDD : Area codes in Brazil are popularly known as "DDD codes" (códigos DDD) or simply "DDD", from the initials of "direct distance dialing"
     # https://en.wikipedia.org/wiki/Telephone_numbers_in_Brazil
@@ -65,18 +67,40 @@ module Whatsapp::IncomingMessageServiceHelpers
     normalised_number
   end
 
-  def processed_waid(waid)
-    # in case of Brazil, we need to do additional processing
-    # https://github.com/chatwoot/chatwoot/issues/5840
-    if brazil_phone_number?(waid)
-      # check if there is an existing contact inbox with the normalised waid
-      # We will create conversation against it
-      contact_inbox = inbox.contact_inboxes.find_by(source_id: normalised_brazil_mobile_number(waid))
+  # Inverse of normalised_brazil_mobile_number for the with-9 → without-9 lookup.
+  # Only strips when the number matches 55 + DDD + 9 + 8 digits.
+  def brazil_mobile_number_without_ninth_digit(phone_number)
+    return unless phone_number.to_s.length == 13
 
-      # if there is no contact inbox with the waid without 9,
-      # We will create contact inboxes and contacts with the number 9 added
-      waid = contact_inbox.source_id if contact_inbox.present?
+    ddd = phone_number[2, 2]
+    ninth_digit = phone_number[4]
+    subscriber = phone_number[5, 8]
+    return unless ninth_digit == '9' && subscriber.to_s.length == 8
+
+    "55#{ddd}#{subscriber}"
+  end
+
+  def brazil_mobile_source_id_candidates(waid)
+    [
+      waid,
+      normalised_brazil_mobile_number(waid),
+      brazil_mobile_number_without_ninth_digit(waid)
+    ].compact.uniq
+  end
+
+  def processed_waid(waid)
+    # Bidirectional BR mobile matching (production-safe):
+    # - incoming without 9 → find existing with 9
+    # - incoming with 9 → find existing without 9
+    # Prefer the existing contact_inbox.source_id (no rewrite / no auto-merge).
+    # https://github.com/chatwoot/chatwoot/issues/5840
+    return waid unless brazil_phone_number?(waid)
+
+    brazil_mobile_source_id_candidates(waid).each do |candidate|
+      contact_inbox = inbox.contact_inboxes.find_by(source_id: candidate)
+      return contact_inbox.source_id if contact_inbox.present?
     end
+
     waid
   end
 

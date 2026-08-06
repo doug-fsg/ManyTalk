@@ -4,14 +4,21 @@ describe Whatsapp::IncomingMessageService do
   describe '#perform' do
     before do
       stub_request(:post, 'https://waba.360dialog.io/v1/configs/webhook')
+      # Dedup locks live in Redis and survive transactional fixtures / prior runs.
+      Redis::Alfred.delete(format(Redis::RedisKeys::MESSAGE_SOURCE_KEY, id: params[:messages].first[:id]))
+    end
+
+    after do
+      Redis::Alfred.delete(format(Redis::RedisKeys::MESSAGE_SOURCE_KEY, id: params[:messages].first[:id]))
     end
 
     let!(:whatsapp_channel) { create(:channel_whatsapp, sync_templates: false) }
     let(:wa_id) { '2423423243' }
+    let(:message_source_id) { "wamid.test-#{SecureRandom.hex(8)}" }
     let!(:params) do
       {
         'contacts' => [{ 'profile' => { 'name' => 'Sojan Jose' }, 'wa_id' => wa_id }],
-        'messages' => [{ 'from' => wa_id, 'id' => 'SDFADSf23sfasdafasdfa', 'text' => { 'body' => 'Test' },
+        'messages' => [{ 'from' => wa_id, 'id' => message_source_id, 'text' => { 'body' => 'Test' },
                          'timestamp' => '1633034394', 'type' => 'text' }]
       }.with_indifferent_access
     end
@@ -303,7 +310,7 @@ describe Whatsapp::IncomingMessageService do
       it 'creates appropriate conversations, message and contacts if contact does not exit' do
         described_class.new(inbox: whatsapp_channel.inbox, params: params).perform
         expect(whatsapp_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
+        expect(whatsapp_channel.inbox.contact_inboxes.first.contact.name).to eq('Sojan Jose')
         expect(whatsapp_channel.inbox.messages.first.content).to eq('Test')
         expect(whatsapp_channel.inbox.contact_inboxes.first.source_id).to eq(wa_id)
       end
@@ -316,6 +323,28 @@ describe Whatsapp::IncomingMessageService do
         expect(whatsapp_channel.inbox.conversations.count).to eq(1)
         # message appended to the last conversation
         expect(last_conversation.messages.last.content).to eq(params[:messages].first[:text][:body])
+      end
+
+      context 'when a contact inbox exists in the old format without 9 included' do
+        it 'appends to existing contact instead of creating a duplicate' do
+          contact = create(:contact, account: whatsapp_channel.account, phone_number: '+554188887777')
+          contact_inbox = create(:contact_inbox, inbox: whatsapp_channel.inbox, contact: contact, source_id: '554188887777')
+          last_conversation = create(
+            :conversation,
+            account: whatsapp_channel.account,
+            inbox: whatsapp_channel.inbox,
+            contact: contact,
+            contact_inbox: contact_inbox
+          )
+
+          expect do
+            described_class.new(inbox: whatsapp_channel.inbox, params: params).perform
+          end.not_to change { whatsapp_channel.inbox.contact_inboxes.count }
+
+          expect(whatsapp_channel.inbox.conversations.count).to eq(1)
+          expect(whatsapp_channel.inbox.contact_inboxes.pluck(:source_id)).to eq(['554188887777'])
+          expect(last_conversation.messages.last.content).to eq(params[:messages].first[:text][:body])
+        end
       end
     end
 
@@ -350,7 +379,7 @@ describe Whatsapp::IncomingMessageService do
         it 'creates contact inbox with the incoming waid' do
           described_class.new(inbox: whatsapp_channel.inbox, params: params).perform
           expect(whatsapp_channel.inbox.conversations.count).not_to eq(0)
-          expect(Contact.all.first.name).to eq('Sojan Jose')
+          expect(whatsapp_channel.inbox.contact_inboxes.first.contact.name).to eq('Sojan Jose')
           expect(whatsapp_channel.inbox.messages.first.content).to eq('Test')
           expect(whatsapp_channel.inbox.contact_inboxes.first.source_id).to eq(wa_id)
         end

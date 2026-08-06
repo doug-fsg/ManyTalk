@@ -183,6 +183,12 @@ class Whatsapp::IncomingMessageBaseService
     @message_type = :incoming
   end
 
+  # 360dialog / non-cloud webhooks are always inbound.
+  # WhatsApp Cloud overrides this to detect business-echo outgoing messages.
+  def outgoing_message_type?
+    false
+  end
+
   def microsecond
     # rubocop:disable Style/ClassVars
     @@microsecond = 0 if @@microsecond > 999_999
