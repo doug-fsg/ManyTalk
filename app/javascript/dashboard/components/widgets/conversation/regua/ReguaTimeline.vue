@@ -17,12 +17,23 @@
           />
         </div>
         <div class="flex-1 min-w-0 -mt-0.5">
-          <p
-            class="text-sm truncate"
-            :class="labelClass(item)"
-          >
-            {{ item.label || item.node_type }}
-          </p>
+          <div class="flex items-center gap-1 min-w-0">
+            <p
+              class="text-sm truncate min-w-0"
+              :class="labelClass(item)"
+            >
+              {{ stepLabel(item) }}
+            </p>
+            <button
+              v-if="actionDetailsText(item)"
+              v-tooltip.top="actionDetailsTooltip(item)"
+              type="button"
+              class="inline-flex shrink-0 items-center justify-center p-0.5 rounded text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-woot-500"
+              :aria-label="$t('WORKFLOW.REGUA.TIMELINE.ACTION_DETAILS')"
+            >
+              <fluent-icon icon="info" size="14" aria-hidden="true" />
+            </button>
+          </div>
           <p
             class="text-xs tabular-nums"
             :class="item.status === 'failed' ? 'text-red-500 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'"
@@ -44,6 +55,10 @@
 
 <script setup>
 import { useI18n } from 'dashboard/composables/useI18n';
+import {
+  displayTimelineStatus,
+  displayWorkflowStepLabel,
+} from 'dashboard/helper/workflowDisplayLabels';
 
 const props = defineProps({
   timeline: { type: Array, default: () => [] },
@@ -51,6 +66,23 @@ const props = defineProps({
 });
 
 const { t } = useI18n();
+
+const stepLabel = item => displayWorkflowStepLabel(item, t);
+
+const actionDetailsText = item => {
+  const details = item && item.action_details;
+  if (!Array.isArray(details) || !details.length) return '';
+  return details.join('\n');
+};
+
+const actionDetailsTooltip = item => {
+  const content = actionDetailsText(item);
+  if (!content) return null;
+  return {
+    content,
+    classes: ['regua-action-tooltip'],
+  };
+};
 
 const dotClass = item => {
   if (item.node_id === props.currentNodeId) return 'bg-woot-500';
@@ -96,9 +128,18 @@ const statusLabel = item => {
         timeStyle: 'short',
       }).format(new Date(item.executed_at));
     } catch {
-      return item.status;
+      return displayTimelineStatus(item.status, t);
     }
   }
-  return item.status || '';
+  return displayTimelineStatus(item.status, t);
 };
 </script>
+
+<style lang="scss">
+body > .tooltip.regua-action-tooltip,
+body > .v-tooltip-container.regua-action-tooltip {
+  max-width: 16rem;
+  white-space: pre-line;
+  text-align: left;
+}
+</style>

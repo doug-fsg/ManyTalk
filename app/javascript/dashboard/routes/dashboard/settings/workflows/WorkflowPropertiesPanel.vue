@@ -1,13 +1,8 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useStore } from 'dashboard/composables/store';
-import { useAlert } from 'dashboard/composables';
 import { useI18n } from 'dashboard/composables/useI18n';
-import WorkflowsAPI from 'dashboard/api/workflows';
-import {
-  WORKFLOW_ACTION_TYPES,
-  WORKFLOW_WAIT_RESPONDERS,
-} from './constants';
+import { WORKFLOW_WAIT_RESPONDERS } from './constants';
 import {
   WORKFLOW_TRIGGER_EVENTS_EXTENDED,
   FORM_SUBMITTED_EVENT_KEY,
@@ -18,28 +13,19 @@ import WorkflowConditionsEditor from './WorkflowConditionsEditor.vue';
 import WorkflowAiOutreachPanel from './WorkflowAiOutreachPanel.vue';
 import WorkflowAiAnalysisPanel from './WorkflowAiAnalysisPanel.vue';
 import WorkflowAiWaitForIntentPanel from './WorkflowAiWaitForIntentPanel.vue';
-import KanbanStageSelect from 'dashboard/routes/dashboard/settings/macros/components/KanbanStageSelect.vue';
-import AutomationFileInput from 'dashboard/components/widgets/AutomationFileInput.vue';
-import {
-  listExternalWhatsappInboxes,
-  validateExternalWhatsappPhone,
-  normalizeExternalWhatsappPhone,
-} from './workflowWhatsappHelper';
+import WorkflowActionList from './WorkflowActionList.vue';
 
 const props = defineProps({
   node: { type: Object, default: null },
   readOnly: { type: Boolean, default: false },
   nodeErrors: { type: Array, default: () => [] },
+  asModal: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update-node']);
 const { t } = useI18n();
 const store = useStore();
-const isTestingWhatsapp = ref(false);
 
-const agents = computed(() => store.getters['agents/getAgents'] || []);
-const teams = computed(() => store.getters['teams/getTeams'] || []);
-const labels = computed(() => store.getters['labels/getLabels'] || []);
 const inboxes = computed(() => store.getters['inboxes/getInboxes'] || []);
 const publishedForms = computed(() => {
   const forms = store.getters['accountForms/getAccountForms'] || [];
@@ -54,17 +40,6 @@ const isFormSubmittedTrigger = computed(
   () => nodeProps.value.event_name === FORM_SUBMITTED_EVENT_KEY
 );
 
-const whatsappInboxes = computed(() =>
-  listExternalWhatsappInboxes(store.getters['inboxes/getInboxes'] || [])
-);
-
-const whatsappPhoneError = computed(() => {
-  const phone = (nodeProps.value.action_params || [])[1];
-  if (!phone) return null;
-  const result = validateExternalWhatsappPhone(phone);
-  return result.isValid ? null : result.messageKey;
-});
-
 const nodeType = computed(() => {
   const node = props.node;
   return node && node.properties && node.properties.workflowNodeType;
@@ -72,34 +47,6 @@ const nodeType = computed(() => {
 const nodeProps = computed(() => {
   const node = props.node;
   return (node && node.properties) || {};
-});
-
-const actionInputType = computed(() => {
-  if (!nodeProps.value.action_name) return null;
-  return (
-    WORKFLOW_ACTION_TYPES.find(a => a.key === nodeProps.value.action_name)
-      ?.inputType || null
-  );
-});
-
-const PRIORITY_OPTIONS = [
-  { id: 'none', name: 'Nenhuma' },
-  { id: 'low', name: 'Baixa' },
-  { id: 'medium', name: 'Média' },
-  { id: 'high', name: 'Alta' },
-  { id: 'urgent', name: 'Urgente' },
-];
-
-const actionDropdownOptions = computed(() => {
-  const action = nodeProps.value.action_name;
-  if (action === 'assign_agent')
-    return agents.value.map(a => ({ id: a.id, name: a.name }));
-  if (action === 'assign_team')
-    return teams.value.map(tm => ({ id: tm.id, name: tm.name }));
-  if (action === 'add_label' || action === 'remove_label')
-    return labels.value.map(l => ({ id: l.title, name: l.title }));
-  if (action === 'change_priority') return PRIORITY_OPTIONS;
-  return [];
 });
 
 const updateProp = (key, value) => emit('update-node', { [key]: value });
@@ -128,81 +75,6 @@ const toggleForm = formId => {
   if (idx === -1) ids.push(strId);
   else ids.splice(idx, 1);
   updateProp('conditions', buildFormSubmittedConditions(ids));
-};
-
-const onActionNameChange = newName => {
-  emit('update-node', { action_name: newName, action_params: [] });
-};
-
-// Single search_select: backend expects [id]
-const onSingleSelectChange = value => {
-  updateProp('action_params', value ? [value] : []);
-};
-
-// Multi-select labels: backend expects [labelTitle, ...]
-const isLabelSelected = labelTitle => {
-  return (nodeProps.value.action_params || []).includes(labelTitle);
-};
-
-const toggleLabel = labelTitle => {
-  const params = [...(nodeProps.value.action_params || [])];
-  const idx = params.indexOf(labelTitle);
-  if (idx === -1) params.push(labelTitle);
-  else params.splice(idx, 1);
-  updateProp('action_params', params);
-};
-
-// KanbanStageSelect emits [{id: pipelineId, name}, {id: stageName, name}]
-// Backend expects [pipelineId, stageName]
-const onKanbanStageChange = value => {
-  if (!value || !value.length) {
-    updateProp('action_params', []);
-    return;
-  }
-  const pipelineId = value[0]?.id;
-  const stageName = value[1]?.id || value[1]?.name;
-  updateProp('action_params', [pipelineId, stageName]);
-};
-
-const updateWhatsappParam = (index, value) => {
-  const params = [...(nodeProps.value.action_params || ['', '', ''])];
-  params[index] = value;
-  emit('update-node', { action_params: params });
-};
-
-const normalizeWhatsappPhoneField = () => {
-  const params = [...(nodeProps.value.action_params || ['', '', ''])];
-  params[1] = normalizeExternalWhatsappPhone(params[1]);
-  emit('update-node', { action_params: params });
-};
-
-const testWhatsappExternal = async () => {
-  const params = nodeProps.value.action_params || [];
-  const inboxId = params[0];
-  const phoneNumber = params[1];
-  const message = params[2];
-
-  if (!inboxId || !phoneNumber) {
-    useAlert(t('WORKFLOW.EDITOR.WHATSAPP_TEST_ERROR'));
-    return;
-  }
-
-  isTestingWhatsapp.value = true;
-  try {
-    await WorkflowsAPI.testExternalWhatsapp({
-      inboxId,
-      phoneNumber,
-      message: message || t('WORKFLOW.EDITOR.MESSAGE_PLACEHOLDER'),
-    });
-    useAlert(t('WORKFLOW.EDITOR.WHATSAPP_TEST_SUCCESS'));
-  } catch (err) {
-    const apiError = err?.response?.data?.error;
-    const detail = err?.response?.data?.detail;
-    const msg = detail || apiError;
-    useAlert(msg ? `${t('WORKFLOW.EDITOR.WHATSAPP_TEST_ERROR')} (${msg})` : t('WORKFLOW.EDITOR.WHATSAPP_TEST_ERROR'));
-  } finally {
-    isTestingWhatsapp.value = false;
-  }
 };
 
 const NODE_META_BASE = {
@@ -248,7 +120,7 @@ const stepLabelPlaceholder = computed(() => {
 const workflowStepLabelInputId = 'workflow-node-step-label';
 
 const inputClass =
-  'w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-woot-500/30 disabled:opacity-50';
+  'w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-woot-500/30 disabled:opacity-50';
 const labelClass =
   'block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5';
 const stepLabelTitleClass =
@@ -256,10 +128,18 @@ const stepLabelTitleClass =
 </script>
 
 <template>
+  <div
+    class="flex flex-col min-w-0"
+    :class="
+      asModal
+        ? 'w-full'
+        : 'w-full max-w-md shrink-0 bg-white dark:bg-slate-900 border-l border-slate-50 dark:border-slate-800/50 overflow-hidden sm:min-w-[22rem] sm:w-96'
+    "
+  >
     <div
-      class="w-full max-w-md shrink-0 flex flex-col bg-white dark:bg-slate-900 border-l border-slate-50 dark:border-slate-800/50 overflow-hidden min-w-0 sm:min-w-[22rem] sm:w-96"
+      v-if="!asModal"
+      class="px-3 py-2.5 border-b border-slate-50 dark:border-slate-800/50"
     >
-    <div class="px-3 py-2.5 border-b border-slate-50 dark:border-slate-800/50">
       <template v-if="node && currentMeta">
         <div class="flex items-center gap-2.5">
           <span
@@ -299,10 +179,14 @@ const stepLabelTitleClass =
       </template>
     </div>
 
-    <div v-if="node && nodeType" class="flex-1 overflow-y-auto p-4 space-y-5 min-w-0">
+    <div
+      v-if="node && nodeType"
+      class="space-y-5 min-w-0"
+      :class="asModal ? 'pb-2' : 'flex-1 overflow-y-auto p-4'"
+    >
       <div
         v-if="nodeErrors.length"
-        class="flex items-start gap-2 -mt-1 mb-1 text-xs text-amber-800/90 dark:text-amber-300/90"
+        class="flex items-start gap-2 text-xs text-amber-800/90 dark:text-amber-300/90"
         role="status"
       >
         <fluent-icon
@@ -455,217 +339,12 @@ const stepLabelTitleClass =
       </template>
 
       <template v-if="nodeType === 'action'">
-        <div>
-          <label :class="labelClass">{{ $t('WORKFLOW.EDITOR.ACTION') }}</label>
-          <select
-            :value="nodeProps.action_name"
-            :disabled="readOnly"
-            :class="inputClass"
-            @change="onActionNameChange($event.target.value)"
-          >
-            <option v-for="action in WORKFLOW_ACTION_TYPES" :key="action.key" :value="action.key">
-              {{ action.label }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Mensagem / nota privada -->
-        <div
-          v-if="nodeProps.action_name === 'send_message' || nodeProps.action_name === 'add_private_note'"
-        >
-          <label :class="labelClass">{{ $t('WORKFLOW.EDITOR.MESSAGE_LABEL') }}</label>
-          <textarea
-            :value="(nodeProps.action_params && nodeProps.action_params[0]) || ''"
-            :disabled="readOnly"
-            :class="inputClass + ' min-h-[100px]'"
-            :placeholder="$t('WORKFLOW.EDITOR.MESSAGE_PLACEHOLDER')"
-            @input="updateProp('action_params', [$event.target.value])"
-          />
-        </div>
-
-        <!-- Webhook URL -->
-        <div v-else-if="nodeProps.action_name === 'send_webhook_event'">
-          <label :class="labelClass">{{ $t('WORKFLOW.EDITOR.WEBHOOK_LABEL') }}</label>
-          <input
-            type="url"
-            :value="(nodeProps.action_params && nodeProps.action_params[0]) || ''"
-            :disabled="readOnly"
-            :class="inputClass"
-            placeholder="https://"
-            @input="updateProp('action_params', [$event.target.value])"
-          />
-        </div>
-
-        <!-- WhatsApp externo -->
-        <div v-else-if="nodeProps.action_name === 'send_whatsapp_external'" class="space-y-3">
-          <p class="text-xs text-slate-500 dark:text-slate-400">
-            {{ $t('WORKFLOW.EDITOR.WHATSAPP_EXTERNAL_HINT') }}
-          </p>
-          <div v-if="!whatsappInboxes.length" class="text-xs text-amber-600 dark:text-amber-400">
-            {{ $t('WORKFLOW.EDITOR.WHATSAPP_NO_INBOX') }}
-          </div>
-          <div v-else>
-            <label :class="labelClass">{{ $t('WORKFLOW.EDITOR.WHATSAPP_INBOX_LABEL') }}</label>
-            <select
-              :value="(nodeProps.action_params && nodeProps.action_params[0]) || ''"
-              :disabled="readOnly"
-              :class="inputClass"
-              @change="updateWhatsappParam(0, $event.target.value)"
-            >
-              <option value="">{{ $t('WORKFLOW.EDITOR.WHATSAPP_SELECT_INBOX') }}</option>
-              <option
-                v-for="inbox in whatsappInboxes"
-                :key="inbox.id"
-                :value="inbox.id"
-              >
-                {{ inbox.name }}
-              </option>
-            </select>
-          </div>
-          <div>
-            <label :class="labelClass">{{ $t('WORKFLOW.EDITOR.WHATSAPP_PHONE_LABEL') }}</label>
-            <input
-              type="tel"
-              :value="(nodeProps.action_params && nodeProps.action_params[1]) || ''"
-              :disabled="readOnly"
-              :class="inputClass"
-              :placeholder="$t('WORKFLOW.EDITOR.WHATSAPP_PHONE_PLACEHOLDER')"
-              @input="updateWhatsappParam(1, $event.target.value)"
-              @blur="normalizeWhatsappPhoneField"
-            />
-            <p
-              v-if="whatsappPhoneError"
-              class="text-xs text-amber-600 dark:text-amber-400 mt-1"
-            >
-              {{ $t(whatsappPhoneError) }}
-            </p>
-          </div>
-          <div>
-            <label :class="labelClass">{{ $t('WORKFLOW.EDITOR.MESSAGE_LABEL') }}</label>
-            <textarea
-              :value="(nodeProps.action_params && nodeProps.action_params[2]) || ''"
-              :disabled="readOnly"
-              :class="inputClass + ' min-h-[100px]'"
-              :placeholder="$t('WORKFLOW.EDITOR.MESSAGE_PLACEHOLDER')"
-              @input="updateWhatsappParam(2, $event.target.value)"
-            />
-          </div>
-          <woot-button
-            size="small"
-            variant="smooth"
-            color-scheme="secondary"
-            :disabled="readOnly"
-            :is-loading="isTestingWhatsapp"
-            @click="testWhatsappExternal"
-          >
-            {{ $t('WORKFLOW.EDITOR.WHATSAPP_TEST') }}
-          </woot-button>
-        </div>
-
-        <!-- Pipeline / estágio (kanban_stage_select) -->
-        <div v-else-if="actionInputType === 'kanban_stage_select'" class="space-y-2">
-          <label :class="labelClass">Pipeline e Estágio</label>
-          <KanbanStageSelect
-            :value="nodeProps.action_params || []"
-            @input="onKanbanStageChange"
-          />
-        </div>
-
-        <!-- Seleção única: atendente, equipe, prioridade, SLA (search_select) -->
-        <div v-else-if="actionInputType === 'search_select'">
-          <label :class="labelClass">
-            <template v-if="nodeProps.action_name === 'assign_agent'">Atendente</template>
-            <template v-else-if="nodeProps.action_name === 'assign_team'">Equipe</template>
-            <template v-else-if="nodeProps.action_name === 'change_priority'">Prioridade</template>
-            <template v-else>Selecionar</template>
-          </label>
-          <select
-            :value="(nodeProps.action_params && nodeProps.action_params[0]) || ''"
-            :disabled="readOnly"
-            :class="inputClass"
-            @change="onSingleSelectChange($event.target.value)"
-          >
-            <option value="">— Selecionar —</option>
-            <option
-              v-for="opt in actionDropdownOptions"
-              :key="opt.id"
-              :value="opt.id"
-            >
-              {{ opt.name }}
-            </option>
-          </select>
-          <p
-            v-if="!actionDropdownOptions.length"
-            class="text-xs text-amber-600 dark:text-amber-400 mt-1"
-          >
-            Nenhum item disponível. Verifique as configurações da conta.
-          </p>
-        </div>
-
-        <!-- Seleção múltipla: etiquetas (multi_select) -->
-        <div v-else-if="actionInputType === 'multi_select'" class="space-y-1.5">
-          <label :class="labelClass">
-            <template v-if="nodeProps.action_name === 'add_label'">Adicionar etiquetas</template>
-            <template v-else>Remover etiquetas</template>
-          </label>
-          <div
-            v-if="!labels.length"
-            class="text-xs text-amber-600 dark:text-amber-400"
-          >
-            Nenhuma etiqueta disponível.
-          </div>
-          <div
-            v-else
-            class="flex flex-wrap gap-1.5 p-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 max-h-40 overflow-y-auto"
-          >
-            <button
-              v-for="label in labels"
-              :key="label.id"
-              type="button"
-              :disabled="readOnly"
-              class="px-2 py-0.5 text-xs rounded-full border transition-colors"
-              :class="
-                isLabelSelected(label.title)
-                  ? 'bg-woot-500 border-woot-500 text-white'
-                  : 'border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-woot-400'
-              "
-              @click="toggleLabel(label.title)"
-            >
-              {{ label.title }}
-            </button>
-          </div>
-          <p
-            v-if="(nodeProps.action_params || []).length"
-            class="text-xs text-slate-400 dark:text-slate-500"
-          >
-            {{ (nodeProps.action_params || []).length }} selecionada(s)
-          </p>
-        </div>
-
-        <!-- E-mail de transcrição -->
-        <div v-else-if="actionInputType === 'email'">
-          <label :class="labelClass">Endereço de e-mail</label>
-          <input
-            type="email"
-            :value="(nodeProps.action_params && nodeProps.action_params[0]) || ''"
-            :disabled="readOnly"
-            :class="inputClass"
-            placeholder="email@exemplo.com"
-            @input="updateProp('action_params', [$event.target.value])"
-          />
-        </div>
-
-        <!-- Enviar anexo -->
-        <div v-else-if="actionInputType === 'attachment'" class="space-y-1.5">
-          <label :class="labelClass">Arquivo para enviar</label>
-          <AutomationFileInput
-            :value="nodeProps.action_params || []"
-            @input="updateProp('action_params', $event)"
-          />
-          <p class="text-xs text-slate-400 dark:text-slate-500">
-            O arquivo será enviado como mensagem na conversa.
-          </p>
-        </div>
+        <WorkflowActionList
+          :node-id="node && node.id"
+          :node-props="nodeProps"
+          :read-only="readOnly"
+          @update-node="patch => emit('update-node', patch)"
+        />
       </template>
 
       <template v-if="nodeType === 'ai_outreach'">
@@ -709,6 +388,7 @@ const stepLabelTitleClass =
           </div>
         </div>
       </template>
+
     </div>
   </div>
 </template>

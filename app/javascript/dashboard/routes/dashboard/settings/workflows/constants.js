@@ -442,7 +442,11 @@ export const getWorkflowNodeDefaultData = type => {
       wait_responder: 'contact',
     },
     condition: { conditions: [] },
-    action: { action_name: 'send_message', action_params: [''] },
+    action: {
+      action_name: 'send_message',
+      action_params: [''],
+      actions: [{ action_name: 'send_message', action_params: [''] }],
+    },
     ai_outreach: { ...AI_OUTREACH_DEFAULTS },
     ai_conversation_analysis: { ...AI_ANALYSIS_DEFAULTS },
     ai_wait_for_intent: { ...AI_WAIT_FOR_INTENT_DEFAULTS },

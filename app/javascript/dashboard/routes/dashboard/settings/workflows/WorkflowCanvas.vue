@@ -140,6 +140,7 @@ export default {
       const classes = [this.isDarkMode ? 'workflow-canvas--dark' : 'workflow-canvas--light'];
       if (this.isDropActive) classes.push('workflow-canvas-host--drop-active');
       if (this.connectPreview) classes.push('workflow-canvas-host--connecting');
+      if (this.isNodeDragging) classes.push('workflow-canvas-host--node-dragging');
       return classes.join(' ');
     },
     showOutputStubs() {
@@ -202,6 +203,7 @@ export default {
     if (this.themeObserver) this.themeObserver.disconnect();
     window.removeEventListener('resize', this.debouncedResizeCanvas);
     if (this.edgeToolbarHideTimer) clearTimeout(this.edgeToolbarHideTimer);
+    if (this.nodeHoverTimer) clearTimeout(this.nodeHoverTimer);
     this.cancelScheduledStubRefresh();
     this.teardownStubPointerListeners();
     if (this.lf) {
@@ -246,12 +248,21 @@ export default {
       this.lf.on('node:click', ({ data }) => {
         this.hideEdgeToolbar();
         this.selectedNode = data;
-        this.$emit('node-selected', data);
+      });
+      this.lf.on('node:dbclick', ({ data }) => {
+        if (!data) return;
+        this.hideEdgeToolbar();
+        const fresh =
+          typeof this.lf.getNodeDataById === 'function'
+            ? this.lf.getNodeDataById(data.id)
+            : null;
+        this.selectedNode = fresh || data;
+        this.$emit('node-edit', this.selectedNode);
       });
       this.lf.on('blank:click', () => {
         this.hideEdgeToolbar();
         this.selectedNode = null;
-        this.$emit('node-selected', null);
+        this.$emit('node-edit', null);
       });
       this.lf.on('history:change', () => { this.debouncedEmitGraphChange(); });
 
@@ -275,7 +286,7 @@ export default {
       this.lf.on('graph:transform', () => {
         this.syncZoomLevel();
         this.scheduleRefreshOutputStubs();
-        this.refreshNodeHoverPosition();
+        this.hoveredNode = null;
         if (this.edgeToolbar && this.edgeToolbar.edgeId) {
           this.updateEdgeToolbarPosition(this.edgeToolbar.edgeId);
         }
@@ -289,27 +300,25 @@ export default {
 
       this.lf.on('node:dragstart', () => {
         this.isNodeDragging = true;
-        this.clearNodeHover();
+        this.hoveredNode = null;
       });
       this.lf.on('node:drop', () => {
         this.isNodeDragging = false;
+        this.hoveredNode = null;
         this.refreshOutputStubs();
         if (this.edgeToolbar?.edgeId) {
           this.updateEdgeToolbarPosition(this.edgeToolbar.edgeId);
         }
       });
       this.lf.on('node:drag', () => {
+        if (this.hoveredNode) this.hoveredNode = null;
         if (this.edgeToolbar && this.edgeToolbar.edgeId) {
           this.updateEdgeToolbarPosition(this.edgeToolbar.edgeId);
         }
       });
 
-      this.lf.on('node:mouseenter', ({ data }) => {
-        if (!this.readOnly) this.onNodeMouseEnter(data);
-      });
-      this.lf.on('node:mouseleave', () => {
-        this.scheduleHideNodeHover();
-      });
+      this.lf.on('node:mouseenter', ({ data }) => this.showNodeTrash(data));
+      this.lf.on('node:mouseleave', () => this.hideNodeTrashSoon());
     },
 
     onEdgeSelected(edgeData) {
@@ -508,7 +517,6 @@ export default {
       this.addNodeAt(paletteItem, target.x, target.y, {
         connectFromId: nodeId,
         sourceAnchorId: sourceAnchorId || workflowAnchorOutId(nodeId),
-        focus: true,
       });
     },
 
@@ -560,71 +568,96 @@ export default {
       this.connectHoverNodeId = null;
     },
 
-    onNodeMouseEnter(data) {
-      if (!data?.id || !this.lf) return;
-      if (this.nodeHoverTimer) {
-        clearTimeout(this.nodeHoverTimer);
-        this.nodeHoverTimer = null;
+    showNodeTrash(data) {
+      if (
+        !data?.id ||
+        !this.lf ||
+        this.readOnly ||
+        this.isNodeDragging ||
+        this.connectPreview
+      ) {
+        return;
       }
-      const nodeModel = this.lf.getNodeModelById?.(data.id) || data;
-      if (!nodeModel || !Number.isFinite(nodeModel.x)) return;
+      clearTimeout(this.nodeHoverTimer);
+      this.nodeHoverTimer = null;
+
+      const model = this.lf.getNodeModelById?.(data.id) || data;
+      if (!model || !Number.isFinite(model.x)) return;
+      if (model.properties?.workflowNodeType === 'trigger') {
+        this.hoveredNode = null;
+        return;
+      }
 
       const overlay = graphPointToOverlayPoint(this.lf, {
-        x: nodeModel.x,
-        y: nodeModel.y - (nodeModel.height || 84) / 2,
+        x: model.x,
+        y: model.y - (model.height || 84) / 2,
       });
       if (!overlay) return;
-
-      this.hoveredNode = {
-        nodeId: data.id,
-        left: overlay.left,
-        top: overlay.top,
-      };
+      this.hoveredNode = { nodeId: data.id, left: overlay.left, top: overlay.top };
     },
 
-    scheduleHideNodeHover() {
-      if (this.nodeHoverTimer) clearTimeout(this.nodeHoverTimer);
+    keepNodeTrash() {
+      clearTimeout(this.nodeHoverTimer);
+      this.nodeHoverTimer = null;
+    },
+
+    hideNodeTrashSoon() {
+      clearTimeout(this.nodeHoverTimer);
       this.nodeHoverTimer = setTimeout(() => {
         this.hoveredNode = null;
         this.nodeHoverTimer = null;
-      }, 280);
-    },
-
-    keepNodeHover() {
-      if (this.nodeHoverTimer) {
-        clearTimeout(this.nodeHoverTimer);
-        this.nodeHoverTimer = null;
-      }
+      }, 120);
     },
 
     clearNodeHover() {
-      if (this.nodeHoverTimer) clearTimeout(this.nodeHoverTimer);
-      this.nodeHoverTimer = null;
+      this.keepNodeTrash();
       this.hoveredNode = null;
     },
 
-    refreshNodeHoverPosition() {
-      if (!this.hoveredNode || !this.lf) return;
-      const nodeModel = this.lf.getNodeModelById?.(this.hoveredNode.nodeId);
-      if (!nodeModel || !Number.isFinite(nodeModel.x)) return;
-      const overlay = graphPointToOverlayPoint(this.lf, {
-        x: nodeModel.x,
-        y: nodeModel.y - (nodeModel.height || 84) / 2,
-      });
-      if (!overlay) return;
-      this.hoveredNode = { ...this.hoveredNode, left: overlay.left, top: overlay.top };
+    deleteHoveredNode() {
+      if (!this.lf || !this.hoveredNode || this.readOnly || this.isNodeDragging) return;
+      const { nodeId } = this.hoveredNode;
+      if (this.lf.getNodeModelById?.(nodeId)?.properties?.workflowNodeType === 'trigger') {
+        return;
+      }
+
+      this.clearNodeHover();
+      this.deleteNodeAndBridge(nodeId);
+      if (this.selectedNode?.id === nodeId) this.selectedNode = null;
+      this.$emit('node-edit', null);
+      this.emitGraphChangeNow();
     },
 
-    deleteHoveredNode() {
-      if (!this.lf || !this.hoveredNode || this.readOnly) return;
-      const { nodeId } = this.hoveredNode;
-      this.clearNodeHover();
-      this.lf.deleteNode(nodeId);
-      if (this.selectedNode?.id === nodeId) {
-        this.selectedNode = null;
-        this.$emit('node-selected', null);
+    /** Linear path (1 in → 1 out): reconnect neighbors after delete. */
+    deleteNodeAndBridge(nodeId) {
+      const edges = this.lf.getGraphData?.()?.edges || [];
+      const incoming = edges.filter(edge => edge.targetNodeId === nodeId);
+      const outgoing = edges.filter(edge => edge.sourceNodeId === nodeId);
+
+      let bridge = null;
+      if (incoming.length === 1 && outgoing.length === 1) {
+        const inn = incoming[0];
+        const out = outgoing[0];
+        bridge = {
+          sourceNodeId: inn.sourceNodeId,
+          targetNodeId: out.targetNodeId,
+          sourceAnchorId:
+            resolveEdgeSourceAnchorIdOnLf(this.lf, inn) || inn.sourceAnchorId,
+          targetAnchorId: workflowAnchorInId(out.targetNodeId),
+        };
       }
-      this.emitGraphChangeNow();
+
+      this.lf.deleteNode(nodeId);
+
+      if (
+        bridge &&
+        bridge.sourceNodeId !== bridge.targetNodeId &&
+        !hasDuplicateSourceAnchor(this.lf, bridge.sourceNodeId, bridge.sourceAnchorId)
+      ) {
+        addWorkflowEdge(this.lf, bridge);
+      }
+
+      this.refreshOutputStubs();
     },
 
     onStubPlusPointerDown(stub, event) {
@@ -803,9 +836,7 @@ export default {
         targetAnchorId: workflowAnchorInId(targetId),
       });
 
-      const newNodeData = this.lf.getNodeDataById(newId);
-      this.selectedNode = newNodeData;
-      this.$emit('node-selected', newNodeData);
+      this.selectedNode = this.lf.getNodeDataById(newId);
       this.hideEdgeToolbar();
       this.emitGraphChangeNow();
     },
@@ -935,10 +966,7 @@ export default {
       if (!point) return;
 
       const connectOpts = this.buildConnectOptionsFromSelection(paletteItem.type);
-      this.addNodeAt(paletteItem, point.x, point.y, {
-        ...connectOpts,
-        focus: false,
-      });
+      this.addNodeAt(paletteItem, point.x, point.y, connectOpts);
     },
 
     applyTheme() {
@@ -1058,7 +1086,6 @@ export default {
       this.addNodeAt(paletteItem, placement.x, placement.y, {
         connectFromId: placement.connectFromId,
         sourceAnchorId: placement.sourceAnchorId,
-        focus: true,
       });
     },
 
@@ -1089,38 +1116,44 @@ export default {
         });
       }
 
-      const newNodeData = this.lf.getNodeDataById
+      this.selectedNode = this.lf.getNodeDataById
         ? this.lf.getNodeDataById(id)
         : node;
-      this.selectedNode = newNodeData;
-      this.$emit('node-selected', newNodeData);
       if (typeof this.lf.selectElementById === 'function') {
         this.lf.selectElementById(id);
-      }
-      if (options.focus !== false && typeof this.lf.focusOn === 'function') {
-        this.lf.focusOn({ id });
       }
 
       this.emitGraphChangeNow();
     },
 
-    updateSelectedNodeProperties(props) {
-      if (!this.lf || !this.selectedNode) return;
-      // Always fetch the latest data from LogicFlow to avoid stale-property merges
-      // when the panel calls this multiple times without a new node:click event.
-      const freshData = this.lf.getNodeDataById
-        ? this.lf.getNodeDataById(this.selectedNode.id)
-        : null;
-      const baseProps =
-        (freshData && freshData.properties) || this.selectedNode.properties;
-      const merged = { ...baseProps, ...props };
-      this.lf.setProperties(this.selectedNode.id, merged);
-      // Keep Canvas.selectedNode in sync so the next call doesn't use click-time data.
-      this.selectedNode = {
-        ...(freshData || this.selectedNode),
-        properties: merged,
-      };
-      this.debouncedEmitGraphChange();
+    updateNodeProperties(nodeId, props) {
+      if (!this.lf || !nodeId) return;
+      const freshData =
+        typeof this.lf.getNodeDataById === 'function'
+          ? this.lf.getNodeDataById(nodeId)
+          : null;
+      const baseProps = (freshData && freshData.properties) || {};
+      // Deep-clone so nested actions[] / action_params are not shared refs
+      // with the editor UI (avoids stale message params on reopen).
+      let merged;
+      try {
+        merged = JSON.parse(JSON.stringify({ ...baseProps, ...props }));
+      } catch (e) {
+        merged = { ...baseProps, ...props };
+      }
+      this.lf.setProperties(nodeId, merged);
+      if (this.selectedNode && this.selectedNode.id === nodeId) {
+        this.selectedNode = {
+          ...(freshData || this.selectedNode),
+          properties: merged,
+        };
+      }
+      this.emitGraphChangeNow();
+      return merged;
+    },
+
+    flushGraphChange() {
+      this.emitGraphChangeNow();
     },
 
     paletteItemTitle(item) {
@@ -1168,7 +1201,7 @@ export default {
       }
 
       this.selectedNode = nodeData;
-      this.$emit('node-selected', nodeData);
+      this.$emit('node-edit', nodeData);
     },
 
     focusFirstInvalidNode(nodeIds) {
@@ -1393,14 +1426,14 @@ export default {
 
       <!-- Node hover trash -->
       <button
-        v-if="hoveredNode && !readOnly"
+        v-if="hoveredNode && !readOnly && !connectPreview && !isNodeDragging"
         type="button"
         class="workflow-node-trash"
         :style="{ left: `${hoveredNode.left}px`, top: `${hoveredNode.top}px` }"
         :title="$t('WORKFLOW.EDITOR.NODE_DELETE')"
         :aria-label="$t('WORKFLOW.EDITOR.NODE_DELETE')"
-        @mouseenter="keepNodeHover"
-        @mouseleave="scheduleHideNodeHover"
+        @mouseenter="keepNodeTrash"
+        @mouseleave="hideNodeTrashSoon"
         @click.stop="deleteHoveredNode"
       >
         <svg width="12" height="12" fill="none" viewBox="0 0 24 24" aria-hidden="true">

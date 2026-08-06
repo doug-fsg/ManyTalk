@@ -11,6 +11,7 @@
         :status="enrollment.status"
         :workflow-name="enrollment.workflow_name"
         :current-node-label="enrollment.current_node_label"
+        :current-node-type="enrollment.current_node_type"
         :next-scheduled-at="enrollment.next_scheduled_at"
         :reply-watch="enrollment.reply_watch"
       />
@@ -54,7 +55,7 @@
 </template>
 
 <script setup>
-import { ref, computed, toRef, onMounted } from 'vue';
+import { ref, computed, toRef, onMounted, watch } from 'vue';
 import { useStore } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
 import { useI18n } from 'dashboard/composables/useI18n';
@@ -70,7 +71,7 @@ const props = defineProps({
   conversationId: { type: [Number, String], required: true },
 });
 
-const emit = defineEmits(['updated']);
+const emit = defineEmits(['updated', 'active-change']);
 
 const store = useStore();
 const { t } = useI18n();
@@ -126,7 +127,7 @@ const contactConversations = computed(() => {
     .map(c => ({
       id: c.id,
       inbox_id: c.inbox_id,
-      label: `${c.inbox?.name || 'Inbox'} #${c.id}`,
+      label: `${c.inbox?.name || t('WORKFLOW.REGUA.INBOX_FALLBACK')} #${c.id}`,
     }));
 });
 
@@ -160,4 +161,12 @@ const onCancel = () => withLoading('cancel', () => cancel());
 const onJump = nodeId => withLoading('jump', () => jump(nodeId));
 const onRebind = conversationId =>
   withLoading('rebind', () => rebind(conversationId));
+
+watch(
+  enrollment,
+  value => {
+    emit('active-change', !!value?.id);
+  },
+  { immediate: true }
+);
 </script>

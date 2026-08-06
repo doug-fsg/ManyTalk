@@ -83,9 +83,9 @@ export default {
   },
   methods: {
     findTemplateByName(name) {
-      const templates = this.$store.getters['inboxes/getWhatsAppTemplates'](
-        this.inboxId
-      );
+      const templates = this.$store.getters[
+        'inboxes/getFilteredWhatsAppTemplates'
+      ](this.inboxId);
       return templates.find(template => template.name === name) || null;
     },
     onSelectTemplate(template) {

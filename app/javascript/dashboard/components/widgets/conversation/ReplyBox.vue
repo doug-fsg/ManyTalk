@@ -341,8 +341,9 @@ export default {
       return false;
     },
     hasWhatsappTemplates() {
-      return !!this.$store.getters['inboxes/getWhatsAppTemplates'](this.inboxId)
-        .length;
+      return !!this.$store.getters['inboxes/getFilteredWhatsAppTemplates'](
+        this.inboxId
+      ).length;
     },
     isPrivate() {
       if (this.currentChat.can_reply || this.isAWhatsAppChannel) {

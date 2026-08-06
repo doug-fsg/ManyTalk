@@ -10,6 +10,10 @@ import {
 } from 'dashboard/routes/dashboard/settings/workflows/workflowLogicFlowNodes';
 import { WORKFLOW_EDGE_TYPE } from 'dashboard/routes/dashboard/settings/workflows/workflowLogicFlowEdges';
 import { serializeWorkflowConditions } from 'dashboard/helper/workflowConditionHelper';
+import {
+  normalizeActionsList,
+  syncActionNodeFields,
+} from 'dashboard/routes/dashboard/settings/workflows/workflowActionHelpers';
 
 export const emptyGraph = () => JSON.parse(JSON.stringify(DEFAULT_WORKFLOW_GRAPH));
 
@@ -99,10 +103,14 @@ export const normalizeWorkflowGraph = graph => {
     const rawData = node.data || node.properties || {};
     const data = { ...rawData };
     delete data.workflowNodeType;
+    const type = node.type || data.workflowNodeType || 'action';
+    if (type === 'action') {
+      Object.assign(data, syncActionNodeFields(normalizeActionsList(data)));
+    }
 
     return {
       id: node.id || `node_${index}`,
-      type: node.type || data.workflowNodeType || 'action',
+      type,
       x: node.x != null ? node.x : (node.position && node.position.x) || 120,
       y: node.y != null ? node.y : (node.position && node.position.y) || 120,
       position: {

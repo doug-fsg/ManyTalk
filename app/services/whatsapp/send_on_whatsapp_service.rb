@@ -25,7 +25,7 @@ class Whatsapp::SendOnWhatsappService < Base::SendOnChannelService
   end
 
   def send_template_message
-    name, namespace, lang_code, processed_parameters = processable_channel_message_template
+    name, namespace, lang_code, processed_parameters = resolve_template_delivery
 
     if name.blank?
       message.update!(status: :failed, external_error: 'Template not found or invalid template name')
@@ -41,35 +41,39 @@ class Whatsapp::SendOnWhatsappService < Base::SendOnChannelService
     message.update!(source_id: message_id) if message_id.present?
   end
 
-  def processable_channel_message_template
-    if template_params.present?
-      params = interpolated_template_params
-      return enhanced_template_result(params) if enhanced_templates_enabled?
+  def resolve_template_delivery
+    return template_processor_call(interpolated_template_params) if template_params.present?
 
-      return [
-        params['name'],
-        params['namespace'],
-        params['language'],
-        params['processed_params']&.map { |_, value| { type: 'text', text: value } }
-      ]
-    end
+    matched_params = template_params_from_content_match
+    return template_processor_call(matched_params) if matched_params.present?
 
-    channel.message_templates&.each do |template|
-      match_obj = template_match_object(template)
-      next if match_obj.blank?
-
-      processed_parameters = match_obj.captures.map { |x| { type: 'text', text: x } }
-      return [template['name'], template['namespace'], template['language'], processed_parameters]
-    end
     [nil, nil, nil, nil]
   end
 
-  def enhanced_template_result(params = interpolated_template_params)
+  def template_processor_call(params)
     Whatsapp::TemplateProcessorService.new(
       channel: channel,
       template_params: params,
       message: message
     ).call
+  end
+
+  def template_params_from_content_match
+    channel.message_templates&.each do |template|
+      match_obj = template_match_object(template)
+      next if match_obj.blank?
+
+      return {
+        'name' => template['name'],
+        'namespace' => template['namespace'],
+        'language' => template['language'],
+        'processed_params' => match_obj.captures.each_with_index.with_object({}) do |(capture, index), params|
+          params[(index + 1).to_s] = capture
+        end
+      }
+    end
+
+    nil
   end
 
   def interpolated_template_params
@@ -83,10 +87,6 @@ class Whatsapp::SendOnWhatsappService < Base::SendOnChannelService
     )
     params['processed_params'] = interpolator.interpolate_value(params['processed_params'])
     params
-  end
-
-  def enhanced_templates_enabled?
-    message.account.feature_enabled?('whatsapp_enhanced_templates')
   end
 
   def template_match_object(template)

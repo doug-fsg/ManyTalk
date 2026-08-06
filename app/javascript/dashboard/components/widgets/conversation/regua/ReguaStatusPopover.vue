@@ -6,6 +6,7 @@
       :status="status"
       :workflow-name="workflowName"
       :current-node-label="currentNodeLabel"
+      :current-node-type="currentNodeType"
       :next-scheduled-at="nextScheduledAt"
       :reply-watch="replyWatch"
     />
@@ -22,6 +23,7 @@ defineProps({
   status: { type: String, default: '' },
   workflowName: { type: String, default: '' },
   currentNodeLabel: { type: String, default: '' },
+  currentNodeType: { type: String, default: '' },
   nextScheduledAt: { type: String, default: null },
   replyWatch: { type: Object, default: null },
 });

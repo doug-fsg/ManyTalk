@@ -27,6 +27,7 @@
       :status="enrollment.status"
       :workflow-name="enrollment.workflow_name"
       :current-node-label="enrollment.current_node_label"
+      :current-node-type="enrollment.current_node_type"
       :next-scheduled-at="enrollment.next_scheduled_at"
       :reply-watch="enrollment.reply_watch"
       class="right-0 top-[40px] invisible group-hover:visible"
@@ -35,18 +36,47 @@
     <woot-modal
       :show.sync="shouldShowPopup"
       :on-close="closePopup"
-      :close-on-backdrop-click="false"
+      :close-on-backdrop-click="true"
+      :size="hasActiveEnrollment ? 'medium' : ''"
+      :class="
+        hasActiveEnrollment
+          ? 'regua-fluxo-modal regua-fluxo-modal--active'
+          : 'regua-fluxo-modal regua-fluxo-modal--empty'
+      "
     >
-      <div class="flex flex-col h-auto overflow-auto w-full overscroll-contain">
+      <div
+        class="flex flex-col w-full overflow-hidden overscroll-contain"
+        :class="
+          hasActiveEnrollment
+            ? 'h-[32rem] max-h-[min(32rem,80vh)]'
+            : 'h-auto'
+        "
+      >
         <woot-modal-header
           :header-title="$t('WORKFLOW.REGUA.TITLE')"
           :header-content="modalDescription"
         />
-        <div class="flex flex-col px-8 pb-8">
+        <div
+          class="min-h-0 px-8"
+          :class="
+            hasActiveEnrollment
+              ? 'flex-1 overflow-y-auto overscroll-contain'
+              : 'overflow-visible pb-8'
+          "
+        >
           <ReguaPanel
             :conversation-id="conversationId"
             @updated="fetchActive"
+            @active-change="onActiveChange"
           />
+        </div>
+        <div
+          v-if="hasActiveEnrollment"
+          class="flex shrink-0 justify-end px-8 py-4 border-t border-slate-75 dark:border-slate-700/50"
+        >
+          <woot-button size="small" @click="closePopup">
+            {{ $t('WORKFLOW.EDITOR.FLOW_SETTINGS_DONE') }}
+          </woot-button>
         </div>
       </div>
     </woot-modal>
@@ -57,6 +87,7 @@
 import { computed, ref, toRef, watch, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'dashboard/composables/useI18n';
 import { useWorkflowEnrollment } from 'dashboard/composables/useWorkflowEnrollment';
+import { displayWorkflowStepLabel } from 'dashboard/helper/workflowDisplayLabels';
 import ReguaPanel from './ReguaPanel.vue';
 import ReguaStatusPopover from './ReguaStatusPopover.vue';
 
@@ -72,8 +103,13 @@ const conversationIdRef = toRef(props, 'conversationId');
 const { enrollment, fetchActive } = useWorkflowEnrollment(conversationIdRef);
 
 const shouldShowPopup = ref(false);
+const panelHasEnrollment = ref(false);
+let pollTimer = null;
 
-const hasActiveEnrollment = computed(() => !!enrollment.value?.id);
+// Panel and shell each call the composable; keep shell size in sync with panel content.
+const hasActiveEnrollment = computed(
+  () => panelHasEnrollment.value || !!enrollment.value?.id
+);
 
 const STATUS_ICON = {
   idle: 'automation',
@@ -107,7 +143,14 @@ const statusLabel = computed(() => {
 
 const buttonLabel = computed(() => {
   if (!enrollment.value) return null;
-  return enrollment.value.current_node_label || statusLabel.value;
+  const step = displayWorkflowStepLabel(
+    {
+      label: enrollment.value.current_node_label,
+      type: enrollment.value.current_node_type,
+    },
+    t
+  );
+  return step && step !== '—' ? step : statusLabel.value;
 });
 
 const tooltipText = computed(() => {
@@ -131,6 +174,10 @@ const closePopup = () => {
   fetchActive();
 };
 
+const onActiveChange = isActive => {
+  panelHasEnrollment.value = !!isActive;
+};
+
 watch(
   () => props.conversationId,
   () => {
@@ -146,9 +193,18 @@ onMounted(() => {
 onUnmounted(() => {
   if (pollTimer) window.clearInterval(pollTimer);
 });
-
-let pollTimer = null;
 </script>
+
+<style lang="scss">
+/* Modal root class is on .modal-mask; lock outer scroll so only the body scrolls. */
+.regua-fluxo-modal--active .modal-container {
+  @apply overflow-hidden;
+}
+
+.regua-fluxo-modal--empty .modal-container {
+  @apply w-[26rem] max-w-[calc(100vw-2rem)] overflow-visible;
+}
+</style>
 
 <style scoped lang="scss">
 .regua-trigger {

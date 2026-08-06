@@ -54,4 +54,11 @@ RSpec.describe Workflows::TimelineBuilder do
     expect(action_step[:status]).to eq('completed')
     expect(wait_step[:status]).to eq('running')
   end
+
+  it 'includes action_details for action steps' do
+    result = described_class.new(enrollment).build
+    action_step = result[:timeline].find { |s| s[:node_id] == 'action_1' }
+
+    expect(action_step[:action_details]).to eq(['Enviar uma mensagem: Hi'])
+  end
 end

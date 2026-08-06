@@ -48,11 +48,7 @@
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
   overflow: hidden;
   font-family: Inter, system-ui, sans-serif;
-  cursor: grab;
-
-  &:active {
-    cursor: grabbing;
-  }
+  cursor: pointer;
   transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 
   &:hover {
@@ -408,25 +404,26 @@
   }
 }
 
-/* Node hover trash button — top-center of the node */
+/* Node hover trash — stub-plus chrome, seated above the node (not inside). */
 .workflow-node-trash {
   position: absolute;
-  z-index: 22;
+  z-index: 21;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   margin: 0;
   padding: 0;
-  border-radius: 5px;
-  border: 1px solid #fca5a5;
-  background: #fee2e2;
-  color: #ef4444;
+  border-radius: 6px;
+  border: 1px solid #f87171;
+  background: #1e293b;
+  color: #fca5a5;
   cursor: pointer;
-  transform: translate(-50%, -120%);
+  transform: translate(-50%, calc(-100% - 10px));
+  touch-action: manipulation;
+  box-shadow: 0 0 0 8px transparent;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-  animation: workflow-edge-toolbar-in 0.12s ease-out;
 
   svg {
     width: 12px;
@@ -440,26 +437,31 @@
   }
 
   &:hover {
-    background: #ef4444;
-    border-color: #ef4444;
-    color: #ffffff;
+    background: #450a0a;
+    border-color: #f87171;
+    color: #fecaca;
   }
 }
 
-.workflow-canvas--dark .workflow-node-trash {
-  border-color: #dc2626;
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
+.workflow-canvas--light .workflow-node-trash {
+  background: #ffffff;
+  border-color: #fca5a5;
+  color: #dc2626;
 
   &:hover {
-    background: #dc2626;
-    border-color: #dc2626;
-    color: #ffffff;
+    background: #fef2f2;
+    border-color: #f87171;
+    color: #b91c1c;
   }
 }
 
 .workflow-canvas-host--connecting {
   cursor: crosshair;
+}
+
+.workflow-canvas-host--node-dragging,
+.workflow-canvas-host--node-dragging .workflow-lf-card {
+  cursor: grabbing !important;
 }
 
 .workflow-edge-toolbar__btn:focus-visible,

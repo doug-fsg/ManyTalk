@@ -1,3 +1,4 @@
+import { isSendableTemplate } from '@chatwoot/utils';
 import * as MutationHelpers from 'shared/helpers/vuex/mutationHelpers';
 import * as types from '../mutation-types';
 import { INBOX_TYPES } from 'shared/mixins/inboxMixin';
@@ -67,15 +68,27 @@ export const getters = {
     const messagesTemplates =
       whatsAppMessageTemplates || apiInboxMessageTemplates;
 
-    const templateList = Array.isArray(messagesTemplates) ? messagesTemplates : [];
+    return Array.isArray(messagesTemplates) ? messagesTemplates : [];
+  },
+  getFilteredWhatsAppTemplates: $state => inboxId => {
+    const [inbox] = $state.records.filter(
+      record => record.id === Number(inboxId)
+    );
 
-    // filtering out the whatsapp templates with media
-    return templateList.filter(template => {
-      const components = template.components || [];
-      return !components.some(
-        i => i.format === 'IMAGE' || i.format === 'VIDEO'
-      );
-    });
+    const {
+      message_templates: whatsAppMessageTemplates,
+      additional_attributes: additionalAttributes,
+    } = inbox || {};
+
+    const { message_templates: apiInboxMessageTemplates } =
+      additionalAttributes || {};
+    const templates = whatsAppMessageTemplates || apiInboxMessageTemplates;
+
+    if (!templates || !Array.isArray(templates)) {
+      return [];
+    }
+
+    return templates.filter(isSendableTemplate);
   },
   getNewConversationInboxes($state) {
     return $state.records.filter(inbox => {

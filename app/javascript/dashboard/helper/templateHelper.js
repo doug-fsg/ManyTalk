@@ -1,18 +1,56 @@
-import { replaceVariablesInMessage } from '@chatwoot/utils';
+import {
+  buildWhatsAppProcessedParams,
+  findComponentByType,
+  hasMediaHeader,
+  getMediaType,
+  processVariable,
+  replaceVariablesInMessage,
+  renderTemplatePreview,
+} from '@chatwoot/utils';
 
-export const COMPONENT_TYPES = {
-  HEADER: 'HEADER',
-  BODY: 'BODY',
-  BUTTONS: 'BUTTONS',
+export {
+  COMPONENT_TYPES,
+  MEDIA_FORMATS,
+  buildWhatsAppProcessedParams,
+  extractVariables,
+  findComponentByType,
+  getMediaType,
+  hasMediaHeader,
+  isSendableTemplate,
+  isWhatsAppComplete,
+  processVariable,
+  renderTemplatePreview,
+} from '@chatwoot/utils';
+
+export const DEFAULT_LANGUAGE = 'en';
+export const DEFAULT_CATEGORY = 'UTILITY';
+
+export const getHeaderMediaFormat = template => {
+  const format = getMediaType(template);
+  return format ? format.toUpperCase() : null;
 };
 
-export const MEDIA_FORMATS = ['IMAGE', 'VIDEO', 'DOCUMENT'];
+export const getHeaderMediaBadgeLabel = template => getHeaderMediaFormat(template);
 
-export const findComponentByType = (template, type) =>
-  template.components?.find(component => component.type === type);
+export const requiresDynamicMediaUrl = template => hasMediaHeader(template);
 
-export const processVariable = str => {
-  return str.replace(/{{|}}/g, '');
+export const shouldUseEnhancedTemplateFormat = template => {
+  const params = buildWhatsAppProcessedParams(template);
+  return Boolean(params.body || params.header || params.buttons);
+};
+
+export const buildTemplateParameters = template =>
+  buildWhatsAppProcessedParams(template);
+
+export const isValidPublicMediaUrl = url => {
+  if (!url || typeof url !== 'string') return false;
+
+  try {
+    const parsed = new URL(url.trim());
+    return ['http:', 'https:'].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
 };
 
 export const allKeysRequired = value => {
@@ -28,21 +66,26 @@ export const allKeysRequired = value => {
     });
   }
 
-  const keys = Object.keys(value);
-  return keys.every(key => {
+  return Object.keys(value).every(key => {
     if (key === 'media_type') return true;
-    return value[key];
+
+    const entry = value[key];
+    if (Array.isArray(entry)) {
+      return allKeysRequired(entry);
+    }
+    if (entry && typeof entry === 'object') {
+      return allKeysRequired(entry);
+    }
+    if (key === 'media_url') {
+      return isValidPublicMediaUrl(entry);
+    }
+
+    return Boolean(entry && String(entry).trim());
   });
 };
 
-export const replaceTemplateVariables = (templateText, processedParams) => {
-  const bodyParams = processedParams.body || processedParams;
-
-  return templateText.replace(/{{([^}]+)}}/g, (match, variable) => {
-    const variableKey = processVariable(variable);
-    return bodyParams[variableKey] || `{{${variable}}}`;
-  });
-};
+export const replaceTemplateVariables = (templateText, processedParams) =>
+  renderTemplatePreview(templateText, processedParams.body || processedParams);
 
 export const interpolateParamsValues = (params, variables = {}) => {
   if (typeof params === 'string') {
@@ -65,80 +108,10 @@ export const interpolateParamsValues = (params, variables = {}) => {
   return params;
 };
 
-export const hasMediaHeader = template => {
-  const headerComponent = findComponentByType(template, COMPONENT_TYPES.HEADER);
-  return (
-    headerComponent &&
-    MEDIA_FORMATS.includes(headerComponent.format?.toUpperCase())
-  );
-};
+export const getTextHeaderVariables = template => {
+  const header = findComponentByType(template, 'HEADER');
+  if (header?.format !== 'TEXT' || !header.text) return [];
 
-export const buildTemplateParameters = (template, includeMediaHeader = false) => {
-  const allVariables = {};
-
-  const bodyComponent = findComponentByType(template, COMPONENT_TYPES.BODY);
-  const headerComponent = findComponentByType(template, COMPONENT_TYPES.HEADER);
-
-  if (bodyComponent?.text) {
-    const matchedVariables = bodyComponent.text.match(/{{([^}]+)}}/g);
-    if (matchedVariables) {
-      allVariables.body = {};
-      matchedVariables.forEach(variable => {
-        const key = processVariable(variable);
-        allVariables.body[key] = '';
-      });
-    }
-  }
-
-  if (includeMediaHeader && hasMediaHeader(template)) {
-    allVariables.header = {
-      media_url: '',
-      media_type: headerComponent.format.toLowerCase(),
-    };
-
-    if (headerComponent.format.toLowerCase() === 'document') {
-      allVariables.header.media_name = '';
-    }
-  }
-
-  const buttonComponents = template.components?.filter(
-    component => component.type === COMPONENT_TYPES.BUTTONS
-  );
-
-  buttonComponents?.forEach(buttonComponent => {
-    buttonComponent.buttons?.forEach((button, index) => {
-      if (button.type === 'URL' && button.url && button.url.includes('{{')) {
-        if (!allVariables.buttons) allVariables.buttons = [];
-        allVariables.buttons[index] = {
-          type: 'url',
-          parameter: '',
-          url: button.url,
-        };
-      }
-
-      if (button.type === 'COPY_CODE') {
-        if (!allVariables.buttons) allVariables.buttons = [];
-        allVariables.buttons[index] = {
-          type: 'copy_code',
-          parameter: '',
-        };
-      }
-    });
-  });
-
-  return allVariables;
-};
-
-export const buildLegacyTemplateParameters = template => {
-  const bodyComponent = findComponentByType(template, COMPONENT_TYPES.BODY);
-  if (!bodyComponent?.text) return {};
-
-  const matchedVariables = bodyComponent.text.match(/{{([^}]+)}}/g);
-  if (!matchedVariables) return {};
-
-  return matchedVariables.reduce((acc, variable) => {
-    const key = processVariable(variable);
-    acc[key] = '';
-    return acc;
-  }, {});
+  const matches = header.text.match(/{{([^}]+)}}/g) || [];
+  return matches.map(variable => processVariable(variable));
 };

@@ -19,6 +19,8 @@
             "VARIABLES_LABEL": "Variables",
             "VARIABLE_PLACEHOLDER": "Introduzca el valor de %{variable}",
             "HEADER_MEDIA_LABEL": "Medios del encabezado",
+            "HEADER_VARIABLES_LABEL": "Variables del encabezado",
+            "HEADER_MEDIA_HINT": "Meta exige una URL HTTPS pública del medio en cada envío de plantillas IMAGE/VIDEO/DOCUMENT. El sample de aprobación no se reutiliza automáticamente.",
             "HEADER_MEDIA_URL_PLACEHOLDER": "URL pública del medio (https://...)",
             "HEADER_MEDIA_NAME_LABEL": "Nombre del archivo",
             "HEADER_MEDIA_NAME_PLACEHOLDER": "documento.pdf",
@@ -27,7 +29,7 @@
             "COPY_CODE_PLACEHOLDER": "Introduzca el código (máx. 15 caracteres)",
             "GO_BACK_LABEL": "Volver",
             "SEND_MESSAGE_LABEL": "Enviar mensaje",
-            "FORM_ERROR_MESSAGE": "Por favor, rellene todas las variables antes de enviar"
+            "FORM_ERROR_MESSAGE": "Complete todas las variables obligatorias y una URL de medio válida antes de enviar"
         },
         "GUIDE": {
             "TAB_CREATE_TITLE": "Crear plantillas",

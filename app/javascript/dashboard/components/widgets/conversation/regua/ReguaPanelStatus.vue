@@ -18,13 +18,13 @@
       {{ workflowName }}
     </p>
     <p
-      v-if="currentNodeLabel"
+      v-if="stageDisplayLabel && stageDisplayLabel !== '—'"
       class="text-sm text-slate-600 dark:text-slate-300"
     >
       <span class="font-medium text-slate-700 dark:text-slate-200">
         {{ $t('WORKFLOW.REGUA.STAGE_LABEL') }}:
       </span>
-      {{ currentNodeLabel }}
+      {{ stageDisplayLabel }}
     </p>
     <p
       v-if="replyDeadlineAt"
@@ -50,16 +50,25 @@
 <script setup>
 import { computed } from 'vue';
 import { useI18n } from 'dashboard/composables/useI18n';
+import { displayWorkflowStepLabel } from 'dashboard/helper/workflowDisplayLabels';
 
 const props = defineProps({
   status: { type: String, default: '' },
   workflowName: { type: String, default: '' },
   currentNodeLabel: { type: String, default: '' },
+  currentNodeType: { type: String, default: '' },
   nextScheduledAt: { type: String, default: null },
   replyWatch: { type: Object, default: null },
 });
 
 const { t } = useI18n();
+
+const stageDisplayLabel = computed(() =>
+  displayWorkflowStepLabel(
+    { label: props.currentNodeLabel, type: props.currentNodeType },
+    t
+  )
+);
 
 const STATUS_MAP = {
   waiting: {

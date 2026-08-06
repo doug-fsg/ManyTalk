@@ -1,3 +1,44 @@
+# UI/UX Improvements
+
+## WhatsApp Templates — header de mídia (IMAGE / VIDEO / DOCUMENT)
+
+### Summary
+Revisão do fluxo de seleção e envio de templates WhatsApp após liberar templates com header de mídia (antes filtrados na UI). O backend já montava o payload; o bloqueio era no picker/store.
+
+### Critical Issues
+
+#### Issue: Templates com mídia invisíveis no seletor
+**Current State (antes):** Store e `TemplatesPicker` removiam IMAGE/VIDEO/DOCUMENT.
+**Problem:** Agente sincronizava templates da Meta mas não conseguia escolhê-los.
+**Recommendation:** Remover filtros; badge de formato no item da lista; campos de URL no parser.
+**Impact:** Templates com mídia aparecem e podem ser enviados.
+**Implementation Notes:** Implementado — `inboxes.js`, `TemplatesPicker.vue`, `TemplateParser.vue`, `templateHelper.js`, `SendOnWhatsappService`.
+
+### High Priority Improvements
+
+#### Issue: URL de mídia sem orientação
+**Current State:** Campo pedia “URL pública” sem explicar a regra da Meta.
+**Problem:** Links privados/expirados falham só após o envio.
+**Recommendation:** Hint curto sob o campo + validação `http(s)://` antes do send.
+**Impact:** Menos falhas por URL inválida.
+**Implementation Notes:** Implementado — `HEADER_MEDIA_HINT` + `isValidPublicMediaUrl`.
+
+### Medium Priority Enhancements
+
+#### Issue: Upload local de arquivo no Chatwoot
+**Current State:** Só URL pública.
+**Problem:** Operador precisa hospedar a mídia fora do produto.
+**Recommendation:** Futuro — upload → ActiveStorage/CDN com URL pública para a Meta.
+**Impact:** Menor atrito operacional.
+**Implementation Notes:** Fora deste PR; Meta exige URL acessível no envio.
+
+### Positive Observations
+- Mesmo `TemplateParser` nos 3 fluxos (ReplyBox, nova conversa, campanhas).
+- Templates só-texto continuam no formato legado quando a flag enhanced está off.
+- Templates com mídia forçam formato enhanced automaticamente (sem exigir flag).
+
+---
+
 # UI/UX Improvements — CRM integrado (Funil · Atividades · Formulários · Automação · Relatórios)
 
 ## Summary

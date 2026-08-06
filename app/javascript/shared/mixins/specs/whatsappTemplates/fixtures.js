@@ -260,4 +260,39 @@ export const templates = [
     ],
     rejected_reason: 'NONE',
   },
+  {
+    name: 'text_header_welcome',
+    status: 'approved',
+    category: 'MARKETING',
+    language: 'en_US',
+    namespace: 'ns_text_header',
+    parameter_format: 'POSITIONAL',
+    components: [
+      {
+        type: 'HEADER',
+        format: 'TEXT',
+        text: 'Welcome {{1}}',
+      },
+      {
+        text: 'Your appointment is on {{1}}.',
+        type: 'BODY',
+      },
+    ],
+    rejected_reason: 'NONE',
+  },
+  {
+    name: 'named_order_update',
+    status: 'approved',
+    category: 'UTILITY',
+    language: 'en_US',
+    namespace: 'ns_named_body',
+    parameter_format: 'NAMED',
+    components: [
+      {
+        text: 'Hi {{first_name}}, your order {{order_id}} is ready.',
+        type: 'BODY',
+      },
+    ],
+    rejected_reason: 'NONE',
+  },
 ];

@@ -1,10 +1,19 @@
 import { HtmlNode, HtmlNodeModel } from '@logicflow/core';
 import { WORKFLOW_CANVAS_GRID_SIZE, findWorkflowIntentByKey } from './constants';
 import {
-  TRIGGER_EVENT_LABELS,
+  WORKFLOW_TRIGGER_EVENTS_EXTENDED,
   FORM_SUBMITTED_EVENT_KEY,
   extractFormIdsFromConditions,
 } from './workflowExtensions';
+import { actionListSubtitle } from './workflowActionHelpers';
+
+const TRIGGER_EVENT_LABELS = WORKFLOW_TRIGGER_EVENTS_EXTENDED.reduce(
+  (acc, event) => {
+    acc[event.key] = event.value;
+    return acc;
+  },
+  {}
+);
 
 const NODE_META = {
   trigger: {
@@ -180,7 +189,7 @@ export const workflowNodeSubtitle = properties => {
       return `${list.length} filtro(s)`;
     }
     case 'action':
-      return data.action_name || '—';
+      return actionListSubtitle(data);
     case 'ai_outreach': {
       const obj = AI_OBJECTIVE_SHORT[data.objective_preset] || 'IA';
       const tone = AI_TONE_SHORT[data.tone_preset] || '';
@@ -336,6 +345,7 @@ class WorkflowCardView extends HtmlNode {
       properties.intent_key,
       (properties.conditions || []).length,
       (properties.action_params || []).join('\0'),
+      JSON.stringify(properties.actions || []),
       properties.isInvalid,
       isSelected,
       isWorkflowCanvasDark(),

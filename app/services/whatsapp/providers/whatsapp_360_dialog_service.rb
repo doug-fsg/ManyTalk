@@ -117,11 +117,15 @@ class Whatsapp::Providers::Whatsapp360DialogService < Whatsapp::Providers::BaseS
         policy: 'deterministic',
         code: template_info[:lang_code]
       },
-      components: [{
-        type: 'body',
-        parameters: template_info[:parameters]
-      }]
+      components: normalize_template_components(template_info[:parameters])
     }
+  end
+
+  def normalize_template_components(parameters)
+    return [{ type: 'body', parameters: [] }] if parameters.blank?
+    return parameters if parameters.first.is_a?(Hash) && parameters.first[:type] != 'text'
+
+    [{ type: 'body', parameters: parameters }]
   end
 
   def send_interactive_text_message(phone_number, message)

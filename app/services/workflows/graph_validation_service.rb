@@ -159,13 +159,29 @@ module Workflows
     end
 
     def validate_action_node(data, node)
-      name = data['action_name']
-      unless Constants::ALLOWED_ACTION_NAMES.include?(name)
-        add_error("Invalid action: #{name}", node_id: node['id'])
+      items = Workflows::ActionNodeData.items(data)
+      if items.blank?
+        add_error('Action node requires at least one action', node_id: node['id'])
         return
       end
 
-      validate_action_params(name, data, node)
+      if items.length > Constants::MAX_ACTIONS_PER_NODE
+        add_error(
+          "Action node exceeds maximum of #{Constants::MAX_ACTIONS_PER_NODE} actions",
+          node_id: node['id']
+        )
+        return
+      end
+
+      items.each do |item|
+        name = item['action_name']
+        unless Constants::ALLOWED_ACTION_NAMES.include?(name)
+          add_error("Invalid action: #{name}", node_id: node['id'])
+          next
+        end
+
+        validate_action_params(name, item, node)
+      end
     end
 
     def validate_action_params(name, data, node)
@@ -388,7 +404,11 @@ module Workflows
     end
 
     def validate_limits
-      send_count = nodes.count { |n| n['type'] == 'action' && n.dig('data', 'action_name') == 'send_message' }
+      send_count = nodes.sum do |n|
+        next 0 unless n['type'] == 'action'
+
+        Workflows::ActionNodeData.items(n['data'] || {}).count { |item| item['action_name'] == 'send_message' }
+      end
       if send_count > Constants::MAX_SEND_MESSAGE_ACTIONS
         add_error("Maximum #{Constants::MAX_SEND_MESSAGE_ACTIONS} send_message actions allowed")
       end

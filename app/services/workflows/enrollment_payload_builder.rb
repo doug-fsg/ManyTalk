@@ -14,7 +14,8 @@ module Workflows
         workflow_name: workflow.name,
         status: enrollment.status,
         current_node_id: enrollment.current_node_id,
-        current_node_label: current_node&.dig('data', 'label') || current_node&.dig('type'),
+        current_node_label: Workflows::NodeLabel.for_node(current_node),
+        current_node_type: current_node&.dig('type'),
         step_index: counts[:step_index],
         total_steps: counts[:total_steps]
       }

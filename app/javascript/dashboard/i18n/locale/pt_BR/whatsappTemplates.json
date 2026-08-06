@@ -19,6 +19,8 @@
             "VARIABLES_LABEL": "Variáveis",
             "VARIABLE_PLACEHOLDER": "Insira o valor para %{variable}",
             "HEADER_MEDIA_LABEL": "Mídia do cabeçalho",
+            "HEADER_VARIABLES_LABEL": "Variáveis do cabeçalho",
+            "HEADER_MEDIA_HINT": "A Meta exige uma URL HTTPS pública da mídia em todo envio de templates IMAGE/VIDEO/DOCUMENT. O sample da aprovação não é reutilizado automaticamente.",
             "HEADER_MEDIA_URL_PLACEHOLDER": "URL pública da mídia (https://...)",
             "HEADER_MEDIA_NAME_LABEL": "Nome do arquivo",
             "HEADER_MEDIA_NAME_PLACEHOLDER": "documento.pdf",
@@ -27,7 +29,7 @@
             "COPY_CODE_PLACEHOLDER": "Insira o código (máx. 15 caracteres)",
             "GO_BACK_LABEL": "Voltar",
             "SEND_MESSAGE_LABEL": "Enviar Mensagem",
-            "FORM_ERROR_MESSAGE": "Por favor, preencha todas as variáveis antes de enviar"
+            "FORM_ERROR_MESSAGE": "Preencha todas as variáveis obrigatórias e uma URL de mídia válida antes de enviar"
         },
         "GUIDE": {
             "TAB_CREATE_TITLE": "Criar templates",

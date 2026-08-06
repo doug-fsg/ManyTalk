@@ -18,6 +18,7 @@ import WorkflowPropertiesPanel from './WorkflowPropertiesPanel.vue';
 import WorkflowFlowSettingsPanel from './WorkflowFlowSettingsPanel.vue';
 import WorkflowValidationBanner from './WorkflowValidationBanner.vue';
 import WorkflowSimulateModal from './WorkflowSimulateModal.vue';
+import WorkflowNodeModalHeader from './WorkflowNodeModalHeader.vue';
 import WorkflowActivateConfirmModal from './WorkflowActivateConfirmModal.vue';
 import ConfirmationModal from 'dashboard/components/widgets/modal/ConfirmationModal.vue';
 import {
@@ -33,6 +34,10 @@ import {
   FORM_SUBMITTED_EVENT_KEY,
   buildFormSubmittedConditions,
 } from './workflowExtensions';
+import {
+  normalizeActionsList,
+  syncActionNodeFields,
+} from './workflowActionHelpers';
 
 const WorkflowCanvas = defineAsyncComponent(() => import('./WorkflowCanvas.vue'));
 
@@ -44,7 +49,8 @@ const { t } = useI18n();
 const workflow = ref({ name: '', description: '', active: false, graph: emptyGraph() });
 /** Last `active` value persisted on the server (not draft toggle). */
 const activeSaved = ref(false);
-const selectedNode = ref(null);
+/** Node open in the edit modal (double-click). */
+const editingNode = ref(null);
 const isDirty = ref(false);
 const isSaving = ref(false);
 const isLoading = ref(false);
@@ -91,11 +97,65 @@ const validationErrorsByNodeId = computed(() => {
   return map;
 });
 
-const selectedNodeErrors = computed(() => {
-  if (!selectedNode.value?.id) return [];
-  const raw = validationErrorsByNodeId.value[selectedNode.value.id] || [];
+const editingNodeErrors = computed(() => {
+  if (!editingNode.value?.id) return [];
+  const raw = validationErrorsByNodeId.value[editingNode.value.id] || [];
   return raw.map(message => humanizeValidationError(message, t));
 });
+
+const NODE_TYPE_LABEL_KEYS = {
+  trigger: 'WORKFLOW.EDITOR.NODE_TRIGGER',
+  wait: 'WORKFLOW.EDITOR.NODE_WAIT',
+  wait_for_reply: 'WORKFLOW.EDITOR.NODE_WAIT_FOR_REPLY',
+  condition: 'WORKFLOW.EDITOR.NODE_CONDITION',
+  action: 'WORKFLOW.EDITOR.NODE_ACTION',
+  ai_outreach: 'WORKFLOW.EDITOR.NODE_CALL_CLIENT',
+  ai_conversation_analysis: 'WORKFLOW.EDITOR.NODE_CONVERSATION_ANALYSIS',
+  ai_wait_for_intent: 'WORKFLOW.EDITOR.NODE_AI_WAIT_FOR_INTENT',
+};
+
+const editingNodeTypeLabel = computed(() => {
+  const type =
+    editingNode.value &&
+    editingNode.value.properties &&
+    editingNode.value.properties.workflowNodeType;
+  const key = NODE_TYPE_LABEL_KEYS[type];
+  return key ? t(key) : t('WORKFLOW.EDITOR.NODE_SETTINGS');
+});
+
+/** Node types that need a taller/wider modal (lists, multi-action, long forms). */
+const LARGE_NODE_MODAL_TYPES = [
+  'action',
+  'ai_outreach',
+  'wait_for_reply',
+];
+
+const editingNodeModalSize = computed(() => {
+  const type =
+    editingNode.value &&
+    editingNode.value.properties &&
+    editingNode.value.properties.workflowNodeType;
+  return LARGE_NODE_MODAL_TYPES.indexOf(type) !== -1 ? 'large' : 'medium';
+});
+
+const editingNodeModalShellClass = computed(() => {
+  const type =
+    editingNode.value &&
+    editingNode.value.properties &&
+    editingNode.value.properties.workflowNodeType;
+  if (type === 'action') {
+    return 'h-[40rem] max-h-[min(40rem,90vh)]';
+  }
+  if (LARGE_NODE_MODAL_TYPES.indexOf(type) !== -1) {
+    return 'h-[34rem] max-h-[min(34rem,85vh)]';
+  }
+  // Compact nodes: trigger, wait, condition, AI analysis, wait-for-intent, etc.
+  return 'h-[26rem] max-h-[min(26rem,80vh)]';
+});
+
+const onEditingNodeTitleUpdate = value => {
+  onUpdateNode({ label: value });
+};
 
 const saveStatusIcon = computed(() => {
   if (isSaving.value) return 'saving';
@@ -301,14 +361,38 @@ const showValidationFailures = async errors => {
     canvasRef.value.focusFirstInvalidNode(invalidNodeIds.value);
   }
 };
-const onNodeSelected = node => { selectedNode.value = node; };
+const onNodeEdit = node => {
+  if (!node) {
+    editingNode.value = null;
+    return;
+  }
+  const properties = node.properties || {};
+  if (properties.workflowNodeType === 'action') {
+    editingNode.value = {
+      ...node,
+      properties: {
+        ...properties,
+        ...syncActionNodeFields(normalizeActionsList(properties)),
+      },
+    };
+    return;
+  }
+  editingNode.value = node;
+};
+
+const closeNodeEdit = () => {
+  if (canvasRef.value && canvasRef.value.flushGraphChange) {
+    canvasRef.value.flushGraphChange();
+  }
+  editingNode.value = null;
+};
 
 const onUpdateNode = props => {
-  if (!selectedNode.value || !canvasRef.value) return;
-  canvasRef.value.updateSelectedNodeProperties(props);
-  selectedNode.value = {
-    ...selectedNode.value,
-    properties: { ...selectedNode.value.properties, ...props },
+  if (!editingNode.value?.id || !canvasRef.value?.updateNodeProperties) return;
+  const merged = canvasRef.value.updateNodeProperties(editingNode.value.id, props);
+  editingNode.value = {
+    ...editingNode.value,
+    properties: merged || { ...editingNode.value.properties, ...props },
   };
 };
 
@@ -668,19 +752,49 @@ const activeStatusLabel = computed(() =>
         :read-only="readOnlyGraph"
         :invalid-node-ids="invalidNodeIds"
         @update:graph="onGraphUpdate"
-        @node-selected="onNodeSelected"
+        @node-edit="onNodeEdit"
       />
-      <transition name="properties-panel">
-        <WorkflowPropertiesPanel
-          v-if="selectedNode"
-          :key="selectedNode.id"
-          :node="selectedNode"
-          :read-only="readOnlyGraph"
-          :node-errors="selectedNodeErrors"
-          @update-node="onUpdateNode"
-        />
-      </transition>
     </div>
+
+    <woot-modal
+      :show="Boolean(editingNode)"
+      :on-close="closeNodeEdit"
+      :close-on-backdrop-click="true"
+      :size="editingNodeModalSize"
+    >
+      <div
+        v-if="editingNode"
+        class="flex flex-col w-full overscroll-contain"
+        :class="editingNodeModalShellClass"
+      >
+        <WorkflowNodeModalHeader
+          :title="
+            (editingNode.properties && editingNode.properties.label) || ''
+          "
+          :placeholder="editingNodeTypeLabel"
+          :hint="$t('WORKFLOW.EDITOR.NODE_SETTINGS_HINT')"
+          :read-only="readOnlyGraph"
+          @update:title="onEditingNodeTitleUpdate"
+        />
+        <div class="flex-1 min-h-0 px-8 overflow-y-auto overscroll-contain">
+          <WorkflowPropertiesPanel
+            :key="editingNode.id"
+            :node="editingNode"
+            :read-only="readOnlyGraph"
+            :node-errors="editingNodeErrors"
+            as-modal
+            @update-node="onUpdateNode"
+          />
+        </div>
+        <div
+          class="flex shrink-0 justify-end px-8 py-4 border-t border-slate-75 dark:border-slate-700/50"
+        >
+          <woot-button size="small" @click="closeNodeEdit">
+            {{ $t('WORKFLOW.EDITOR.FLOW_SETTINGS_DONE') }}
+          </woot-button>
+        </div>
+      </div>
+    </woot-modal>
 
     <woot-modal
       :show.sync="showFlowSettings"
@@ -742,27 +856,9 @@ const activeStatusLabel = computed(() =>
   transform: translateY(-4px);
 }
 
-/* Properties panel — fade + slide (same feel as animate-scale-in modals) */
-.properties-panel-enter-active,
-.properties-panel-leave-active {
-  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
-}
-.properties-panel-enter,
-.properties-panel-leave-to {
-  opacity: 0;
-  transform: translateX(0.5rem) scale(0.98);
-}
-.properties-panel-enter-to,
-.properties-panel-leave {
-  opacity: 1;
-  transform: translateX(0) scale(1);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .fade-down-enter-active,
-  .fade-down-leave-active,
-  .properties-panel-enter-active,
-  .properties-panel-leave-active {
+  .fade-down-leave-active {
     transition: none;
   }
   .workflow-editor-toolbar-spinner {

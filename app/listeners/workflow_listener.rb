@@ -49,6 +49,8 @@ class WorkflowListener < BaseListener
     return if performed_by_workflow?(event)
 
     conversation = event.data[:conversation]
+    return if external_whatsapp_conversation?(conversation)
+
     Workflows::ProcessEventJob.perform_later(
       event_name,
       conversation.account_id,
@@ -73,7 +75,8 @@ class WorkflowListener < BaseListener
 
   def ignore_message_created_event?(event)
     message = event.data[:message]
-    performed_by_workflow?(event) || message.activity? || workflow_message?(message) || external_echo_message?(message)
+    performed_by_workflow?(event) || message.activity? || workflow_message?(message) ||
+      external_echo_message?(message) || external_whatsapp_conversation?(message.conversation)
   end
 
   def external_echo_message?(message)
@@ -83,5 +86,11 @@ class WorkflowListener < BaseListener
   def workflow_message?(message)
     attrs = message.content_attributes || {}
     attrs['workflow_id'].present?
+  end
+
+  def external_whatsapp_conversation?(conversation)
+    return false if conversation.blank?
+
+    conversation.additional_attributes&.[](Workflows::ExternalWhatsappNotifier::EXTERNAL_ATTR) == true
   end
 end

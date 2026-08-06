@@ -167,7 +167,12 @@ module Workflows
       when 'trigger'
         data['event_name'] || 'trigger'
       when 'action'
-        [data['action_name'], Array(data['action_params']).first].compact.join(': ')
+        items = Workflows::ActionNodeData.items(data)
+        return data['action_name'].to_s if items.blank?
+
+        items.map do |item|
+          [item['action_name'], Array(item['action_params']).first].compact.join(': ')
+        end.join(' → ')
       when 'wait'
         "#{data['duration']} #{data['unit']}"
       when 'wait_for_reply'

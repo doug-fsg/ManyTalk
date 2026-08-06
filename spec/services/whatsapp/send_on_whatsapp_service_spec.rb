@@ -39,6 +39,7 @@ describe Whatsapp::SendOnWhatsappService do
       end
 
       it 'calls channel.send_template when after 24 hour limit' do
+        allow_any_instance_of(Conversation).to receive(:can_reply?).and_return(false)
         message = create(:message, message_type: :outgoing, content: 'Your package has been shipped. It will be delivered in 3 business days.',
                                    conversation: conversation)
         allow(HTTParty).to receive(:post).and_return(whatsapp_request)
@@ -62,9 +63,22 @@ describe Whatsapp::SendOnWhatsappService do
         expect(message.reload.source_id).to eq('123456789')
       end
 
-      it 'calls channel.send_template if template_params are present' do
-        message = create(:message, additional_attributes: { template_params: template_params },
-                                   content: 'Your package will be delivered in 3 business days.', conversation: conversation, message_type: :outgoing)
+      it 'uses TemplateProcessorService for legacy flat processed_params without feature flag' do
+        message = create(
+          :message,
+          additional_attributes: { template_params: template_params },
+          content: 'Your package will be delivered in 3 business days.',
+          conversation: conversation,
+          message_type: :outgoing
+        )
+
+        expect(Whatsapp::TemplateProcessorService).to receive(:new).with(
+          hash_including(
+            channel: whatsapp_channel,
+            message: message
+          )
+        ).and_call_original
+
         allow(HTTParty).to receive(:post).and_return(whatsapp_request)
         allow(whatsapp_request).to receive(:success?).and_return(true)
         allow(whatsapp_request).to receive(:[]).with('messages').and_return([{ 'id' => '123456789' }])
@@ -82,6 +96,7 @@ describe Whatsapp::SendOnWhatsappService do
             type: 'template'
           }.to_json
         )
+
         described_class.new(message: message).perform
         expect(message.reload.source_id).to eq('123456789')
       end
@@ -120,6 +135,7 @@ describe Whatsapp::SendOnWhatsappService do
       end
 
       it 'calls channel.send_template when template has regexp characters' do
+        allow_any_instance_of(Conversation).to receive(:can_reply?).and_return(false)
         message = create(
           :message,
           message_type: :outgoing,
@@ -145,6 +161,79 @@ describe Whatsapp::SendOnWhatsappService do
         )
         described_class.new(message: message).perform
         expect(message.reload.source_id).to eq('123456789')
+      end
+    end
+
+    context 'when sending media header templates via whatsapp cloud' do
+      let!(:whatsapp_channel) do
+        create(
+          :channel_whatsapp,
+          provider: 'whatsapp_cloud',
+          sync_templates: false,
+          validate_provider_config: false,
+          message_templates: [
+            {
+              'name' => 'promo_doc',
+              'status' => 'approved',
+              'category' => 'MARKETING',
+              'language' => 'pt_BR',
+              'namespace' => 'ns',
+              'components' => [
+                { 'type' => 'HEADER', 'format' => 'DOCUMENT' },
+                { 'type' => 'BODY', 'text' => 'Confira {{1}}' }
+              ]
+            }
+          ]
+        )
+      end
+      let!(:contact_inbox) { create(:contact_inbox, inbox: whatsapp_channel.inbox, source_id: '5511999999999') }
+      let!(:conversation) { create(:conversation, contact_inbox: contact_inbox, inbox: whatsapp_channel.inbox) }
+
+      it 'sends header document component from enhanced processed_params without feature flag' do
+        template_params = {
+          'name' => 'promo_doc',
+          'namespace' => 'ns',
+          'language' => 'pt_BR',
+          'processed_params' => {
+            'body' => { '1' => 'oferta' },
+            'header' => {
+              'media_url' => 'https://example.com/doc.pdf',
+              'media_type' => 'document',
+              'media_name' => 'doc.pdf'
+            }
+          }
+        }
+        message = create(
+          :message,
+          additional_attributes: { template_params: template_params },
+          content: 'Confira oferta',
+          conversation: conversation,
+          message_type: :outgoing
+        )
+
+        stub_request(:post, 'https://graph.facebook.com/v13.0/123456789/messages')
+          .to_return(
+            status: 200,
+            body: { messages: [{ id: 'wamid.media123' }] }.to_json,
+            headers: { 'Content-Type' => 'application/json' }
+          )
+
+        described_class.new(message: message).perform
+
+        expect(
+          a_request(:post, 'https://graph.facebook.com/v13.0/123456789/messages')
+            .with { |req|
+              body = JSON.parse(req.body)
+              components = body.dig('template', 'components')
+              header = components.find { |c| c['type'] == 'header' }
+              body_component = components.find { |c| c['type'] == 'body' }
+
+              header.dig('parameters', 0, 'type') == 'document' &&
+                header.dig('parameters', 0, 'document', 'link') == 'https://example.com/doc.pdf' &&
+                body_component.dig('parameters', 0, 'text') == 'oferta'
+            }
+        ).to have_been_made.once
+        expect(message.reload.source_id).to eq('wamid.media123')
       end
     end
   end

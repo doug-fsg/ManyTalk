@@ -1,6 +1,13 @@
 <template>
   <div class="w-full">
     <textarea
+      v-if="renderedHeader"
+      v-model="renderedHeader"
+      :rows="1"
+      readonly
+      class="template-input header-preview"
+    />
+    <textarea
       v-model="processedString"
       :rows="campaignMode ? 2 : 4"
       readonly
@@ -10,26 +17,47 @@
       <p class="variables-label">
         {{ $t('WHATSAPP_TEMPLATES.PARSER.VARIABLES_LABEL') }}
       </p>
+    <div
+      v-for="variable in bodyVariables"
+      :key="variable"
+      class="template__variable-item"
+    >
+      <span class="variable-label">
+        {{ variable }}
+      </span>
+      <template-variable-input
+        v-if="processedParams.body"
+        v-model="processedParams.body[variable]"
+        :placeholder="
+          $t('WHATSAPP_TEMPLATES.PARSER.VARIABLE_PLACEHOLDER', {
+            variable,
+          })
+        "
+      />
+    </div>
+    </div>
+
+    <div
+      v-if="
+        textHeaderVariables.length &&
+        processedParams.header &&
+        !requiresDynamicMediaUrl
+      "
+      class="template__variables-container"
+    >
+      <p class="variables-label">
+        {{ $t('WHATSAPP_TEMPLATES.PARSER.HEADER_VARIABLES_LABEL') }}
+      </p>
       <div
-        v-for="variable in bodyVariables"
-        :key="variable"
+        v-for="variable in textHeaderVariables"
+        :key="`header-${variable}`"
         class="template__variable-item"
       >
         <span class="variable-label">
           {{ variable }}
         </span>
         <template-variable-input
-          v-if="enhancedTemplatesEnabled"
-          v-model="processedParams.body[variable]"
-          :placeholder="
-            $t('WHATSAPP_TEMPLATES.PARSER.VARIABLE_PLACEHOLDER', {
-              variable,
-            })
-          "
-        />
-        <template-variable-input
-          v-else
-          v-model="processedParams[variable]"
+          v-model="processedParams.header[variable]"
           :placeholder="
             $t('WHATSAPP_TEMPLATES.PARSER.VARIABLE_PLACEHOLDER', {
               variable,
@@ -39,9 +67,15 @@
       </div>
     </div>
 
-    <div v-if="enhancedTemplatesEnabled && hasMediaHeader" class="template__variables-container">
+    <div
+      v-if="requiresDynamicMediaUrl && processedParams.header"
+      class="template__variables-container"
+    >
       <p class="variables-label">
         {{ $t('WHATSAPP_TEMPLATES.PARSER.HEADER_MEDIA_LABEL') }}
+      </p>
+      <p class="media-hint">
+        {{ $t('WHATSAPP_TEMPLATES.PARSER.HEADER_MEDIA_HINT') }}
       </p>
       <div class="template__variable-item">
         <span class="variable-label">
@@ -49,7 +83,7 @@
         </span>
         <woot-input
           v-model="processedParams.header.media_url"
-          type="text"
+          type="url"
           class="variable-input"
           :styles="{ marginBottom: 0 }"
           :placeholder="$t('WHATSAPP_TEMPLATES.PARSER.HEADER_MEDIA_URL_PLACEHOLDER')"
@@ -73,7 +107,7 @@
     </div>
 
     <div
-      v-if="enhancedTemplatesEnabled && buttonFields.length"
+      v-if="useEnhancedTemplateFormat && buttonFields.length"
       class="template__variables-container"
     >
       <p class="variables-label">
@@ -102,7 +136,7 @@
       <woot-button variant="smooth" @click="$emit('resetTemplate')">
         {{ $t('WHATSAPP_TEMPLATES.PARSER.GO_BACK_LABEL') }}
       </woot-button>
-      <woot-button type="button" @click="sendMessage">
+      <woot-button type="button" :disabled="isFormInvalid" @click="sendMessage">
         {{ $t('WHATSAPP_TEMPLATES.PARSER.SEND_MESSAGE_LABEL') }}
       </woot-button>
     </footer>
@@ -115,19 +149,21 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
 import { requiredIf } from 'vuelidate/lib/validators';
-import accountMixin from 'dashboard/mixins/account';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import {
   allKeysRequired,
-  buildLegacyTemplateParameters,
   buildTemplateParameters,
+  COMPONENT_TYPES,
   findComponentByType,
+  getTextHeaderVariables,
   hasMediaHeader,
   interpolateParamsValues,
+  isWhatsAppComplete,
+  renderTemplatePreview,
   replaceTemplateVariables,
-  COMPONENT_TYPES,
+  requiresDynamicMediaUrl,
+  shouldUseEnhancedTemplateFormat,
 } from 'dashboard/helper/templateHelper';
 import {
   applySavedTemplateDefaults,
@@ -138,7 +174,6 @@ import TemplateVariableInput from './TemplateVariableInput.vue';
 
 export default {
   components: { TemplateVariableInput },
-  mixins: [accountMixin],
   setup() {
     const { uiSettings, updateUISettings } = useUISettings();
 
@@ -175,20 +210,20 @@ export default {
     };
   },
   computed: {
-    ...mapGetters({
-      isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
-    }),
-    enhancedTemplatesEnabled() {
-      return this.isFeatureEnabledonAccount(
-        this.accountId,
-        'whatsapp_enhanced_templates'
-      );
+    useEnhancedTemplateFormat() {
+      return shouldUseEnhancedTemplateFormat(this.template);
     },
     headerComponent() {
       return findComponentByType(this.template, COMPONENT_TYPES.HEADER);
     },
     hasMediaHeader() {
       return hasMediaHeader(this.template);
+    },
+    requiresDynamicMediaUrl() {
+      return requiresDynamicMediaUrl(this.template);
+    },
+    textHeaderVariables() {
+      return getTextHeaderVariables(this.template);
     },
     bodyVariables() {
       const bodyComponent = findComponentByType(
@@ -205,10 +240,24 @@ export default {
       );
     },
     hasAnyVariables() {
-      return (
-        this.bodyVariables.length > 0 ||
-        (this.enhancedTemplatesEnabled && this.hasMediaHeader) ||
-        this.buttonFields.length > 0
+      const baseParams = buildTemplateParameters(this.template);
+      return Object.keys(baseParams).length > 0;
+    },
+    isFormInvalid() {
+      return !isWhatsAppComplete(this.template, this.processedParams);
+    },
+    renderedHeader() {
+      const header = this.headerComponent;
+      if (!header?.text || header.format !== 'TEXT') return '';
+
+      const interpolatedParams = interpolateParamsValues(
+        this.processedParams,
+        this.variables
+      );
+
+      return renderTemplatePreview(
+        header.text,
+        interpolatedParams.header || {}
       );
     },
     processedString() {
@@ -226,7 +275,7 @@ export default {
       return replaceTemplateVariables(bodyComponent.text, interpolatedParams);
     },
     buttonFields() {
-      if (!this.enhancedTemplatesEnabled) return [];
+      if (!this.useEnhancedTemplateFormat) return [];
 
       const buttonComponents =
         this.template.components?.filter(
@@ -258,13 +307,21 @@ export default {
       return fields;
     },
   },
-  mounted() {
+  created() {
     this.generateVariables();
+  },
+  mounted() {
     if (this.campaignMode) {
       this.emitCampaignPayload();
     }
   },
   watch: {
+    template: {
+      deep: true,
+      handler() {
+        this.generateVariables();
+      },
+    },
     processedParams: {
       deep: true,
       handler() {
@@ -305,7 +362,7 @@ export default {
     },
     sendMessage() {
       this.$v.$touch();
-      if (this.$v.$invalid) return;
+      if (this.$v.$invalid || this.isFormInvalid) return;
 
       this.persistTemplateDefaults();
       this.$emit('sendMessage', this.buildPayload());
@@ -324,9 +381,7 @@ export default {
       this.updateUISettings(settingsUpdate);
     },
     generateVariables() {
-      const baseParams = this.enhancedTemplatesEnabled
-        ? buildTemplateParameters(this.template, true)
-        : buildLegacyTemplateParameters(this.template);
+      const baseParams = buildTemplateParameters(this.template);
 
       const savedDefaults = getSavedTemplateDefaults(
         this.uiSettings,
@@ -349,6 +404,10 @@ export default {
 
 .variables-label {
   @apply text-sm font-semibold mb-2.5;
+}
+
+.media-hint {
+  @apply text-xs text-slate-500 dark:text-slate-400 mb-2.5;
 }
 
 .template__variable-item {
@@ -379,6 +438,10 @@ footer {
 }
 .template-input {
   @apply bg-slate-25 dark:bg-slate-900 text-slate-700 dark:text-slate-100;
+}
+
+.header-preview {
+  @apply mb-2 font-semibold;
 }
 
 .campaign-parser-footer {

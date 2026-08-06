@@ -110,7 +110,8 @@ class Api::V1::Accounts::Conversations::WorkflowEnrollmentsController < Api::V1:
       conversation_id: enrollment.conversation_id,
       status: enrollment.status,
       current_node_id: enrollment.current_node_id,
-      current_node_label: current_node&.dig('data', 'label') || current_node&.dig('type'),
+      current_node_label: Workflows::NodeLabel.for_node(current_node),
+      current_node_type: current_node&.dig('type'),
       step_index: timeline_meta[:step_index],
       total_steps: timeline_meta[:total_steps],
       timeline: timeline_meta[:timeline],
@@ -160,7 +161,7 @@ class Api::V1::Accounts::Conversations::WorkflowEnrollmentsController < Api::V1:
 
   def available_stages(workflow)
     (workflow.graph['nodes'] || [])
-      .select { |n| n.dig('data', 'label').present? }
-      .map { |n| { id: n['id'], label: n.dig('data', 'label'), type: n['type'] } }
+      .reject { |n| n['type'] == 'trigger' }
+      .map { |n| { id: n['id'], label: Workflows::NodeLabel.for_node(n), type: n['type'] } }
   end
 end

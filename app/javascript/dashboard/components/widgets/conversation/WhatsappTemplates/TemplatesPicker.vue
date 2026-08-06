@@ -13,7 +13,10 @@
     <p v-if="isSyncing" class="templates__sync-status">
       {{ $t('WHATSAPP_TEMPLATES.PICKER.SYNCING') }}
     </p>
-    <div class="template__list-container" :class="{ 'template__list-container--compact': compact }">
+    <div
+      class="template__list-container"
+      :class="{ 'template__list-container--compact': compact }"
+    >
       <whatsapp-template-guide
         v-if="showEmptyGuide"
         :inbox-id="inboxId"
@@ -27,15 +30,27 @@
             @click="$emit('onSelect', template)"
           >
             <div>
-              <div class="flex items-center justify-between gap-2" :class="{ 'mb-0': compact }">
-                <p class="label-title" :class="{ 'label-title--compact': compact }">
+              <div
+                class="flex items-center justify-between gap-2"
+                :class="{ 'mb-0': compact }"
+              >
+                <p
+                  class="label-title"
+                  :class="{ 'label-title--compact': compact }"
+                >
                   {{ template.name }}
                 </p>
-                <span
-                  class="inline-block py-0.5 px-1.5 rounded-sm text-xs leading-none cursor-default bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 shrink-0"
-                >
-                  {{ template.language }}
-                </span>
+                <div class="template__badges">
+                  <span
+                    v-if="getHeaderMediaBadgeLabel(template)"
+                    class="template__badge template__badge--media"
+                  >
+                    {{ getHeaderMediaBadgeLabel(template) }}
+                  </span>
+                  <span class="template__badge">
+                    {{ template.language }}
+                  </span>
+                </div>
               </div>
               <template v-if="!compact">
                 <div>
@@ -69,9 +84,7 @@
 <script>
 import WhatsappTemplateGuide from './WhatsappTemplateGuide.vue';
 import whatsappTemplateGuideMixin from 'dashboard/mixins/whatsappTemplateGuideMixin';
-
-// TODO: Remove this when we support all formats
-const formatsToRemove = ['DOCUMENT', 'IMAGE', 'VIDEO'];
+import { getHeaderMediaBadgeLabel } from 'dashboard/helper/templateHelper';
 
 export default {
   components: {
@@ -106,14 +119,9 @@ export default {
       );
     },
     whatsAppTemplateMessages() {
-      // TODO: Remove the last filter when we support all formats
-      return this.$store.getters['inboxes/getWhatsAppTemplates'](this.inboxId)
-        .filter(template => template.status.toLowerCase() === 'approved')
-        .filter(template => {
-          return template.components.every(component => {
-            return !formatsToRemove.includes(component.format);
-          });
-        });
+      return this.$store.getters['inboxes/getFilteredWhatsAppTemplates'](
+        this.inboxId
+      );
     },
     filteredTemplateMessages() {
       return this.whatsAppTemplateMessages.filter(template =>
@@ -133,9 +141,12 @@ export default {
     this.maybeSyncWhatsAppTemplates();
   },
   methods: {
+    getHeaderMediaBadgeLabel,
     getTemplatebody(template) {
-      return template.components.find(component => component.type === 'BODY')
-        .text;
+      return (
+        template.components.find(component => component.type === 'BODY')
+          ?.text || ''
+      );
     },
   },
 };
@@ -190,6 +201,18 @@ export default {
     .label-body {
       font-family: monospace;
     }
+  }
+}
+
+.template__badges {
+  @apply flex items-center gap-1 shrink-0;
+}
+
+.template__badge {
+  @apply inline-block py-0.5 px-1.5 rounded-sm text-xs leading-none cursor-default bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300;
+
+  &--media {
+    @apply bg-woot-50 dark:bg-woot-900/40 text-woot-700 dark:text-woot-200;
   }
 }
 

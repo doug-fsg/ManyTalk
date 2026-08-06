@@ -18,6 +18,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useI18n } from 'dashboard/composables/useI18n';
+import { displayWorkflowStepLabel } from 'dashboard/helper/workflowDisplayLabels';
 
 const props = defineProps({
   summary: { type: Object, default: null },
@@ -37,8 +38,14 @@ const badgeClass = computed(
 
 const badgeLabel = computed(() => {
   if (!props.summary) return '';
-  const label = props.summary.current_node_label;
-  return label
+  const label = displayWorkflowStepLabel(
+    {
+      label: props.summary.current_node_label,
+      type: props.summary.current_node_type,
+    },
+    t
+  );
+  return label && label !== '—'
     ? `${t('WORKFLOW.REGUA.BADGE_PREFIX')} · ${label}`
     : t('WORKFLOW.REGUA.BADGE_PREFIX');
 });

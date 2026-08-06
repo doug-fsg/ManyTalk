@@ -64,4 +64,40 @@ describe('#getters', () => {
       isDeleting: false,
     });
   });
+
+  describe('getFilteredWhatsAppTemplates', () => {
+    it('returns only sendable approved templates', () => {
+      const state = {
+        records: [
+          {
+            id: 1,
+            channel_type: 'Channel::Whatsapp',
+            message_templates: [
+              {
+                name: 'auth_template',
+                status: 'approved',
+                category: 'AUTHENTICATION',
+                components: [{ type: 'BODY', text: 'Code {{1}}' }],
+              },
+              {
+                name: 'marketing_template',
+                status: 'approved',
+                category: 'MARKETING',
+                components: [{ type: 'BODY', text: 'Hello {{1}}' }],
+              },
+              {
+                name: 'pending_template',
+                status: 'pending',
+                components: [{ type: 'BODY', text: 'Pending' }],
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = getters.getFilteredWhatsAppTemplates(state)(1);
+      expect(result).toHaveLength(1);
+      expect(result[0].name).toBe('marketing_template');
+    });
+  });
 });

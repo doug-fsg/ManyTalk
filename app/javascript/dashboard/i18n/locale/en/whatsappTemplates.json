@@ -19,6 +19,8 @@
             "VARIABLES_LABEL": "Variables",
             "VARIABLE_PLACEHOLDER": "Enter %{variable} value",
             "HEADER_MEDIA_LABEL": "Header media",
+            "HEADER_VARIABLES_LABEL": "Header variables",
+            "HEADER_MEDIA_HINT": "Meta requires a public HTTPS media URL in every send for IMAGE/VIDEO/DOCUMENT headers. The sample uploaded during template approval is not reused automatically.",
             "HEADER_MEDIA_URL_PLACEHOLDER": "Public media URL (https://...)",
             "HEADER_MEDIA_NAME_LABEL": "Filename",
             "HEADER_MEDIA_NAME_PLACEHOLDER": "document.pdf",
@@ -27,7 +29,7 @@
             "COPY_CODE_PLACEHOLDER": "Enter code (max 15 characters)",
             "GO_BACK_LABEL": "Go Back",
             "SEND_MESSAGE_LABEL": "Send Message",
-            "FORM_ERROR_MESSAGE": "Please fill all variables before sending"
+            "FORM_ERROR_MESSAGE": "Please fill all required variables and a valid media URL before sending"
         },
         "GUIDE": {
             "TAB_CREATE_TITLE": "Create templates",

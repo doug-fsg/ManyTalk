@@ -215,6 +215,7 @@ module Workflows
 
     MAX_GRAPH_BYTES = 512.kilobytes
     MAX_SEND_MESSAGE_ACTIONS = 15
+    MAX_ACTIONS_PER_NODE = 20
     MAX_WAIT_NODES = 10
     MAX_WORKFLOWS_PER_EVENT = 100
     # After this many synchronous node advances, enqueue StepJob to avoid long-running jobs

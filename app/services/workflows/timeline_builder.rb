@@ -123,13 +123,15 @@ module Workflows
 
       {
         node_id: node_id,
-        label: node.dig('data', 'label') || node['type'],
+        label: Workflows::NodeLabel.for_node(node),
         type: node['type'],
+        node_type: node['type'],
         status: status,
         executed_at: execution&.executed_at,
         scheduled_at: scheduled_at_for(node_id, execution, status),
         branch: branch_hint(node_id, status),
-        error_message: status == 'failed' ? execution&.error_message : nil
+        error_message: status == 'failed' ? execution&.error_message : nil,
+        action_details: Workflows::NodeLabel.action_details(node)
       }
     end
 

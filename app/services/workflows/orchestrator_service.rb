@@ -272,30 +272,50 @@ module Workflows
         end
       end
 
+      SEND_ACTIONS = %w[send_message send_attachment].freeze
+      # Delay after send actions so reply jobs can finish before the next action (macro parity).
+      SEND_ACTION_DELAY = 2.5.seconds
+
       def execute_action(workflow, enrollment, conversation, node)
         data = node['data'] || {}
-        action_name = data['action_name']
+        items = Workflows::ActionNodeData.items(data)
+        return if items.blank?
 
-        success = begin
-          Current.skip_workflow_triggers = true if action_name == 'change_kanban_stage'
-          Workflows::ActionService.new(
-            workflow,
-            workflow.account,
-            conversation,
-            node_id: node['id']
-          ).perform_action(action_name, data['action_params'] || [])
-        ensure
-          Current.skip_workflow_triggers = nil
-        end
-
-        return if success
-
-        execution = enrollment.workflow_step_executions.find_or_create_by!(node_id: node['id'])
-        execution.update!(
-          status: 'failed',
-          error_message: "Action #{action_name} failed. Check application logs for details.",
-          executed_at: Time.current
+        service = Workflows::ActionService.new(
+          workflow,
+          workflow.account,
+          conversation,
+          node_id: node['id']
         )
+
+        items.each_with_index do |item, index|
+          action_name = item['action_name']
+          success = begin
+            Current.skip_workflow_triggers = true if action_name == 'change_kanban_stage'
+            service.perform_action(action_name, item['action_params'] || [])
+          ensure
+            Current.skip_workflow_triggers = nil
+          end
+
+          unless success
+            execution = enrollment.workflow_step_executions.find_or_create_by!(node_id: node['id'])
+            execution.update!(
+              status: 'failed',
+              error_message: "Action #{action_name} failed. Check application logs for details.",
+              executed_at: Time.current
+            )
+            return
+          end
+
+          wait_after_send_action(action_name, index, items.length)
+        end
+      end
+
+      def wait_after_send_action(action_name, current_index, total)
+        return unless SEND_ACTIONS.include?(action_name)
+        return if current_index >= total - 1
+
+        sleep(SEND_ACTION_DELAY)
       end
 
       def execute_ai_outreach(workflow, enrollment, conversation, node)
