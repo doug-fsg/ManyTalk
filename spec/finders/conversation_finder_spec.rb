@@ -194,4 +194,20 @@ describe ConversationFinder do
       end
     end
   end
+
+  describe '#perform_meta_only' do
+    let(:params) { { assignee_type: 'assigned' } }
+
+    it 'returns only count without conversations' do
+      result = conversation_finder.perform_meta_only
+      expect(result).to have_key(:count)
+      expect(result).not_to have_key(:conversations)
+    end
+
+    it 'returns the same counts as perform' do
+      meta_result = conversation_finder.perform_meta_only
+      full_result = conversation_finder.perform
+      expect(meta_result[:count]).to eq(full_result[:count])
+    end
+  end
 end

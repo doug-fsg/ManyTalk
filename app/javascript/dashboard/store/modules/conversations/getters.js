@@ -10,7 +10,8 @@ export const getSelectedChatConversation = ({
 
 const getters = {
   getAllConversations: ({ allConversations, chatSortFilter: sortKey }) => {
-    return allConversations.sort((a, b) => sortComparator(a, b, sortKey));
+    // Copy before sort — never mutate Vuex state inside a getter
+    return [...allConversations].sort((a, b) => sortComparator(a, b, sortKey));
   },
   getSelectedChat: ({ selectedChatId, allConversations }) => {
     const selectedChat = allConversations.find(

@@ -56,11 +56,15 @@ export default {
     this.$store.dispatch('agents/get');
     this.fetchAllData();
 
-    this.$emitter.on('fetch_overview_reports', () => {
-      this.fetchAllData();
-    });
+    this.$emitter.on('fetch_overview_reports', this.onFetchOverviewReports);
+  },
+  beforeDestroy() {
+    this.$emitter.off('fetch_overview_reports', this.onFetchOverviewReports);
   },
   methods: {
+    onFetchOverviewReports() {
+      this.fetchAllData();
+    },
     fetchAllData() {
       this.fetchAccountConversationMetric();
       this.fetchAgentConversationMetric();

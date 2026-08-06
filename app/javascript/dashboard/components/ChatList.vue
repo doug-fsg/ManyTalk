@@ -231,8 +231,9 @@ export default {
       selectedInboxes: [],
       isContextMenuOpen: false,
       appliedFilter: [],
+      // root is bound in mounted — refs are unavailable in data()
       infiniteLoaderOptions: {
-        root: this.$refs.conversationList,
+        root: null,
         rootMargin: '100px 0px 100px 0px',
       },
 
@@ -539,6 +540,11 @@ export default {
       this.fetchEnrollmentSummaries,
       300
     );
+    // Collapse ActionCable stats storms into one meta request
+    this.debouncedFetchConversationStats = debounce(() => {
+      if (this.hasAppliedFiltersOrActiveFolders) return;
+      this.$store.dispatch('conversationStats/get', this.conversationFilters);
+    }, 300);
   },
   mounted() {
     this.$store.dispatch('setChatListFilters', this.conversationFilters);
@@ -551,23 +557,57 @@ export default {
       this.$store.dispatch('campaigns/get');
     }
 
-    this.$emitter.on('fetch_conversation_stats', () => {
-      this.$store.dispatch('conversationStats/get', this.conversationFilters);
-    });
-
+    // Named handler so we can remove it on destroy (anonymous listeners leak)
+    this.$emitter.on('fetch_conversation_stats', this.onFetchConversationStats);
     this.$emitter.on('workflow_enrollment.updated', this.onWorkflowEnrollmentUpdated);
 
     if (this.isFeatureEnabledonAccount(this.accountId, 'workflows')) {
       this.fetchEnrollmentSummaries();
     }
+
+    this.$nextTick(() => {
+      this.bindInfiniteLoaderRoot();
+    });
   },
   beforeDestroy() {
+    this.$emitter.off('fetch_conversation_stats', this.onFetchConversationStats);
     this.$emitter.off('workflow_enrollment.updated', this.onWorkflowEnrollmentUpdated);
+    // Prevent debounced fetch firing after unmount
+    if (this.debouncedFetchEnrollmentSummaries?.cancel) {
+      this.debouncedFetchEnrollmentSummaries.cancel();
+    }
+    if (this.debouncedFetchConversationStats?.cancel) {
+      this.debouncedFetchConversationStats.cancel();
+    }
   },
   methods: {
+    bindInfiniteLoaderRoot() {
+      // Prefer the actual scroll container (virtual-list), fallback to list wrapper
+      const scrollRoot =
+        this.$refs.conversationVirtualList?.$el ||
+        this.$refs.conversationList ||
+        null;
+      this.infiniteLoaderOptions = {
+        ...this.infiniteLoaderOptions,
+        root: scrollRoot,
+      };
+    },
+    onFetchConversationStats() {
+      this.debouncedFetchConversationStats();
+    },
     onWorkflowEnrollmentUpdated(payload) {
       if (!payload?.conversation_id) return;
-      this.fetchEnrollmentSummaries();
+      if (!this.isFeatureEnabledonAccount(this.accountId, 'workflows')) return;
+
+      const conversationId = Number(payload.conversation_id);
+      // Skip noise from enrollments outside the visible list
+      const isVisible = this.conversationList.some(
+        conversation => conversation.id === conversationId
+      );
+      if (!isVisible) return;
+
+      // Reuse the same debounce as conversationList watcher to avoid API storms
+      this.debouncedFetchEnrollmentSummaries();
     },
     async fetchEnrollmentSummaries() {
       if (!this.isFeatureEnabledonAccount(this.accountId, 'workflows')) return;

@@ -21,13 +21,14 @@ json.meta do
 end
 
 json.id conversation.display_id
-if conversation.messages.where(account_id: conversation.account_id).last.blank?
+# Single query for last message (same JSON shape; avoids duplicate .last lookups)
+last_message = conversation.messages.where(account_id: conversation.account_id)
+                           .includes([{ attachments: [{ file_attachment: [:blob] }] }])
+                           .last
+if last_message.blank?
   json.messages []
 else
-  json.messages [
-    conversation.messages.where(account_id: conversation.account_id)
-                .includes([{ attachments: [{ file_attachment: [:blob] }] }]).last.try(:push_event_data)
-  ]
+  json.messages [last_message.try(:push_event_data)]
 end
 
 json.account_id conversation.account_id

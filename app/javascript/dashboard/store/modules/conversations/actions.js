@@ -181,9 +181,14 @@ const actions = {
     commit(types.CLEAR_ALL_MESSAGES_LOADED);
     if (data.dataFetched === undefined) {
       try {
+        const firstMessageId = data.messages?.[0]?.id;
+        if (!firstMessageId) {
+          Vue.set(data, 'dataFetched', true);
+          return;
+        }
         await dispatch('fetchPreviousMessages', {
           after,
-          before: data.messages[0].id,
+          before: firstMessageId,
           conversationId: data.id,
         });
         Vue.set(data, 'dataFetched', true);

@@ -170,8 +170,10 @@ class ActionCableConnector extends BaseActionCableConnector {
 
   // eslint-disable-next-line class-methods-use-this
   fetchConversationStats = () => {
+    // Only refresh inbox conversation counts. Overview reports are refreshed
+    // via first.reply.created — emitting here on every conversation event
+    // caused API storms when LiveReports was open (aligned with upstream develop).
     emitter.emit('fetch_conversation_stats');
-    emitter.emit('fetch_overview_reports');
   };
 
   onContactDelete = data => {

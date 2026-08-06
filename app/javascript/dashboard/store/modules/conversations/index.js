@@ -209,7 +209,10 @@ export const mutations = {
   },
 
   [types.ADD_CONVERSATION](_state, conversation) {
-    _state.allConversations.push(conversation);
+    const exists = _state.allConversations.some(c => c.id === conversation.id);
+    if (!exists) {
+      _state.allConversations.push(conversation);
+    }
   },
 
   [types.REMOVE_CONVERSATION](_state, { conversationId }) {
