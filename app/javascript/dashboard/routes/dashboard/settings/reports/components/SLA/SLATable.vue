@@ -81,7 +81,9 @@ export default {
         class="flex items-center justify-center h-32 bg-white rounded-b-xl dark:bg-slate-900"
       >
         <Spinner />
-        <span>{{ $t('SLA_REPORTS.LOADING') }}</span>
+        <span class="ml-2 text-slate-600 dark:text-slate-200">{{
+          $t('SLA_REPORTS.LOADING')
+        }}</span>
       </div>
       <div v-else-if="slaReports.length > 0">
         <SLAReportItem

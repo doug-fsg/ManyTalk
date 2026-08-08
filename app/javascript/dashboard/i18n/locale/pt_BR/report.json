@@ -536,6 +536,7 @@
       "LABELS": "Marcador",
       "TEAMS": "Time"
     },
+    "WITH": "com",
     "METRICS": {
       "HIT_RATE": {
         "LABEL": "Taxa de Acertos",

@@ -35,6 +35,7 @@ export default {
     >
       <div class="relative">
         <woot-button
+          type="button"
           color-scheme="secondary"
           variant="link"
           @click="openSlaEvents"

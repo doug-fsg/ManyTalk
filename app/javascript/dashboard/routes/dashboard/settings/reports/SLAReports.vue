@@ -5,6 +5,7 @@ import SLAMetrics from './components/SLA/SLAMetrics.vue';
 import SLATable from './components/SLA/SLATable.vue';
 import SLAReportFilters from './components/SLA/SLAReportFilters.vue';
 import { generateFileName } from 'dashboard/helper/downloadHelper';
+
 export default {
   name: 'SLAReports',
   components: {
@@ -77,8 +78,7 @@ export default {
 </script>
 
 <template>
-  <div class="flex flex-col flex-1 gap-6 px-4 pt-4 overflow-auto">
-    <SLAReportFilters @filterChange="onFilterChange" />
+  <div class="flex-1 p-4 overflow-auto">
     <woot-button
       color-scheme="success"
       class-names="button--fixed-top"
@@ -87,7 +87,8 @@ export default {
     >
       {{ $t('SLA_REPORTS.DOWNLOAD_SLA_REPORTS') }}
     </woot-button>
-    <div class="flex flex-col gap-6">
+    <SLAReportFilters @filterChange="onFilterChange" />
+    <div class="flex flex-col gap-6 mt-4">
       <SLAMetrics
         :hit-rate="slaMetrics.hitRate"
         :no-of-breaches="slaMetrics.numberOfSLAMisses"
