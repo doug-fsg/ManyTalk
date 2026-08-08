@@ -129,12 +129,13 @@ describe('#getters', () => {
     });
   });
   describe('#getUnAssignedChats', () => {
-    it('order returns only chats assigned to user', () => {
+    it('returns only unassigned chats', () => {
       const conversationList = [
         {
           id: 1,
           inbox_id: 2,
           status: 1,
+          last_activity_at: 100,
           meta: { assignee: { id: 1 } },
           labels: ['sales', 'dev'],
         },
@@ -142,6 +143,7 @@ describe('#getters', () => {
           id: 2,
           inbox_id: 2,
           status: 1,
+          last_activity_at: 200,
           meta: {},
           labels: ['dev'],
         },
@@ -149,6 +151,7 @@ describe('#getters', () => {
           id: 11,
           inbox_id: 3,
           status: 1,
+          last_activity_at: 150,
           meta: { assignee: { id: 1 } },
           labels: [],
         },
@@ -156,13 +159,17 @@ describe('#getters', () => {
           id: 22,
           inbox_id: 4,
           status: 1,
+          last_activity_at: 50,
           meta: { team: { id: 5 } },
           labels: ['sales'],
         },
       ];
 
       expect(
-        getters.getUnAssignedChats({ allConversations: conversationList })({
+        getters.getUnAssignedChats({
+          allConversations: conversationList,
+          chatSortFilter: 'last_activity_at_desc',
+        })({
           status: 1,
         })
       ).toEqual([
@@ -170,6 +177,7 @@ describe('#getters', () => {
           id: 2,
           inbox_id: 2,
           status: 1,
+          last_activity_at: 200,
           meta: {},
           labels: ['dev'],
         },
@@ -177,10 +185,117 @@ describe('#getters', () => {
           id: 22,
           inbox_id: 4,
           status: 1,
+          last_activity_at: 50,
           meta: { team: { id: 5 } },
           labels: ['sales'],
         },
       ]);
+    });
+
+    it('re-sorts by last_activity_at after realtime updates (does not keep fetch order)', () => {
+      // Mimics store after message.created: fields updated in-place, array order unchanged
+      const conversationList = [
+        {
+          id: 22,
+          status: 1,
+          last_activity_at: 50,
+          meta: {},
+          labels: [],
+        },
+        {
+          id: 2,
+          status: 1,
+          last_activity_at: 300,
+          meta: {},
+          labels: [],
+        },
+      ];
+
+      const result = getters.getUnAssignedChats({
+        allConversations: conversationList,
+        chatSortFilter: 'last_activity_at_desc',
+      })({ status: 1 });
+
+      expect(result.map(c => c.id)).toEqual([2, 22]);
+      // Original store order must remain untouched
+      expect(conversationList.map(c => c.id)).toEqual([22, 2]);
+    });
+  });
+
+  describe('#getMineChats', () => {
+    it('filters to current user and sorts by last_activity_at_desc', () => {
+      const conversationList = [
+        {
+          id: 1,
+          status: 1,
+          last_activity_at: 100,
+          meta: { assignee: { id: 7 } },
+          labels: [],
+        },
+        {
+          id: 2,
+          status: 1,
+          last_activity_at: 300,
+          meta: { assignee: { id: 7 } },
+          labels: [],
+        },
+        {
+          id: 3,
+          status: 1,
+          last_activity_at: 200,
+          meta: { assignee: { id: 9 } },
+          labels: [],
+        },
+      ];
+      const rootGetters = { getCurrentUser: { id: 7 } };
+
+      const result = getters.getMineChats(
+        {
+          allConversations: conversationList,
+          chatSortFilter: 'last_activity_at_desc',
+        },
+        null,
+        null,
+        rootGetters
+      )({ status: 1 });
+
+      expect(result.map(c => c.id)).toEqual([2, 1]);
+    });
+  });
+
+  describe('#getAllStatusChats', () => {
+    it('sorts by last_activity_at_desc without mutating store order', () => {
+      const conversationList = [
+        {
+          id: 1,
+          status: 1,
+          last_activity_at: 100,
+          meta: {},
+          labels: [],
+        },
+        {
+          id: 2,
+          status: 1,
+          last_activity_at: 300,
+          meta: {},
+          labels: [],
+        },
+        {
+          id: 3,
+          status: 1,
+          last_activity_at: 200,
+          meta: {},
+          labels: [],
+        },
+      ];
+
+      const result = getters.getAllStatusChats({
+        allConversations: conversationList,
+        chatSortFilter: 'last_activity_at_desc',
+      })({ status: 1 });
+
+      expect(result.map(c => c.id)).toEqual([2, 3, 1]);
+      expect(conversationList.map(c => c.id)).toEqual([1, 2, 3]);
     });
   });
   describe('#getConversationById', () => {

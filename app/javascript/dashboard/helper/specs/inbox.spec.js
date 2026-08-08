@@ -40,6 +40,9 @@ describe('#Inbox Helpers', () => {
       expect(getInboxWarningIconClass('Channel::FacebookPage', true)).toEqual(
         'warning'
       );
+      expect(getInboxWarningIconClass('Channel::Whatsapp', true)).toEqual(
+        'warning'
+      );
     });
   });
 });

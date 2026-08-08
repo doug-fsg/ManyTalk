@@ -8,6 +8,12 @@ export const getSelectedChatConversation = ({
 }) =>
   allConversations.filter(conversation => conversation.id === selectedChatId);
 
+// filter() returns a new array — safe to sort without mutating Vuex state
+const filterAndSortConversations = (conversations, sortKey, predicate) =>
+  conversations
+    .filter(predicate)
+    .sort((a, b) => sortComparator(a, b, sortKey));
+
 const getters = {
   getAllConversations: ({ allConversations, chatSortFilter: sortKey }) => {
     // Copy before sort — never mutate Vuex state inside a getter
@@ -46,15 +52,18 @@ const getters = {
   },
   getMineChats: (_state, _, __, rootGetters) => activeFilters => {
     const currentUserID = rootGetters.getCurrentUser?.id;
+    const { allConversations, chatSortFilter: sortKey } = _state;
 
-    return _state.allConversations.filter(conversation => {
-      const { assignee } = conversation.meta;
-      const isAssignedToMe = assignee && assignee.id === currentUserID;
-      const shouldFilter = applyPageFilters(conversation, activeFilters);
-      const isChatMine = isAssignedToMe && shouldFilter;
-
-      return isChatMine;
-    });
+    return filterAndSortConversations(
+      allConversations,
+      sortKey,
+      conversation => {
+        const { assignee } = conversation.meta;
+        const isAssignedToMe = assignee && assignee.id === currentUserID;
+        const shouldFilter = applyPageFilters(conversation, activeFilters);
+        return isAssignedToMe && shouldFilter;
+      }
+    );
   },
   getAppliedConversationFilters: _state => {
     return _state.appliedFilters;
@@ -64,17 +73,26 @@ const getters = {
     return hasAppliedFilters ? filterQueryGenerator(_state.appliedFilters) : [];
   },
   getUnAssignedChats: _state => activeFilters => {
-    return _state.allConversations.filter(conversation => {
-      const isUnAssigned = !conversation.meta.assignee;
-      const shouldFilter = applyPageFilters(conversation, activeFilters);
-      return isUnAssigned && shouldFilter;
-    });
+    const { allConversations, chatSortFilter: sortKey } = _state;
+
+    return filterAndSortConversations(
+      allConversations,
+      sortKey,
+      conversation => {
+        const isUnAssigned = !conversation.meta.assignee;
+        const shouldFilter = applyPageFilters(conversation, activeFilters);
+        return isUnAssigned && shouldFilter;
+      }
+    );
   },
   getAllStatusChats: _state => activeFilters => {
-    return _state.allConversations.filter(conversation => {
-      const shouldFilter = applyPageFilters(conversation, activeFilters);
-      return shouldFilter;
-    });
+    const { allConversations, chatSortFilter: sortKey } = _state;
+
+    return filterAndSortConversations(
+      allConversations,
+      sortKey,
+      conversation => applyPageFilters(conversation, activeFilters)
+    );
   },
   getChatListLoadingStatus: ({ listLoadingStatus }) => listLoadingStatus,
   getAllMessagesLoaded(_state) {

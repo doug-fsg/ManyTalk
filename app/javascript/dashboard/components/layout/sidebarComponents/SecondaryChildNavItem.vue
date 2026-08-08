@@ -71,7 +71,7 @@
           <router-link
             v-if="reconnectSettingsUrl"
             :to="reconnectSettingsUrl"
-            v-tooltip.top-end="$t('SIDEBAR.WHATSAPP_WEB_DISCONNECTED_HINT')"
+            v-tooltip.top-end="$t(warningTooltipKey || 'SIDEBAR.REAUTHORIZE')"
             class="inline-flex items-center gap-1 text-woot-500 hover:text-woot-600 dark:text-woot-500 dark:hover:text-woot-400 underline cursor-pointer text-xs"
           >
             <span

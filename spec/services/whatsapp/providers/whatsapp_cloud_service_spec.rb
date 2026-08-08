@@ -296,12 +296,52 @@ describe Whatsapp::Providers::WhatsappCloudService do
           .to_return(
             status: 401,
             headers: response_headers,
-            body: { error: { message: 'Invalid OAuth access token.' } }.to_json
+            body: { error: { message: 'Invalid OAuth access token.', code: 190 } }.to_json
           )
 
         timstamp = whatsapp_channel.reload.message_templates_last_updated
         expect { subject.sync_templates }.to raise_error(StandardError, 'Invalid OAuth access token.')
         expect(whatsapp_channel.reload.message_templates_last_updated).to eq(timstamp)
+        expect(whatsapp_channel.authorization_error_count).to eq(1)
+        expect(whatsapp_channel.reauthorization_required?).to be(false)
+      end
+
+      it 'marks reauthorization required after repeated Meta permission failures' do
+        stub_request(:get, 'https://graph.facebook.com/v22.0/123456789/message_templates')
+          .with(headers: { 'Authorization' => 'Bearer test_key' })
+          .to_return(
+            status: 400,
+            headers: response_headers,
+            body: {
+              error: {
+                message: "Unsupported get request. Object with ID '123' does not exist",
+                type: 'GraphMethodException',
+                code: 100,
+                error_subcode: 33
+              }
+            }.to_json
+          )
+
+        2.times do
+          expect { subject.sync_templates }.to raise_error(StandardError)
+        end
+        expect(whatsapp_channel.reauthorization_required?).to be(true)
+      end
+
+      it 'does not mark reauthorization required on non-auth sync failures' do
+        stub_request(:get, 'https://graph.facebook.com/v22.0/123456789/message_templates')
+          .with(headers: { 'Authorization' => 'Bearer test_key' })
+          .to_return(
+            status: 500,
+            headers: response_headers,
+            body: { error: { message: 'Temporary failure', code: 1 } }.to_json
+          )
+
+        2.times do
+          expect { subject.sync_templates }.to raise_error(StandardError)
+        end
+        expect(whatsapp_channel.authorization_error_count).to eq(0)
+        expect(whatsapp_channel.reauthorization_required?).to be(false)
       end
     end
   end

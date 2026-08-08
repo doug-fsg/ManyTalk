@@ -185,14 +185,14 @@ export default {
               inbox.reauthorization_required
                 ? 'SIDEBAR.WHATSAPP_WEB_DISCONNECTED'
                 : 'SIDEBAR.REAUTHORIZE',
-            reconnectSettingsUrl:
-              inbox.channel_type === 'Channel::Api' &&
-              inbox.reauthorization_required
-                ? frontendURL(
-                    `accounts/${this.accountId}/settings/inboxes/${inbox.id}`,
-                    { tab: 'quepasa' }
-                  )
-                : null,
+            reconnectSettingsUrl: inbox.reauthorization_required
+              ? frontendURL(
+                  `accounts/${this.accountId}/settings/inboxes/${inbox.id}`,
+                  inbox.channel_type === 'Channel::Api'
+                    ? { tab: 'quepasa' }
+                    : undefined
+                )
+              : null,
           }))
           .sort((a, b) =>
             a.label.toLowerCase() > b.label.toLowerCase() ? 1 : -1

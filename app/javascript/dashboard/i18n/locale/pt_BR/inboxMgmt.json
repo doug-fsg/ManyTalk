@@ -4,7 +4,7 @@
     "DESCRIPTION": "Conecte vários canais de comunicação como Website, Facebook, Twitter, WhatsApp, SMS e Email para interagir com seus clientes.",
     "LEARN_MORE": "Saiba mais sobre canais de entrada",
     "SIDEBAR_TXT": "<p><b>Canal de entrada</b></p> <p> Quando você conectar um site ou uma página de Facebook ao ManyTalks, é chamado de <b>canal de entrada</b>. Você pode ter canais de entrada ilimitadas na sua conta de ManyTalks. </p><p> Clique em <b>Adicionar canal de entrada</b> para conectar um site ou uma página do Facebook. </p><p> No Painel, você pode ver todas as conversas de todas as suas canais de entrada em um único lugar e responder a elas sob a guia `Conversations`. </p><p> Você também pode ver conversas específicas para um novo canal de entrada clicando no nome do canal de entrada no painel esquerdo do painel. </p>",
-    "RECONNECTION_REQUIRED": "Your inbox is disconnected. You won't receive new messages until you reauthorize it.",
+    "RECONNECTION_REQUIRED": "Este canal está desconectado. Você não receberá novas mensagens até reconectá-lo.",
     "CLICK_TO_RECONNECT": "Clique para reconectar.",
     "LIST": {
       "404": "Não há canais de entrada anexadas a esta conta.",

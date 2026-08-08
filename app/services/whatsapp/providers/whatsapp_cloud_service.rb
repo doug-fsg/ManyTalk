@@ -39,6 +39,7 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
 
     unless response.success?
       Rails.logger.error "[WHATSAPP] Template sync failed for channel #{whatsapp_channel.id}: #{response.code} - #{response.body}"
+      record_authorization_error_from_meta!(response)
       raise StandardError, template_sync_error_message(response)
     end
 
@@ -116,9 +117,31 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
   end
 
   def template_sync_error_message(response)
+    meta_error(response)&.dig('message') || 'Failed to sync WhatsApp templates'
+  end
+
+  # Meta auth/permission failures → existing Reauthorizable flow (banner after threshold).
+  # 190 = invalid/expired token; 100/33 = object inaccessible / missing permissions.
+  def record_authorization_error_from_meta!(response)
+    return unless meta_authorization_error?(response)
+
+    whatsapp_channel.authorization_error!
+  end
+
+  def meta_authorization_error?(response)
+    return true if response.code.to_i == 401
+
+    error = meta_error(response)
+    return false unless error
+
+    code = error['code'].to_i
+    subcode = error['error_subcode'].to_i
+    code == 190 || (code == 100 && subcode == 33)
+  end
+
+  def meta_error(response)
     parsed = response.parsed_response
-    error = parsed.is_a?(Hash) ? parsed['error'] : nil
-    error&.dig('message') || 'Failed to sync WhatsApp templates'
+    parsed.is_a?(Hash) ? parsed['error'] : nil
   end
 
   def send_text_message(phone_number, message)

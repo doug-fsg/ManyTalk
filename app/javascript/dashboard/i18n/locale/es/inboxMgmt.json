@@ -4,8 +4,8 @@
     "DESCRIPTION": "Conecta varios canales de comunicación como sitio web, Facebook, Twitter, WhatsApp, SMS y correo electrónico para interactuar con tus clientes.",
     "LEARN_MORE": "Más información sobre bandejas de entrada",
     "SIDEBAR_TXT": "<p><b>Bandeja de entrada</b></p> <p> Cuando conecta un sitio web o una página de Facebook a ManyTalks, se llama una <b>Bandeja de entrada</b>. Puede tener bandejas de entrada ilimitadas en su cuenta de ManyTalks. </p><p> Haga clic en <b>Añadir bandeja de entrada</b> para conectar un sitio web o una página de Facebook. </p><p> en el panel, puede ver todas las conversaciones de todas su bandejas de entrada en un solo lugar y responder a ellas en la pestaña `Conversaciones`. </p><p> También puede ver conversaciones específicas de una bandeja de entrada haciendo clic en el nombre de la bandeja de entrada en el menú izquierdo del panel. </p>",
-    "RECONNECTION_REQUIRED": "Your inbox is disconnected. You won't receive new messages until you reauthorize it.",
-    "CLICK_TO_RECONNECT": "Click here to reconnect.",
+    "RECONNECTION_REQUIRED": "Este canal está desconectado. No recibirás nuevos mensajes hasta que lo vuelvas a conectar.",
+    "CLICK_TO_RECONNECT": "Haz clic para reconectar.",
     "LIST": {
       "404": "No hay entradas adjuntas a esta cuenta."
     },
