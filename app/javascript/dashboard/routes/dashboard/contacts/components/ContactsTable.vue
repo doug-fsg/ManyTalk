@@ -5,7 +5,7 @@
     <ve-table
       :fixed-header="true"
       max-height="calc(100vh - 7.125rem)"
-      scroll-width="187rem"
+      :scroll-width="scrollWidth"
       :columns="columns"
       :table-data="tableData"
       :border-around="false"
@@ -37,6 +37,27 @@ import EmptyState from 'dashboard/components/widgets/EmptyState.vue';
 import { dynamicTime } from 'shared/helpers/timeHelper';
 import rtlMixin from 'shared/mixins/rtlMixin';
 import FluentIcon from 'shared/components/FluentIcon/DashboardIcon.vue';
+import { isValidURL } from 'dashboard/helper/URLHelper';
+
+const formatCustomAttributeValue = (value, displayType) => {
+  if (value === null || value === undefined || value === '') return '---';
+
+  if (displayType === 'checkbox') {
+    return value === true || value === 'true' ? '✓' : '---';
+  }
+
+  if (Array.isArray(value)) {
+    return value.length ? value.join(', ') : '---';
+  }
+
+  if (typeof value === 'object') {
+    if (value.filename || value.name) return value.filename || value.name;
+    if (value.url) return value.url;
+    return '---';
+  }
+
+  return String(value);
+};
 
 export default {
   components: {
@@ -73,6 +94,19 @@ export default {
     sortOrder: {
       type: String,
       default: 'desc',
+    },
+    visibleColumnKeys: {
+      type: Array,
+      default: () => [
+        'name',
+        'email',
+        'phone_number',
+        'last_activity_at',
+      ],
+    },
+    optionalColumns: {
+      type: Array,
+      default: () => [],
     },
   },
   data() {
@@ -111,7 +145,7 @@ export default {
         };
       });
     },
-    columns() {
+    allColumns() {
       return [
         {
           field: 'name',
@@ -255,7 +289,59 @@ export default {
           title: this.$t('CONTACTS_PAGE.LIST.TABLE_HEADER.CREATED_AT'),
           align: this.isRTLView ? 'right' : 'left',
         },
+        ...this.customAttributeColumns,
       ];
+    },
+    customAttributeColumns() {
+      return this.optionalColumns
+        .filter(col => col.kind === 'custom')
+        .map(col => ({
+          field: col.key,
+          key: col.key,
+          title: col.label,
+          align: this.isRTLView ? 'right' : 'left',
+          width: 180,
+          renderBodyCell: ({ row }) => {
+            const value = (row.custom_attributes || {})[col.attributeKey];
+            const formatted = formatCustomAttributeValue(
+              value,
+              col.displayType
+            );
+
+            if (
+              col.displayType === 'link' &&
+              value &&
+              isValidURL(String(value))
+            ) {
+              return (
+                <div class="overflow-hidden whitespace-nowrap text-ellipsis text-woot-500">
+                  <a
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    href={String(value)}
+                  >
+                    {String(value)}
+                  </a>
+                </div>
+              );
+            }
+
+            return (
+              <div class="overflow-hidden whitespace-nowrap text-ellipsis">
+                {formatted}
+              </div>
+            );
+          },
+        }));
+    },
+    columns() {
+      const allowed = new Set(this.visibleColumnKeys);
+      return this.allColumns.filter(column => allowed.has(column.key));
+    },
+    scrollWidth() {
+      // Keep horizontal scroll proportional to visible columns
+      const width = Math.max(this.columns.length * 16, 48);
+      return `${width}rem`;
     },
   },
   watch: {

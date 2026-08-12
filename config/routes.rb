@@ -179,6 +179,7 @@ Rails.application.routes.draw do
               post :filter
               post :import
               post :export
+              post :export_preview
               post :merge, to: 'actions/contact_merges#create'
             end
             member do

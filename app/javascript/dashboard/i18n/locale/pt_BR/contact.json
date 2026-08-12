@@ -82,13 +82,17 @@
   "EXPORT_CONTACTS": {
     "BUTTON_LABEL": "Exportar",
     "TITLE": "Exportar contatos",
-    "DESC": "Exportar contatos para arquivo CSV.",
-    "SUCCESS_MESSAGE": "A exportação está em andamento. Você será notificado por e-mail quando o arquivo de exportação estiver pronto para download.",
+    "DESC": "Exportar contatos para um arquivo.",
+    "SUCCESS_MESSAGE": "A exportação está em andamento. Enviaremos um e-mail quando o arquivo estiver pronto para download.",
+    "DIRECT_SUCCESS": "Arquivo Excel baixado com sucesso.",
     "ERROR_MESSAGE": "Ocorreu um erro, por favor tente novamente",
     "CONFIRM": {
       "TITLE": "Exportar contatos",
-      "MESSAGE": "Are you sure you want to export all contacts?",
-      "FILTERED_MESSAGE": "Are you sure you want to export all the filtered contacts?",
+      "MESSAGE": "Tem certeza de que deseja exportar todos os contatos?",
+      "FILTERED_MESSAGE": "Tem certeza de que deseja exportar os contatos filtrados?",
+      "DIRECT_MESSAGE": "O arquivo Excel será baixado agora ({count} contatos).",
+      "EMAIL_MESSAGE": "São {count} contatos. Enviaremos o arquivo para {email}.",
+      "FORM_FILTERED_MESSAGE": "Exportar contatos do formulário \"{form}\"?",
       "YES": "Sim, Exportar",
       "NO": "Não, Cancelar"
     }
@@ -261,6 +265,13 @@
     "FILTER_CONTACTS_SAVE": "Salvar filtro",
     "FILTER_CONTACTS_DELETE": "Excluir filtro",
     "FILTER_CONTACTS_EDIT": "Editar segmento",
+    "COLUMNS": {
+      "TRIGGER": "Colunas",
+      "TRIGGER_ARIA": "Escolher colunas visíveis",
+      "TITLE": "Colunas visíveis",
+      "HINT": "Algumas ficam ocultas para a lista caber melhor; ative as que usar com frequência.",
+      "ATTRIBUTES_SECTION": "Atributos do contato"
+    },
     "LIST": {
       "LOADING_MESSAGE": "Carregando contatos...",
       "404": "Nenhum contato corresponde à sua pesquisa 🔍",

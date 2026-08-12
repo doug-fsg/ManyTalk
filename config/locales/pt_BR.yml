@@ -41,7 +41,7 @@ pt_BR:
       import:
         failed: Arquivo vazio
       export:
-        success: Avisaremos você assim que a exportação de arquivos estiver pronta para ser exibida.
+        success: Enviaremos um e-mail quando o arquivo de exportação de contatos estiver pronto para download.
       email:
         invalid: E-mail inválido
       phone_number:

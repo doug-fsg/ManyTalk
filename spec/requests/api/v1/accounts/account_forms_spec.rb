@@ -301,4 +301,28 @@ RSpec.describe 'Api::V1::Accounts::AccountForms' do
       expect(form.reload).to be_paused
     end
   end
+
+  describe 'GET /api/v1/accounts/:account_id/account_forms/:id/export_submissions' do
+    let(:form) { create(:account_form, account: account) }
+
+    before do
+      FormSubmission.create!(
+        account: account,
+        account_form: form,
+        payload: { 'email' => 'user@example.com', 'name' => 'Test User' }
+      )
+    end
+
+    it 'returns csv file for agent' do
+      get "/api/v1/accounts/#{account.id}/account_forms/#{form.id}/export_submissions",
+          headers: agent_headers,
+          as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include('text/csv')
+      expect(response.body).to start_with(AccountForms::CsvExportService::UTF8_BOM)
+      expect(response.body).to include('user@example.com')
+      expect(response.body).to include('Test User')
+    end
+  end
 end

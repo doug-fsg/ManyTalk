@@ -59,7 +59,7 @@ en:
       import:
         failed: File is blank
       export:
-        success: We will notify you once contacts export file is ready to view.
+        success: We will email you when the contacts export file is ready to download.
       email:
         invalid: Invalid email
       phone_number:

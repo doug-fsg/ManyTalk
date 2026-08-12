@@ -46,10 +46,33 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   end
 
   def export
-    column_names = params['column_names']
-    filter_params = { :payload => params.permit!['payload'], :label => params.permit!['label'] }
-    Account::ContactsExportJob.perform_later(Current.account.id, Current.user.id, column_names, filter_params)
-    head :ok, message: I18n.t('errors.contacts.export.success')
+    export_service = build_export_service
+    if export_service.direct_download?
+      send_data export_service.to_csv,
+                filename: "contacts_#{Current.account.id}_#{Time.zone.today}.csv",
+                type: 'text/csv; charset=utf-8',
+                disposition: 'attachment'
+    else
+      Account::ContactsExportJob.perform_later(
+        Current.account.id,
+        Current.user.id,
+        params['column_names'],
+        export_filter_params
+      )
+      render json: {
+        export_mode: 'email',
+        message: I18n.t('errors.contacts.export.success')
+      }, status: :accepted
+    end
+  end
+
+  def export_preview
+    export_service = build_export_service
+    render json: {
+      count: export_service.count,
+      mode: export_service.export_mode,
+      limit: Contacts::ExportService::DIRECT_DOWNLOAD_LIMIT
+    }
   end
 
   # returns online contacts
@@ -65,7 +88,8 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   def filter
     result = ::Contacts::FilterService.new(Current.account, Current.user, params.permit!).perform
     contacts = result[:contacts]
-    @contacts_count = result[:count]
+    contacts = filter_by_account_form(contacts) if params[:account_form_id].present?
+    @contacts_count = contacts.count
     @contacts = fetch_contacts(contacts)
   rescue CustomExceptions::CustomFilter::InvalidAttribute,
          CustomExceptions::CustomFilter::InvalidOperator,
@@ -123,6 +147,25 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   end
 
   private
+
+  def build_export_service
+    Contacts::ExportService.new(
+      account: Current.account,
+      account_user: Current.account_user,
+      params: export_filter_params,
+      column_names: params['column_names']
+    )
+  end
+
+  def export_filter_params
+    permitted = params.permit(:label, :account_form_id, column_names: [], payload: {})
+    # payload is an array of filter hashes; permit! keeps nested structure for FilterService
+    {
+      payload: params[:payload],
+      label: permitted[:label],
+      account_form_id: permitted[:account_form_id]
+    }
+  end
 
   # TODO: Move this to a finder class
   def resolved_contacts

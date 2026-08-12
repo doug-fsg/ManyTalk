@@ -14,6 +14,10 @@ import FormPreviewPanel from './FormPreviewPanel.vue';
 import FormAppearanceSettings from './FormAppearanceSettings.vue';
 import AddAttribute from '../attributes/AddAttribute.vue';
 import {
+  downloadSubmissionsAsExcel,
+  parseApiBlobError,
+} from './formSubmissionsExportHelper';
+import {
   isFormSupportedAttribute,
   enrichCustomField,
 } from 'shared/helpers/formFieldHelpers';
@@ -78,6 +82,12 @@ const submissionsLabel = computed(() => {
   if (!count) return t('ACCOUNT_FORM.SUBMISSIONS.EMPTY');
   return t('ACCOUNT_FORM.LIST.SUBMISSIONS_TOOLTIP', { count });
 });
+
+const hasSubmissionsToExport = computed(
+  () =>
+    submissionsMeta.value.total_count > 0 ||
+    (form.value?.submissions_count ?? 0) > 0
+);
 
 // ── Field management (moved from FormFieldsEditor) ───────────────────────────
 
@@ -294,19 +304,18 @@ const fetchSubmissions = async page => {
   }
 };
 
-const exportCsv = async () => {
+const exportSubmissions = async () => {
   isExporting.value = true;
   try {
     const response = await AccountFormsAPI.exportSubmissions(formId.value);
-    const blob = new Blob([response.data], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `form-${form.value ? form.value.slug : formId.value}-submissions.csv`;
-    link.click();
-    window.URL.revokeObjectURL(url);
-  } catch {
-    useAlert(t('ACCOUNT_FORM.DETAIL.SAVE_ERROR'));
+    const csvContent = await response.data.text();
+    const slug = form.value ? form.value.slug : formId.value;
+    downloadSubmissionsAsExcel(`form-${slug}-submissions`, csvContent);
+  } catch (error) {
+    const message =
+      (await parseApiBlobError(error)) ||
+      t('ACCOUNT_FORM.SUBMISSIONS.EXPORT_ERROR');
+    useAlert(message);
   } finally {
     isExporting.value = false;
   }
@@ -555,10 +564,10 @@ onMounted(async () => {
               color-scheme="secondary"
               size="tiny"
               icon="arrow-download"
-              v-tooltip.top="$t('ACCOUNT_FORM.SUBMISSIONS.EXPORT_CSV_TOOLTIP')"
+              v-tooltip.top="$t('ACCOUNT_FORM.SUBMISSIONS.EXPORT_EXCEL_TOOLTIP')"
               :is-loading="isExporting"
-              :disabled="!submissions.length"
-              @click="exportCsv"
+              :disabled="!hasSubmissionsToExport"
+              @click="exportSubmissions"
             />
             <woot-button
               variant="smooth"

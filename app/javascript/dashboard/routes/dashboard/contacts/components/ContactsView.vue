@@ -2,19 +2,25 @@
   <div class="flex flex-row w-full">
     <div class="flex flex-col h-full" :class="wrapClass">
       <contacts-header
+        ref="contactsHeader"
         :search-query="searchQuery"
         :header-title="pageTitle"
         :segments-id="segmentsId"
+        :export-description="exportDescription"
+        :column-options="optionalColumns"
+        :visible-column-keys="visibleOptionalKeys"
         this-selected-contact-id=""
         @on-input-search="onInputSearch"
         @on-toggle-create="onToggleCreate"
         @on-toggle-filter="onToggleFilters"
         @on-search-submit="onSearchSubmit"
         @on-toggle-import="onToggleImport"
+        @on-export-prepare="onExportPrepare"
         @on-export-submit="onExportSubmit"
         @on-toggle-save-filter="onToggleSaveFilters"
         @on-toggle-delete-filter="onToggleDeleteFilters"
         @on-toggle-edit-filter="onToggleFilters"
+        @on-toggle-column="toggleOptionalColumn"
       />
       <contacts-table
         :contacts="records"
@@ -22,6 +28,8 @@
         :is-loading="uiFlags.isFetching"
         :on-click-contact="openContactInfoPanel"
         :active-contact-id="selectedContactId"
+        :visible-column-keys="visibleColumnKeys"
+        :optional-columns="optionalColumns"
         @on-sort-change="onSortChange"
       />
       <table-footer
@@ -97,6 +105,11 @@ import DeleteCustomViews from 'dashboard/routes/dashboard/customviews/DeleteCust
 import { CONTACTS_EVENTS } from '../../../../helper/AnalyticsHelper/events';
 import countries from 'shared/constants/countries.js';
 import { generateValuesForEditCustomViews } from 'dashboard/helper/customViewsHelper';
+import {
+  downloadCsvAsExcel,
+  parseExportBlobResponse,
+} from '../utils/contactsExportHelper';
+import { useContactTableColumns } from '../composables/useContactTableColumns';
 
 const DEFAULT_PAGE = 1;
 const FILTER_TYPE_CONTACT = 1;
@@ -112,6 +125,21 @@ export default {
     ContactsAdvancedFilters,
     AddCustomViews,
     DeleteCustomViews,
+  },
+  setup() {
+    const {
+      optionalColumns,
+      visibleOptionalKeys,
+      visibleColumnKeys,
+      toggleOptionalColumn,
+    } = useContactTableColumns();
+
+    return {
+      optionalColumns,
+      visibleOptionalKeys,
+      visibleColumnKeys,
+      toggleOptionalColumn,
+    };
   },
   props: {
     label: { type: String, default: '' },
@@ -143,6 +171,7 @@ export default {
       showAddSegmentsModal: false,
       showDeleteSegmentsModal: false,
       appliedFilter: [],
+      exportDescription: '',
     };
   },
   computed: {
@@ -152,6 +181,7 @@ export default {
       meta: 'contacts/getMeta',
       segments: 'customViews/getCustomViews',
       getAppliedContactFilters: 'contacts/getAppliedContactFilters',
+      currentUser: 'getCurrentUser',
     }),
     showEmptySearchResult() {
       const hasEmptyResults = !!this.searchQuery && this.records.length === 0;
@@ -249,6 +279,7 @@ export default {
     },
   },
   mounted() {
+    this.$store.dispatch('attributes/get');
     this.fetchContacts(this.pageParameter);
   },
   methods: {
@@ -301,6 +332,7 @@ export default {
         this.$store.dispatch('contacts/filter', {
           queryPayload: payload,
           page,
+          accountFormId: this.formId,
         });
       }
     },
@@ -311,7 +343,65 @@ export default {
         this.$store.dispatch('contacts/filter', {
           queryPayload: payload,
           page,
+          accountFormId: this.formId,
         });
+      }
+    },
+    buildExportPayload() {
+      let query = { payload: [] };
+
+      if (this.hasActiveSegments) {
+        query = this.activeSegment.query;
+      } else if (this.hasAppliedFilters) {
+        query = filterQueryGenerator(this.getAppliedContactFilters);
+      }
+
+      return {
+        ...query,
+        label: this.label,
+        accountFormId: this.formId,
+      };
+    },
+    buildExportDescription(preview) {
+      const count = preview.count || 0;
+      const email = this.currentUser?.email || '';
+      const formName = this.pageTitle;
+
+      if (preview.mode === 'direct') {
+        const base = this.$t('EXPORT_CONTACTS.CONFIRM.DIRECT_MESSAGE', {
+          count,
+        });
+        if (this.formId) {
+          return `${this.$t('EXPORT_CONTACTS.CONFIRM.FORM_FILTERED_MESSAGE', {
+            form: formName,
+          })} ${base}`;
+        }
+        return base;
+      }
+
+      const emailMsg = this.$t('EXPORT_CONTACTS.CONFIRM.EMAIL_MESSAGE', {
+        count,
+        email,
+      });
+      if (this.formId) {
+        return `${this.$t('EXPORT_CONTACTS.CONFIRM.FORM_FILTERED_MESSAGE', {
+          form: formName,
+        })} ${emailMsg}`;
+      }
+      return emailMsg;
+    },
+    async onExportPrepare() {
+      try {
+        const preview = await this.$store.dispatch(
+          'contacts/exportPreview',
+          this.buildExportPayload()
+        );
+        this.exportDescription = this.buildExportDescription(preview);
+        await this.$nextTick();
+        this.$refs.contactsHeader.confirmExport();
+      } catch (error) {
+        this.$refs.contactsHeader?.finishPreparingExport();
+        useAlert(error.message || this.$t('EXPORT_CONTACTS.ERROR_MESSAGE'));
       }
     },
 
@@ -394,6 +484,7 @@ export default {
       this.segmentsQuery = filterQueryGenerator(payload);
       this.$store.dispatch('contacts/filter', {
         queryPayload: filterQueryGenerator(payload),
+        accountFormId: this.formId,
       });
       this.showFiltersModal = false;
     },
@@ -410,21 +501,24 @@ export default {
       this.$store.dispatch('contacts/clearContactFilters');
       this.fetchContacts(this.pageParameter);
     },
-    onExportSubmit() {
-      let query = { payload: [] };
-
-      if (this.hasActiveSegments) {
-        query = this.activeSegment.query;
-      } else if (this.hasAppliedFilters) {
-        query = filterQueryGenerator(this.getAppliedContactFilters);
-      }
-
+    async onExportSubmit() {
       try {
-        this.$store.dispatch('contacts/export', {
-          ...query,
-          label: this.label,
-        });
-        useAlert(this.$t('EXPORT_CONTACTS.SUCCESS_MESSAGE'));
+        const response = await this.$store.dispatch(
+          'contacts/export',
+          this.buildExportPayload()
+        );
+        const parsed = await parseExportBlobResponse(response);
+        if (parsed.mode === 'direct' && parsed.csvContent) {
+          downloadCsvAsExcel(
+            `contacts-${this.formId || 'all'}-export`,
+            parsed.csvContent
+          );
+          useAlert(this.$t('EXPORT_CONTACTS.DIRECT_SUCCESS'));
+          return;
+        }
+        useAlert(
+          parsed.message || this.$t('EXPORT_CONTACTS.SUCCESS_MESSAGE')
+        );
       } catch (error) {
         useAlert(error.message || this.$t('EXPORT_CONTACTS.ERROR_MESSAGE'));
       }

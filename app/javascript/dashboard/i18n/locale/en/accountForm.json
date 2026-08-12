@@ -224,7 +224,9 @@
       "PREV_PAGE": "Previous page",
       "NEXT_PAGE": "Next page",
       "EXPORT_CSV": "Export",
-      "EXPORT_CSV_TOOLTIP": "Export submissions as CSV"
+      "EXPORT_CSV_TOOLTIP": "Export submissions as CSV",
+      "EXPORT_EXCEL_TOOLTIP": "Export submissions as Excel",
+      "EXPORT_ERROR": "Could not export submissions. Please try again."
     },
     "EMBED": {
       "TITLE": "Embed",

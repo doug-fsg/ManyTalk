@@ -224,7 +224,9 @@
       "PREV_PAGE": "Página anterior",
       "NEXT_PAGE": "Próxima página",
       "EXPORT_CSV": "Exportar",
-      "EXPORT_CSV_TOOLTIP": "Exportar cadastros como CSV"
+      "EXPORT_CSV_TOOLTIP": "Exportar cadastros como CSV",
+      "EXPORT_EXCEL_TOOLTIP": "Exportar cadastros como Excel",
+      "EXPORT_ERROR": "Não foi possível exportar os cadastros. Tente novamente."
     },
     "EMBED": {
       "TITLE": "Embed",

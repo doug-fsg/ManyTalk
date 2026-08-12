@@ -29,6 +29,10 @@ class AccountFormPolicy < ApplicationPolicy
     show?
   end
 
+  def export_submissions?
+    submissions?
+  end
+
   private
 
   def account_member?

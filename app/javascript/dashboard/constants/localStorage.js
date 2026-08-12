@@ -8,5 +8,6 @@ export const LOCAL_STORAGE_KEYS = {
   DISMISSED_ANNOUNCEMENTS: 'dismissedAnnouncements',
   KANBAN_SELECTED_PIPELINE: 'kanban_selected_pipeline',
   KANBAN_COLUMN_SORT: 'kanban_column_sort',
+  CONTACT_TABLE_COLUMNS: 'contact_table_columns',
   ACTIVITIES_ONBOARDING: 'activitiesOnboardingSeen',
 };

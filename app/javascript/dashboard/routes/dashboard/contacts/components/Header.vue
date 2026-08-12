@@ -42,7 +42,12 @@
             </woot-button>
           </div>
         </div>
-        <div class="flex gap-1">
+        <div class="flex items-center gap-1">
+          <contacts-column-picker
+            :columns="columnOptions"
+            :visible-keys="visibleColumnKeys"
+            @toggle="$emit('on-toggle-column', $event)"
+          />
           <div v-if="hasActiveSegments" class="flex gap-2">
             <woot-button
               class="clear [&>span]:hidden xs:[&>span]:block"
@@ -112,6 +117,7 @@
             color-scheme="info"
             icon="download"
             class="clear [&>span]:hidden xs:[&>span]:block"
+            :is-loading="isPreparingExport"
             @click="submitExport"
           >
             {{ $t('EXPORT_CONTACTS.BUTTON_LABEL') }}
@@ -132,8 +138,12 @@
 <script>
 import { mapGetters } from 'vuex';
 import { useAdmin } from 'dashboard/composables/useAdmin';
+import ContactsColumnPicker from './ContactsColumnPicker.vue';
 
 export default {
+  components: {
+    ContactsColumnPicker,
+  },
   props: {
     headerTitle: {
       type: String,
@@ -147,7 +157,32 @@ export default {
       type: [String, Number],
       default: 0,
     },
+    exportDescription: {
+      type: String,
+      default: '',
+    },
+    columnOptions: {
+      type: Array,
+      default: () => [],
+    },
+    visibleColumnKeys: {
+      type: Array,
+      default: () => [],
+    },
   },
+  emits: [
+    'on-toggle-save-filter',
+    'on-toggle-edit-filter',
+    'on-toggle-delete-filter',
+    'on-toggle-create',
+    'on-toggle-filter',
+    'on-toggle-import',
+    'on-export-prepare',
+    'on-export-submit',
+    'on-search-submit',
+    'on-input-search',
+    'on-toggle-column',
+  ],
   setup() {
     const { isAdmin } = useAdmin();
     return {
@@ -158,6 +193,7 @@ export default {
     return {
       showCreateModal: false,
       showImportModal: false,
+      isPreparingExport: false,
     };
   },
   computed: {
@@ -174,11 +210,6 @@ export default {
     },
     hasActiveSegments() {
       return this.segmentsId !== 0;
-    },
-    exportDescription() {
-      return this.hasAppliedFilters
-        ? this.$t('EXPORT_CONTACTS.CONFIRM.FILTERED_MESSAGE')
-        : this.$t('EXPORT_CONTACTS.CONFIRM.MESSAGE');
     },
   },
   methods: {
@@ -200,10 +231,17 @@ export default {
     toggleImport() {
       this.$emit('on-toggle-import');
     },
-    async submitExport() {
+    submitExport() {
+      this.isPreparingExport = true;
+      this.$emit('on-export-prepare');
+    },
+    finishPreparingExport() {
+      this.isPreparingExport = false;
+    },
+    async confirmExport() {
+      this.finishPreparingExport();
       const ok =
         await this.$refs.confirmExportContactsDialog.showConfirmation();
-
       if (ok) {
         this.$emit('on-export-submit');
       }

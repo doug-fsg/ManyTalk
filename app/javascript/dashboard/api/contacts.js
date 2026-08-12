@@ -71,8 +71,8 @@ class ContactAPI extends ApiClient {
   }
 
   // eslint-disable-next-line default-param-last
-  filter(page = 1, sortAttr = 'name', queryPayload, perPage) {
-    let requestURL = `${this.url}/filter?${buildContactParams(page, sortAttr, '', '', perPage)}`;
+  filter(page = 1, sortAttr = 'name', queryPayload, perPage, accountFormId = '') {
+    let requestURL = `${this.url}/filter?${buildContactParams(page, sortAttr, '', '', perPage, accountFormId)}`;
     return axios.post(requestURL, queryPayload);
   }
 
@@ -94,8 +94,14 @@ class ContactAPI extends ApiClient {
     return axios.delete(`${this.url}/${contactId}/avatar`);
   }
 
+  exportPreview(queryPayload) {
+    return axios.post(`${this.url}/export_preview`, queryPayload);
+  }
+
   exportContacts(queryPayload) {
-    return axios.post(`${this.url}/export`, queryPayload);
+    return axios.post(`${this.url}/export`, queryPayload, {
+      responseType: 'blob',
+    });
   }
 
   update(id, data) {

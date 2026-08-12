@@ -82,13 +82,17 @@
   "EXPORT_CONTACTS": {
     "BUTTON_LABEL": "Export",
     "TITLE": "Export Contacts",
-    "DESC": "Export contacts to a CSV file.",
-    "SUCCESS_MESSAGE": "Export is in progress. You will be notified on email when the export file is ready to download.",
+    "DESC": "Export contacts to a file.",
+    "SUCCESS_MESSAGE": "Export is in progress. We will email you when the file is ready to download.",
+    "DIRECT_SUCCESS": "Excel file downloaded successfully.",
     "ERROR_MESSAGE": "There was an error, please try again",
     "CONFIRM": {
       "TITLE": "Export Contacts",
       "MESSAGE": "Are you sure you want to export all contacts?",
-      "FILTERED_MESSAGE": "Are you sure you want to export all the filtered contacts?",
+      "FILTERED_MESSAGE": "Are you sure you want to export the filtered contacts?",
+      "DIRECT_MESSAGE": "The Excel file will download now ({count} contacts).",
+      "EMAIL_MESSAGE": "There are {count} contacts. We will send the file to {email}.",
+      "FORM_FILTERED_MESSAGE": "Export contacts from form \"{form}\"?",
       "YES": "Yes, Export",
       "NO": "No, Cancel"
     }
@@ -261,6 +265,13 @@
     "FILTER_CONTACTS_SAVE": "Save filter",
     "FILTER_CONTACTS_DELETE": "Delete filter",
     "FILTER_CONTACTS_EDIT": "Edit segment",
+    "COLUMNS": {
+      "TRIGGER": "Columns",
+      "TRIGGER_ARIA": "Choose visible columns",
+      "TITLE": "Visible columns",
+      "HINT": "Some stay hidden so the list fits better; enable the ones you use often.",
+      "ATTRIBUTES_SECTION": "Contact attributes"
+    },
     "LIST": {
       "LOADING_MESSAGE": "Loading contacts...",
       "404": "No contacts matches your search 🔍",

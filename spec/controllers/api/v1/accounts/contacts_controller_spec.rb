@@ -206,6 +206,35 @@ RSpec.describe 'Contacts API', type: :request do
     end
   end
 
+  describe 'POST /api/v1/accounts/{account.id}/contacts/export_preview' do
+    let(:admin) { create(:user, account: account, role: :administrator) }
+
+    it 'returns direct mode for small exports' do
+      create(:contact, :with_email, account: account)
+
+      post "/api/v1/accounts/#{account.id}/contacts/export_preview",
+           headers: admin.create_new_auth_token,
+           as: :json
+
+      expect(response).to have_http_status(:ok)
+      body = response.parsed_body
+      expect(body['mode']).to eq('direct')
+      expect(body['count']).to eq(1)
+    end
+
+    it 'returns email mode when over limit' do
+      stub_const('Contacts::ExportService::DIRECT_DOWNLOAD_LIMIT', 1)
+      create_list(:contact, 2, :with_email, account: account)
+
+      post "/api/v1/accounts/#{account.id}/contacts/export_preview",
+           headers: admin.create_new_auth_token,
+           as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body['mode']).to eq('email')
+    end
+  end
+
   describe 'POST /api/v1/accounts/{account.id}/contacts/export' do
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do
@@ -230,38 +259,55 @@ RSpec.describe 'Contacts API', type: :request do
     context 'when it is an authenticated user' do
       let(:admin) { create(:user, account: account, role: :administrator) }
 
-      it 'enqueues a contact export job' do
-        expect(Account::ContactsExportJob).to receive(:perform_later).with(account.id, admin.id, nil, { :payload => nil, :label => nil }).once
+      it 'downloads csv directly when under the limit' do
+        contact = create(:contact, :with_email, account: account)
+
+        expect(Account::ContactsExportJob).not_to receive(:perform_later)
 
         post "/api/v1/accounts/#{account.id}/contacts/export",
              headers: admin.create_new_auth_token
 
-        expect(response).to have_http_status(:success)
+        expect(response).to have_http_status(:ok)
+        expect(response.content_type).to include('text/csv')
+        expect(response.body).to include(contact.email)
       end
 
-      it 'enqueues a contact export job with sent_columns' do
-        expect(Account::ContactsExportJob).to receive(:perform_later).with(account.id, admin.id, %w[phone_number email],
-                                                                           { :payload => nil, :label => nil }).once
+      it 'enqueues a contact export job when over the limit' do
+        stub_const('Contacts::ExportService::DIRECT_DOWNLOAD_LIMIT', 1)
+        create_list(:contact, 2, :with_email, account: account)
+
+        expect(Account::ContactsExportJob).to receive(:perform_later).with(
+          account.id,
+          admin.id,
+          nil,
+          hash_including(label: nil, account_form_id: nil)
+        ).once
+
+        post "/api/v1/accounts/#{account.id}/contacts/export",
+             headers: admin.create_new_auth_token
+
+        expect(response).to have_http_status(:accepted)
+        expect(response.parsed_body['export_mode']).to eq('email')
+      end
+
+      it 'exports only contacts from the given account form' do
+        form = create(:account_form, :published, account: account)
+        contact_with_submission = create(:contact, :with_email, account: account)
+        other_contact = create(:contact, :with_email, account: account)
+        FormSubmission.create!(
+          account: account,
+          account_form: form,
+          contact: contact_with_submission,
+          payload: { 'email' => contact_with_submission.email }
+        )
 
         post "/api/v1/accounts/#{account.id}/contacts/export",
              headers: admin.create_new_auth_token,
-             params: { column_names: %w[phone_number email] }
+             params: { account_form_id: form.id }
 
-        expect(response).to have_http_status(:success)
-      end
-
-      it 'enqueues a contact export job with payload' do
-        expect(Account::ContactsExportJob).to receive(:perform_later).with(account.id, admin.id, nil,
-                                                                           {
-                                                                             :payload => [ActionController::Parameters.new(email_filter).permit!],
-                                                                             :label => nil
-                                                                           }).once
-
-        post "/api/v1/accounts/#{account.id}/contacts/export",
-             headers: admin.create_new_auth_token,
-             params: { payload: [email_filter] }
-
-        expect(response).to have_http_status(:success)
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include(contact_with_submission.email)
+        expect(response.body).not_to include(other_contact.email)
       end
     end
   end
@@ -432,6 +478,35 @@ RSpec.describe 'Contacts API', type: :request do
 
         expect(response).to have_http_status(:unprocessable_entity)
         expect(response.body).to include('Invalid value. The values provided for country_code are invalid"')
+      end
+
+      it 'keeps account form scope when advanced filters are applied' do
+        account_form = create(:account_form, :published, account: account)
+        FormSubmission.create!(
+          account: account,
+          account_form: account_form,
+          contact: contact1,
+          payload: { 'name' => contact1.name }
+        )
+
+        post "/api/v1/accounts/#{account.id}/contacts/filter",
+             params: {
+               account_form_id: account_form.id,
+               payload: [
+                 {
+                   attribute_key: 'country_code',
+                   filter_operator: 'equal_to',
+                   values: ['US']
+                 }
+               ]
+             },
+             headers: admin.create_new_auth_token,
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        body = response.parsed_body
+        expect(body['meta']['count']).to eq(1)
+        expect(body['payload'].first['id']).to eq(contact1.id)
       end
     end
   end

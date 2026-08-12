@@ -138,18 +138,30 @@ export const actions = {
     }
   },
 
-  export: async ({ commit }, { payload, label }) => {
-    try {
-      await ContactAPI.exportContacts({ payload, label });
+  exportPreview: async (_context, { payload, label, accountFormId }) => {
+    const { data } = await ContactAPI.exportPreview({
+      payload,
+      label,
+      account_form_id: accountFormId,
+    });
+    return data;
+  },
 
+  export: async ({ commit }, { payload, label, accountFormId }) => {
+    try {
+      const response = await ContactAPI.exportContacts({
+        payload,
+        label,
+        account_form_id: accountFormId,
+      });
       commit(types.SET_CONTACT_UI_FLAG, { isCreating: false });
+      return response;
     } catch (error) {
       commit(types.SET_CONTACT_UI_FLAG, { isCreating: false });
       if (error.response?.data?.message) {
         throw new Error(error.response.data.message);
-      } else {
-        throw new Error(error);
       }
+      throw new Error(error);
     }
   },
 
@@ -255,13 +267,26 @@ export const actions = {
 
   filter: async (
     { commit },
-    { page = 1, sortAttr, queryPayload, resetState = true, perPage } = {}
+    {
+      page = 1,
+      sortAttr,
+      queryPayload,
+      resetState = true,
+      perPage,
+      accountFormId,
+    } = {}
   ) => {
     commit(types.SET_CONTACT_UI_FLAG, { isFetching: true });
     try {
       const {
         data: { payload, meta },
-      } = await ContactAPI.filter(page, sortAttr, queryPayload, perPage);
+      } = await ContactAPI.filter(
+        page,
+        sortAttr,
+        queryPayload,
+        perPage,
+        accountFormId
+      );
       if (resetState) {
         commit(types.CLEAR_CONTACTS);
         commit(types.SET_CONTACTS, payload);
