@@ -1,5 +1,7 @@
 json.id resource.id
 json.name resource.name
+json.avatar_url resource.avatar_url
+json.capitao resource.capitao
 json.description resource.description
 json.outgoing_url resource.outgoing_url
 json.bot_type resource.bot_type

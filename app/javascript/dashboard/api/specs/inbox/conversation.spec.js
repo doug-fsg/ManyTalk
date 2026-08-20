@@ -10,6 +10,7 @@ describe('#ConversationAPI', () => {
     expect(conversationAPI).toHaveProperty('update');
     expect(conversationAPI).toHaveProperty('delete');
     expect(conversationAPI).toHaveProperty('toggleStatus');
+    expect(conversationAPI).toHaveProperty('toggleCapitao');
     expect(conversationAPI).toHaveProperty('assignAgent');
     expect(conversationAPI).toHaveProperty('assignTeam');
     expect(conversationAPI).toHaveProperty('markMessageRead');
@@ -85,6 +86,21 @@ describe('#ConversationAPI', () => {
         {
           status: 'online',
           snoozed_until: null,
+        }
+      );
+    });
+
+    it('#toggleCapitao', () => {
+      conversationAPI.toggleCapitao({
+        conversationId: 12,
+        enabled: true,
+        agent: { id: 'agt_vendas', name: 'Vendas' },
+      });
+      expect(axiosMock.post).toHaveBeenCalledWith(
+        `/api/v1/conversations/12/toggle_capitao`,
+        {
+          enabled: true,
+          agent: { id: 'agt_vendas', name: 'Vendas' },
         }
       );
     });

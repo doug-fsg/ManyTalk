@@ -76,6 +76,20 @@
         "DUE": "due"
       }
     },
+    "CAPITAO": {
+      "ACTIVE_TOOLTIP": "{agent} is responding",
+      "ACTIVE_FALLBACK_TOOLTIP": "Assistant is responding",
+      "PAUSED_TOOLTIP": "Choose assistant",
+      "SELECT_AGENT": "Choose assistant",
+      "PAUSE_ACTION": "Pause",
+      "PAUSE_ACTION_WITH_AGENT": "Pause {agent}",
+      "ACTIVATED": "Assistant is responding",
+      "ACTIVATED_WITH_AGENT": "{agent} is responding",
+      "PAUSED": "Assistant paused",
+      "PAUSED_WITH_AGENT": "{agent} paused",
+      "AUTO_PAUSED": "Assistant paused after assignment to an agent",
+      "ERROR": "Could not update. Please try again."
+    },
     "RESOLVE_DROPDOWN": {
       "MARK_PENDING": "Mark as pending",
       "SNOOZE_UNTIL": "Snooze",

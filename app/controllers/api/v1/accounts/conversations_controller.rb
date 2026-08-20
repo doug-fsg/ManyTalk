@@ -95,6 +95,27 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
     head :ok
   end
 
+  def toggle_capitao
+    enabled = if params.key?(:enabled)
+                ActiveModel::Type::Boolean.new.cast(params[:enabled])
+              elsif params[:agent].present?
+                true
+              else
+                !@conversation.capitao_enabled
+              end
+
+    attrs = { capitao_enabled: enabled }
+
+    if params[:agent].present?
+      agent = normalize_capitao_agent(params[:agent])
+      return render json: { error: 'Invalid Capitão agent' }, status: :unprocessable_entity if agent.blank?
+
+      attrs[:capitao_agent] = agent
+    end
+
+    @conversation.update!(attrs)
+  end
+
   def toggle_typing_status
     typing_status_manager = ::Conversations::TypingStatusManager.new(@conversation, current_user, params)
     typing_status_manager.toggle_typing_status
@@ -117,6 +138,20 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   end
 
   private
+
+  def normalize_capitao_agent(agent_param)
+    agent_id = agent_param[:id].presence || agent_param['id'].presence
+    agent_name = agent_param[:name].presence || agent_param['name'].presence
+    return if agent_id.blank? || agent_name.blank?
+
+    agent_bot = @conversation.inbox.agent_bot
+    if agent_bot&.capitao?
+      resolved = agent_bot.find_capitao_agent(agent_id)
+      return resolved if resolved.present?
+    end
+
+    { 'id' => agent_id.to_s, 'name' => agent_name.to_s }
+  end
 
   def permitted_update_params
     # TODO: Move the other conversation attributes to this method and remove specific endpoints for each attribute

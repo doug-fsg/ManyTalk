@@ -79,6 +79,13 @@
           v-if="isLinearIntegrationEnabled && isLinearFeatureEnabled"
           :conversation-id="currentChat.id"
         />
+        <capitao-toggle
+          :conversation-id="currentChat.id"
+          :inbox-id="chat.inbox_id"
+          :status="currentChat.status"
+          :capitao-enabled="currentChat.capitao_enabled"
+          :capitao-agent="currentChat.capitao_agent"
+        />
         <more-actions :conversation-id="currentChat.id" />
       </div>
     </div>
@@ -92,6 +99,7 @@ import keyboardEventListenerMixins from 'shared/mixins/keyboardEventListenerMixi
 import inboxMixin from 'shared/mixins/inboxMixin';
 import InboxName from '../InboxName.vue';
 import MoreActions from './MoreActions.vue';
+import CapitaoToggle from './CapitaoToggle.vue';
 import Thumbnail from '../Thumbnail.vue';
 import SLACardLabel from './components/SLACardLabel.vue';
 import wootConstants from 'dashboard/constants/globals';
@@ -106,6 +114,7 @@ export default {
     BackButton,
     InboxName,
     MoreActions,
+    CapitaoToggle,
     Thumbnail,
     SLACardLabel,
     Linear,

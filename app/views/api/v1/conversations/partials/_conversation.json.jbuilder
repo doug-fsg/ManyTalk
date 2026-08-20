@@ -44,6 +44,8 @@ json.labels conversation.cached_label_list_array
 json.muted conversation.muted?
 json.snoozed_until conversation.snoozed_until
 json.status conversation.status
+json.capitao_enabled conversation.capitao_enabled
+json.capitao_agent conversation.capitao_agent
 json.created_at conversation.created_at.to_i
 json.timestamp conversation.last_activity_at.to_i
 json.first_reply_created_at conversation.first_reply_created_at.to_i

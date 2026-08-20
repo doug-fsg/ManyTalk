@@ -73,6 +73,20 @@
         "DUE": "due"
       }
     },
+    "CAPITAO": {
+      "ACTIVE_TOOLTIP": "{agent} está a responder",
+      "ACTIVE_FALLBACK_TOOLTIP": "Assistente a responder",
+      "PAUSED_TOOLTIP": "Escolher assistente",
+      "SELECT_AGENT": "Escolher assistente",
+      "PAUSE_ACTION": "Pausar",
+      "PAUSE_ACTION_WITH_AGENT": "Pausar {agent}",
+      "ACTIVATED": "Assistente a responder",
+      "ACTIVATED_WITH_AGENT": "{agent} está a responder",
+      "PAUSED": "Assistente em pausa",
+      "PAUSED_WITH_AGENT": "{agent} em pausa",
+      "AUTO_PAUSED": "Assistente em pausa após atribuição a um atendente",
+      "ERROR": "Não foi possível alterar. Tente novamente."
+    },
     "RESOLVE_DROPDOWN": {
       "MARK_PENDING": "Marcar como pendente",
       "SNOOZE_UNTIL": "Adiar",

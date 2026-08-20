@@ -39,4 +39,39 @@ RSpec.describe AgentBot do
       expect(message.reload.sender).to be_nil
     end
   end
+
+  describe 'capitao flag' do
+    it 'allows only one capitao bot at a time' do
+      first_bot = create(:agent_bot, capitao: true)
+      second_bot = create(:agent_bot, capitao: false)
+
+      second_bot.update!(capitao: true)
+
+      expect(first_bot.reload.capitao).to be(false)
+      expect(second_bot.reload.capitao).to be(true)
+      expect(AgentBot.capitao_bot).to eq(second_bot)
+    end
+  end
+
+  describe 'capitao agents from bot_config' do
+    it 'returns normalized agents and default agent' do
+      agent_bot = create(
+        :agent_bot,
+        capitao: true,
+        bot_config: {
+          'agents' => [
+            { 'id' => 'agt_suporte', 'name' => 'Suporte' },
+            { 'id' => 'agt_vendas', 'name' => 'Vendas', 'default' => true }
+          ]
+        }
+      )
+
+      expect(agent_bot.capitao_agents).to contain_exactly(
+        { 'id' => 'agt_suporte', 'name' => 'Suporte', 'default' => false },
+        { 'id' => 'agt_vendas', 'name' => 'Vendas', 'default' => true }
+      )
+      expect(agent_bot.capitao_default_agent).to eq({ 'id' => 'agt_vendas', 'name' => 'Vendas' })
+      expect(agent_bot.find_capitao_agent('agt_suporte')).to eq({ 'id' => 'agt_suporte', 'name' => 'Suporte' })
+    end
+  end
 end

@@ -539,7 +539,10 @@ RSpec.describe Conversation do
         created_at: conversation.created_at.to_i,
         waiting_since: conversation.waiting_since.to_i,
         priority: nil,
-        unread_count: 0
+        capitao_enabled: true,
+        capitao_agent: nil,
+        unread_count: 0,
+        workflow: { active: false }
       }
     end
 
@@ -565,11 +568,60 @@ RSpec.describe Conversation do
 
     it 'returns conversation status as pending' do
       expect(conversation.status).to eq('pending')
+      expect(conversation.capitao_enabled).to be(true)
     end
 
     it 'returns conversation as open if campaign is present' do
       conversation = create(:conversation, inbox: bot_inbox.inbox, campaign: create(:campaign))
       expect(conversation.status).to eq('open')
+    end
+  end
+
+  describe '#capitao_enabled' do
+    let(:account) { create(:account) }
+    let(:inbox) { create(:inbox, account: account) }
+    let(:agent) { create(:user, account: account, role: :agent) }
+
+    it 'defaults to true on new conversations' do
+      conversation = create(:conversation, account: account, inbox: inbox)
+      expect(conversation.capitao_enabled).to be(true)
+    end
+
+    it 'disables Capitão when a human assignee is set' do
+      conversation = create(:conversation, account: account, inbox: inbox, assignee: nil)
+      expect(conversation.capitao_enabled).to be(true)
+
+      conversation.update!(assignee: agent)
+      expect(conversation.reload.capitao_enabled).to be(false)
+    end
+
+    it 'keeps Capitão disabled when conversation is created already assigned' do
+      conversation = create(:conversation, account: account, inbox: inbox, assignee: agent)
+      expect(conversation.capitao_enabled).to be(false)
+    end
+
+    it 'does not re-disable Capitão when assignee is cleared' do
+      conversation = create(:conversation, account: account, inbox: inbox, assignee: agent)
+      conversation.update!(assignee: nil)
+      expect(conversation.reload.capitao_enabled).to be(false)
+    end
+
+    it 'assigns default capitao agent from bot_config on create' do
+      agent_bot = create(
+        :agent_bot,
+        capitao: true,
+        bot_config: {
+          'agents' => [
+            { 'id' => 'agt_vendas', 'name' => 'Vendas', 'default' => true },
+            { 'id' => 'agt_suporte', 'name' => 'Suporte' }
+          ]
+        }
+      )
+      create(:agent_bot_inbox, inbox: inbox, agent_bot: agent_bot)
+
+      conversation = create(:conversation, account: account, inbox: inbox, assignee: nil)
+
+      expect(conversation.capitao_agent).to eq({ 'id' => 'agt_vendas', 'name' => 'Vendas' })
     end
   end
 

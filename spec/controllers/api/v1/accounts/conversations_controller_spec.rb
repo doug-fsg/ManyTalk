@@ -604,6 +604,77 @@ RSpec.describe 'Conversations API', type: :request do
     end
   end
 
+  describe 'POST /api/v1/accounts/{account.id}/conversations/:id/toggle_capitao' do
+    let(:conversation) { create(:conversation, account: account, assignee: nil) }
+    let(:agent) { create(:user, account: account, role: :agent) }
+
+    context 'when it is an unauthenticated user' do
+      it 'returns unauthorized' do
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/toggle_capitao"
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when it is an authenticated user' do
+      before do
+        create(:inbox_member, user: agent, inbox: conversation.inbox)
+      end
+
+      it 'toggles capitao_enabled when no param is passed' do
+        expect(conversation.capitao_enabled).to be(true)
+
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/toggle_capitao",
+             headers: agent.create_new_auth_token,
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(conversation.reload.capitao_enabled).to be(false)
+        expect(JSON.parse(response.body, symbolize_names: true)[:capitao_enabled]).to be(false)
+      end
+
+      it 'enables Capitão even when a human is assigned' do
+        conversation.update!(assignee: agent)
+        expect(conversation.reload.capitao_enabled).to be(false)
+
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/toggle_capitao",
+             headers: agent.create_new_auth_token,
+             params: { enabled: true },
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(conversation.reload.capitao_enabled).to be(true)
+        expect(conversation.reload.assignee_id).to eq(agent.id)
+      end
+
+      it 'activates Capitão with selected agent' do
+        agent_bot = create(
+          :agent_bot,
+          capitao: true,
+          bot_config: {
+            'agents' => [
+              { 'id' => 'agt_vendas', 'name' => 'Vendas', 'default' => true },
+              { 'id' => 'agt_suporte', 'name' => 'Suporte' }
+            ]
+          }
+        )
+        create(:agent_bot_inbox, inbox: conversation.inbox, agent_bot: agent_bot)
+        conversation.update!(capitao_enabled: false, capitao_agent: nil)
+
+        post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/toggle_capitao",
+             headers: agent.create_new_auth_token,
+             params: { enabled: true, agent: { id: 'agt_suporte', name: 'Suporte' } },
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(conversation.reload.capitao_enabled).to be(true)
+        expect(conversation.reload.capitao_agent).to eq({ 'id' => 'agt_suporte', 'name' => 'Suporte' })
+        body = JSON.parse(response.body, symbolize_names: true)
+        expect(body[:capitao_agent]).to eq({ id: 'agt_suporte', name: 'Suporte' })
+      end
+    end
+  end
+
   describe 'POST /api/v1/accounts/{account.id}/conversations/:id/toggle_typing_status' do
     let(:conversation) { create(:conversation, account: account) }
 

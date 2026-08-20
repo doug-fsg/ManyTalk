@@ -7,6 +7,8 @@
 #  agent_last_seen_at     :datetime
 #  assignee_last_seen_at  :datetime
 #  cached_label_list      :text
+#  capitao_agent          :jsonb
+#  capitao_enabled        :boolean          default(TRUE), not null
 #  contact_last_seen_at   :datetime
 #  custom_attributes      :jsonb
 #  first_reply_created_at :datetime
@@ -31,22 +33,23 @@
 #
 # Indexes
 #
-#  conv_acid_inbid_stat_asgnid_idx                    (account_id,inbox_id,status,assignee_id)
-#  index_conversations_on_account_id                  (account_id)
-#  index_conversations_on_account_id_and_display_id   (account_id,display_id) UNIQUE
-#  index_conversations_on_assignee_id_and_account_id  (assignee_id,account_id)
-#  index_conversations_on_campaign_id                 (campaign_id)
-#  index_conversations_on_contact_id                  (contact_id)
-#  index_conversations_on_contact_inbox_id            (contact_inbox_id)
-#  index_conversations_on_first_reply_created_at      (first_reply_created_at)
-#  index_conversations_on_id_and_account_id           (account_id,id)
-#  index_conversations_on_inbox_id                    (inbox_id)
-#  index_conversations_on_priority                    (priority)
-#  index_conversations_on_status_and_account_id       (status,account_id)
-#  index_conversations_on_status_and_priority         (status,priority)
-#  index_conversations_on_team_id                     (team_id)
-#  index_conversations_on_uuid                        (uuid) UNIQUE
-#  index_conversations_on_waiting_since               (waiting_since)
+#  conv_acid_inbid_stat_asgnid_idx                        (account_id,inbox_id,status,assignee_id)
+#  index_conversations_on_account_id                      (account_id)
+#  index_conversations_on_account_id_and_capitao_enabled  (account_id,capitao_enabled)
+#  index_conversations_on_account_id_and_display_id       (account_id,display_id) UNIQUE
+#  index_conversations_on_assignee_id_and_account_id      (assignee_id,account_id)
+#  index_conversations_on_campaign_id                     (campaign_id)
+#  index_conversations_on_contact_id                      (contact_id)
+#  index_conversations_on_contact_inbox_id                (contact_inbox_id)
+#  index_conversations_on_first_reply_created_at          (first_reply_created_at)
+#  index_conversations_on_id_and_account_id               (account_id,id)
+#  index_conversations_on_inbox_id                        (inbox_id)
+#  index_conversations_on_priority                        (priority)
+#  index_conversations_on_status_and_account_id           (status,account_id)
+#  index_conversations_on_status_and_priority             (status,priority)
+#  index_conversations_on_team_id                         (team_id)
+#  index_conversations_on_uuid                            (uuid) UNIQUE
+#  index_conversations_on_waiting_since                   (waiting_since)
 #
 
 class Conversation < ApplicationRecord
@@ -107,6 +110,8 @@ class Conversation < ApplicationRecord
   before_save :ensure_snooze_until_reset
   before_create :determine_conversation_status
   before_create :ensure_waiting_since
+  before_create :assign_default_capitao_agent
+  before_save :disable_capitao_on_human_assignment, if: :assignee_id_changed?
 
   after_update_commit :execute_after_update_commit_callbacks
   after_create_commit :notify_conversation_creation
@@ -231,6 +236,25 @@ class Conversation < ApplicationRecord
     self.status = :pending if inbox.active_bot?
   end
 
+  def disable_capitao_on_human_assignment
+    return if assignee_id.blank?
+    return unless capitao_enabled?
+
+    self.capitao_enabled = false
+  end
+
+  def assign_default_capitao_agent
+    return if capitao_agent.present?
+
+    agent_bot = inbox&.agent_bot_inbox&.agent_bot || inbox&.agent_bot
+    return unless agent_bot&.capitao?
+
+    default_agent = agent_bot.capitao_default_agent
+    return if default_agent.blank?
+
+    self.capitao_agent = default_agent
+  end
+
   def notify_conversation_creation
     dispatcher_dispatch(CONVERSATION_CREATED)
   end
@@ -243,7 +267,7 @@ class Conversation < ApplicationRecord
 
   def list_of_keys
     %w[team_id assignee_id status snoozed_until custom_attributes label_list waiting_since first_reply_created_at
-       priority]
+       priority capitao_enabled capitao_agent]
   end
 
   def allowed_keys?

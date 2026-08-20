@@ -33,6 +33,8 @@ RSpec.describe Conversations::EventDataPresenter do
         created_at: conversation.created_at.to_i,
         waiting_since: conversation.waiting_since.to_i,
         priority: nil,
+        capitao_enabled: true,
+        capitao_agent: nil,
         unread_count: 0,
         workflow: { active: false }
       }

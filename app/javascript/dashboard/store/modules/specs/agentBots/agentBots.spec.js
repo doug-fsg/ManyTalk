@@ -117,6 +117,7 @@ describe('#actions', () => {
       await actions.fetchAgentBotInbox({ commit }, 2);
       expect(commit.mock.calls).toEqual([
         [types.SET_AGENT_BOT_UI_FLAG, { isFetchingAgentBot: true }],
+        [types.ADD_AGENT_BOT, { id: 3 }],
         [types.SET_AGENT_BOT_INBOX, { inboxId: 2, agentBotId: 3 }],
         [types.SET_AGENT_BOT_UI_FLAG, { isFetchingAgentBot: false }],
       ]);

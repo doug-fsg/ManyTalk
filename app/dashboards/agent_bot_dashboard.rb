@@ -17,6 +17,7 @@ class AgentBotDashboard < Administrate::BaseDashboard
     ),
     id: Field::Number,
     name: Field::String,
+    capitao: Field::Boolean,
     account: Field::BelongsTo.with_options(searchable: true, searchable_field: 'name', order: 'id DESC'),
     description: Field::String,
     outgoing_url: Field::String,
@@ -32,6 +33,7 @@ class AgentBotDashboard < Administrate::BaseDashboard
   COLLECTION_ATTRIBUTES = %i[
     id
     avatar_url
+    capitao
     account
     name
     outgoing_url
@@ -42,6 +44,7 @@ class AgentBotDashboard < Administrate::BaseDashboard
   SHOW_PAGE_ATTRIBUTES = %i[
     id
     avatar_url
+    capitao
     account
     name
     description
@@ -54,6 +57,7 @@ class AgentBotDashboard < Administrate::BaseDashboard
   # on the model's form (`new` and `edit`) pages.
   FORM_ATTRIBUTES = %i[
     name
+    capitao
     avatar
     account
     description

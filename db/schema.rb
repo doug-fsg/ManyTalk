@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_27_204223) do
+ActiveRecord::Schema[7.0].define(version: 2026_08_20_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -166,7 +166,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_27_204223) do
     t.bigint "account_id"
     t.integer "bot_type", default: 0
     t.jsonb "bot_config", default: {}
+    t.boolean "capitao", default: false, null: false
     t.index ["account_id"], name: "index_agent_bots_on_account_id"
+    t.index ["capitao"], name: "index_agent_bots_unique_capitao", unique: true, where: "(capitao IS TRUE)"
   end
 
   create_table "applied_slas", force: :cascade do |t|
@@ -585,6 +587,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_27_204223) do
     t.bigint "sla_policy_id"
     t.datetime "waiting_since"
     t.text "cached_label_list"
+    t.boolean "capitao_enabled", default: true, null: false
+    t.jsonb "capitao_agent"
+    t.index ["account_id", "capitao_enabled"], name: "index_conversations_on_account_id_and_capitao_enabled"
     t.index ["account_id", "display_id"], name: "index_conversations_on_account_id_and_display_id", unique: true
     t.index ["account_id", "id"], name: "index_conversations_on_id_and_account_id"
     t.index ["account_id", "inbox_id", "status", "assignee_id"], name: "conv_acid_inbid_stat_asgnid_idx"
@@ -1156,12 +1161,12 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_27_204223) do
     t.string "enrollment_scope", default: "contact", null: false
     t.index ["account_id", "contact_id"], name: "index_we_on_account_id_and_contact_id"
     t.index ["account_id", "conversation_id"], name: "index_workflow_enrollments_on_account_id_and_conversation_id"
-    t.index ["account_id", "status"], name: "idx_we_in_progress_by_account", where: "((status)::text = ANY ((ARRAY['active'::character varying, 'waiting'::character varying, 'paused'::character varying])::text[]))"
+    t.index ["account_id", "status"], name: "idx_we_in_progress_by_account", where: "((status)::text = ANY (ARRAY[('active'::character varying)::text, ('waiting'::character varying)::text, ('paused'::character varying)::text]))"
     t.index ["account_id"], name: "index_workflow_enrollments_on_account_id"
     t.index ["contact_id"], name: "index_workflow_enrollments_on_contact_id"
     t.index ["conversation_id"], name: "index_workflow_enrollments_on_conversation_id"
-    t.index ["workflow_id", "contact_id"], name: "index_we_unique_active_contact_scope", unique: true, where: "(((status)::text = ANY ((ARRAY['active'::character varying, 'waiting'::character varying, 'paused'::character varying])::text[])) AND ((enrollment_scope)::text = 'contact'::text))"
-    t.index ["workflow_id", "conversation_id"], name: "index_workflow_enrollments_unique_active", unique: true, where: "((status)::text = ANY ((ARRAY['active'::character varying, 'waiting'::character varying, 'paused'::character varying])::text[]))"
+    t.index ["workflow_id", "contact_id"], name: "index_we_unique_active_contact_scope", unique: true, where: "(((status)::text = ANY (ARRAY[('active'::character varying)::text, ('waiting'::character varying)::text, ('paused'::character varying)::text])) AND ((enrollment_scope)::text = 'contact'::text))"
+    t.index ["workflow_id", "conversation_id"], name: "index_workflow_enrollments_unique_active", unique: true, where: "((status)::text = ANY (ARRAY[('active'::character varying)::text, ('waiting'::character varying)::text, ('paused'::character varying)::text]))"
     t.index ["workflow_id"], name: "index_workflow_enrollments_on_workflow_id"
   end
 

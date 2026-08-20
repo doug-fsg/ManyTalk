@@ -101,6 +101,9 @@ export const actions = {
     try {
       const { data } = await InboxesAPI.getAgentBot(inboxId);
       const { agent_bot: agentBot = {} } = data || {};
+      if (agentBot.id) {
+        commit(types.ADD_AGENT_BOT, agentBot);
+      }
       commit(types.SET_AGENT_BOT_INBOX, { agentBotId: agentBot.id, inboxId });
     } catch (error) {
       throwErrorMessage(error);
@@ -141,7 +144,17 @@ export const mutations = {
       ...data,
     };
   },
-  [types.ADD_AGENT_BOT]: MutationHelpers.setSingleRecord,
+  [types.ADD_AGENT_BOT]($state, data) {
+    const recordIndex = $state.records.findIndex(record => record.id === data.id);
+    if (recordIndex > -1) {
+      Vue.set($state.records, recordIndex, {
+        ...$state.records[recordIndex],
+        ...data,
+      });
+    } else {
+      $state.records.push(data);
+    }
+  },
   [types.SET_AGENT_BOTS]: MutationHelpers.set,
   [types.EDIT_AGENT_BOT]: MutationHelpers.update,
   [types.DELETE_AGENT_BOT]: MutationHelpers.destroy,

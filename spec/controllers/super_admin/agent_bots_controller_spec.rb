@@ -23,6 +23,28 @@ RSpec.describe 'Super Admin agent-bots API', type: :request do
     end
   end
 
+  describe 'PATCH /super_admin/agent_bots/:id' do
+    let!(:agent_bot) { create(:agent_bot) }
+    let!(:other_bot) { create(:agent_bot, capitao: true) }
+
+    context 'when it is an authenticated super admin' do
+      it 'marks the agent bot as capitao and unmarks the previous one' do
+        sign_in(super_admin, scope: :super_admin)
+        patch "/super_admin/agent_bots/#{agent_bot.id}", params: {
+          agent_bot: {
+            name: agent_bot.name,
+            capitao: '1',
+            outgoing_url: agent_bot.outgoing_url
+          }
+        }
+
+        expect(response).to have_http_status(:redirect)
+        expect(agent_bot.reload.capitao).to be(true)
+        expect(other_bot.reload.capitao).to be(false)
+      end
+    end
+  end
+
   describe 'DELETE /super_admin/agent_bots/:id/destroy_avatar' do
     let!(:agent_bot) { create(:agent_bot, :with_avatar) }
 

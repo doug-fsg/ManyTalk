@@ -230,6 +230,16 @@ const actions = {
     commit(types.ASSIGN_TEAM, { team, conversationId });
   },
 
+  toggleCapitao: async ({ commit }, { conversationId, enabled, agent }) => {
+    const response = await ConversationApi.toggleCapitao({
+      conversationId,
+      enabled,
+      agent,
+    });
+    commit(types.UPDATE_CONVERSATION, response.data);
+    return response.data;
+  },
+
   toggleStatus: async (
     { commit },
     { conversationId, status, snoozedUntil = null }
