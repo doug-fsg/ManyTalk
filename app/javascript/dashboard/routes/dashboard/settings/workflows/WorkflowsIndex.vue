@@ -87,7 +87,7 @@ const requestDeleteWorkflow = async workflow => {
   <SettingsLayout
     :is-loading="uiFlags.isFetching"
     :loading-message="$t('WORKFLOW.LOADING')"
-    :no-records-found="!records.length"
+    :no-records-found="!records.length && !fetchError"
     :no-records-message="$t('WORKFLOW.LIST.EMPTY')"
   >
     <template #header>
@@ -126,12 +126,16 @@ const requestDeleteWorkflow = async workflow => {
           {{ $t('WORKFLOW.EDITOR.RETRY') }}
         </woot-button>
       </div>
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div
+        v-else
+        class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 w-full min-w-0"
+      >
         <WorkflowCard
           v-for="workflow in records"
           :key="workflow.id"
+          class="min-w-0"
           :workflow="workflow"
-          :loading="loading[workflow.id]"
+          :loading="!!loading[workflow.id]"
           @toggle="toggleWorkflow"
           @edit="openEdit"
           @clone="cloneWorkflow"

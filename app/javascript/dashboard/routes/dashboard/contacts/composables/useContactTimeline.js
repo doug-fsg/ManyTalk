@@ -19,6 +19,10 @@ export const TIMELINE_EVENT_TYPES = [
   'activity',
   'note',
   'conversation_started',
+  'workflow_started',
+  'workflow_cancelled',
+  'workflow_completed',
+  'workflow_failed',
 ];
 
 export const TIMELINE_FILTER_OPTIONS = [

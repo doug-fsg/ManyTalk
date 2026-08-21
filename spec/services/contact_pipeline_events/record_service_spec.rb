@@ -86,4 +86,25 @@ RSpec.describe ContactPipelineEvents::RecordService do
     expect(event).to be_present
     expect(event.metadata['previous_status']).to eq('won')
   end
+
+  it 'stores workflow metadata when executed by a workflow' do
+    Current.user = nil
+    workflow = create(:workflow, account: account, name: 'Follow-up 24h')
+    Current.executed_by = workflow
+
+    position = create(
+      :contact_pipeline_position,
+      contact: contact,
+      pipeline: pipeline,
+      stage_id: 'Proposta'
+    )
+
+    event = ContactPipelineEvent.find_by(contact_pipeline_position: position, event_type: 'entered')
+    expect(event.user_id).to be_nil
+    expect(event.metadata['source']).to eq('workflow')
+    expect(event.metadata['workflow_id']).to eq(workflow.id)
+    expect(event.metadata['workflow_name']).to eq('Follow-up 24h')
+  ensure
+    Current.executed_by = nil
+  end
 end

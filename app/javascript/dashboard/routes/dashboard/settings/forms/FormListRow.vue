@@ -2,7 +2,10 @@
 import { computed } from 'vue';
 import { useI18n } from 'dashboard/composables/useI18n';
 import { useAlert } from 'dashboard/composables';
-import { messageStamp } from 'shared/helpers/timeHelper';
+import {
+  formatListDate,
+  formatListDateTime,
+} from 'dashboard/helper/localeDateHelper';
 import FormStatusBadge from './FormStatusBadge.vue';
 import FormWorkflowLinkageCell from './FormWorkflowLinkageCell.vue';
 
@@ -14,11 +17,10 @@ const props = defineProps({
 
 const emit = defineEmits(['open', 'publish', 'pause', 'delete', 'connect', 'submissions']);
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
-const readableDate = date => messageStamp(new Date(date * 1000), 'LLL d, yyyy');
-const readableDateWithTime = date =>
-  messageStamp(new Date(date * 1000), 'LLL d, yyyy hh:mm a');
+const readableDate = date => formatListDate(date, locale.value);
+const readableDateWithTime = date => formatListDateTime(date, locale.value);
 
 const submissionsTooltip = computed(() =>
   t('ACCOUNT_FORM.LIST.SUBMISSIONS_TOOLTIP', {

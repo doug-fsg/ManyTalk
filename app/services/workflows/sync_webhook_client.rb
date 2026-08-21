@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-# Synchronous HTTP client for AI intent classification.
+# Synchronous HTTP client for workflow AI calls that need a response
+# (currently intent classification). Async AI nodes use WebhookJob instead.
 # Strangler: does not touch Webhooks::Trigger or WebhookJob.
 module Workflows
   class SyncWebhookClient

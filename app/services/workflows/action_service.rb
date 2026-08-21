@@ -83,6 +83,11 @@ module Workflows
     def send_webhook_event(webhook_url)
       payload = @conversation.webhook_data.merge(event: "workflow_event.#{@workflow.id}")
       WebhookJob.perform_later(webhook_url[0], payload)
+      Workflows::ActivityLogger.log(
+        @conversation,
+        'webhook_sent',
+        workflow_name: @workflow.name
+      )
     end
 
     def send_attachment(blob_ids)
@@ -99,7 +104,22 @@ module Workflows
       teams = Team.where(id: params[0][:team_ids])
       teams.each do |team|
         TeamNotifications::AutomationNotificationMailer.conversation_creation(@conversation, team, params[0][:message])&.deliver_now
+        Workflows::ActivityLogger.log(
+          @conversation,
+          'email_to_team',
+          workflow_name: @workflow.name,
+          team_name: team.name
+        )
       end
+    end
+
+    def send_email_transcript(emails)
+      super
+      Workflows::ActivityLogger.log(
+        @conversation,
+        'email_transcript',
+        workflow_name: @workflow.name
+      )
     end
 
     def send_whatsapp_external(params)
@@ -118,9 +138,15 @@ module Workflows
         message: content
       ).send!
 
-      return if result[:success]
+      unless result[:success]
+        raise "WhatsApp send failed: #{result[:error]}#{result[:detail] ? " (#{result[:detail]})" : ''}"
+      end
 
-      raise "WhatsApp send failed: #{result[:error]}#{result[:detail] ? " (#{result[:detail]})" : ''}"
+      Workflows::ActivityLogger.log(
+        @conversation,
+        'whatsapp_external',
+        workflow_name: @workflow.name
+      )
     end
 
     def change_kanban_stage(stage_params)
@@ -144,7 +170,7 @@ module Workflows
 
       content = I18n.t(
         'conversations.activity.kanban.moved',
-        user_name: 'Workflow System',
+        user_name: @workflow.name,
         stage_name: selected_stage
       )
       ::Conversations::ActivityMessageJob.perform_later(

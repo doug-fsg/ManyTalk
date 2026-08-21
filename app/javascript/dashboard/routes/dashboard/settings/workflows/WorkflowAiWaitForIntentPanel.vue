@@ -26,7 +26,7 @@ const showSuggestions = ref(false);
 const hasWebhookUrl = computed(
   () =>
     typeof window !== 'undefined' &&
-    window.__WORKFLOW_AI_INTENT_CONFIGURED__ === true
+    window.__WORKFLOW_AI_CONFIGURED__ === true
 );
 
 const selectedIntent = computed(() =>
@@ -126,7 +126,7 @@ const updateUnit = val => emit('update-node', { unit: val });
     <div
       v-if="!hasWebhookUrl"
       class="flex items-center gap-1.5 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700"
-      :title="t('WORKFLOW.EDITOR.INTENT_WEBHOOK_MISSING_TOOLTIP')"
+      :title="t('WORKFLOW.EDITOR.AI_WEBHOOK_MISSING_TOOLTIP')"
     >
       <svg
         class="w-3.5 h-3.5 text-amber-500 flex-shrink-0"
@@ -142,7 +142,7 @@ const updateUnit = val => emit('update-node', { unit: val });
         />
       </svg>
       <span class="text-xs text-amber-700 dark:text-amber-300">
-        {{ t('WORKFLOW.EDITOR.INTENT_WEBHOOK_MISSING') }}
+        {{ t('WORKFLOW.EDITOR.AI_WEBHOOK_MISSING') }}
       </span>
     </div>
 

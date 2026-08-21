@@ -244,8 +244,8 @@ RSpec.describe Workflows::OrchestratorService do
   end
 
   describe 'ai_outreach node' do
-    let(:channel_api) { create(:channel_api, account: account, webhook_url: 'https://n8n.example.com/webhook/ai') }
-    let(:api_inbox) { channel_api.inbox }
+    let(:ai_url) { 'https://n8n.example.com/webhook/ai' }
+    let(:api_inbox) { create(:inbox, account: account) }
     let(:api_contact) { create(:contact, account: account, name: 'Maria') }
     let(:api_contact_inbox) { create(:contact_inbox, contact: api_contact, inbox: api_inbox) }
     let(:api_conversation) do
@@ -284,15 +284,19 @@ RSpec.describe Workflows::OrchestratorService do
 
     let!(:workflow) { create(:workflow, account: account, active: true, graph: ai_graph) }
 
-    it 'enqueues inbox webhook when enrollment reaches ai_outreach node' do
+    before do
+      account.enable_features!('inteligencia_artificial')
+      allow(Workflows::AiWebhook).to receive(:url).and_return(ai_url)
+    end
+
+    it 'enqueues WORKFLOW_AI_URL webhook when enrollment reaches ai_outreach node' do
       expect(WebhookJob).to receive(:perform_later).with(
-        'https://n8n.example.com/webhook/ai',
+        ai_url,
         hash_including(
           event: 'workflow.ai_outreach',
           prompt: include('cliente'),
           workflow_node_id: 'ai_1'
-        ),
-        :api_inbox_webhook
+        )
       )
 
       described_class.on_event(

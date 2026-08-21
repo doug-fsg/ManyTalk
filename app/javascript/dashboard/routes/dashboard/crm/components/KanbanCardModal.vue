@@ -207,7 +207,7 @@
               attribute-type="contact_attribute"
               attribute-class="conversation--attribute"
               attribute-from="kanban_card_modal"
-              :custom-attributes="contact.custom_attributes"
+              :contact-custom-attributes="contact.custom_attributes"
               :empty-state-message="$t('CONTACT_PANEL.SIDEBAR_SECTIONS.NO_RECORDS_FOUND')"
               class="even"
             />

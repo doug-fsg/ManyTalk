@@ -12,15 +12,27 @@
 
 Todos os nós de IA requerem a feature `inteligencia_artificial` habilitada na conta.
 
+## Webhook único
+
+```
+WORKFLOW_AI_URL=https://seu-servidor/webhook/ai
+```
+
+As três opções de IA usam a mesma URL. O receptor distingue pelo campo `event`:
+
+| `event` | Nó | Modo |
+|---------|-----|------|
+| `workflow.ai_outreach` | Chamar cliente | Assíncrono |
+| `workflow.ai_conversation_analysis` | Avaliar conversa (nota privada) | Assíncrono |
+| `workflow.ai_wait_for_intent` | Aguardar intenção | Síncrono (≤5s, responde `{ "matched": true\|false }`) |
+
+Destino WhatsApp na análise **não** usa essa URL.
+
 ---
 
 ## `ai_wait_for_intent` — Aguardar intenção
 
-### Variável de ambiente obrigatória
-
-```
-WORKFLOW_AI_INTENT_WEBHOOK_URL=https://seu-servidor/webhook/intent
-```
+### Contrato síncrono
 
 O endpoint deve:
 - Aceitar `POST` com `Content-Type: application/json`
@@ -28,6 +40,8 @@ O endpoint deve:
 - Retornar HTTP 200 com corpo `{ "matched": true }` ou `{ "matched": false }`
 
 Timeout, erro HTTP ou JSON inválido → tratado como `matched: false` (enrollment permanece aguardando).
+
+Sem `WORKFLOW_AI_URL`, a classificação é ignorada (`no_webhook_url`).
 
 ### Evento webhook
 

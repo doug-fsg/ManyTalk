@@ -17,11 +17,11 @@ export default {
       return this.contact.custom_attributes || {};
     },
     contactIdentifier() {
-      return (
-        this.currentChat.meta?.sender?.id ||
-        this.$route.params.contactId ||
-        this.contactId
-      );
+      // Explicit prop wins (contact profile / panels that pass :contact-id)
+      if (this.contactId != null && this.contactId !== '') {
+        return this.contactId;
+      }
+      return this.currentChat.meta?.sender?.id || this.$route.params.contactId;
     },
     contact() {
       return this.$store.getters['contacts/getContact'](this.contactIdentifier);

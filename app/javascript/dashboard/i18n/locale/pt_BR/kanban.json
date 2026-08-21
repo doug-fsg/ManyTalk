@@ -217,11 +217,12 @@
       "NAME_ASC": "Nome (A-Z)",
       "NAME_DESC": "Nome (Z-A)",
       "POSITION": "Ordem manual",
-      "DEAL_VALUE_DESC": "Valor (maior → menor)",
-      "DEAL_VALUE_ASC": "Valor (menor → maior)",
-      "NEWEST": "Mais recentes",
-      "OLDEST": "Mais antigos",
-      "TIME_IN_STAGE": "Mais tempo na etapa"
+      "DEAL_VALUE_DESC": "Maior valor",
+      "DEAL_VALUE_ASC": "Menor valor",
+      "NEWEST": "Novos no Kanban",
+      "OLDEST": "Antigos no Kanban",
+      "RECENTLY_UPDATED": "Última atividade",
+      "TIME_IN_STAGE": "Tempo na etapa"
     },
     "DASHBOARD": {
       "TITLE": "Dashboard do Pipeline",

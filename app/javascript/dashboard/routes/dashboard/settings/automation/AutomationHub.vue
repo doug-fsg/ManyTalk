@@ -114,7 +114,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="flex flex-col flex-1 overflow-hidden bg-white dark:bg-slate-900">
+  <div
+    class="flex flex-col flex-1 w-full min-w-0 overflow-hidden bg-white dark:bg-slate-900"
+  >
     <div
       v-if="isWorkflowsEnabled"
       class="flex items-center justify-between gap-4 px-4 py-3 bg-white border-b border-slate-200 dark:bg-slate-900 dark:border-slate-700"

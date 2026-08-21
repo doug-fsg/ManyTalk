@@ -95,6 +95,7 @@ export default {
         { value: 'deal_value_asc', label: this.$t('KANBAN.SORT.DEAL_VALUE_ASC') },
         { value: 'newest', label: this.$t('KANBAN.SORT.NEWEST') },
         { value: 'oldest', label: this.$t('KANBAN.SORT.OLDEST') },
+        { value: 'recently_updated', label: this.$t('KANBAN.SORT.RECENTLY_UPDATED') },
         { value: 'time_in_stage', label: this.$t('KANBAN.SORT.TIME_IN_STAGE') },
       ];
     },

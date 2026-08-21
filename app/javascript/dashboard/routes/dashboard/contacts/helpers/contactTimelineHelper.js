@@ -399,6 +399,70 @@ export function getEventPresentation(event, t, localeCode = 'en') {
         actionLabel: t('CONTACT_PROFILE.TIMELINE.ACTIONS.OPEN_CONVERSATION'),
         isClickable: !!(meta.conversation_internal_id || meta.conversation_id),
       };
+    case 'workflow_started':
+      return {
+        icon: 'play',
+        tone: 'brand',
+        title: meta.automatic
+          ? t('CONTACT_PROFILE.TIMELINE.EVENTS.WORKFLOW_STARTED_AUTOMATIC', {
+              workflow: meta.workflow_name,
+            })
+          : t('CONTACT_PROFILE.TIMELINE.EVENTS.WORKFLOW_STARTED_BY_USER', {
+              workflow: meta.workflow_name,
+              user:
+                meta.user_name || t('CONTACT_PROFILE.TIMELINE.UNKNOWN_USER'),
+            }),
+        contextLines: [],
+        actionLabel: meta.conversation_id
+          ? t('CONTACT_PROFILE.TIMELINE.ACTIONS.OPEN_CONVERSATION')
+          : null,
+        isClickable: !!meta.conversation_id,
+      };
+    case 'workflow_cancelled':
+      return {
+        icon: 'dismiss',
+        tone: 'danger',
+        title: t('CONTACT_PROFILE.TIMELINE.EVENTS.WORKFLOW_CANCELLED', {
+          workflow: meta.workflow_name,
+        }),
+        contextLines: meta.reason
+          ? [
+              t('CONTACT_PROFILE.TIMELINE.WORKFLOW_REASON', {
+                reason: meta.reason,
+              }),
+            ]
+          : [],
+        actionLabel: meta.conversation_id
+          ? t('CONTACT_PROFILE.TIMELINE.ACTIONS.OPEN_CONVERSATION')
+          : null,
+        isClickable: !!meta.conversation_id,
+      };
+    case 'workflow_completed':
+      return {
+        icon: 'checkmark-circle',
+        tone: 'success',
+        title: t('CONTACT_PROFILE.TIMELINE.EVENTS.WORKFLOW_COMPLETED', {
+          workflow: meta.workflow_name,
+        }),
+        contextLines: [],
+        actionLabel: meta.conversation_id
+          ? t('CONTACT_PROFILE.TIMELINE.ACTIONS.OPEN_CONVERSATION')
+          : null,
+        isClickable: !!meta.conversation_id,
+      };
+    case 'workflow_failed':
+      return {
+        icon: 'warning',
+        tone: 'danger',
+        title: t('CONTACT_PROFILE.TIMELINE.EVENTS.WORKFLOW_FAILED', {
+          workflow: meta.workflow_name,
+        }),
+        contextLines: meta.error_message ? [meta.error_message] : [],
+        actionLabel: meta.conversation_id
+          ? t('CONTACT_PROFILE.TIMELINE.ACTIONS.OPEN_CONVERSATION')
+          : null,
+        isClickable: !!meta.conversation_id,
+      };
     default:
       return {
         icon: 'info',
@@ -420,9 +484,10 @@ function buildPipelineContext(meta, t) {
     );
   }
 
-  if (meta.user_name) {
+  const performedBy = meta.user_name || meta.workflow_name;
+  if (performedBy) {
     lines.push(
-      t('CONTACT_PROFILE.TIMELINE.PERFORMED_BY', { name: meta.user_name })
+      t('CONTACT_PROFILE.TIMELINE.PERFORMED_BY', { name: performedBy })
     );
   }
 

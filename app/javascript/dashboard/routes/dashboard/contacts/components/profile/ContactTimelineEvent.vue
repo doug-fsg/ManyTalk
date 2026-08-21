@@ -80,7 +80,13 @@ const onItemClick = () => {
     return;
   }
 
-  if (props.event.type === 'conversation_started') {
+  if (
+    props.event.type === 'conversation_started' ||
+    props.event.type === 'workflow_started' ||
+    props.event.type === 'workflow_cancelled' ||
+    props.event.type === 'workflow_completed' ||
+    props.event.type === 'workflow_failed'
+  ) {
     const conversationId =
       meta.conversation_internal_id || meta.conversation_id;
     if (!conversationId) return;

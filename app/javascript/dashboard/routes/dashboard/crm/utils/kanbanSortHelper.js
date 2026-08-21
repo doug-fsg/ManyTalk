@@ -1,4 +1,5 @@
 import {
+  getCreatedAt,
   getDealValue,
   getEnteredAt,
   getPosition,
@@ -12,10 +13,32 @@ export const KANBAN_SORT_OPTIONS = [
   'deal_value_asc',
   'newest',
   'oldest',
+  'recently_updated',
   'time_in_stage',
 ];
 
 export const DEFAULT_KANBAN_SORT = 'name';
+
+/** Unix seconds, ms, or ISO → epoch ms */
+const toTimestamp = value => {
+  if (value == null || value === '') return 0;
+  if (typeof value === 'number') {
+    return value < 1e12 ? value * 1000 : value;
+  }
+  const parsed = Date.parse(value);
+  if (!Number.isNaN(parsed)) return parsed;
+  const asNumber = Number(value);
+  if (!Number.isNaN(asNumber)) {
+    return asNumber < 1e12 ? asNumber * 1000 : asNumber;
+  }
+  return 0;
+};
+
+const cardCreatedAt = (contact, pipelineId) =>
+  getCreatedAt(contact, pipelineId) || contact.created_at;
+
+const cardUpdatedAt = (contact, pipelineId) =>
+  contact.last_activity_at || cardCreatedAt(contact, pipelineId);
 
 /**
  * Ordena contatos de uma coluna do kanban conforme o critério visual selecionado.
@@ -34,12 +57,6 @@ export function sortKanbanContacts(contacts, sortBy = DEFAULT_KANBAN_SORT, pipel
   const compareName = (a, b) =>
     (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
 
-  const toTimestamp = value => {
-    if (!value) return 0;
-    const ts = new Date(value).getTime();
-    return Number.isNaN(ts) ? 0 : ts;
-  };
-
   switch (sortBy) {
     case 'name_desc':
       return list.sort((a, b) => compareName(b, a));
@@ -53,7 +70,7 @@ export function sortKanbanContacts(contacts, sortBy = DEFAULT_KANBAN_SORT, pipel
         if (posA != null) return -1;
         if (posB != null) return 1;
 
-        return toTimestamp(a.created_at) - toTimestamp(b.created_at);
+        return toTimestamp(cardCreatedAt(a, pipelineId)) - toTimestamp(cardCreatedAt(b, pipelineId));
       });
 
     case 'deal_value_desc':
@@ -73,10 +90,22 @@ export function sortKanbanContacts(contacts, sortBy = DEFAULT_KANBAN_SORT, pipel
       });
 
     case 'newest':
-      return list.sort((a, b) => toTimestamp(b.created_at) - toTimestamp(a.created_at));
+      return list.sort(
+        (a, b) =>
+          toTimestamp(cardCreatedAt(b, pipelineId)) - toTimestamp(cardCreatedAt(a, pipelineId))
+      );
 
     case 'oldest':
-      return list.sort((a, b) => toTimestamp(a.created_at) - toTimestamp(b.created_at));
+      return list.sort(
+        (a, b) =>
+          toTimestamp(cardCreatedAt(a, pipelineId)) - toTimestamp(cardCreatedAt(b, pipelineId))
+      );
+
+    case 'recently_updated':
+      return list.sort(
+        (a, b) =>
+          toTimestamp(cardUpdatedAt(b, pipelineId)) - toTimestamp(cardUpdatedAt(a, pipelineId))
+      );
 
     case 'time_in_stage':
       return list.sort((a, b) => {

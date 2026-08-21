@@ -79,7 +79,7 @@
 
 ### `ai_outreach` webhook payload
 
-When the node executes on an API inbox with `webhook_url` configured, the server POSTs to that URL with:
+POSTs to `WORKFLOW_AI_URL` with:
 
 - `event`: `"workflow.ai_outreach"`
 - `prompt`: composed phrase (tone prefix + objective prompt, interpolated)
@@ -208,7 +208,7 @@ While waiting, `context.intent_watch` holds:
 
 ### AI webhook contract
 
-**Request** (POST to `WORKFLOW_AI_INTENT_WEBHOOK_URL`, timeout 5s):
+**Request** (POST to `WORKFLOW_AI_URL`, timeout 5s):
 
 ```json
 {
@@ -235,10 +235,10 @@ Timeout, HTTP error, or missing `matched` → treated as `{ "matched": false }` 
 ### Environment variable
 
 ```
-WORKFLOW_AI_INTENT_WEBHOOK_URL=https://your-server/webhook/intent
+WORKFLOW_AI_URL=https://your-server/webhook/ai
 ```
 
-Required. Nodes with this type will silently skip classification if the variable is not set.
+Shared by all workflow AI nodes (`ai_outreach`, `ai_conversation_analysis`, `ai_wait_for_intent`). Distinguish by payload `event`. Required for intent classification; nodes skip classification silently if unset.
 
 ### Pre-filter (layer 1 — structural signals only)
 

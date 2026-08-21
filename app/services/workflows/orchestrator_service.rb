@@ -184,6 +184,7 @@ module Workflows
           return
         end
 
+        Workflows::ActivityLogger.log_started(conversation, workflow)
         advance_from(workflow, enrollment, conversation, trigger['id'], depth: 0)
       end
 
@@ -304,6 +305,7 @@ module Workflows
               error_message: "Action #{action_name} failed. Check application logs for details.",
               executed_at: Time.current
             )
+            Workflows::ActivityLogger.log_failed(conversation, workflow)
             return
           end
 
@@ -363,6 +365,7 @@ module Workflows
           )
         end
 
+        Workflows::ActivityLogger.log_waiting(conversation, workflow, node_type: 'wait')
         job = Workflows::StepJob.set(wait: wait_delay).perform_later(enrollment.id, node['id'])
         execution.update!(job_id: job&.provider_job_id)
       end
@@ -404,6 +407,7 @@ module Workflows
           )
         end
 
+        Workflows::ActivityLogger.log_waiting(conversation, workflow, node_type: 'wait_for_reply')
         job = Workflows::StepJob.set(wait: wait_delay).perform_later(enrollment.id, node['id'])
         execution.update!(job_id: job&.provider_job_id)
       end
@@ -467,6 +471,7 @@ module Workflows
           executed_at: Time.current
         )
         enrollment.complete!
+        Workflows::ActivityLogger.log_completed(enrollment.conversation, enrollment.workflow)
       end
 
       def process_node(workflow, enrollment, conversation, node)
@@ -558,6 +563,7 @@ module Workflows
           )
         end
 
+        Workflows::ActivityLogger.log_waiting(conversation, workflow, node_type: 'ai_wait_for_intent')
         job = Workflows::StepJob.set(wait: wait_delay).perform_later(enrollment.id, node['id'])
         execution.update!(job_id: job&.provider_job_id)
       end
@@ -579,6 +585,7 @@ module Workflows
         mark_step_completed(enrollment, node['id'])
         enrollment.clear_intent_watch!
         enrollment.update!(status: 'active')
+        Workflows::ActivityLogger.log_resumed_after_timeout(conversation, workflow)
 
         next_id = workflow.next_node_id(node['id'], source_handle: 'timeout')
         if next_id.blank?
@@ -599,6 +606,7 @@ module Workflows
         mark_step_completed(enrollment, node['id'])
         enrollment.clear_reply_watch!
         enrollment.update!(status: 'active')
+        Workflows::ActivityLogger.log_resumed_after_timeout(conversation, workflow)
 
         next_id = workflow.next_node_id(node['id'], source_handle: 'timeout')
         if next_id.blank?

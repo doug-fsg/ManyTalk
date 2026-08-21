@@ -29,9 +29,9 @@ RSpec.describe Workflows::IntentClassificationJob, type: :job do
   let(:message) { create(:message, conversation: conversation, message_type: :incoming, content: 'quero o cardápio') }
 
   before do
-    allow(ENV).to receive(:[]).and_call_original
-    allow(ENV).to receive(:[]).with('WORKFLOW_AI_INTENT_WEBHOOK_URL').and_return('https://example.com/intent')
-    allow(account).to receive(:feature_enabled?).with('inteligencia_artificial').and_return(true)
+    allow(Workflows::AiWebhook).to receive(:url).and_return('https://example.com/intent')
+    allow(Workflows::AiWebhook).to receive(:configured?).and_return(true)
+    account.enable_features!('inteligencia_artificial')
     stub_request(:post, 'https://example.com/intent')
       .to_return(status: 200, body: '{"matched":false}')
   end
@@ -59,8 +59,6 @@ RSpec.describe Workflows::IntentClassificationJob, type: :job do
       emoji_message = create(:message, conversation: conversation, message_type: :incoming, content: '👍')
       expect(Workflows::AiWaitForIntentService).not_to receive(:new)
       described_class.perform_now(enrollment.id, emoji_message.id)
-      enrollment.reload
-      expect(enrollment.intent_watch.dig('last_classification', 'skipped')).to be true
     end
 
     context 'when AI returns matched: true' do

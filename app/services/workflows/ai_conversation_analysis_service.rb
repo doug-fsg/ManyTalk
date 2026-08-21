@@ -57,18 +57,10 @@ module Workflows
         return record_result(success: false, error: 'feature_disabled')
       end
 
-      inbox = conversation.inbox
-      unless inbox.api?
-        return record_result(success: false, error: 'inbox_not_supported')
-      end
+      webhook_url = AiWebhook.url
+      return record_result(success: false, error: 'webhook_url_missing') if webhook_url.blank?
 
-      webhook_url = inbox.channel.webhook_url
-      if webhook_url.blank?
-        return record_result(success: false, error: 'webhook_url_missing')
-      end
-
-      payload = build_payload(data, destination)
-      WebhookJob.perform_later(webhook_url, payload, :api_inbox_webhook)
+      WebhookJob.perform_later(webhook_url, build_payload(data, destination))
       record_result(success: true)
     end
 

@@ -11,8 +11,16 @@ module Workflows
         enrollment_scope = WorkflowEnrollment.where(workflow_id: workflow.id)
 
         enrollment_scope.find_each do |enrollment|
-          enrollment.cancel!('workflow_deleted') if enrollment.status.in?(%w[active waiting paused])
+          next unless enrollment.status.in?(%w[active waiting paused])
+
+          conversation = enrollment.conversation
+          enrollment.cancel!('workflow_deleted')
           JobScheduler.cancel_pending!(enrollment)
+          Workflows::ActivityLogger.log_cancelled(
+            conversation,
+            workflow,
+            reason: 'workflow_deleted'
+          )
         end
 
         enrollment_ids = enrollment_scope.pluck(:id)

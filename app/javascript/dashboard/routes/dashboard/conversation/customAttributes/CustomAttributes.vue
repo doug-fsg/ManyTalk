@@ -62,6 +62,12 @@ export default {
       default: '',
     },
     contactId: { type: Number, default: null },
+    // From ContactInfoPanel / profile: :custom-attributes="contact.custom_attributes"
+    // Named to avoid clashing with mixin computed `customAttributes`
+    contactCustomAttributes: {
+      type: Object,
+      default: null,
+    },
     attributeFrom: {
       type: String,
       required: true,
@@ -90,11 +96,20 @@ export default {
         ? this.$t('CUSTOM_ATTRIBUTES.SHOW_MORE')
         : this.$t('CUSTOM_ATTRIBUTES.SHOW_LESS');
     },
+    // Prefer explicitly passed attrs (contact profile) over currentChat/mixin lookup
+    resolvedCustomAttributes() {
+      if (this.attributeType === 'conversation_attribute') {
+        return this.currentChat.custom_attributes || {};
+      }
+      if (this.contactCustomAttributes) {
+        return this.contactCustomAttributes;
+      }
+      return this.customAttributes || {};
+    },
     filteredAttributes() {
       return this.attributes.map(attribute => {
-        // Check if the attribute key exists in customAttributes
         const hasValue = Object.hasOwnProperty.call(
-          this.customAttributes,
+          this.resolvedCustomAttributes,
           attribute.attribute_key
         );
 
@@ -103,9 +118,8 @@ export default {
 
         return {
           ...attribute,
-          // Set value from customAttributes if it exists, otherwise use default value
           value: hasValue
-            ? this.customAttributes[attribute.attribute_key]
+            ? this.resolvedCustomAttributes[attribute.attribute_key]
             : defaultValue,
         };
       });
@@ -136,7 +150,10 @@ export default {
       });
     },
     async onUpdate(key, value) {
-      const updatedAttributes = { ...this.customAttributes, [key]: value };
+      const updatedAttributes = {
+        ...this.resolvedCustomAttributes,
+        [key]: value,
+      };
       try {
         if (this.attributeType === 'conversation_attribute') {
           await this.$store.dispatch('updateCustomAttributes', {
@@ -159,7 +176,8 @@ export default {
     },
     async onDelete(key) {
       try {
-        const { [key]: remove, ...updatedAttributes } = this.customAttributes;
+        const { [key]: remove, ...updatedAttributes } =
+          this.resolvedCustomAttributes;
         if (this.attributeType === 'conversation_attribute') {
           await this.$store.dispatch('updateCustomAttributes', {
             conversationId: this.conversationId,

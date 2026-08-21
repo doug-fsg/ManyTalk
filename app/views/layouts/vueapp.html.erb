@@ -57,6 +57,7 @@
       window.browserConfig = {
         browser_name: '<%= browser.name %>',
       }
+      window.__WORKFLOW_AI_CONFIGURED__ = <%= ENV['WORKFLOW_AI_URL'].present? %>
       window.errorLoggingConfig = '<%= ENV.fetch('SENTRY_FRONTEND_DSN', '') || ENV.fetch('SENTRY_DSN', '') %>'
     </script>
     <% if @global_config['ANALYTICS_TOKEN'].present? %>

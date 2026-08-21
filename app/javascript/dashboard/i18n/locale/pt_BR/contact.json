@@ -349,8 +349,14 @@
         "ACTIVITY": "Atividade",
         "ACTIVITY_COMPLETED": "Atividade concluída · {title}",
         "NOTE": "Nota de {user}",
-        "CONVERSATION": "Conversa iniciada · {inbox}"
+        "CONVERSATION": "Conversa iniciada · {inbox}",
+        "WORKFLOW_STARTED_AUTOMATIC": "Fluxo {workflow} foi iniciado automaticamente",
+        "WORKFLOW_STARTED_BY_USER": "{user} iniciou o fluxo {workflow}",
+        "WORKFLOW_CANCELLED": "Fluxo {workflow} foi cancelado",
+        "WORKFLOW_COMPLETED": "Fluxo {workflow} foi concluído",
+        "WORKFLOW_FAILED": "Fluxo {workflow} falhou em um passo"
       },
+      "WORKFLOW_REASON": "Motivo: {reason}",
       "SCHEDULED_FOR": "Prevista para {date}",
       "DEAL_VALUE": "Valor do negócio: {value}",
       "DATE_TODAY": "Hoje",

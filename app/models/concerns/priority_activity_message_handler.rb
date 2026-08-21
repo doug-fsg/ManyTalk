@@ -7,7 +7,7 @@ module PriorityActivityMessageHandler
     old_priority, new_priority = previous_changes.values_at('priority')[0]
     return unless priority_change?(old_priority, new_priority)
 
-    user = Current.executed_by.instance_of?(AutomationRule) ? 'Automation System' : user_name
+    user = Workflows::ActivityLogger.actor_name(Current.executed_by) || user_name
     content = build_priority_change_content(user, old_priority, new_priority)
 
     ::Conversations::ActivityMessageJob.perform_later(self, activity_message_params(content)) if content

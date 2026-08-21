@@ -11,7 +11,7 @@ module Workflows
     end
 
     def classify!
-      unless ENV['WORKFLOW_AI_INTENT_WEBHOOK_URL'].present?
+      unless AiWebhook.configured?
         log_metric('error', skip_reason: 'no_webhook_url')
         return { matched: false }
       end
@@ -28,10 +28,10 @@ module Workflows
       end
 
       started_at = Time.current
-      result = Workflows::SyncWebhookClient.post_json(
-        ENV['WORKFLOW_AI_INTENT_WEBHOOK_URL'],
+      result = SyncWebhookClient.post_json(
+        AiWebhook.url,
         build_payload(intent_data),
-        timeout: Workflows::SyncWebhookClient::TIMEOUT
+        timeout: SyncWebhookClient::TIMEOUT
       )
       duration_ms = ((Time.current - started_at) * 1000).round
 

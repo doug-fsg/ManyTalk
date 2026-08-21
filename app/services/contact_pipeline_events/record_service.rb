@@ -87,12 +87,22 @@ module ContactPipelineEvents
         to_stage_id: to_stage_id,
         user_id: current_user_id,
         occurred_at: occurred_at,
-        metadata: metadata
+        metadata: metadata.merge(workflow_metadata)
       )
     end
 
     def current_user_id
       Current.user.is_a?(User) ? Current.user.id : nil
+    end
+
+    def workflow_metadata
+      return {} unless Current.executed_by.is_a?(Workflow)
+
+      {
+        'source' => 'workflow',
+        'workflow_id' => Current.executed_by.id,
+        'workflow_name' => Current.executed_by.name
+      }
     end
 
     def extract_win_lost(metadata)

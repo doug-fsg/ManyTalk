@@ -177,6 +177,34 @@ pt_BR:
         not_sent_due_to_messaging_window: "A pesquisa CSAT não foi enviada porque a janela de mensagens expirou."
       kanban:
         moved: "%{user_name} moveu o contato para %{stage_name}"
+      workflow:
+        started_by_user: "%{user_name} iniciou o fluxo %{workflow_name}"
+        started_automatically: "Fluxo %{workflow_name} foi iniciado automaticamente"
+        cancelled_by_user: "%{user_name} cancelou o fluxo %{workflow_name}"
+        cancelled_automatically: "Fluxo %{workflow_name} foi cancelado automaticamente (%{reason})"
+        paused_by_user: "%{user_name} pausou o fluxo %{workflow_name}"
+        paused_automatically: "Fluxo %{workflow_name} foi pausado automaticamente (%{reason})"
+        resumed_by_user: "%{user_name} retomou o fluxo %{workflow_name}"
+        resumed_after_timeout: "Fluxo %{workflow_name} retomou após tempo esgotado"
+        completed: "Fluxo %{workflow_name} foi concluído"
+        failed: "Fluxo %{workflow_name} falhou em um passo"
+        waiting: "Fluxo %{workflow_name} entrou em espera (%{kind})"
+        webhook_sent: "%{workflow_name} enviou um webhook"
+        email_to_team: "%{workflow_name} enviou e-mail à equipe %{team_name}"
+        email_transcript: "%{workflow_name} enviou a transcrição por e-mail"
+        whatsapp_external: "%{workflow_name} enviou mensagem para WhatsApp externo"
+        wait_kinds:
+          wait: "espera"
+          wait_for_reply: "aguardar resposta"
+          wait_for_intent: "aguardar intenção"
+        reasons:
+          contact_replied: "contato respondeu"
+          agent_replied: "agente respondeu"
+          conversation_resolved: "conversa resolvida"
+          manual: "manual"
+          workflow_deleted: "fluxo excluído"
+          label_applied: "etiqueta aplicada"
+          unknown: "motivo desconhecido"
     merge:
       errors:
         invalid: "Mesclagem de conversas não permitida"

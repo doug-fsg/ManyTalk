@@ -1,5 +1,9 @@
 <script setup>
-import { messageStamp } from 'shared/helpers/timeHelper';
+import { useI18n } from 'dashboard/composables/useI18n';
+import {
+  formatListDate,
+  formatListDateTime,
+} from 'dashboard/helper/localeDateHelper';
 
 const props = defineProps({
   automation: {
@@ -14,9 +18,10 @@ const props = defineProps({
 
 const emit = defineEmits(['toggle', 'edit', 'delete', 'clone']);
 
-const readableDate = date => messageStamp(new Date(date), 'LLL d, yyyy');
-const readableDateWithTime = date =>
-  messageStamp(new Date(date), 'LLL d, yyyy hh:mm a');
+const { locale } = useI18n();
+
+const readableDate = date => formatListDate(date, locale.value);
+const readableDateWithTime = date => formatListDateTime(date, locale.value);
 
 const toggle = () => {
   const { id, name, active } = props.automation;

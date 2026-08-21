@@ -67,7 +67,9 @@ module ActivityMessageHandler
   end
 
   def automation_status_change_activity_content
-    if Current.executed_by.instance_of?(AutomationRule) || Current.executed_by.is_a?(Workflow)
+    if Current.executed_by.is_a?(Workflow)
+      I18n.t("conversations.activity.status.#{status}", user_name: Current.executed_by.name)
+    elsif Current.executed_by.instance_of?(AutomationRule)
       I18n.t("conversations.activity.status.#{status}", user_name: 'Automation System')
     elsif Current.executed_by.instance_of?(Contact)
       Current.executed_by = nil
@@ -88,9 +90,10 @@ module ActivityMessageHandler
   end
 
   def create_mute_change_activity(change_type)
-    return unless Current.user
+    user_name = Current.user&.name || Workflows::ActivityLogger.actor_name(Current.executed_by)
+    return unless user_name
 
-    content = I18n.t("conversations.activity.#{change_type}", user_name: Current.user.name)
+    content = I18n.t("conversations.activity.#{change_type}", user_name: user_name)
     ::Conversations::ActivityMessageJob.perform_later(self, activity_message_params(content)) if content
   end
 
@@ -111,7 +114,9 @@ module ActivityMessageHandler
   end
 
   def activity_message_owner(user_name)
-    user_name = 'Automation System' if !user_name && Current.executed_by.present?
-    user_name
+    return user_name if user_name.present?
+    return nil unless Current.executed_by.present?
+
+    Workflows::ActivityLogger.actor_name(Current.executed_by) || 'Automation System'
   end
 end

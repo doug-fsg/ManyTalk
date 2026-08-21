@@ -11,15 +11,8 @@ module Workflows
         return record_result(success: false, error: 'feature_disabled')
       end
 
-      inbox = conversation.inbox
-      unless inbox.api?
-        return record_result(success: false, error: 'inbox_not_supported')
-      end
-
-      webhook_url = inbox.channel.webhook_url
-      if webhook_url.blank?
-        return record_result(success: false, error: 'webhook_url_missing')
-      end
+      webhook_url = AiWebhook.url
+      return record_result(success: false, error: 'webhook_url_missing') if webhook_url.blank?
 
       data = node['data'] || {}
       prompt = build_prompt(data)
@@ -29,12 +22,11 @@ module Workflows
         ai_config: ai_config_payload(data),
         workflow_id: workflow.id,
         workflow_node_id: node['id'],
-        enrollment_id: enrollment.id
+        enrollment_id: enrollment.id,
+        context: { last_messages: last_messages_payload }
       )
 
-      payload[:context] = { last_messages: last_messages_payload }
-
-      WebhookJob.perform_later(webhook_url, payload, :api_inbox_webhook)
+      WebhookJob.perform_later(webhook_url, payload)
       record_result(success: true)
     rescue StandardError => e
       ChatwootExceptionTracker.new(e, account: workflow.account).capture_exception

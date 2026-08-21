@@ -139,6 +139,43 @@ RSpec.describe Contacts::TimelineBuilder do
     expect(filtered[:events].pluck(:type).uniq).to eq(['form_submission'])
   end
 
+  it 'includes workflow enrollment lifecycle events' do
+    conversation = create(:conversation, account: account, contact: contact)
+    workflow = create(:workflow, account: account, name: 'Follow-up 24h')
+    user = create(:user, account: account, name: 'Maria', display_name: 'Maria')
+    enrollment = create(
+      :workflow_enrollment,
+      workflow: workflow,
+      conversation: conversation,
+      account: account,
+      contact: contact,
+      status: 'completed',
+      started_at: 2.hours.ago,
+      completed_at: 1.hour.ago,
+      started_by: user
+    )
+    create(
+      :workflow_step_execution,
+      workflow_enrollment: enrollment,
+      status: 'failed',
+      executed_at: 90.minutes.ago,
+      error_message: 'Action failed'
+    )
+
+    events = result[:events]
+    started = events.find { |event| event[:type] == 'workflow_started' }
+    completed = events.find { |event| event[:type] == 'workflow_completed' }
+    failed = events.find { |event| event[:type] == 'workflow_failed' }
+
+    expect(started).to be_present
+    expect(started[:meta][:workflow_name]).to eq('Follow-up 24h')
+    expect(started[:meta][:user_name]).to eq('Maria')
+    expect(started[:meta][:automatic]).to be(false)
+    expect(completed).to be_present
+    expect(failed).to be_present
+    expect(failed[:meta][:error_message]).to eq('Action failed')
+  end
+
   it 'sorts events by occurred_at descending' do
     account_form = create(:account_form, :published, account: account)
     FormSubmission.create!(

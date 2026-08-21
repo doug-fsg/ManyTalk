@@ -17,6 +17,7 @@ module Workflows
 
       enrollment.save!
       EnrollmentBroadcaster.updated(enrollment)
+      Workflows::ActivityLogger.log_started(conversation, workflow, user: user)
 
       trigger_id = workflow.trigger_node&.dig('id')
       start_id = start_node_id || trigger_id
@@ -40,6 +41,12 @@ module Workflows
 
         JobScheduler.cancel_pending!(enrollment)
         EnrollmentBroadcaster.updated(enrollment)
+        Workflows::ActivityLogger.log_paused(
+          enrollment.conversation,
+          enrollment.workflow,
+          user: user,
+          reason: reason
+        )
         { enrollment: enrollment }
       end
     end
@@ -67,6 +74,7 @@ module Workflows
         end
 
         EnrollmentBroadcaster.updated(enrollment)
+        Workflows::ActivityLogger.log_resumed(conversation, workflow, user: user)
         { enrollment: enrollment }
       end
     end
@@ -78,6 +86,12 @@ module Workflows
         JobScheduler.cancel_pending!(enrollment)
         enrollment.cancel!(reason)
         EnrollmentBroadcaster.updated(enrollment)
+        Workflows::ActivityLogger.log_cancelled(
+          enrollment.conversation,
+          enrollment.workflow,
+          user: user,
+          reason: reason
+        )
         { enrollment: enrollment }
       end
     end

@@ -186,11 +186,12 @@
       "NAME_ASC": "Name (A-Z)",
       "NAME_DESC": "Name (Z-A)",
       "POSITION": "Manual order",
-      "DEAL_VALUE_DESC": "Deal value (high to low)",
-      "DEAL_VALUE_ASC": "Deal value (low to high)",
-      "NEWEST": "Newest first",
-      "OLDEST": "Oldest first",
-      "TIME_IN_STAGE": "Longest in stage"
+      "DEAL_VALUE_DESC": "Highest value",
+      "DEAL_VALUE_ASC": "Lowest value",
+      "NEWEST": "New in Kanban",
+      "OLDEST": "Oldest in Kanban",
+      "RECENTLY_UPDATED": "Last activity",
+      "TIME_IN_STAGE": "Time in stage"
     },
     "DASHBOARD": {
       "TITLE": "Pipeline Dashboard",

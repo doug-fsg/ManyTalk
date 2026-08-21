@@ -198,6 +198,34 @@ en:
         not_sent_due_to_messaging_window: "CSAT survey was not sent because the messaging window has expired."
       kanban:
         moved: "%{user_name} moved contact to %{stage_name}"
+      workflow:
+        started_by_user: "%{user_name} started the workflow %{workflow_name}"
+        started_automatically: "Workflow %{workflow_name} was started automatically"
+        cancelled_by_user: "%{user_name} cancelled the workflow %{workflow_name}"
+        cancelled_automatically: "Workflow %{workflow_name} was cancelled automatically (%{reason})"
+        paused_by_user: "%{user_name} paused the workflow %{workflow_name}"
+        paused_automatically: "Workflow %{workflow_name} was paused automatically (%{reason})"
+        resumed_by_user: "%{user_name} resumed the workflow %{workflow_name}"
+        resumed_after_timeout: "Workflow %{workflow_name} resumed after timeout"
+        completed: "Workflow %{workflow_name} was completed"
+        failed: "Workflow %{workflow_name} failed on a step"
+        waiting: "Workflow %{workflow_name} entered waiting (%{kind})"
+        webhook_sent: "%{workflow_name} sent a webhook"
+        email_to_team: "%{workflow_name} sent an email to team %{team_name}"
+        email_transcript: "%{workflow_name} sent the conversation transcript by email"
+        whatsapp_external: "%{workflow_name} sent a message to external WhatsApp"
+        wait_kinds:
+          wait: "wait"
+          wait_for_reply: "wait for reply"
+          wait_for_intent: "wait for intent"
+        reasons:
+          contact_replied: "contact replied"
+          agent_replied: "agent replied"
+          conversation_resolved: "conversation resolved"
+          manual: "manual"
+          workflow_deleted: "workflow deleted"
+          label_applied: "label applied"
+          unknown: "unknown reason"
     merge:
       errors:
         invalid: "Conversation merge is not allowed"

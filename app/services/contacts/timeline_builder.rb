@@ -13,6 +13,10 @@ module Contacts
       activity
       note
       conversation_started
+      workflow_started
+      workflow_cancelled
+      workflow_completed
+      workflow_failed
     ].freeze
 
     DEFAULT_PER_PAGE = 50
@@ -31,6 +35,7 @@ module Contacts
       events.concat(activity_events)
       events.concat(note_events)
       events.concat(conversation_events)
+      events.concat(workflow_events)
 
       events = filter_by_types(events)
       events.sort_by! { |event| event[:occurred_at] }.reverse!
@@ -106,7 +111,10 @@ module Contacts
           user_id: record.user_id,
           user_name: record.user&.available_name || record.user&.name,
           win_lost_notes: record.metadata['win_lost_notes'],
-          previous_status: record.metadata['previous_status']
+          previous_status: record.metadata['previous_status'],
+          source: record.metadata['source'],
+          workflow_id: record.metadata['workflow_id'],
+          workflow_name: record.metadata['workflow_name']
         }.compact
 
         build_event(
@@ -281,6 +289,89 @@ module Contacts
           }
         )
       end
+    end
+
+    def workflow_events
+      enrollments = WorkflowEnrollment.where(contact_id: @contact.id)
+                                      .includes(:workflow, :started_by, :workflow_step_executions)
+                                      .order(started_at: :desc)
+                                      .limit(100)
+
+      enrollments.flat_map { |enrollment| build_workflow_enrollment_events(enrollment) }
+    end
+
+    def build_workflow_enrollment_events(enrollment)
+      workflow_name = enrollment.workflow&.name || "Workflow ##{enrollment.workflow_id}"
+      events = []
+
+      started_at = enrollment.started_at || enrollment.created_at
+      if started_at.present?
+        events << build_event(
+          id: "workflow_started-#{enrollment.id}",
+          type: 'workflow_started',
+          occurred_at: started_at,
+          meta: {
+            workflow_id: enrollment.workflow_id,
+            workflow_name: workflow_name,
+            enrollment_id: enrollment.id,
+            conversation_id: enrollment.conversation_id,
+            user_id: enrollment.started_by_id,
+            user_name: enrollment.started_by&.available_name || enrollment.started_by&.name,
+            automatic: enrollment.started_by_id.blank?
+          }.compact
+        )
+      end
+
+      if enrollment.cancelled? && enrollment.cancelled_at.present?
+        events << build_event(
+          id: "workflow_cancelled-#{enrollment.id}",
+          type: 'workflow_cancelled',
+          occurred_at: enrollment.cancelled_at,
+          meta: {
+            workflow_id: enrollment.workflow_id,
+            workflow_name: workflow_name,
+            enrollment_id: enrollment.id,
+            conversation_id: enrollment.conversation_id,
+            reason: enrollment.cancel_reason,
+            automatic: enrollment.started_by_id.blank? && enrollment.cancel_reason != 'manual'
+          }.compact
+        )
+      end
+
+      if enrollment.completed? && enrollment.completed_at.present?
+        events << build_event(
+          id: "workflow_completed-#{enrollment.id}",
+          type: 'workflow_completed',
+          occurred_at: enrollment.completed_at,
+          meta: {
+            workflow_id: enrollment.workflow_id,
+            workflow_name: workflow_name,
+            enrollment_id: enrollment.id,
+            conversation_id: enrollment.conversation_id
+          }.compact
+        )
+      end
+
+      enrollment.workflow_step_executions.select { |execution| execution.status == 'failed' }.each do |execution|
+        occurred_at = execution.executed_at || execution.updated_at
+        next if occurred_at.blank?
+
+        events << build_event(
+          id: "workflow_failed-#{enrollment.id}-#{execution.id}",
+          type: 'workflow_failed',
+          occurred_at: occurred_at,
+          meta: {
+            workflow_id: enrollment.workflow_id,
+            workflow_name: workflow_name,
+            enrollment_id: enrollment.id,
+            conversation_id: enrollment.conversation_id,
+            node_id: execution.node_id,
+            error_message: execution.error_message
+          }.compact
+        )
+      end
+
+      events
     end
 
     def pipeline_meta(position, pipeline_name)

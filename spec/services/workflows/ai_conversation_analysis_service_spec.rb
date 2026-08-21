@@ -4,11 +4,7 @@ require 'rails_helper'
 
 RSpec.describe Workflows::AiConversationAnalysisService do
   let(:account) { create(:account) }
-  let(:channel_api) do
-    create(:channel_api, account: account, webhook_url: 'https://n8n.example.com/webhook/analysis',
-                       additional_attributes: { 'source' => 'whatsapp_web' })
-  end
-  let(:inbox) { channel_api.inbox }
+  let(:inbox) { create(:inbox, account: account) }
   let(:contact) { create(:contact, account: account, name: 'Maria Silva') }
   let(:contact_inbox) { create(:contact_inbox, contact: contact, inbox: inbox) }
   let(:conversation) do
@@ -31,6 +27,7 @@ RSpec.describe Workflows::AiConversationAnalysisService do
       }
     }
   end
+  let(:ai_url) { 'https://n8n.example.com/webhook/ai' }
 
   subject(:service) do
     described_class.new(
@@ -42,13 +39,14 @@ RSpec.describe Workflows::AiConversationAnalysisService do
   end
 
   before do
-    allow(account).to receive(:feature_enabled?).with('inteligencia_artificial').and_return(true)
+    account.enable_features!('inteligencia_artificial')
+    allow(Workflows::AiWebhook).to receive(:url).and_return(ai_url)
   end
 
   describe '#perform!' do
     it 'enqueues webhook with workflow.ai_conversation_analysis event' do
       expect(WebhookJob).to receive(:perform_later).with(
-        'https://n8n.example.com/webhook/analysis',
+        ai_url,
         hash_including(
           event: 'workflow.ai_conversation_analysis',
           analysis_types: %w[executive_summary service_quality],
@@ -56,8 +54,7 @@ RSpec.describe Workflows::AiConversationAnalysisService do
           workflow_id: workflow.id,
           workflow_node_id: 'analysis_1',
           enrollment_id: enrollment.id
-        ),
-        :api_inbox_webhook
+        )
       )
 
       result = service.perform!
@@ -68,7 +65,7 @@ RSpec.describe Workflows::AiConversationAnalysisService do
       create(:message, conversation: conversation, account: account, inbox: inbox,
                        content: 'Preciso de ajuda', message_type: :incoming)
 
-      expect(WebhookJob).to receive(:perform_later) do |_url, payload, _type|
+      expect(WebhookJob).to receive(:perform_later) do |_url, payload|
         msgs = payload[:context][:messages]
         expect(msgs).not_to be_empty
         expect(msgs.first[:content]).to eq('Preciso de ajuda')
@@ -81,7 +78,7 @@ RSpec.describe Workflows::AiConversationAnalysisService do
     it 'defaults to all analysis types when none are specified' do
       node['data'].delete('analysis_types')
 
-      expect(WebhookJob).to receive(:perform_later) do |_url, payload, _type|
+      expect(WebhookJob).to receive(:perform_later) do |_url, payload|
         expect(payload[:analysis_types]).to match_array(Workflows::Constants::AI_ANALYSIS_TYPES)
       end
 
@@ -91,7 +88,7 @@ RSpec.describe Workflows::AiConversationAnalysisService do
     it 'filters out invalid analysis types' do
       node['data']['analysis_types'] = %w[executive_summary invalid_type]
 
-      expect(WebhookJob).to receive(:perform_later) do |_url, payload, _type|
+      expect(WebhookJob).to receive(:perform_later) do |_url, payload|
         expect(payload[:analysis_types]).to eq(%w[executive_summary])
       end
 
@@ -99,33 +96,34 @@ RSpec.describe Workflows::AiConversationAnalysisService do
     end
 
     context 'when whatsapp_external destination' do
+      let(:channel_api) do
+        create(:channel_api, account: account, webhook_url: 'https://bridge.example/webhook',
+                             additional_attributes: { 'source' => 'whatsapp_web' })
+      end
+      let(:inbox) { channel_api.inbox }
+
       before do
         node['data']['output_destination'] = 'whatsapp_external'
         node['data']['whatsapp_inbox_id'] = inbox.id
         node['data']['whatsapp_phone'] = '5511999999999'
-        allow(ENV).to receive(:fetch).and_call_original
-        allow(ENV).to receive(:fetch).with('WEBHOOK_URL', nil).and_return('https://bridge.example/webhook')
-        allow(ENV).to receive(:fetch).with('WEBHOOKS_TRIGGER_TIMEOUT', '15').to_i).and_return(5)
       end
 
       it 'sends analysis text via ExternalWhatsappNotifier without analysis webhook' do
         create(:message, conversation: conversation, account: account, inbox: inbox,
                          content: 'Preciso de ajuda', message_type: :incoming)
 
-        response = instance_double(RestClient::Response, code: 200, body: 'ok')
-        expect(RestClient::Request).to receive(:execute).and_return(response)
+        notifier = instance_double(Workflows::ExternalWhatsappNotifier, send!: { success: true })
+        expect(Workflows::ExternalWhatsappNotifier).to receive(:new).and_return(notifier)
         expect(WebhookJob).not_to receive(:perform_later)
 
         result = service.perform!
         expect(result[:success]).to be true
-        expect(result[:delivery]).to eq('webhook')
+        expect(result[:delivery]).to eq('whatsapp')
       end
     end
 
     context 'when feature is disabled' do
-      before do
-        allow(account).to receive(:feature_enabled?).with('inteligencia_artificial').and_return(false)
-      end
+      before { account.disable_features!('inteligencia_artificial') }
 
       it 'returns feature_disabled without enqueueing webhook' do
         expect(WebhookJob).not_to receive(:perform_later)
@@ -136,23 +134,8 @@ RSpec.describe Workflows::AiConversationAnalysisService do
       end
     end
 
-    context 'when inbox is not API' do
-      let(:email_inbox) { create(:inbox, account: account) }
-      let(:conversation) do
-        create(:conversation, account: account, inbox: email_inbox, contact: contact)
-      end
-
-      it 'returns inbox_not_supported without enqueueing webhook' do
-        expect(WebhookJob).not_to receive(:perform_later)
-
-        result = service.perform!
-        expect(result[:success]).to be false
-        expect(result[:error]).to eq('inbox_not_supported')
-      end
-    end
-
-    context 'when webhook_url is missing' do
-      before { channel_api.update!(webhook_url: nil) }
+    context 'when WORKFLOW_AI_URL is missing' do
+      let(:ai_url) { nil }
 
       it 'returns webhook_url_missing without enqueueing webhook' do
         expect(WebhookJob).not_to receive(:perform_later)

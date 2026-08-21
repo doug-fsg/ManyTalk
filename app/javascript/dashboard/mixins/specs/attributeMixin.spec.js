@@ -99,6 +99,23 @@ describe('attributeMixin', () => {
     expect(wrapper.vm.contactIdentifier).toEqual(1212);
   });
 
+  it('prefers contactId prop over currentChat sender', () => {
+    const Component = {
+      render() {},
+      title: 'TestComponent',
+      mixins: [attributeMixin],
+      props: {
+        contactId: { type: Number, default: null },
+      },
+    };
+    const wrapper = shallowMount(Component, {
+      store,
+      localVue,
+      propsData: { contactId: 727990 },
+    });
+    expect(wrapper.vm.contactIdentifier).toEqual(727990);
+  });
+
   it('returns currently selected conversation custom attributes', () => {
     const Component = {
       render() {},

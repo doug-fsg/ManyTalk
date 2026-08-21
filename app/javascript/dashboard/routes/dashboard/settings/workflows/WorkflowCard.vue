@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useI18n } from 'dashboard/composables/useI18n';
+import { useRouter } from 'dashboard/composables/route';
 
 const props = defineProps({
   workflow: {
@@ -16,6 +17,7 @@ const props = defineProps({
 const emit = defineEmits(['toggle', 'edit', 'delete', 'clone']);
 
 const { t } = useI18n();
+const router = useRouter();
 
 const activeCount = computed(() => props.workflow.metrics?.active_count ?? 0);
 
@@ -30,6 +32,12 @@ const conflictingAutomations = computed(
 );
 const hasConflicts = computed(
   () => conflictingAutomations.value.length > 0 && props.workflow.active
+);
+
+const conflictNames = computed(() =>
+  conflictingAutomations.value.map(item =>
+    typeof item === 'string' ? item : item?.name || String(item)
+  )
 );
 
 const metricsTooltip = computed(() => {
@@ -87,25 +95,37 @@ const toggle = () => {
     conflictingAutomations: conflictingAutomations.value,
   });
 };
+
+const goToReport = () => {
+  router.push(reportRoute.value);
+};
 </script>
 
 <template>
   <div
-    class="flex flex-col p-5 bg-white border border-solid rounded-xl dark:bg-slate-800 border-slate-75 dark:border-slate-700/50 shadow-soft hover:shadow-soft-lg transition-all duration-300 ease-smooth"
+    class="flex flex-col h-full min-w-0 p-5 bg-white border border-solid rounded-xl dark:bg-slate-800 border-slate-75 dark:border-slate-700/50 shadow-soft hover:shadow-soft-lg transition-shadow duration-300 ease-smooth"
   >
     <div class="flex items-start justify-between gap-3 mb-3">
       <div class="min-w-0 flex-1">
-        <h3 class="text-base font-semibold text-slate-800 dark:text-slate-100 truncate">
+        <h3
+          class="text-base font-semibold text-slate-800 dark:text-slate-100 truncate"
+          :title="workflow.name"
+        >
           {{ workflow.name }}
         </h3>
         <p
           v-if="workflow.description"
           class="mt-1 text-sm text-slate-600 dark:text-slate-300 line-clamp-2"
+          :title="workflow.description"
         >
           {{ workflow.description }}
         </p>
       </div>
-      <woot-switch :value="workflow.active" @input="toggle" />
+      <woot-switch
+        class="shrink-0 mt-0.5"
+        :value="workflow.active"
+        @input="toggle"
+      />
     </div>
 
     <div class="flex flex-wrap items-center gap-2 mb-4">
@@ -120,7 +140,8 @@ const toggle = () => {
         {{ statusLabel }}
       </span>
       <span
-        class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+        class="inline-flex items-center max-w-full px-2 py-0.5 text-xs font-medium rounded-md bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 truncate"
+        :title="triggerLabel"
       >
         {{ triggerLabel }}
       </span>
@@ -130,9 +151,18 @@ const toggle = () => {
       v-if="hasConflicts"
       class="flex items-start gap-2 mb-3 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800/50 dark:bg-amber-950/30 px-3 py-2"
     >
-      <fluent-icon icon="warning" size="14" class="text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
-      <p class="text-xs text-amber-700 dark:text-amber-300 leading-snug">
-        {{ $t('WORKFLOW.LIST.CONFLICT_WARNING', { names: conflictingAutomations.join(', ') }) }}
+      <fluent-icon
+        icon="warning"
+        size="14"
+        class="text-amber-500 dark:text-amber-400 shrink-0 mt-0.5"
+        aria-hidden="true"
+      />
+      <p class="text-xs text-amber-700 dark:text-amber-300 leading-snug break-words">
+        {{
+          $t('WORKFLOW.LIST.CONFLICT_WARNING', {
+            names: conflictNames.join(', '),
+          })
+        }}
       </p>
     </div>
 
@@ -141,38 +171,70 @@ const toggle = () => {
         content: metricsTooltip,
         delay: { show: 200, hide: 0 },
       }"
-      class="flex items-center gap-3 mb-4 tabular-nums cursor-default"
+      class="flex flex-wrap items-center gap-x-3 gap-y-1 mb-4 tabular-nums cursor-default"
     >
-      <span class="inline-flex items-center gap-1 text-sm text-slate-700 dark:text-slate-300">
-        <fluent-icon icon="play-circle" size="14" class="text-slate-400 dark:text-slate-500" aria-hidden="true" />
+      <span
+        class="inline-flex items-center gap-1 text-sm text-slate-700 dark:text-slate-300"
+      >
+        <fluent-icon
+          icon="play-circle"
+          size="14"
+          class="text-slate-400 dark:text-slate-500 shrink-0"
+          aria-hidden="true"
+        />
         <span class="font-medium">{{ activeCount }}</span>
-        <span class="text-xs text-slate-400 dark:text-slate-500">{{ $t('WORKFLOW.LIST.METRICS_LABEL_RUNNING') }}</span>
+        <span class="text-xs text-slate-400 dark:text-slate-500">
+          {{ $t('WORKFLOW.LIST.METRICS_LABEL_RUNNING') }}
+        </span>
       </span>
       <span class="text-slate-200 dark:text-slate-700" aria-hidden="true">·</span>
-      <span class="inline-flex items-center gap-1 text-sm text-slate-700 dark:text-slate-300">
-        <fluent-icon icon="arrow-reply" size="14" class="text-slate-400 dark:text-slate-500" aria-hidden="true" />
-        <span class="font-medium">{{ replyRate != null ? replyRate + '%' : '—' }}</span>
-        <span class="text-xs text-slate-400 dark:text-slate-500">{{ $t('WORKFLOW.LIST.METRICS_LABEL_RATE') }}</span>
+      <span
+        class="inline-flex items-center gap-1 text-sm text-slate-700 dark:text-slate-300"
+      >
+        <fluent-icon
+          icon="arrow-reply"
+          size="14"
+          class="text-slate-400 dark:text-slate-500 shrink-0"
+          aria-hidden="true"
+        />
+        <span class="font-medium">
+          {{ replyRate != null ? replyRate + '%' : '—' }}
+        </span>
+        <span class="text-xs text-slate-400 dark:text-slate-500">
+          {{ $t('WORKFLOW.LIST.METRICS_LABEL_RATE') }}
+        </span>
       </span>
       <span class="text-slate-200 dark:text-slate-700" aria-hidden="true">·</span>
-      <span class="inline-flex items-center gap-1 text-sm text-slate-700 dark:text-slate-300">
-        <fluent-icon icon="checkmark-circle" size="14" class="text-slate-400 dark:text-slate-500" aria-hidden="true" />
-        <span class="font-medium">{{ completionRate != null ? completionRate + '%' : '—' }}</span>
-        <span class="text-xs text-slate-400 dark:text-slate-500">{{ $t('WORKFLOW.LIST.METRICS_LABEL_COMPLETION') }}</span>
+      <span
+        class="inline-flex items-center gap-1 text-sm text-slate-700 dark:text-slate-300"
+      >
+        <fluent-icon
+          icon="checkmark-circle"
+          size="14"
+          class="text-slate-400 dark:text-slate-500 shrink-0"
+          aria-hidden="true"
+        />
+        <span class="font-medium">
+          {{ completionRate != null ? completionRate + '%' : '—' }}
+        </span>
+        <span class="text-xs text-slate-400 dark:text-slate-500">
+          {{ $t('WORKFLOW.LIST.METRICS_LABEL_COMPLETION') }}
+        </span>
       </span>
     </div>
 
-    <div class="flex items-center gap-1 mt-auto pt-3 border-t border-slate-50 dark:border-slate-700/50">
-      <router-link :to="reportRoute">
-        <woot-button
-          v-tooltip.top="$t('WORKFLOW.LIST.GOTO_REPORT')"
-          variant="smooth"
-          size="tiny"
-          color-scheme="secondary"
-          class-names="grey-btn"
-          icon="arrow-right"
-        />
-      </router-link>
+    <div
+      class="flex items-center justify-end gap-1 mt-auto pt-3 border-t border-slate-50 dark:border-slate-700/50"
+    >
+      <woot-button
+        v-tooltip.top="$t('WORKFLOW.LIST.GOTO_REPORT')"
+        variant="smooth"
+        size="tiny"
+        color-scheme="secondary"
+        class-names="grey-btn"
+        icon="chart"
+        @click="goToReport"
+      />
       <woot-button
         v-tooltip.top="$t('WORKFLOW.LIST.EDIT')"
         variant="smooth"
@@ -181,17 +243,17 @@ const toggle = () => {
         class-names="grey-btn"
         icon="edit"
         :is-loading="loading"
-        @click="$emit('edit', workflow)"
+        @click="emit('edit', workflow)"
       />
       <woot-button
         v-tooltip.top="$t('WORKFLOW.LIST.CLONE')"
         variant="smooth"
         size="tiny"
-        color-scheme="primary"
+        color-scheme="secondary"
         class-names="grey-btn"
         icon="copy"
         :is-loading="loading"
-        @click="$emit('clone', workflow)"
+        @click="emit('clone', workflow)"
       />
       <woot-button
         v-tooltip.top="$t('WORKFLOW.LIST.DELETE')"
@@ -201,7 +263,7 @@ const toggle = () => {
         icon="dismiss-circle"
         class-names="grey-btn"
         :is-loading="loading"
-        @click="$emit('delete', workflow)"
+        @click="emit('delete', workflow)"
       />
     </div>
   </div>
