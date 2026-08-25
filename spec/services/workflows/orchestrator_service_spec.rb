@@ -320,4 +320,137 @@ RSpec.describe Workflows::OrchestratorService do
       expect(enrollment.reload.status).to eq('cancelled')
     end
   end
+
+  describe 'contact-scoped follow and reply' do
+    let(:conversation_b) { create(:conversation, account: account, inbox: inbox, contact: contact, contact_inbox: contact_inbox) }
+    let(:wait_reply_graph) do
+      {
+        'nodes' => [
+          { 'id' => 'trigger_1', 'type' => 'trigger', 'data' => { 'event_name' => 'conversation_created', 'conditions' => [] } },
+          {
+            'id' => 'wait_reply_1',
+            'type' => 'wait_for_reply',
+            'data' => { 'duration' => 1, 'unit' => 'hours' }
+          },
+          { 'id' => 'action_replied', 'type' => 'action', 'data' => { 'action_name' => 'add_label', 'action_params' => ['replied'] } }
+        ],
+        'edges' => [
+          { 'id' => 'e1', 'source' => 'trigger_1', 'target' => 'wait_reply_1' },
+          { 'id' => 'e2', 'source' => 'wait_reply_1', 'target' => 'action_replied', 'sourceHandle' => 'replied' }
+        ],
+        'settings' => Workflows::Constants::DEFAULT_SETTINGS.merge(
+          'cancel_on_conversation_resolved' => false,
+          'enrollment_scope' => 'contact'
+        )
+      }
+    end
+    let!(:workflow) { create(:workflow, account: account, active: true, graph: wait_reply_graph) }
+
+    it 'advances wait_for_reply when the contact replies in another conversation' do
+      described_class.on_event(
+        event_name: 'conversation_created',
+        account_id: account.id,
+        conversation_id: conversation.id
+      )
+      enrollment = WorkflowEnrollment.last
+      message = create(:message, account: account, inbox: inbox, conversation: conversation_b,
+                                 message_type: :incoming, content: 'Oi de novo')
+
+      WorkflowEnrollment.handle_reply!(conversation_b, message)
+
+      expect(enrollment.reload.conversation_id).to eq(conversation_b.id)
+      expect(enrollment.reply_watch_active?).to be false
+      expect(enrollment.status).to eq('completed')
+    end
+  end
+
+  describe 'resolved conversation enrollment' do
+    let!(:workflow) { create(:workflow, account: account, active: true) }
+
+    it 'does not enroll on conversation_created when the conversation is already resolved' do
+      conversation.resolved!
+      expect do
+        described_class.on_event(
+          event_name: 'conversation_created',
+          account_id: account.id,
+          conversation_id: conversation.id
+        )
+      end.not_to change(WorkflowEnrollment, :count)
+    end
+
+    it 'enrolls when the trigger is conversation_resolved' do
+      resolved_graph = workflow.graph.deep_dup
+      resolved_graph['nodes'][0]['data']['event_name'] = 'conversation_resolved'
+      workflow.update!(graph: resolved_graph, trigger_event_name: 'conversation_resolved')
+      conversation.resolved!
+
+      expect do
+        described_class.on_event(
+          event_name: 'conversation_resolved',
+          account_id: account.id,
+          conversation_id: conversation.id
+        )
+      end.to change(WorkflowEnrollment, :count).by(1)
+    end
+  end
+
+  describe 'resolve_conversation action' do
+    let(:resolve_graph) do
+      {
+        'nodes' => [
+          { 'id' => 'trigger_1', 'type' => 'trigger', 'data' => { 'event_name' => 'conversation_created', 'conditions' => [] } },
+          { 'id' => 'resolve_1', 'type' => 'action', 'data' => { 'action_name' => 'resolve_conversation', 'action_params' => [] } },
+          { 'id' => 'label_1', 'type' => 'action', 'data' => { 'action_name' => 'add_label', 'action_params' => ['after-resolve'] } }
+        ],
+        'edges' => [
+          { 'id' => 'e1', 'source' => 'trigger_1', 'target' => 'resolve_1' },
+          { 'id' => 'e2', 'source' => 'resolve_1', 'target' => 'label_1' }
+        ],
+        'settings' => Workflows::Constants::DEFAULT_SETTINGS.merge('cancel_on_conversation_resolved' => true)
+      }
+    end
+    let!(:workflow) { create(:workflow, account: account, active: true, graph: resolve_graph) }
+
+    it 'keeps the enrollment cancelled when settings cancel on resolve' do
+      described_class.on_event(
+        event_name: 'conversation_created',
+        account_id: account.id,
+        conversation_id: conversation.id
+      )
+
+      enrollment = WorkflowEnrollment.last
+      expect(conversation.reload).to be_resolved
+      expect(enrollment.reload.status).to eq('cancelled')
+      expect(conversation.reload.label_list).not_to include('after-resolve')
+    end
+
+    it 'continues after resolve when cancel_on_conversation_resolved is disabled' do
+      resolve_graph['settings']['cancel_on_conversation_resolved'] = false
+      workflow.update!(graph: resolve_graph)
+
+      described_class.on_event(
+        event_name: 'conversation_created',
+        account_id: account.id,
+        conversation_id: conversation.id
+      )
+
+      enrollment = WorkflowEnrollment.last
+      expect(conversation.reload).to be_resolved
+      expect(enrollment.reload.status).to eq('completed')
+      expect(conversation.reload.label_list).to include('after-resolve')
+    end
+  end
+
+  describe 'inactive workflow steps' do
+    let!(:workflow) { create(:workflow, account: account, active: false) }
+    let!(:enrollment) do
+      create(:workflow_enrollment, workflow: workflow, conversation: conversation, account: account,
+                                   status: 'waiting', current_node_id: 'action_1')
+    end
+
+    it 'does not run scheduled steps while the workflow is inactive' do
+      described_class.on_step(enrollment_id: enrollment.id, node_id: 'action_1')
+      expect(enrollment.reload.status).to eq('waiting')
+    end
+  end
 end

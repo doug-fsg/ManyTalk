@@ -7,6 +7,7 @@ import ReportsFiltersLabels from './Filters/Labels.vue';
 import ReportsFiltersInboxes from './Filters/Inboxes.vue';
 import ReportsFiltersTeams from './Filters/Teams.vue';
 import ReportsFiltersRatings from './Filters/Ratings.vue';
+import ReportsFiltersWorkflows from './Filters/Workflows.vue';
 import subDays from 'date-fns/subDays';
 import { DATE_RANGE_OPTIONS } from '../constants';
 import { getUnixStartOfDay, getUnixEndOfDay } from 'helpers/DateHelper';
@@ -21,6 +22,7 @@ export default {
     ReportsFiltersInboxes,
     ReportsFiltersTeams,
     ReportsFiltersRatings,
+    ReportsFiltersWorkflows,
   },
   props: {
     showGroupByFilter: {
@@ -51,6 +53,14 @@ export default {
       type: Boolean,
       default: true,
     },
+    showWorkflowFilter: {
+      type: Boolean,
+      default: false,
+    },
+    selectedWorkflowId: {
+      type: [Number, String],
+      default: null,
+    },
   },
   data() {
     return {
@@ -61,6 +71,7 @@ export default {
       selectedInbox: null,
       selectedTeam: null,
       selectedRating: null,
+      selectedWorkflow: null,
       selectedAgents: [],
       customDateRange: [new Date(), new Date()],
       businessHoursSelected: false,
@@ -125,6 +136,7 @@ export default {
         selectedInbox,
         selectedTeam,
         selectedRating,
+        selectedWorkflow,
       } = this;
       this.$emit('filterChange', {
         from,
@@ -136,6 +148,7 @@ export default {
         selectedInbox,
         selectedTeam,
         selectedRating,
+        selectedWorkflow,
       });
     },
     onDateRangeChange(selectedRange) {
@@ -172,6 +185,11 @@ export default {
       this.selectedRating = selectedRating;
       this.emitChange();
     },
+    handleWorkflowFilterSelection(selectedWorkflow) {
+      this.selectedWorkflow = selectedWorkflow;
+      this.$emit('workflowFilterSelection', selectedWorkflow);
+      this.emitChange();
+    },
   },
 };
 </script>
@@ -182,6 +200,11 @@ export default {
       class="w-full grid gap-y-2 gap-x-1.5 grid-cols-[repeat(auto-fill,minmax(250px,1fr))]"
     >
       <ReportsFiltersDateRange @on-range-change="onDateRangeChange" />
+      <ReportsFiltersWorkflows
+        v-if="showWorkflowFilter"
+        :selected-workflow-id="selectedWorkflowId"
+        @workflowFilterSelection="handleWorkflowFilterSelection"
+      />
       <WootDateRangePicker
         v-if="isDateRangeSelected"
         show-range

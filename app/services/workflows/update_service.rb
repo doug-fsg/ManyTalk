@@ -37,10 +37,20 @@ module Workflows
         workflow.update!(attrs.compact)
       end
 
+      apply_activation_side_effects(deactivating, activating)
+
       { workflow: workflow.reload, errors: [] }
     end
 
     private
+
+    def apply_activation_side_effects(deactivating, activating)
+      if deactivating
+        ActivationService.new.pause_in_progress!(workflow)
+      elsif activating
+        ActivationService.new.resume_inactive!(workflow)
+      end
+    end
 
     def graph_changed?
       params.key?(:graph) && params[:graph].present?

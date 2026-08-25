@@ -101,6 +101,17 @@ class ReportsAPI extends ApiClient {
     });
   }
 
+  getWorkflowEnrollments({ from, to, workflowId, page = 1 } = {}) {
+    return axios.get(`${this.url}/workflow_enrollments`, {
+      params: {
+        since: from,
+        until: to,
+        workflow_id: workflowId,
+        page,
+      },
+    });
+  }
+
   getBotSummary({ from, to, groupBy, businessHours } = {}) {
     return axios.get(`${this.url}/bot_summary`, {
       params: {

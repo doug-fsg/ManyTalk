@@ -157,11 +157,7 @@ module AccountForms
     end
 
     def enrollment_exists?(workflow, conversation)
-      if workflow.settings['enrollment_scope'] == 'conversation'
-        WorkflowEnrollment.in_progress.exists?(workflow_id: workflow.id, conversation_id: conversation.id)
-      else
-        WorkflowEnrollment.in_progress.exists?(workflow_id: workflow.id, contact_id: conversation.contact_id)
-      end
+      Workflows::EnrollmentPresence.exists?(workflow, conversation)
     end
 
     def update_submission_conversation(conversation_id)

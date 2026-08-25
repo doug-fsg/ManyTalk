@@ -7,10 +7,12 @@ class WorkflowListener < BaseListener
   end
 
   def conversation_created(event)
+    follow_contact_enrollment(event)
     dispatch_conversation(event, 'conversation_created')
   end
 
   def conversation_opened(event)
+    follow_contact_enrollment(event)
     dispatch_conversation(event, 'conversation_opened')
   end
 
@@ -58,6 +60,13 @@ class WorkflowListener < BaseListener
       nil,
       event.data[:changed_attributes]
     )
+  end
+
+  def follow_contact_enrollment(event)
+    conversation = event.data[:conversation]
+    return if conversation.blank? || external_whatsapp_conversation?(conversation)
+
+    Workflows::EnrollmentFollowService.follow_to_conversation!(conversation)
   end
 
   def handle_label_changes(event)

@@ -122,8 +122,9 @@ class WorkflowEnrollment < ApplicationRecord
     end
 
     def handle_reply!(conversation, message)
+      Workflows::EnrollmentFollowService.follow_to_conversation!(conversation)
       enrollments_for_conversation(conversation).find_each do |enrollment|
-        Workflows::EnrollmentControlService.new.handle_reply(enrollment, message)
+        Workflows::EnrollmentControlService.new.handle_reply(enrollment.reload, message)
       end
     end
 
@@ -137,8 +138,7 @@ class WorkflowEnrollment < ApplicationRecord
 
     def cancel_for_conversation!(conversation, reason:)
       in_progress.where(conversation_id: conversation.id).find_each do |enrollment|
-        workflow = enrollment.workflow
-        next unless cancel_enabled?(workflow, reason)
+        next unless cancel_enabled?(enrollment.workflow, reason)
 
         enrollment.cancel!(reason)
       end
@@ -159,7 +159,7 @@ class WorkflowEnrollment < ApplicationRecord
     end
 
     def cancel_for_agent_reply!(conversation)
-      in_progress.where(conversation_id: conversation.id).find_each do |enrollment|
+      enrollments_for_conversation(conversation).find_each do |enrollment|
         next unless cancel_enabled?(enrollment.workflow, 'agent_replied')
 
         enrollment.cancel!('agent_replied')
@@ -169,7 +169,7 @@ class WorkflowEnrollment < ApplicationRecord
     def cancel_for_labels!(conversation, labels)
       return if labels.blank?
 
-      in_progress.where(conversation_id: conversation.id).find_each do |enrollment|
+      enrollments_for_conversation(conversation).find_each do |enrollment|
         cancel_labels = Array(enrollment.workflow.settings['cancel_on_labels'])
         next if cancel_labels.blank?
         next unless (cancel_labels & labels.map(&:to_s)).any?

@@ -47,4 +47,26 @@ RSpec.describe Workflows::UpdateService do
       expect(workflow.reload.graph['nodes'].size).to eq(2)
     end
   end
+
+  describe 'activation side effects' do
+    let(:conversation) { create(:conversation, account: account) }
+    let!(:enrollment) do
+      create(:workflow_enrollment, workflow: workflow, conversation: conversation, account: account, status: 'waiting',
+                                   current_node_id: 'action_1')
+    end
+
+    before do
+      allow(Workflows::EnrollmentBroadcaster).to receive(:updated)
+      allow(Workflows::JobScheduler).to receive(:cancel_pending!)
+      allow(Workflows::OrchestratorService).to receive(:advance_from_node)
+    end
+
+    it 'pauses in-progress enrollments when deactivating' do
+      result = described_class.new(workflow: workflow, user: user, params: { active: false }).perform
+
+      expect(result[:errors]).to be_empty
+      expect(enrollment.reload.status).to eq('paused')
+      expect(enrollment.pause_reason).to eq('workflow_inactive')
+    end
+  end
 end

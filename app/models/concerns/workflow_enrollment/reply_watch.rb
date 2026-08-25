@@ -67,6 +67,17 @@ module WorkflowEnrollment::ReplyWatch
     end
   end
 
+  def reply_detected?(message = nil)
+    if message.present?
+      return false unless reply_matches_message?(message)
+
+      baseline = reply_baseline_time
+      baseline.blank? || message.created_at > baseline
+    else
+      replied_since_baseline?
+    end
+  end
+
   def reply_matches_message?(message)
     return false if message.blank? || message.activity? || message.private?
     return false if (message.content_attributes || {})['workflow_id'].present?

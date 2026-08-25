@@ -24,6 +24,11 @@ module Workflows
       Current.reset
     end
 
+    def resolve_conversation(_params)
+      super
+      WorkflowEnrollment.cancel_for_conversation!(@conversation, reason: 'conversation_resolved')
+    end
+
     private
 
     def send_message(message)

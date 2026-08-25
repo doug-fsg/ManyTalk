@@ -486,6 +486,21 @@
         "LABEL": "Ended",
         "TOOLTIP": "Flows cancelled in the period"
       }
+    },
+    "TABLE": {
+      "TITLE": "Contacts in flows",
+      "NO_RECORDS": "There are no contacts in this period.",
+      "GO_TO_CONVERSATION": "Go to conversation",
+      "TRIGGERED_AUTOMATIC": "Automatic",
+      "HEADER": {
+        "CONTACT": "Contact",
+        "WORKFLOW": "Flow",
+        "FLOW_STATUS": "Flow status",
+        "CONVERSATION_STATUS": "Conversation status",
+        "ASSIGNEE": "Assignee",
+        "TRIGGERED_BY": "Triggered by",
+        "STEP": "Step"
+      }
     }
   }
 }

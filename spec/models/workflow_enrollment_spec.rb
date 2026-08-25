@@ -244,22 +244,22 @@ RSpec.describe WorkflowEnrollment, type: :model do
       enrollment = create(:workflow_enrollment, account: account, conversation: conversation, workflow: workflow, status: 'waiting')
       service = instance_double(Workflows::EnrollmentControlService)
       allow(Workflows::EnrollmentControlService).to receive(:new).and_return(service)
-      allow(service).to receive(:handle_contact_reply)
+      allow(service).to receive(:handle_reply)
 
       described_class.handle_contact_reply!(conversation)
 
-      expect(service).to have_received(:handle_contact_reply).with(enrollment)
+      expect(service).to have_received(:handle_reply).with(enrollment, nil)
     end
 
     it 'skips completed enrollments' do
       create(:workflow_enrollment, account: account, conversation: conversation, workflow: workflow, status: 'completed')
       service = instance_double(Workflows::EnrollmentControlService)
       allow(Workflows::EnrollmentControlService).to receive(:new).and_return(service)
-      allow(service).to receive(:handle_contact_reply)
+      allow(service).to receive(:handle_reply)
 
       described_class.handle_contact_reply!(conversation)
 
-      expect(service).not_to have_received(:handle_contact_reply)
+      expect(service).not_to have_received(:handle_reply)
     end
   end
 
@@ -310,8 +310,9 @@ RSpec.describe WorkflowEnrollment, type: :model do
       end
 
       it 'returns false when only workflow messages exist after baseline' do
-        create(:message, conversation: conversation, message_type: :incoming,
-                       content_attributes: { 'workflow_id' => workflow.id }, created_at: 30.minutes.ago)
+        message = create(:message, conversation: conversation, message_type: :incoming, created_at: 30.minutes.ago)
+        message.update_column(:content_attributes, { 'workflow_id' => workflow.id })
+        conversation.messages.incoming.where.not(id: message.id).delete_all
 
         expect(enrollment.contact_replied_since_baseline?).to be false
       end

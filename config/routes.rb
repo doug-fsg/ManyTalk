@@ -417,6 +417,7 @@ Rails.application.routes.draw do
               get :conversation_traffic
               get :bot_metrics
               get :workflows, to: 'reports/workflows#show'
+              get :workflow_enrollments, to: 'reports/workflows#enrollments'
             end
           end
         end

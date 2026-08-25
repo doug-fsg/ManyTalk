@@ -495,6 +495,21 @@
         "LABEL": "Encerradas",
         "TOOLTIP": "Fluxos cancelados no período"
       }
+    },
+    "TABLE": {
+      "TITLE": "Contatos nos fluxos",
+      "NO_RECORDS": "Não há contatos neste período.",
+      "GO_TO_CONVERSATION": "Ir para conversa",
+      "TRIGGERED_AUTOMATIC": "Automático",
+      "HEADER": {
+        "CONTACT": "Contato",
+        "WORKFLOW": "Fluxo",
+        "FLOW_STATUS": "Status do fluxo",
+        "CONVERSATION_STATUS": "Status da conversa",
+        "ASSIGNEE": "Atendente",
+        "TRIGGERED_BY": "Quem ativou",
+        "STEP": "Etapa"
+      }
     }
   }
 }

@@ -11,6 +11,14 @@ class Api::V2::Accounts::Reports::WorkflowsController < Api::V1::Accounts::BaseC
     ).build
   end
 
+  def enrollments
+    render json: V2::Reports::WorkflowEnrollmentsBuilder.new(
+      account: Current.account,
+      user: Current.user,
+      params: permitted_params
+    ).build
+  end
+
   private
 
   def check_authorization
@@ -18,6 +26,6 @@ class Api::V2::Accounts::Reports::WorkflowsController < Api::V1::Accounts::BaseC
   end
 
   def permitted_params
-    params.permit(:since, :until, :workflow_id, :pipeline_id, :stage_id)
+    params.permit(:since, :until, :workflow_id, :pipeline_id, :stage_id, :page)
   end
 end

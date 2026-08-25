@@ -11,26 +11,27 @@ RSpec.describe WorkflowListener do
   let(:listener) { described_class.instance }
 
   describe '#message_created' do
-    it 'calls handle_contact_reply for incoming messages' do
-      allow(WorkflowEnrollment).to receive(:handle_contact_reply!)
+    it 'calls handle_reply for incoming messages' do
+      allow(WorkflowEnrollment).to receive(:handle_reply!)
 
       message = create(:message, account: account, inbox: inbox, conversation: conversation, message_type: :incoming)
       event = Events::Base.new('message_created', Time.zone.now, { message: message })
 
       listener.message_created(event)
 
-      expect(WorkflowEnrollment).to have_received(:handle_contact_reply!).with(conversation)
+      expect(WorkflowEnrollment).to have_received(:handle_reply!).with(conversation, message)
     end
 
-    it 'does not call handle_contact_reply for outgoing messages' do
-      allow(WorkflowEnrollment).to receive(:handle_contact_reply!)
+    it 'calls handle_reply for outgoing messages so agent wait_for_reply can advance' do
+      allow(WorkflowEnrollment).to receive(:handle_reply!)
+      allow(WorkflowEnrollment).to receive(:cancel_for_agent_reply!)
 
       message = create(:message, account: account, inbox: inbox, conversation: conversation, message_type: :outgoing)
       event = Events::Base.new('message_created', Time.zone.now, { message: message })
 
       listener.message_created(event)
 
-      expect(WorkflowEnrollment).not_to have_received(:handle_contact_reply!)
+      expect(WorkflowEnrollment).to have_received(:handle_reply!).with(conversation, message)
     end
   end
 end

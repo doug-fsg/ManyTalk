@@ -17,11 +17,12 @@ module Workflows
         workflows.each do |workflow|
           next if workflow.settings['allow_manual_start_only']
 
-          process_workflow_trigger(workflow, conversation, message, changed_attributes)
+          process_workflow_trigger(workflow, conversation, message, changed_attributes, event_name: event_name)
         end
       end
 
       def advance_from_node(workflow, enrollment, conversation, node_id)
+        conversation = EnrollmentFollowService.new.ensure_actionable_conversation!(enrollment) || conversation
         advance_from(workflow, enrollment, conversation, node_id, depth: 0)
       end
 
@@ -29,14 +30,16 @@ module Workflows
         enrollment = WorkflowEnrollment.find_by(id: enrollment_id)
         return if enrollment.blank? || enrollment.paused? || enrollment.cancelled? || enrollment.completed?
         return unless enrollment.may_run_step?(node_id)
+        return unless enrollment.workflow&.active?
 
         workflow = enrollment.workflow
-        conversation = enrollment.conversation
+        conversation = EnrollmentFollowService.new.ensure_actionable_conversation!(enrollment)
         node = workflow.find_node(node_id)
-        return if node.blank?
+        return complete_enrollment(enrollment) if node.blank?
 
         enrollment.with_lock do
           return if enrollment.reload.cancelled?
+          return unless workflow.reload.active?
 
           if enrollment.waiting?
             case node['type']
@@ -57,9 +60,10 @@ module Workflows
 
       def on_intent_detected(enrollment)
         return unless enrollment.intent_watch_active?
+        return unless enrollment.workflow&.active?
 
         workflow = enrollment.workflow
-        conversation = enrollment.conversation
+        conversation = EnrollmentFollowService.new.ensure_actionable_conversation!(enrollment)
 
         enrollment.with_lock do
           enrollment.reload
@@ -86,17 +90,18 @@ module Workflows
         EnrollmentBroadcaster.updated(enrollment.reload)
       end
 
-      def on_contact_reply(enrollment)
+      def on_contact_reply(enrollment, message = nil)
         return unless enrollment.reply_watch_active?
-        return unless enrollment.replied_since_baseline?
+        return unless enrollment.workflow&.active?
+        return unless enrollment.reply_detected?(message)
 
         workflow = enrollment.workflow
-        conversation = enrollment.conversation
+        conversation = EnrollmentFollowService.new.ensure_actionable_conversation!(enrollment)
 
         enrollment.with_lock do
           enrollment.reload
           return unless enrollment.reply_watch_active?
-          return unless enrollment.replied_since_baseline?
+          return unless enrollment.reply_detected?(message)
 
           node_id = enrollment.reply_watch['node_id']
           node = workflow.find_node(node_id)
@@ -120,7 +125,7 @@ module Workflows
       end
 
       def enrollment_exists?(workflow, conversation)
-        active_enrollment_exists?(workflow, conversation)
+        EnrollmentPresence.exists?(workflow, conversation)
       end
 
       def on_contact_kanban_stage_changed(account_id:, contact_id:, pipeline_id:, stage_id:, previous_stage_id:)
@@ -151,7 +156,8 @@ module Workflows
 
       private
 
-      def process_workflow_trigger(workflow, conversation, message, changed_attributes)
+      def process_workflow_trigger(workflow, conversation, message, changed_attributes, event_name: nil)
+        return if skip_resolved_conversation?(conversation, event_name)
         return if skip_enrollment_for_older_conversation?(workflow, conversation)
 
         trigger = workflow.trigger_node
@@ -166,7 +172,7 @@ module Workflows
           changed_attributes: changed_attributes
         ).match?
 
-        return if active_enrollment_exists?(workflow, conversation)
+        return if EnrollmentPresence.exists?(workflow, conversation)
 
         begin
           enrollment = WorkflowEnrollment.create!(
@@ -188,50 +194,8 @@ module Workflows
         advance_from(workflow, enrollment, conversation, trigger['id'], depth: 0)
       end
 
-      def active_enrollment_exists?(workflow, conversation)
-        if workflow.settings['enrollment_scope'] == 'conversation'
-          return true if WorkflowEnrollment.in_progress.exists?(workflow_id: workflow.id, conversation_id: conversation.id)
-        else
-          return true if WorkflowEnrollment.in_progress.exists?(workflow_id: workflow.id, contact_id: conversation.contact_id)
-        end
-
-        reenrollment_blocked?(workflow, conversation.contact_id)
-      end
-
-      def reenrollment_blocked?(workflow, contact_id)
-        return false if contact_id.blank?
-
-        past = WorkflowEnrollment.where(workflow_id: workflow.id, contact_id: contact_id)
-                                 .where(status: %w[completed cancelled])
-
-        return false unless past.exists?
-
-        # No past finished enrollment → no block
-        return true unless workflow.settings['allow_reenrollment'] == true
-
-        # Re-enrollment allowed — check optional limits
-        settings = workflow.settings
-
-        # Block re-entry after cancel if reenrollment_on_cancel is false
-        if settings['reenrollment_on_cancel'] == false
-          return true if past.exists?(status: 'cancelled')
-        end
-
-        # Enforce minimum interval
-        min_days = settings['reenrollment_min_interval_days'].to_i
-        if min_days > 0
-          last = past.order(updated_at: :desc).first
-          return true if last && last.updated_at > min_days.days.ago
-        end
-
-        # Enforce max total enrollments
-        max_total = settings['max_enrollments_per_contact'].to_i
-        if max_total > 0
-          total = WorkflowEnrollment.where(workflow_id: workflow.id, contact_id: contact_id).count
-          return true if total >= max_total
-        end
-
-        false
+      def skip_resolved_conversation?(conversation, event_name)
+        conversation.resolved? && event_name.to_s != 'conversation_resolved'
       end
 
       def skip_enrollment_for_older_conversation?(workflow, conversation)
@@ -245,6 +209,8 @@ module Workflows
       end
 
       def advance_from(workflow, enrollment, conversation, node_id, depth: 0)
+        return if enrollment_stopped?(enrollment)
+
         node = workflow.find_node(node_id)
         return complete_enrollment(enrollment) if node.blank?
 
@@ -282,6 +248,7 @@ module Workflows
         items = Workflows::ActionNodeData.items(data)
         return if items.blank?
 
+        conversation = enrollment.reload.conversation
         service = Workflows::ActionService.new(
           workflow,
           workflow.account,
@@ -308,6 +275,8 @@ module Workflows
             Workflows::ActivityLogger.log_failed(conversation, workflow)
             return
           end
+
+          return if enrollment_stopped?(enrollment)
 
           wait_after_send_action(action_name, index, items.length)
         end
@@ -448,6 +417,8 @@ module Workflows
       end
 
       def move_to_next(workflow, enrollment, conversation, node_id, depth: 0)
+        return if enrollment_stopped?(enrollment)
+
         next_id = workflow.next_node_id(node_id)
         if next_id.blank?
           complete_enrollment(enrollment)
@@ -455,6 +426,10 @@ module Workflows
           enrollment.update!(status: 'active', current_node_id: next_id)
           continue_to_node(workflow, enrollment, conversation, next_id, depth: depth)
         end
+      end
+
+      def enrollment_stopped?(enrollment)
+        enrollment.reload.cancelled? || enrollment.completed? || enrollment.paused?
       end
 
       def continue_to_node(workflow, enrollment, conversation, node_id, depth: 0)
@@ -466,6 +441,8 @@ module Workflows
       end
 
       def complete_enrollment(enrollment)
+        return if enrollment.cancelled? || enrollment.completed?
+
         enrollment.workflow_step_executions.where(node_id: enrollment.current_node_id, status: 'scheduled').update_all(
           status: 'completed',
           executed_at: Time.current

@@ -88,6 +88,11 @@ class Api::V1::Accounts::WorkflowsController < Api::V1::Accounts::BaseController
       end
     end
     @workflow.update!(active: activating, updated_by: current_user)
+    if activating
+      Workflows::ActivationService.new.resume_inactive!(@workflow)
+    else
+      Workflows::ActivationService.new.pause_in_progress!(@workflow)
+    end
     @workflow
   end
 

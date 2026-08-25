@@ -90,6 +90,19 @@ RSpec.describe 'Conversations::WorkflowEnrollments API', type: :request do
         expect(body['status']).to eq('waiting')
       end
 
+      it 'returns a contact-scoped enrollment bound to another conversation' do
+        other = create(:conversation, account: account, inbox: inbox, contact: conversation.contact,
+                                      contact_inbox: conversation.contact_inbox)
+        enrollment = create(:workflow_enrollment, account: account, conversation: other,
+                                                  workflow: workflow, status: 'waiting',
+                                                  enrollment_scope: 'contact', contact: conversation.contact)
+
+        get url, headers: agent.create_new_auth_token, as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body['id']).to eq(enrollment.id)
+      end
+
       it 'returns null enrollment when none active' do
         get url, headers: agent.create_new_auth_token, as: :json
 

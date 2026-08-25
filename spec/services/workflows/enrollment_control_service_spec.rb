@@ -219,7 +219,7 @@ RSpec.describe Workflows::EnrollmentControlService do
 
       subject.handle_contact_reply(enrollment)
 
-      expect(Workflows::OrchestratorService).to have_received(:on_contact_reply).with(enrollment)
+      expect(Workflows::OrchestratorService).to have_received(:on_contact_reply).with(enrollment, nil)
       expect(enrollment.reload.status).to eq('waiting')
     end
 

@@ -138,7 +138,7 @@ module Workflows
       if enrollment.reply_watch_active?
         return if message.present? && !enrollment.reply_matches_message?(message)
 
-        Workflows::OrchestratorService.on_contact_reply(enrollment)
+        Workflows::OrchestratorService.on_contact_reply(enrollment, message)
         return
       end
 

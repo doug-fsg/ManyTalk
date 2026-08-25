@@ -19,11 +19,10 @@ class Api::V1::Accounts::Conversations::WorkflowEnrollmentsController < Api::V1:
   end
 
   def active
-    enrollment = @conversation.workflow_enrollments
-                            .in_progress
-                            .includes(:workflow, :workflow_step_executions)
-                            .order(created_at: :desc)
-                            .first
+    enrollment = WorkflowEnrollment.enrollments_for_conversation(@conversation)
+                                   .includes(:workflow, :workflow_step_executions)
+                                   .order(created_at: :desc)
+                                   .first
     if enrollment
       render json: enrollment_response(enrollment)
     else
@@ -86,7 +85,7 @@ class Api::V1::Accounts::Conversations::WorkflowEnrollmentsController < Api::V1:
   private
 
   def set_enrollment
-    @enrollment = @conversation.workflow_enrollments.find(params[:id])
+    @enrollment = WorkflowEnrollment.enrollments_for_conversation(@conversation).find(params[:id])
   end
 
   def render_result(result)
