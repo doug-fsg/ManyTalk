@@ -14,7 +14,7 @@ class ContactInboxWithContactBuilder
   end
 
   def find_or_create_contact_and_contact_inbox
-    @contact_inbox = inbox.contact_inboxes.find_by(source_id: source_id) if source_id.present?
+    @contact_inbox = find_existing_contact_inbox
     if @contact_inbox
       update_contact_avatar(@contact_inbox.contact) unless @contact_inbox.contact.avatar.attached?
       return @contact_inbox
@@ -30,8 +30,26 @@ class ContactInboxWithContactBuilder
 
   private
 
+  def find_existing_contact_inbox
+    resolved = effective_source_id
+    return if resolved.blank?
+
+    if whatsapp_inbox?
+      candidates = Contacts::BrazilPhoneNormalizer.lookup_variants(resolved)
+      inbox.contact_inboxes.where(source_id: candidates).first
+    else
+      inbox.contact_inboxes.find_by(source_id: resolved)
+    end
+  end
+
   def build_contact_with_contact_inbox
     @contact = find_contact || create_contact
+    existing_ci = @contact.contact_inboxes.find_by(inbox_id: inbox.id)
+    if existing_ci
+      @contact_inbox = existing_ci
+      return
+    end
+
     @contact_inbox = create_contact_inbox
   end
 
@@ -43,9 +61,20 @@ class ContactInboxWithContactBuilder
     ContactInboxBuilder.new(
       contact: @contact,
       inbox: @inbox,
-      source_id: @source_id,
+      source_id: effective_source_id,
       hmac_verified: hmac_verified
     ).perform
+  end
+
+  def effective_source_id
+    return source_id if source_id.blank?
+    return source_id unless whatsapp_inbox?
+
+    Contacts::BrazilPhoneNormalizer.resolve_inbox_source_id(inbox: inbox, waid: source_id)
+  end
+
+  def whatsapp_inbox?
+    inbox.channel_type == 'Channel::Whatsapp'
   end
 
   def update_contact_avatar(contact)
@@ -85,6 +114,12 @@ class ContactInboxWithContactBuilder
   def find_contact_by_phone_number(phone_number)
     return if phone_number.blank?
 
-    account.contacts.find_by(phone_number: phone_number)
+    contact = account.contacts.find_by(phone_number: phone_number)
+    return contact if contact
+
+    candidates = Contacts::BrazilPhoneNormalizer.e164_lookup_variants(phone_number)
+    return if candidates.blank?
+
+    account.contacts.where(phone_number: candidates).first
   end
 end

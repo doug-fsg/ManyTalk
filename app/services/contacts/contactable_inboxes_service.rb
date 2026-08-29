@@ -59,8 +59,17 @@ class Contacts::ContactableInboxesService
   def whatsapp_contactable_inbox(inbox)
     return unless @contact.phone_number
 
-    # Remove the plus since thats the format 360 dialog uses
-    { source_id: @contact.phone_number.delete('+'), inbox: inbox }
+    digits = @contact.phone_number.delete('+')
+    existing_ci = inbox.contact_inboxes.find_by(contact: @contact)
+    source_id = existing_ci&.source_id
+
+    unless source_id
+      candidates = Contacts::BrazilPhoneNormalizer.lookup_variants(digits)
+      existing_ci = inbox.contact_inboxes.where(contact: @contact, source_id: candidates).first
+      source_id = existing_ci&.source_id || digits
+    end
+
+    { source_id: source_id, inbox: inbox }
   end
 
   def sms_contactable_inbox(inbox)

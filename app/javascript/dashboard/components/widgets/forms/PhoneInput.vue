@@ -99,6 +99,7 @@
 <script>
 import countries from 'shared/constants/countries.js';
 import parsePhoneNumber from 'libphonenumber-js';
+import { BR_COUNTRY_CODE } from 'shared/helpers/Validators';
 
 export default {
   props: {
@@ -288,6 +289,20 @@ export default {
 
       if (country) {
         const codeDigits = country.dial_code.replace(/\D/g, '');
+
+        // DDD 55 (RS) starts with the same digits as country code 55 — keep local
+        // digits until the input looks like a full international number.
+        if (
+          codeDigits === BR_COUNTRY_CODE &&
+          digits.length < 12
+        ) {
+          this.activeCountryCode = country.id;
+          this.activeDialCode = country.dial_code;
+          this.phoneNumber = digits;
+          this.$emit('setCode', country.dial_code);
+          return;
+        }
+
         this.activeCountryCode = country.id;
         this.activeDialCode = country.dial_code;
         this.phoneNumber = digits.slice(codeDigits.length) || '';

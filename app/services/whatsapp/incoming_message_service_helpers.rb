@@ -48,60 +48,15 @@ module Whatsapp::IncomingMessageServiceHelpers
     %w[reaction ephemeral unsupported request_welcome].include?(message_type)
   end
 
-  def brazil_phone_number?(phone_number)
-    phone_number.match(/^55/)
-  end
-
   # ref: https://github.com/chatwoot/chatwoot/issues/5840
-  # Brazil mobiles may arrive with or without the extra 9 after DDD.
-  # Canonical with-9 form: 55 + DDD(2) + 9 + 8 digits = 13 digits.
-  def normalised_brazil_mobile_number(phone_number)
-    # DDD : Area codes in Brazil are popularly known as "DDD codes" (códigos DDD) or simply "DDD", from the initials of "direct distance dialing"
-    # https://en.wikipedia.org/wiki/Telephone_numbers_in_Brazil
-    ddd = phone_number[2, 2]
-    # Remove country code and DDD to obtain the number
-    number = phone_number[4, phone_number.length - 4]
-    normalised_number = "55#{ddd}#{number}"
-    # insert 9 to convert the number to the new mobile number format
-    normalised_number = "55#{ddd}9#{number}" if normalised_number.length != 13
-    normalised_number
-  end
-
-  # Inverse of normalised_brazil_mobile_number for the with-9 → without-9 lookup.
-  # Only strips when the number matches 55 + DDD + 9 + 8 digits.
-  def brazil_mobile_number_without_ninth_digit(phone_number)
-    return unless phone_number.to_s.length == 13
-
-    ddd = phone_number[2, 2]
-    ninth_digit = phone_number[4]
-    subscriber = phone_number[5, 8]
-    return unless ninth_digit == '9' && subscriber.to_s.length == 8
-
-    "55#{ddd}#{subscriber}"
+  # Prefer existing contact_inbox.source_id across BR mobile with/without 9.
+  # Never rewrite Meta's wa_id when creating a new contact_inbox.
+  def processed_waid(waid)
+    Contacts::BrazilPhoneNormalizer.resolve_inbox_source_id(inbox: inbox, waid: waid)
   end
 
   def brazil_mobile_source_id_candidates(waid)
-    [
-      waid,
-      normalised_brazil_mobile_number(waid),
-      brazil_mobile_number_without_ninth_digit(waid)
-    ].compact.uniq
-  end
-
-  def processed_waid(waid)
-    # Bidirectional BR mobile matching (production-safe):
-    # - incoming without 9 → find existing with 9
-    # - incoming with 9 → find existing without 9
-    # Prefer the existing contact_inbox.source_id (no rewrite / no auto-merge).
-    # https://github.com/chatwoot/chatwoot/issues/5840
-    return waid unless brazil_phone_number?(waid)
-
-    brazil_mobile_source_id_candidates(waid).each do |candidate|
-      contact_inbox = inbox.contact_inboxes.find_by(source_id: candidate)
-      return contact_inbox.source_id if contact_inbox.present?
-    end
-
-    waid
+    Contacts::BrazilPhoneNormalizer.source_id_candidates(waid)
   end
 
   def error_webhook_event?(message)

@@ -1,16 +1,20 @@
 class ConversationBuilder
-  pattr_initialize [:params!, :contact_inbox!]
+  pattr_initialize [:params!, :contact_inbox!, { actor: nil }]
 
   def perform
-    look_up_exising_conversation || create_new_conversation
+    look_up_existing_conversation || create_new_conversation
   end
 
   private
 
-  def look_up_exising_conversation
-    return unless @contact_inbox.inbox.lock_to_single_conversation?
+  def look_up_existing_conversation
+    if contact_inbox.inbox.lock_to_single_conversation?
+      return contact_inbox.conversations.last
+    end
 
-    @contact_inbox.conversations.last
+    return unless actor
+
+    Conversations::ReusableConversationFinder.new(contact_inbox: contact_inbox, actor: actor).find
   end
 
   def create_new_conversation
@@ -26,10 +30,10 @@ class ConversationBuilder
     # commenting this out to see if there are any errors, if not we can remove this in subsequent releases
     # status = { status: 'pending' } if status[:status] == 'bot'
     {
-      account_id: @contact_inbox.inbox.account_id,
-      inbox_id: @contact_inbox.inbox_id,
-      contact_id: @contact_inbox.contact_id,
-      contact_inbox_id: @contact_inbox.id,
+      account_id: contact_inbox.inbox.account_id,
+      inbox_id: contact_inbox.inbox_id,
+      contact_id: contact_inbox.contact_id,
+      contact_inbox_id: contact_inbox.id,
       additional_attributes: additional_attributes,
       custom_attributes: custom_attributes,
       snoozed_until: params[:snoozed_until],

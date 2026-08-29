@@ -25,11 +25,18 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   def search
     render json: { error: 'Specify search string with parameter q' }, status: :unprocessable_entity if params[:q].blank? && return
 
+    query = params[:q].strip
     contacts = resolved_contacts.where(
       'name ILIKE :search OR email ILIKE :search OR phone_number ILIKE :search OR contacts.identifier LIKE :search
         OR contacts.additional_attributes->>\'company_name\' ILIKE :search',
-      search: "%#{params[:q].strip}%"
+      search: "%#{query}%"
     )
+
+    phone_variants = Contacts::BrazilPhoneNormalizer.e164_lookup_variants(query)
+    if phone_variants.present?
+      contacts = contacts.or(resolved_contacts.where(phone_number: phone_variants))
+    end
+
     @contacts_count = contacts.count
     @contacts = fetch_contacts(contacts)
   end
@@ -110,7 +117,8 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
 
   def create
     ActiveRecord::Base.transaction do
-      @contact = Current.account.contacts.new(permitted_params.except(:avatar_url))
+      @contact = find_or_build_contact
+      @contact.assign_attributes(permitted_params.except(:avatar_url))
       @contact.save!
       @contact_inbox = build_contact_inbox
       process_avatar_from_url
@@ -203,6 +211,19 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
     return contacts_with_avatar.includes([{ contact_inboxes: [:inbox] }]) if @include_contact_inboxes
 
     contacts_with_avatar
+  end
+
+  def find_or_build_contact
+    phone_number = permitted_params[:phone_number]
+    if phone_number.present?
+      existing = Contacts::BrazilPhoneNormalizer.find_contact(
+        account: Current.account,
+        phone_number: phone_number
+      )
+      return existing if existing
+    end
+
+    Current.account.contacts.new
   end
 
   def build_contact_inbox

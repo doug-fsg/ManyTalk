@@ -55,6 +55,18 @@ RSpec.describe Campaigns::AudienceResolver do
       it 'returns spreadsheet entries with phone' do
         expect(resolver.deliverable_contacts).to eq(campaign.audience)
       end
+
+      it 'collapses Brazilian ninth-digit variants into one recipient' do
+        campaign.update!(
+          audience: [
+            { 'type' => 'Contact', 'id' => '555599067484', 'nome' => 'A' },
+            { 'type' => 'Contact', 'id' => '5555999067484', 'nome' => 'B' }
+          ]
+        )
+
+        expect(resolver.deliverable_contacts.size).to eq(1)
+        expect(resolver.deliverable_contacts.first['id']).to eq('555599067484')
+      end
     end
   end
 
@@ -76,9 +88,11 @@ RSpec.describe Campaigns::AudienceResolver do
   end
 
   describe '.contact_phone_key' do
-    it 'normalizes phone numbers for comparison' do
-      expect(described_class.contact_phone_key({ 'id' => '+5511999990001' })).to eq('5511999990001')
-      expect(described_class.contact_phone_key({ 'id' => '5511999990001' })).to eq('5511999990001')
+    it 'uses a stable key across Brazilian ninth-digit variants' do
+      expect(described_class.contact_phone_key({ 'id' => '+5511999990001' })).to eq(
+        described_class.contact_phone_key({ 'id' => '551199990001' })
+      )
+      expect(described_class.contact_phone_key({ 'id' => '+5511999990001' })).to be_present
     end
   end
 end

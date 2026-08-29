@@ -40,7 +40,6 @@ class Campaigns::SendContactJob < ApplicationJob
     Rails.logger.error("[SendContactJob] contact_inbox OK: campaign_id=#{campaign.id} contact_inbox_id=#{contact_inbox.id}")
 
     force_resend = campaign.trigger_rules['force_resend'] == true
-    conversation = nil
 
     if already_sent?(contact_inbox, campaign) && !force_resend
       Rails.logger.error("[SendContactJob] já enviado (skip): campaign_id=#{campaign.id} contact_inbox_id=#{contact_inbox.id}")
@@ -49,17 +48,7 @@ class Campaigns::SendContactJob < ApplicationJob
       return
     end
 
-    if already_sent?(contact_inbox, campaign) && force_resend
-      conversation = contact_inbox.conversations.find_by(campaign_id: campaign.id)
-      if conversation
-        ensure_conversation_snoozed_until_reply(conversation)
-        Rails.logger.error("[SendContactJob] force_resend: usando conversa existente campaign_id=#{campaign.id} conversation_id=#{conversation.id}")
-      else
-        conversation = create_conversation(campaign, contact_inbox)
-      end
-    end
-
-    conversation ||= create_conversation(campaign, contact_inbox)
+    conversation = resolve_conversation(campaign, contact_inbox, force_resend)
     Rails.logger.error("[SendContactJob] conversation: campaign_id=#{campaign.id} conversation_id=#{conversation.id} inbox_type=#{campaign.inbox&.inbox_type}")
 
     if campaign_has_macro_only?(campaign)
@@ -129,43 +118,33 @@ class Campaigns::SendContactJob < ApplicationJob
 
   def find_or_create_contact(campaign, contact_data)
     raw_phone = phone_from(contact_data)
-    phone = if contact_data['type'] == 'Contact'
-              Campaigns::SpreadsheetPhoneNormalizer.normalize_to_e164(raw_phone)
-            else
-              legacy_normalize_phone(raw_phone)
-            end
+    phone = Contacts::BrazilPhoneNormalizer.to_e164(raw_phone)
 
     if phone.blank?
       Rails.logger.error("[SendContactJob] normalização retornou nil: campaign_id=#{campaign.id} raw=#{raw_phone.inspect} type=#{contact_data['type']}")
       return nil
     end
 
-    Rails.logger.error("[SendContactJob] contact encontrado/criado: campaign_id=#{campaign.id} raw=#{raw_phone.inspect} phone=#{phone}")
+    existing = Contacts::BrazilPhoneNormalizer.find_contact(
+      account: campaign.account,
+      phone_number: phone,
+      inbox: campaign.inbox
+    )
+    return existing if existing
 
     name = contact_data['name'] || contact_data['nome'] || phone
-    campaign.account.contacts.find_or_create_by!(phone_number: phone) do |c|
-      c.name = name
-    end
+    campaign.account.contacts.create!(phone_number: phone, name: name)
   rescue ActiveRecord::RecordInvalid => e
-    raw_phone = phone_from(contact_data)
-    normalized = contact_data['type'] == 'Contact' ? Campaigns::SpreadsheetPhoneNormalizer.normalize_to_e164(raw_phone) : legacy_normalize_phone(raw_phone)
-    Rails.logger.error("[SendContactJob] RecordInvalid ao criar contact: campaign_id=#{campaign.id} raw=#{raw_phone.inspect} normalized=#{normalized.inspect} error=#{e.message}")
-    campaign.account.contacts.find_by(phone_number: normalized)
+    Rails.logger.error("[SendContactJob] RecordInvalid ao criar contact: campaign_id=#{campaign.id} raw=#{raw_phone.inspect} phone=#{phone.inspect} error=#{e.message}")
+    Contacts::BrazilPhoneNormalizer.find_contact(
+      account: campaign.account,
+      phone_number: phone,
+      inbox: campaign.inbox
+    )
   end
 
   def phone_from(contact_data)
     contact_data.is_a?(Hash) ? (contact_data['id'] || contact_data['phone_number']) : contact_data.to_s
-  end
-
-  def legacy_normalize_phone(raw)
-    return nil if raw.blank?
-
-    digits = raw.to_s.gsub(/\D/, '')
-    return "+#{digits}" if digits.length > 11
-    return "+55#{digits}" if digits.length == 11
-    return "+55#{digits}" if digits.length == 10
-
-    nil
   end
 
   def build_contact_inbox(campaign, contact)
@@ -184,8 +163,39 @@ class Campaigns::SendContactJob < ApplicationJob
     contact_inbox.conversations.exists?(campaign_id: campaign.id)
   end
 
+  def resolve_conversation(campaign, contact_inbox, force_resend)
+    open_conversation = reusable_open_conversation(contact_inbox)
+    if open_conversation
+      remember_campaign_on(open_conversation, campaign)
+      return open_conversation
+    end
+
+    if force_resend
+      existing = contact_inbox.conversations.find_by(campaign_id: campaign.id)
+      if existing
+        ensure_conversation_snoozed_until_reply(existing)
+        return existing
+      end
+    end
+
+    create_conversation(campaign, contact_inbox)
+  end
+
+  # Open threads in progress must stay visible. Assigned open conversations
+  # are never moved to snoozed by a campaign send.
+  def reusable_open_conversation(contact_inbox)
+    contact_inbox.conversations.open.order(updated_at: :desc).first
+  end
+
+  def remember_campaign_on(conversation, campaign)
+    return if conversation.campaign_id.present?
+
+    conversation.update_column(:campaign_id, campaign.id)
+  end
+
   def ensure_conversation_snoozed_until_reply(conversation)
     return if conversation.open?
+    return if conversation.snoozed?
 
     conversation.update!(status: :snoozed, snoozed_until: nil)
   end

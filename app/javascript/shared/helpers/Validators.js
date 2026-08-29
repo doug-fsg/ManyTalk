@@ -2,6 +2,23 @@ export const isPhoneE164 = value => !!value.match(/^\+[1-9]\d{1,14}$/);
 
 export const cleanPhoneDigits = value => `${value || ''}`.replace(/\D/g, '');
 
+export const BR_COUNTRY_CODE = '55';
+
+// Brazilian DDD 55 (RS) collides with country code 55. Only treat a leading
+// "55" as embedded country code when length matches full international form.
+export const digitsIncludeDialCode = (dialCode, digits) => {
+  const code = cleanPhoneDigits(dialCode);
+  if (!code || !digits.startsWith(code)) {
+    return false;
+  }
+
+  if (code === BR_COUNTRY_CODE) {
+    return digits.length >= 12;
+  }
+
+  return true;
+};
+
 // Combines dial code and local number without duplicating the country code.
 // Works for any country: +55 + 554299098450 => +554299098450
 export const buildE164PhoneNumber = (dialCode, localNumber) => {
@@ -18,7 +35,7 @@ export const buildE164PhoneNumber = (dialCode, localNumber) => {
     return '';
   }
 
-  if (code && digits.startsWith(code)) {
+  if (digitsIncludeDialCode(code, digits)) {
     return `+${digits}`;
   }
 

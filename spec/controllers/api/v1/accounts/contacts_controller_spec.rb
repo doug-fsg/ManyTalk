@@ -624,6 +624,19 @@ RSpec.describe 'Contacts API', type: :request do
 
         expect(response).to have_http_status(:success)
       end
+
+      it 'reuses existing contact when phone_number is a BR variant' do
+        existing = create(:contact, account: account, phone_number: '+5555999067484', name: 'Existing BR')
+
+        expect do
+          post "/api/v1/accounts/#{account.id}/contacts",
+               headers: admin.create_new_auth_token,
+               params: { name: '555599067484', phone_number: '+555599067484' }
+        end.not_to change(Contact, :count)
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body['payload']['contact']['id']).to eq(existing.id)
+      end
     end
   end
 

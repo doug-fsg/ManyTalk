@@ -36,6 +36,11 @@ describe('composeConversationHelper', () => {
     it('uses international value when local starts with plus', () => {
       expect(buildFullPhoneNumber('+55', '+351912345678')).toBe('+351912345678');
     });
+
+    it('preserves DDD 55 when it collides with country code 55', () => {
+      expect(buildFullPhoneNumber('+55', '55991234567')).toBe('+5555991234567');
+      expect(buildFullPhoneNumber('+55', '5599123456')).toBe('+555599123456');
+    });
   });
 
   describe('buildQuickContactPayload', () => {

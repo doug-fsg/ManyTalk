@@ -5,11 +5,32 @@ class ContactInboxBuilder
   pattr_initialize [:contact, :inbox, :source_id, { hmac_verified: false }]
 
   def perform
+    @source_id = resolved_source_id
     @source_id ||= generate_source_id
     create_contact_inbox if source_id.present?
   end
 
   private
+
+  def resolved_source_id
+    return @source_id unless whatsapp_channel?
+
+    digits = (@source_id.presence || @contact.phone_number&.delete('+')).to_s
+    return if digits.blank?
+
+    existing_ci = @contact.contact_inboxes.find_by(inbox: @inbox)
+    return existing_ci.source_id if existing_ci
+
+    candidates = Contacts::BrazilPhoneNormalizer.lookup_variants(digits)
+    existing_ci = @inbox.contact_inboxes.where(contact: @contact, source_id: candidates).first
+    return existing_ci.source_id if existing_ci
+
+    Contacts::BrazilPhoneNormalizer.resolve_inbox_source_id(inbox: @inbox, waid: digits)
+  end
+
+  def whatsapp_channel?
+    @inbox.channel_type == 'Channel::Whatsapp'
+  end
 
   def generate_source_id
     case @inbox.channel_type
@@ -68,10 +89,21 @@ class ContactInboxBuilder
   end
 
   def create_contact_inbox
+    existing = find_existing_contact_inbox
+    return existing if existing
+
     ::ContactInbox.create_with(hmac_verified: hmac_verified || false).find_or_create_by!(
       contact_id: @contact.id,
       inbox_id: @inbox.id,
       source_id: @source_id
     )
+  end
+
+  def find_existing_contact_inbox
+    return unless whatsapp_channel?
+
+    candidates = Contacts::BrazilPhoneNormalizer.lookup_variants(@source_id)
+    @inbox.contact_inboxes.where(contact_id: @contact.id, source_id: candidates).first ||
+      @contact.contact_inboxes.find_by(inbox: @inbox)
   end
 end

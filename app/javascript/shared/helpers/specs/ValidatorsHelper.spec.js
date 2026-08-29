@@ -9,6 +9,7 @@ import {
   isNumber,
   isDomain,
   buildE164PhoneNumber,
+  digitsIncludeDialCode,
 } from '../Validators';
 
 describe('#shouldBeUrl', () => {
@@ -68,6 +69,29 @@ describe('#buildE164PhoneNumber', () => {
 
   it('uses international value when local starts with plus', () => {
     expect(buildE164PhoneNumber('+55', '+351912345678')).toBe('+351912345678');
+  });
+
+  it('does not strip DDD 55 when local number starts with 55', () => {
+    expect(buildE164PhoneNumber('+55', '55991234567')).toBe('+5555991234567');
+    expect(buildE164PhoneNumber('+55', '5599123456')).toBe('+555599123456');
+    expect(buildE164PhoneNumber('+55', '55')).toBe('+5555');
+  });
+
+  it('still treats pasted full BR international numbers as complete', () => {
+    expect(buildE164PhoneNumber('+55', '5555991234567')).toBe('+5555991234567');
+    expect(buildE164PhoneNumber('+55', '554299098450')).toBe('+554299098450');
+  });
+});
+
+describe('#digitsIncludeDialCode', () => {
+  it('distinguishes BR country code from DDD 55', () => {
+    expect(digitsIncludeDialCode('+55', '55991234567')).toBe(false);
+    expect(digitsIncludeDialCode('+55', '554299098450')).toBe(true);
+    expect(digitsIncludeDialCode('+55', '5555991234567')).toBe(true);
+  });
+
+  it('keeps non-BR prefix behavior', () => {
+    expect(digitsIncludeDialCode('+1', '14155551234')).toBe(true);
   });
 });
 

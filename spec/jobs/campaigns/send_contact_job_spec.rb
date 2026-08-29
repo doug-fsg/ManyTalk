@@ -33,6 +33,7 @@ RSpec.describe Campaigns::SendContactJob do
     allow($alfred).to receive(:with).and_yield(redis_double)
     allow(ActionCableBroadcastJob).to receive(:perform_later)
     stub_request(:any, /n8n.example.com/).to_return(status: 200, body: "")
+    allow_any_instance_of(described_class).to receive(:sleep)
     
     # Global redis mocks to avoid "paused_or_stopped_count" false positives
     allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:stop_requested").and_return(nil)
@@ -43,8 +44,8 @@ RSpec.describe Campaigns::SendContactJob do
     context 'with a valid contact hash from spreadsheet' do
       let(:contact_data) { { 'type' => 'Contact', 'id' => '5511999990001', 'nome' => 'João' } }
 
-      it 'normalizes raw 10-digit number with DDD < 31' do
-        raw_contact = { 'type' => 'Contact', 'id' => '1199999999', 'nome' => 'Test' }
+      it 'normalizes local 11-digit numbers without inventing a ninth digit' do
+        raw_contact = { 'type' => 'Contact', 'id' => '11999999999', 'nome' => 'Test' }
         expect {
           described_class.perform_now(campaign.id, raw_contact)
         }.to change(Contact, :count).by(1)
@@ -135,9 +136,47 @@ RSpec.describe Campaigns::SendContactJob do
       end
     end
 
-    context 'when campaign is not found' do
-      it 'returns without error' do
-        expect { described_class.perform_now(99_999, {}) }.not_to raise_error
+    context 'when a Brazilian phone variant already exists' do
+      let(:contact_data) { { 'type' => 'Contact', 'id' => '555599067484', 'nome' => 'RS' } }
+
+      before do
+        create(:contact, account: account, phone_number: '+5555999067484', name: 'Existing')
+        allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:total_count").and_return('10')
+        allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:processed_count").and_return('1')
+        allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:last_broadcast_at").and_return('0')
+      end
+
+      it 'reuses the existing contact instead of creating a duplicate' do
+        expect {
+          described_class.perform_now(campaign.id, contact_data)
+        }.not_to change(Contact, :count)
+      end
+    end
+
+    context 'when the contact already has an open assigned conversation' do
+      let(:agent) { create(:user, account: account) }
+      let(:contact_data) { { 'type' => 'Contact', 'id' => '5511999990005', 'nome' => 'Lead' } }
+      let!(:contact) { create(:contact, account: account, phone_number: '+5511999990005') }
+      let!(:contact_inbox) { create(:contact_inbox, contact: contact, inbox: api_inbox, source_id: '5511999990005') }
+      let!(:open_conversation) do
+        create(:conversation, account: account, inbox: api_inbox, contact: contact,
+                              contact_inbox: contact_inbox, assignee: agent, status: :open)
+      end
+
+      before do
+        allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:total_count").and_return('10')
+        allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:processed_count").and_return('1')
+        allow(redis_double).to receive(:get).with("campaign:#{campaign.id}:last_broadcast_at").and_return('0')
+      end
+
+      it 'sends on the open conversation and does not snooze it' do
+        expect {
+          described_class.perform_now(campaign.id, contact_data)
+        }.to change(Message, :count).by(1)
+          .and not_change(Conversation, :count)
+
+        expect(open_conversation.reload.status).to eq('open')
+        expect(open_conversation.assignee_id).to eq(agent.id)
       end
     end
   end

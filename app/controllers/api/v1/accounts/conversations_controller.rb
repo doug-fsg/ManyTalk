@@ -31,7 +31,11 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
 
   def create
     ActiveRecord::Base.transaction do
-      @conversation = ConversationBuilder.new(params: params, contact_inbox: @contact_inbox).perform
+      @conversation = ConversationBuilder.new(
+        params: params,
+        contact_inbox: @contact_inbox,
+        actor: Current.user
+      ).perform
       Messages::MessageBuilder.new(Current.user, @conversation, params[:message]).perform if params[:message].present?
     end
   end

@@ -4,7 +4,7 @@ class Campaigns::AudienceResolver
   pattr_initialize [:campaign!]
 
   def deliverable_contacts
-    spreadsheet_contacts + label_contacts
+    deduplicate_by_phone(spreadsheet_contacts + label_contacts)
   end
 
   def deliverable_count
@@ -21,7 +21,7 @@ class Campaigns::AudienceResolver
             else
               contact_data.to_s
             end
-    phone.to_s.gsub(/\D/, '')
+    Contacts::BrazilPhoneNormalizer.canonical_lookup_key(phone).presence || phone.to_s.gsub(/\D/, '')
   end
 
   def self.normalize_job_contact(entry)
@@ -91,5 +91,15 @@ class Campaigns::AudienceResolver
 
   def phone_from(contact_data)
     contact_data.is_a?(Hash) ? (contact_data['id'] || contact_data['phone_number']) : contact_data.to_s
+  end
+
+  def deduplicate_by_phone(contacts)
+    seen = {}
+    contacts.select do |item|
+      key = self.class.contact_phone_key(item)
+      next false if key.blank? || seen[key]
+
+      seen[key] = true
+    end
   end
 end
