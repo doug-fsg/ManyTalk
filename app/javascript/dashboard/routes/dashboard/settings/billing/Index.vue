@@ -1,123 +1,159 @@
-<script>
-import messageFormatterMixin from 'shared/mixins/messageFormatterMixin';
-
-import { mapGetters } from 'vuex';
+<script setup>
+import { computed } from 'vue';
+import { useMapGetter, useStore } from 'dashboard/composables/store';
 import { useAccount } from 'dashboard/composables/useAccount';
-import BillingItem from './components/BillingItem.vue';
+import { useI18n } from 'dashboard/composables/useI18n';
+import { useAlert } from 'dashboard/composables';
+import { formatBillingDate } from 'dashboard/helper/localeDateHelper';
+import { openSupportChat } from 'dashboard/helper/supportChatHelper';
+import BillingCard from './components/BillingCard.vue';
+import BillingHeader from './components/BillingHeader.vue';
+import DetailItem from './components/DetailItem.vue';
+import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
+import SettingsLayout from '../SettingsLayout.vue';
 
-export default {
-  components: { BillingItem },
-  mixins: [messageFormatterMixin],
-  setup() {
-    const { accountId } = useAccount();
+const WARNING_STATUSES = ['past_due', 'unpaid', 'incomplete'];
 
-    return {
-      accountId,
-    };
-  },
-  computed: {
-    ...mapGetters({
-      getAccount: 'accounts/getAccount',
-      uiFlags: 'accounts/getUIFlags',
-    }),
-    currentAccount() {
-      return this.getAccount(this.accountId) || {};
-    },
-    customAttributes() {
-      return this.currentAccount.custom_attributes || {};
-    },
-    hasABillingPlan() {
-      return !!this.planName;
-    },
-    planName() {
-      return this.customAttributes.plan_name || '';
-    },
-    subscribedQuantity() {
-      return this.customAttributes.subscribed_quantity || 0;
-    },
-  },
-  mounted() {
-    this.fetchAccountDetails();
-  },
-  methods: {
-    async fetchAccountDetails() {
-      if (!this.hasABillingPlan) {
-        this.$store.dispatch('accounts/subscription');
-      }
-    },
-    onClickBillingPortal() {
-      this.$store.dispatch('accounts/checkout');
-    },
-    onToggleChatWindow() {
-      if (window.$chatwoot) {
-        window.$chatwoot.toggle();
-      }
-    },
-  },
+const store = useStore();
+const { accountId } = useAccount();
+const { t, locale, te } = useI18n();
+const getAccount = useMapGetter('accounts/getAccount');
+const uiFlags = useMapGetter('accounts/getUIFlags');
+const globalConfig = useMapGetter('globalConfig/get');
+
+const currentAccount = computed(
+  () => getAccount.value(accountId.value) || {}
+);
+const customAttributes = computed(
+  () => currentAccount.value.custom_attributes || {}
+);
+const planName = computed(() => customAttributes.value.plan_name || '');
+const subscribedQuantity = computed(
+  () => customAttributes.value.subscribed_quantity
+);
+const subscriptionStatus = computed(
+  () => customAttributes.value.subscription_status || ''
+);
+const hasABillingPlan = computed(() => !!planName.value);
+const hasSupportChat = computed(() => !!globalConfig.value.chatwootInboxToken);
+
+const subscriptionEndsOn = computed(() => {
+  if (!customAttributes.value.subscription_ends_on) return '';
+  return formatBillingDate(
+    customAttributes.value.subscription_ends_on,
+    locale.value
+  );
+});
+
+const subscriptionStatusLabel = computed(() => {
+  if (!subscriptionStatus.value) return '';
+
+  const key = `BILLING_SETTINGS.CURRENT_PLAN.STATUS_OPTIONS.${subscriptionStatus.value}`;
+  return te(key) ? t(key) : subscriptionStatus.value;
+});
+
+const subscriptionDateLabel = computed(() => {
+  if (WARNING_STATUSES.includes(subscriptionStatus.value)) {
+    return t('BILLING_SETTINGS.CURRENT_PLAN.DUE_ON');
+  }
+
+  if (subscriptionStatus.value === 'canceled') {
+    return t('BILLING_SETTINGS.CURRENT_PLAN.ENDED_ON');
+  }
+
+  return t('BILLING_SETTINGS.CURRENT_PLAN.RENEWS_ON');
+});
+
+const isWarningStatus = computed(() =>
+  WARNING_STATUSES.includes(subscriptionStatus.value)
+);
+
+const onClickBillingPortal = () => {
+  store.dispatch('accounts/checkout');
+};
+
+const onToggleChatWindow = () => {
+  if (openSupportChat()) return;
+
+  useAlert(t('BILLING_SETTINGS.CHAT_WITH_US.UNAVAILABLE'));
 };
 </script>
 
 <template>
-  <div class="flex-1 p-6 overflow-auto dark:bg-slate-900">
-    <woot-loading-state v-if="uiFlags.isFetchingItem" />
-    <div v-else-if="!hasABillingPlan">
-      <p>{{ $t('BILLING_SETTINGS.NO_BILLING_USER') }}</p>
-    </div>
-    <div v-else class="w-full">
-      <div class="current-plan--details">
-        <h6>{{ $t('BILLING_SETTINGS.CURRENT_PLAN.TITLE') }}</h6>
-        <div
-          v-dompurify-html="
-            formatMessage(
-              $t('BILLING_SETTINGS.CURRENT_PLAN.PLAN_NOTE', {
-                plan: planName,
-                quantity: subscribedQuantity,
-              })
-            )
-          "
-        />
-      </div>
-      <BillingItem
-        :title="$t('BILLING_SETTINGS.MANAGE_SUBSCRIPTION.TITLE')"
-        :description="$t('BILLING_SETTINGS.MANAGE_SUBSCRIPTION.DESCRIPTION')"
-        :button-label="$t('BILLING_SETTINGS.MANAGE_SUBSCRIPTION.BUTTON_TXT')"
-        @click="onClickBillingPortal"
+  <SettingsLayout
+    :is-loading="uiFlags.isFetchingItem"
+    :loading-message="$t('ATTRIBUTES_MGMT.LOADING')"
+    :no-records-found="!hasABillingPlan"
+    :no-records-message="$t('BILLING_SETTINGS.NO_BILLING_USER')"
+  >
+    <template #header>
+      <BaseSettingsHeader
+        :title="$t('BILLING_SETTINGS.TITLE')"
+        :description="$t('BILLING_SETTINGS.DESCRIPTION')"
+        feature-name="billing"
       />
-      <BillingItem
-        :title="$t('BILLING_SETTINGS.CHAT_WITH_US.TITLE')"
-        :description="$t('BILLING_SETTINGS.CHAT_WITH_US.DESCRIPTION')"
-        :button-label="$t('BILLING_SETTINGS.CHAT_WITH_US.BUTTON_TXT')"
-        button-icon="chat-multiple"
-        @click="onToggleChatWindow"
-      />
-    </div>
-  </div>
+    </template>
+    <template #body>
+      <section class="grid gap-4">
+        <BillingCard
+          :title="$t('BILLING_SETTINGS.MANAGE_SUBSCRIPTION.TITLE')"
+          :description="$t('BILLING_SETTINGS.MANAGE_SUBSCRIPTION.DESCRIPTION')"
+        >
+          <template #action>
+            <woot-button size="small" @click="onClickBillingPortal">
+              {{ $t('BILLING_SETTINGS.MANAGE_SUBSCRIPTION.BUTTON_TXT') }}
+            </woot-button>
+          </template>
+          <div
+            v-if="
+              planName ||
+              subscribedQuantity ||
+              subscriptionEndsOn ||
+              subscriptionStatusLabel
+            "
+            class="grid lg:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-4 sm:gap-2 sm:divide-x sm:divide-slate-75 sm:dark:divide-slate-700/50"
+          >
+            <DetailItem
+              v-if="planName"
+              :label="$t('BILLING_SETTINGS.CURRENT_PLAN.TITLE')"
+              :value="planName"
+            />
+            <DetailItem
+              v-if="subscribedQuantity"
+              :label="$t('BILLING_SETTINGS.CURRENT_PLAN.SEAT_COUNT')"
+              :value="subscribedQuantity"
+            />
+            <DetailItem
+              v-if="subscriptionEndsOn"
+              :label="subscriptionDateLabel"
+              :value="subscriptionEndsOn"
+              :variant="isWarningStatus ? 'warning' : 'default'"
+            />
+            <DetailItem
+              v-if="subscriptionStatusLabel"
+              :label="$t('BILLING_SETTINGS.CURRENT_PLAN.STATUS')"
+              :value="subscriptionStatusLabel"
+              :variant="isWarningStatus ? 'warning' : 'default'"
+            />
+          </div>
+        </BillingCard>
+
+        <BillingHeader
+          v-if="hasSupportChat"
+          class="px-1 mt-2"
+          :title="$t('BILLING_SETTINGS.CHAT_WITH_US.TITLE')"
+          :description="$t('BILLING_SETTINGS.CHAT_WITH_US.DESCRIPTION')"
+        >
+          <woot-button
+            size="small"
+            color-scheme="secondary"
+            icon="chat-multiple"
+            @click="onToggleChatWindow"
+          >
+            {{ $t('BILLING_SETTINGS.CHAT_WITH_US.BUTTON_TXT') }}
+          </woot-button>
+        </BillingHeader>
+      </section>
+    </template>
+  </SettingsLayout>
 </template>
-
-<style lang="scss">
-.manage-subscription {
-  @apply bg-white dark:bg-slate-800 flex justify-between mb-2 py-6 px-4 items-center rounded-xl border border-solid border-slate-75 dark:border-slate-700 shadow-soft hover:shadow-soft-lg transition-all duration-300 ease-smooth;
-}
-
-.current-plan--details {
-  @apply border-b border-solid border-slate-75 dark:border-slate-800 mb-4 pb-4;
-
-  h6 {
-    @apply text-slate-800 dark:text-slate-100;
-  }
-
-  p {
-    @apply text-slate-600 dark:text-slate-200;
-  }
-}
-
-.manage-subscription {
-  .manage-subscription--description {
-    @apply mb-0 text-slate-600 dark:text-slate-200;
-  }
-
-  h6 {
-    @apply text-slate-800 dark:text-slate-100;
-  }
-}
-</style>

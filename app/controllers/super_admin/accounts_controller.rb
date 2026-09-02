@@ -57,6 +57,20 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
     # rubocop:enable Rails/I18nLocaleTexts
   end
 
+  def link_stripe
+    result = Enterprise::Billing::LinkStripeCustomerService.new(
+      account: requested_resource,
+      stripe_customer_id: params[:stripe_customer_id]
+    ).perform
+    customer = result.customer
+    redirect_back(
+      fallback_location: [namespace, requested_resource],
+      notice: "Linked Stripe customer #{customer.id} (#{customer.name} / #{customer.email})"
+    )
+  rescue Enterprise::Billing::LinkStripeCustomerService::Error => e
+    redirect_back(fallback_location: [namespace, requested_resource], alert: e.message)
+  end
+
   def destroy
     account = Account.find(params[:id])
 

@@ -26,13 +26,9 @@ class WebhookListener < BaseListener
     message = extract_message_and_account(event)[0]
     inbox = message.inbox
 
-    unless message.webhook_sendable?
-      Rails.logger.error("[WebhookListener] message_created SKIP webhook_sendable=false: message_id=#{message.id} inbox_id=#{inbox&.id} inbox_type=#{inbox&.inbox_type}")
-      return
-    end
+    return unless message.webhook_sendable?
 
     payload = message.webhook_data.merge(event: __method__.to_s)
-    Rails.logger.error("[WebhookListener] message_created enviando webhook: message_id=#{message.id} inbox_id=#{inbox.id} inbox_type=#{inbox.inbox_type} webhook_url=#{inbox.channel_type == 'Channel::Api' ? inbox.channel&.webhook_url : 'N/A'}")
     deliver_webhook_payloads(payload, inbox)
   end
 
@@ -123,12 +119,8 @@ class WebhookListener < BaseListener
 
   def deliver_api_inbox_webhooks(payload, inbox)
     return unless inbox.channel_type == 'Channel::Api'
-    if inbox.channel.webhook_url.blank?
-      Rails.logger.error("[WebhookListener] deliver_api_inbox_webhooks SKIP: webhook_url vazio inbox_id=#{inbox.id}")
-      return
-    end
+    return if inbox.channel.webhook_url.blank?
 
-    Rails.logger.error("[WebhookListener] deliver_api_inbox_webhooks OK: enfileirando WebhookJob inbox_id=#{inbox.id} url=#{inbox.channel.webhook_url}")
     WebhookJob.perform_later(inbox.channel.webhook_url, payload, :api_inbox_webhook)
   end
 

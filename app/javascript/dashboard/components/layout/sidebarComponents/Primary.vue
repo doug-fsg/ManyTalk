@@ -48,6 +48,7 @@ import NotificationBell from './NotificationBell.vue';
 import wootConstants from 'dashboard/constants/globals';
 import { frontendURL } from 'dashboard/helper/URLHelper';
 import { ACCOUNT_EVENTS } from '../../../helper/AnalyticsHelper/events';
+import { openSupportChat } from 'dashboard/helper/supportChatHelper';
 
 export default {
   components: {
@@ -98,7 +99,7 @@ export default {
       this.$emit('toggle-accounts');
     },
     toggleSupportChatWindow() {
-      window.$chatwoot.toggle();
+      openSupportChat();
     },
     openNotificationPanel() {
       this.$track(ACCOUNT_EVENTS.OPENED_NOTIFICATIONS);

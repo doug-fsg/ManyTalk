@@ -1,0 +1,116 @@
+<% account = page.resource %>
+<% attrs = (account.custom_attributes || {}).with_indifferent_access %>
+<% stripe_customer_id = attrs[:stripe_customer_id].presence %>
+<% billing_state = stripe_billing_state(attrs) %>
+<% seat_count = account.users.count %>
+<% licensed_seats = attrs[:subscribed_quantity] %>
+<% stripe_mode_label = stripe_test_mode? ? 'Test mode' : 'Live mode' %>
+
+<section class="mx-8 my-8">
+  <header class="flex items-start gap-4 pb-5 border-b border-solid border-slate-100" role="banner">
+    <div class="border border-solid border-slate-100 text-slate-700 p-2 rounded-full shrink-0">
+      <svg width="24" height="24" aria-hidden="true"><use xlink:href="#icon-settings-2-line" /></svg>
+    </div>
+    <div class="flex flex-col gap-1 min-w-0 flex-1">
+      <div class="flex flex-wrap items-center gap-2">
+        <h2 class="text-base font-medium leading-6 text-slate-900 m-0">Stripe billing</h2>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium <%= stripe_status_badge_classes(billing_state[:key]) %>">
+          <%= billing_state[:label] %>
+        </span>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-slate-100 text-slate-600">
+          <%= stripe_mode_label %>
+        </span>
+      </div>
+      <p class="text-sm text-slate-500 m-0">
+        Link an existing Stripe customer. Retrieves subscription data only — nothing is created in Stripe.
+      </p>
+    </div>
+    <% if stripe_customer_id.present? %>
+      <%= link_to 'Open in Stripe',
+                  stripe_dashboard_customer_url(stripe_customer_id),
+                  target: '_blank',
+                  rel: 'noopener noreferrer',
+                  class: 'inline-flex items-center gap-1 shrink-0 bg-transparent shadow-sm h-9 hover:bg-slate-100 border border-solid border-slate-100 rounded text-slate-700 text-sm font-medium px-3' %>
+    <% end %>
+  </header>
+
+  <% if ActiveModel::Type::Boolean.new.cast(attrs[:is_creating_customer]) %>
+    <div class="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
+      Legacy billing job flag <code class="text-xs">is_creating_customer</code> is set. Auto-provision is off, so no Stripe resources will be created.
+    </div>
+  <% end %>
+
+  <% unless stripe_auto_provision_enabled? %>
+    <div class="mt-5 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600" role="status">
+      Auto-provision is <strong>disabled</strong> (recommended). Use the form below to link existing customers.
+    </div>
+  <% end %>
+
+  <div class="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+    <div class="border border-solid border-slate-100 rounded-lg p-4 shadow-sm bg-white">
+      <p class="text-xs font-medium uppercase tracking-wide text-slate-500 m-0">Customer name</p>
+      <p class="text-sm font-medium text-slate-900 mt-1 mb-0 break-words"><%= attrs[:stripe_customer_name].presence || '—' %></p>
+    </div>
+    <div class="border border-solid border-slate-100 rounded-lg p-4 shadow-sm bg-white md:col-span-2">
+      <p class="text-xs font-medium uppercase tracking-wide text-slate-500 m-0">Customer email</p>
+      <p class="text-sm text-slate-900 mt-1 mb-0 break-all"><%= attrs[:stripe_customer_email].presence || '—' %></p>
+    </div>
+    <div class="border border-solid border-slate-100 rounded-lg p-4 shadow-sm bg-white">
+      <p class="text-xs font-medium uppercase tracking-wide text-slate-500 m-0">Plan</p>
+      <p class="text-sm font-medium text-slate-900 mt-1 mb-0"><%= attrs[:plan_name].presence || '—' %></p>
+    </div>
+    <div class="border border-solid border-slate-100 rounded-lg p-4 shadow-sm bg-white">
+      <p class="text-xs font-medium uppercase tracking-wide text-slate-500 m-0">Seats</p>
+      <p class="text-sm font-medium text-slate-900 mt-1 mb-0 tabular-nums">
+        <%= seat_count %><% if licensed_seats.present? %> / <%= licensed_seats %> licensed<% end %>
+      </p>
+    </div>
+    <div class="border border-solid border-slate-100 rounded-lg p-4 shadow-sm bg-white">
+      <p class="text-xs font-medium uppercase tracking-wide text-slate-500 m-0">Subscription status</p>
+      <p class="text-sm font-medium text-slate-900 mt-1 mb-0"><%= attrs[:subscription_status].presence || '—' %></p>
+    </div>
+    <div class="border border-solid border-slate-100 rounded-lg p-4 shadow-sm bg-white">
+      <p class="text-xs font-medium uppercase tracking-wide text-slate-500 m-0">Current period ends</p>
+      <p class="text-sm font-medium text-slate-900 mt-1 mb-0"><%= format_stripe_timestamp(attrs[:subscription_ends_on]) %></p>
+    </div>
+    <div class="border border-solid border-slate-100 rounded-lg p-4 shadow-sm bg-white">
+      <p class="text-xs font-medium uppercase tracking-wide text-slate-500 m-0">Customer ID</p>
+      <p class="text-sm font-mono text-slate-900 mt-1 mb-0 break-all" translate="no"><%= stripe_customer_id || '—' %></p>
+    </div>
+    <div class="border border-solid border-slate-100 rounded-lg p-4 shadow-sm bg-white">
+      <p class="text-xs font-medium uppercase tracking-wide text-slate-500 m-0">Price ID</p>
+      <p class="text-sm font-mono text-slate-900 mt-1 mb-0 break-all" title="<%= attrs[:stripe_price_id] %>" translate="no"><%= attrs[:stripe_price_id].presence || '—' %></p>
+    </div>
+    <div class="border border-solid border-slate-100 rounded-lg p-4 shadow-sm bg-white">
+      <p class="text-xs font-medium uppercase tracking-wide text-slate-500 m-0">Product ID</p>
+      <p class="text-sm font-mono text-slate-900 mt-1 mb-0 break-all" title="<%= attrs[:stripe_product_id] %>" translate="no"><%= attrs[:stripe_product_id].presence || '—' %></p>
+    </div>
+  </div>
+
+  <div class="mt-6 p-4 border border-solid border-slate-100 rounded-lg shadow-sm bg-white">
+    <%= form_for([:link_stripe, namespace, page.resource], method: :post, html: { class: 'space-y-4' }) do %>
+      <div>
+        <label for="stripe_customer_id" class="block text-sm font-medium text-slate-900 mb-1">
+          Stripe Customer ID
+        </label>
+        <p class="text-sm text-slate-500 m-0 mb-2">
+          Paste the <code class="text-xs bg-slate-100 px-1 rounded">cus_</code> from Stripe. Must have exactly one active or trialing subscription.
+        </p>
+        <%= text_field_tag :stripe_customer_id,
+                           stripe_customer_id,
+                           id: 'stripe_customer_id',
+                           placeholder: 'cus_…',
+                           autocomplete: 'off',
+                           spellcheck: false,
+                           class: 'block w-full max-w-xl rounded-md border border-slate-200 px-3 py-2 text-sm font-mono text-slate-900 shadow-sm focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400' %>
+      </div>
+      <div class="flex flex-wrap items-center gap-3 pt-1">
+        <%= submit_tag 'Link Stripe customer',
+                       class: 'inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 cursor-pointer border-0' %>
+        <% if stripe_customer_id.present? %>
+          <span class="text-xs text-slate-500">Submitting again replaces the link and re-pulls from Stripe.</span>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</section>

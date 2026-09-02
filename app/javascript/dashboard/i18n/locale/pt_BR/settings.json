@@ -306,9 +306,23 @@
   },
   "BILLING_SETTINGS": {
     "TITLE": "Cobrança",
+    "DESCRIPTION": "Gerencie sua assinatura, acompanhe o plano e acesse o portal de pagamento.",
     "CURRENT_PLAN": {
       "TITLE": "Plano Atual",
-      "PLAN_NOTE": "Você está atualmente inscrito no plano **%{plan}** com **%{quantity}** licenças"
+      "PLAN_NOTE": "Você está atualmente inscrito no plano **%{plan}** com **%{quantity}** licenças",
+      "SEAT_COUNT": "Número de assentos",
+      "RENEWS_ON": "Renova em",
+      "DUE_ON": "Vencimento",
+      "ENDED_ON": "Encerrado em",
+      "STATUS": "Situação",
+      "STATUS_OPTIONS": {
+        "active": "Ativo",
+        "trialing": "Período de teste",
+        "past_due": "Pagamento em atraso",
+        "unpaid": "Não pago",
+        "canceled": "Cancelado",
+        "incomplete": "Incompleto"
+      }
     },
     "MANAGE_SUBSCRIPTION": {
       "TITLE": "Gerencie sua assinatura",
@@ -318,9 +332,10 @@
     "CHAT_WITH_US": {
       "TITLE": "Precisa de ajuda?",
       "DESCRIPTION": "Você está com algum problema de cobrança? Nós estamos aqui para ajudar.",
-      "BUTTON_TXT": "Fale conosco no chat"
+      "BUTTON_TXT": "Fale conosco no chat",
+      "UNAVAILABLE": "O chat de suporte não está configurado nesta instalação. Entre em contato com o administrador."
     },
-    "NO_BILLING_USER": "A sua conta de cobrança está sendo configurada. Atualize a página e tente novamente."
+    "NO_BILLING_USER": "Esta conta ainda não está vinculada a uma assinatura Stripe. Fale com o suporte se precisar de acesso à cobrança."
   },
   "CREATE_ACCOUNT": {
     "NO_ACCOUNT_WARNING": "Ah oh! Não conseguimos encontrar nenhuma conta. Por favor, crie uma nova conta para continuar.",

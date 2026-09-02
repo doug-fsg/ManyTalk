@@ -106,13 +106,26 @@ export default {
       type: Boolean,
       default: false,
     },
+    isBillingDeployment: {
+      type: Boolean,
+      default: false,
+    },
+    isManyTalksDeployment: {
+      type: Boolean,
+      default: false,
+    },
   },
   computed: {
     ...mapGetters({
       isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
       currentRole: 'getCurrentRole',
       labelSidebar: 'labelGroups/getSidebarLabelSections',
+      getAccount: 'accounts/getAccount',
     }),
+    hasLinkedStripeCustomer() {
+      const account = this.getAccount(this.accountId);
+      return Boolean(account?.custom_attributes?.stripe_customer_id);
+    },
     hasSecondaryMenu() {
       const hideSecondaryForRoutes = ['workflows_new', 'workflows_edit'];
       if (hideSecondaryForRoutes.includes(this.$route.name)) {
@@ -137,6 +150,12 @@ export default {
         }
       );
       return menuItemsFilteredByPermissions.filter(item => {
+        if (item.showOnlyOnBillingDeployment) {
+          return (
+            this.isBillingDeployment &&
+            (!this.isManyTalksDeployment || this.hasLinkedStripeCustomer)
+          );
+        }
         if (item.showOnlyOnCloud) {
           return this.isOnChatwootCloud;
         }

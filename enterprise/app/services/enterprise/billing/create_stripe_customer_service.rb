@@ -4,6 +4,8 @@ class Enterprise::Billing::CreateStripeCustomerService
   DEFAULT_QUANTITY = 2
 
   def perform
+    return unless Enterprise::Billing::AutoProvision.enabled?
+
     customer_id = prepare_customer_id
     subscription = Stripe::Subscription.create(
       {
@@ -11,8 +13,9 @@ class Enterprise::Billing::CreateStripeCustomerService
         items: [{ price: price_id, quantity: default_quantity }]
       }
     )
-    account.update!(
-      custom_attributes: {
+    Enterprise::Billing::CustomAttributes.merge!(
+      account,
+      {
         stripe_customer_id: customer_id,
         stripe_price_id: subscription['plan']['id'],
         stripe_product_id: subscription['plan']['product'],
@@ -42,12 +45,10 @@ class Enterprise::Billing::CreateStripeCustomerService
   end
 
   def default_plan
-    installation_config = InstallationConfig.find_by(name: 'CHATWOOT_CLOUD_PLANS')
-    @default_plan ||= installation_config.value.first
+    @default_plan ||= Enterprise::Billing::CloudPlans.default_plan
   end
 
   def price_id
-    price_ids = default_plan['price_ids']
-    price_ids.first
+    default_plan['price_ids'].first
   end
 end

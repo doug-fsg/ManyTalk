@@ -2,23 +2,20 @@ class Enterprise::Api::V1::AccountsController < Api::BaseController
   include BillingHelper
   before_action :fetch_account
   before_action :check_authorization
-  before_action :check_cloud_env, only: [:limits]
+  before_action :check_billing_deployment, only: [:limits]
 
   def subscription
-    if stripe_customer_id.blank? && @account.custom_attributes['is_creating_customer'].blank?
-      @account.update(custom_attributes: { is_creating_customer: true })
+    if Enterprise::Billing::AutoProvision.enabled? && stripe_customer_id.blank? && @account.custom_attributes['is_creating_customer'].blank?
+      Enterprise::Billing::CustomAttributes.merge!(@account, { is_creating_customer: true })
       Enterprise::CreateStripeCustomerJob.perform_later(@account)
     end
     head :no_content
   end
 
   def limits
-    limits = {
-      'conversation' => {},
-      'non_web_inboxes' => {}
-    }
+    limits = { 'conversation' => {}, 'non_web_inboxes' => {} }
 
-    if default_plan?(@account)
+    if enforce_billing_limits?(@account) && default_plan?(@account)
       limits = {
         'conversation' => {
           'allowed' => 500,
@@ -41,10 +38,12 @@ class Enterprise::Api::V1::AccountsController < Api::BaseController
     render_invalid_billing_details
   end
 
-  def check_cloud_env
-    installation_config = InstallationConfig.find_by(name: 'DEPLOYMENT_ENV')
-    render json: { error: 'Not found' }, status: :not_found unless installation_config&.value == 'cloud'
+  def check_billing_deployment
+    return if Enterprise::Billing::DeploymentEnv.billing_enabled?
+
+    render json: { error: 'Not found' }, status: :not_found
   end
+
 
   private
 
@@ -60,6 +59,7 @@ class Enterprise::Api::V1::AccountsController < Api::BaseController
   def render_invalid_billing_details
     render_could_not_create_error('Please subscribe to a plan before viewing the billing details')
   end
+
 
   def create_stripe_billing_session(customer_id)
     session = Enterprise::Billing::CreateSessionService.new.create_session(customer_id)

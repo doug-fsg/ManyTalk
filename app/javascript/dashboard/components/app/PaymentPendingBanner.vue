@@ -31,7 +31,8 @@ export default {
   },
   computed: {
     ...mapGetters({
-      isOnChatwootCloud: 'globalConfig/isOnChatwootCloud',
+      isBillingDeployment: 'globalConfig/isBillingDeployment',
+      isManyTalksDeployment: 'globalConfig/isManyTalksDeployment',
       getAccount: 'accounts/getAccount',
     }),
     bannerMessage() {
@@ -40,15 +41,15 @@ export default {
     actionButtonMessage() {
       return this.$t('GENERAL_SETTINGS.OPEN_BILLING');
     },
+    hasLinkedStripeCustomer() {
+      const account = this.getAccount(this.accountId);
+      return Boolean(account?.custom_attributes?.stripe_customer_id);
+    },
     shouldShowBanner() {
-      if (!this.isOnChatwootCloud) {
+      if (!this.isBillingDeployment || !this.isAdmin) return false;
+      if (this.isManyTalksDeployment && !this.hasLinkedStripeCustomer) {
         return false;
       }
-
-      if (!this.isAdmin) {
-        return false;
-      }
-
       return this.isPaymentPending();
     },
   },

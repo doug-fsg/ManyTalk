@@ -26,33 +26,60 @@ RSpec.describe 'Enterprise Billing APIs', type: :request do
       end
 
       context 'when it is an admin' do
-        it 'enqueues a job' do
-          expect do
-            post "/enterprise/api/v1/accounts/#{account.id}/subscription",
-                 headers: admin.create_new_auth_token,
-                 as: :json
-          end.to have_enqueued_job(Enterprise::CreateStripeCustomerJob).with(account)
-          expect(account.reload.custom_attributes).to eq({ 'is_creating_customer': true }.with_indifferent_access)
-        end
-
-        it 'does not enqueue a job if a job is already enqueued' do
-          account.update!(custom_attributes: { is_creating_customer: true })
+        it 'does not enqueue a job when auto provision is disabled' do
+          config = InstallationConfig.find_or_initialize_by(name: 'STRIPE_AUTO_PROVISION_CUSTOMERS')
+          config.value = false
+          config.save!
+          account.update!(custom_attributes: { onboarding_step: 'keep-me' })
 
           expect do
             post "/enterprise/api/v1/accounts/#{account.id}/subscription",
                  headers: admin.create_new_auth_token,
                  as: :json
           end.not_to have_enqueued_job(Enterprise::CreateStripeCustomerJob).with(account)
+          expect(account.reload.custom_attributes).to eq({ 'onboarding_step' => 'keep-me' })
         end
 
-        it 'does not enqueues a job if customer id is present' do
-          account.update!(custom_attributes: { 'stripe_customer_id': 'cus_random_string' })
+        context 'when auto provision is enabled' do
+          before do
+            config = InstallationConfig.find_or_initialize_by(name: 'STRIPE_AUTO_PROVISION_CUSTOMERS')
+            config.value = true
+            config.save!
+          end
 
-          expect do
-            post "/enterprise/api/v1/accounts/#{account.id}/subscription",
-                 headers: admin.create_new_auth_token,
-                 as: :json
-          end.not_to have_enqueued_job(Enterprise::CreateStripeCustomerJob).with(account)
+          it 'enqueues a job and merges custom attributes' do
+            account.update!(custom_attributes: { onboarding_step: 'keep-me' })
+
+            expect do
+              post "/enterprise/api/v1/accounts/#{account.id}/subscription",
+                   headers: admin.create_new_auth_token,
+                   as: :json
+            end.to have_enqueued_job(Enterprise::CreateStripeCustomerJob).with(account)
+            expect(account.reload.custom_attributes).to include(
+              'is_creating_customer' => true,
+              'onboarding_step' => 'keep-me'
+            )
+          end
+
+          it 'does not enqueue a job if a job is already enqueued' do
+            account.update!(custom_attributes: { is_creating_customer: true })
+
+            expect do
+              post "/enterprise/api/v1/accounts/#{account.id}/subscription",
+                   headers: admin.create_new_auth_token,
+                   as: :json
+            end.not_to have_enqueued_job(Enterprise::CreateStripeCustomerJob).with(account)
+          end
+
+          it 'does not enqueues a job if customer id is present' do
+            account.update!(custom_attributes: { 'stripe_customer_id': 'cus_random_string' })
+
+            expect do
+              post "/enterprise/api/v1/accounts/#{account.id}/subscription",
+                   headers: admin.create_new_auth_token,
+                   as: :json
+            end.not_to have_enqueued_job(Enterprise::CreateStripeCustomerJob).with(account)
+          end
         end
       end
     end
@@ -201,6 +228,48 @@ RSpec.describe 'Enterprise Billing APIs', type: :request do
           }
           expect(response).to have_http_status(:ok)
           expect(JSON.parse(response.body)).to eq(expected_response)
+        end
+      end
+
+      context 'when DEPLOYMENT_ENV is manytalks' do
+        before do
+          InstallationConfig.where(name: 'DEPLOYMENT_ENV').first_or_create(value: 'manytalks').update!(value: 'manytalks')
+          InstallationConfig.where(name: 'CHATWOOT_CLOUD_PLANS').first_or_create(value: [{ 'name': 'Hacker' }])
+          create(:conversation, account: account) unless account.conversations.exists?
+          create(:channel_api, account: account) unless account.inboxes.where(channel_type: Channel::Api.to_s).exists?
+        end
+
+        it 'returns empty limits when stripe_customer_id is not linked' do
+          account.update!(custom_attributes: { plan_name: 'Hacker' })
+
+          get "/enterprise/api/v1/accounts/#{account.id}/limits",
+              headers: admin.create_new_auth_token,
+              as: :json
+
+          expect(response).to have_http_status(:ok)
+          expect(JSON.parse(response.body)).to eq(
+            'id' => account.id,
+            'limits' => {
+              'conversation' => {},
+              'non_web_inboxes' => {}
+            }
+          )
+        end
+
+        it 'returns plan limits when stripe_customer_id is linked and plan is default' do
+          account.update!(custom_attributes: {
+                            plan_name: 'Hacker',
+                            stripe_customer_id: 'cus_linked123'
+                          })
+
+          get "/enterprise/api/v1/accounts/#{account.id}/limits",
+              headers: admin.create_new_auth_token,
+              as: :json
+
+          body = JSON.parse(response.body)
+          expect(response).to have_http_status(:ok)
+          expect(body['limits']['conversation']['allowed']).to eq(500)
+          expect(body['limits']['non_web_inboxes']['allowed']).to eq(0)
         end
       end
     end

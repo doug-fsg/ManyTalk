@@ -157,14 +157,19 @@
 # ------- Chatwoot Internal Config for Cloud ----#
 - name: CHATWOOT_INBOX_TOKEN
   value:
-  display_title: 'Inbox Token'
-  description: 'The Chatwoot Inbox Token for Contact Support in Cloud'
+  display_title: 'Website Token (suporte)'
+  description: 'Token do inbox Website usado no botão "Fale conosco" do dashboard. Copie em Configurações → Inbox → Website → Código de instalação.'
   locked: false
 - name: CHATWOOT_INBOX_HMAC_KEY
   value:
-  display_title: 'Inbox HMAC Key'
-  description: 'The Chatwoot Inbox HMAC Key for Contact Support in Cloud'
+  display_title: 'HMAC Key (opcional)'
+  description: 'Chave HMAC do inbox de suporte, se identificação segura estiver ativada no widget.'
   locked: false
+- name: STRIPE_AUTO_PROVISION_CUSTOMERS
+  display_title: 'Stripe Auto Provision Customers'
+  value: false
+  locked: false
+  description: 'When true, Chatwoot creates Stripe customers and subscriptions. Keep false when customers already exist in Stripe.'
 - name: CHATWOOT_CLOUD_PLANS
   display_title: 'Cloud Plans'
   value:
@@ -175,7 +180,7 @@
   description: 'Config to features and their associated plans'
 - name: DEPLOYMENT_ENV
   value: self-hosted
-  description: 'The deployment environment of the installation, to differentiate between Chatwoot cloud and self-hosted'
+  description: 'Deployment mode: self-hosted | cloud | manytalks. Use manytalks for Stripe billing via Super Admin cus_ linking (unlinked accounts are untouched).'
 - name: ANALYTICS_TOKEN
   value:
   display_title: 'Analytics Token'
@@ -186,8 +191,8 @@
   description: 'This API key is used for onboarding the users, to pre-fill account data.'
 - name: DASHBOARD_SCRIPTS
   value:
-  display_title: 'Dashboard Scripts'
-  description: 'Scripts are loaded as the last item in the <body> tag'
+  display_title: 'Scripts do dashboard (avançado)'
+  description: 'Opcional. Se vazio, o script do widget é gerado automaticamente a partir do Website Token acima.'
   type: code
 # ------- End of Chatwoot Internal Config for Cloud ----#
 

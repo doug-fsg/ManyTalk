@@ -59,9 +59,28 @@
     <% end %>
 
 
+    <% support_inbox_token = InstallationConfig.find_by(name: 'CHATWOOT_INBOX_TOKEN')&.value %>
     <div class="flex p-4 border border-solid border-slate-100 rounded-lg mt-4 items-start md:items-center shadow-sm flex-col md:flex-row">
       <div class="flex flex-col flex-grow gap-1">
-        <h2 class="h-5 leading-5 text-slate-900 text-sm font-medium">Need help?</h2>
+        <h2 class="h-5 leading-5 text-slate-900 text-sm font-medium">Chat de suporte no dashboard</h2>
+        <p class="text-slate-600 m-0 text-sm">
+          Widget usado em Cobrança e no menu "Fale conosco".
+          <% if support_inbox_token.present? %>
+            <span class="text-green-700 font-medium">Configurado.</span>
+          <% else %>
+            <span class="text-amber-700 font-medium">Não configurado.</span>
+          <% end %>
+        </p>
+      </div>
+      <a href="<%= super_admin_app_config_path(config: 'support_chat') %>">
+        <button type="button" class="mt-4 md:mt-0 flex gap-1 items-center bg-transparent shadow-sm h-9 hover:bg-slate-100 hover:text-slate-800 border border-solid border-slate-100 rounded text-slate-700 font-medium p-2">
+          <svg width="16" height="16"><use xlink:href="#icon-settings-2-line" /></svg>
+          <span class="px-1">Configurar widget</span>
+        </button>
+      </a>
+    </div>
+
+    <div class="flex p-4 border border-solid border-slate-100 rounded-lg mt-4 items-start md:items-center shadow-sm flex-col md:flex-row">
         <p class="text-slate-600 m-0 text-sm">Do you face any issues? We are here to help.</p>
       </div>
       <a href="https://wa.me/595985523065" target="_blank">

@@ -24,6 +24,8 @@
       :menu-config="activeSecondaryMenu"
       :current-user="currentUser"
       :is-on-chatwoot-cloud="isOnChatwootCloud"
+      :is-billing-deployment="isBillingDeployment"
+      :is-many-talks-deployment="isManyTalksDeployment"
       @add-label="showAddLabelPopup"
       @toggle-accounts="toggleAccountModal"
     />
@@ -76,6 +78,8 @@ export default {
       isACustomBrandedInstance: 'globalConfig/isACustomBrandedInstance',
       isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
       isOnChatwootCloud: 'globalConfig/isOnChatwootCloud',
+      isBillingDeployment: 'globalConfig/isBillingDeployment',
+      isManyTalksDeployment: 'globalConfig/isManyTalksDeployment',
       labels: 'labels/getLabelsOnSidebar',
       accountForms: 'accountForms/getAccountForms',
       teams: 'teams/getMyTeams',

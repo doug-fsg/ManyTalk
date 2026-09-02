@@ -11,6 +11,15 @@ module BillingHelper
     account.custom_attributes['plan_name'].nil? || account.custom_attributes['plan_name'] == default_plan['name']
   end
 
+  def stripe_linked?(account)
+    account.custom_attributes['stripe_customer_id'].present?
+  end
+
+  def enforce_billing_limits?(account)
+    Enterprise::Billing::DeploymentEnv.cloud? ||
+      (Enterprise::Billing::DeploymentEnv.manytalks? && stripe_linked?(account))
+  end
+
   def conversations_this_month(account)
     account.conversations.where('created_at > ?', 30.days.ago).count
   end
@@ -19,3 +28,4 @@ module BillingHelper
     account.inboxes.where.not(channel_type: Channel::WebWidget.to_s).count
   end
 end
+

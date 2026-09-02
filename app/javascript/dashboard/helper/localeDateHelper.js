@@ -63,3 +63,16 @@ export function formatListDateTime(unixSeconds, localeCode = 'en') {
     { locale: resolveDateFnsLocale(localeCode) }
   );
 }
+
+export function formatBillingDate(isoDate, localeCode = 'en') {
+  if (!isoDate) return '';
+
+  const date = new Date(isoDate);
+  const isPortuguese = normalizeLocaleCode(localeCode) === 'pt_BR';
+
+  return format(
+    date,
+    isPortuguese ? 'dd/MM/yyyy' : 'dd MMM, yyyy',
+    { locale: resolveDateFnsLocale(localeCode) }
+  );
+}

@@ -6,21 +6,20 @@ RSpec.describe BillingHelper do
     let(:account) { create(:account, custom_attributes: { 'plan_name' => 'Hacker' }) }
 
     before do
-      create(:installation_config, {
-               name: 'CHATWOOT_CLOUD_PLANS',
-               value: [
-                 {
-                   'name' => 'Hacker',
-                   'product_id' => ['plan_id'],
-                   'price_ids' => ['price_1']
-                 },
-                 {
-                   'name' => 'Startups',
-                   'product_id' => ['plan_id_2'],
-                   'price_ids' => ['price_2']
-                 }
-               ]
-             })
+      config = InstallationConfig.find_or_initialize_by(name: 'CHATWOOT_CLOUD_PLANS')
+      config.value = [
+        {
+          'name' => 'Hacker',
+          'product_id' => ['plan_id'],
+          'price_ids' => ['price_1']
+        },
+        {
+          'name' => 'Startups',
+          'product_id' => ['plan_id_2'],
+          'price_ids' => ['price_2']
+        }
+      ]
+      config.save!
     end
 
     it 'counts only the conversations created this month' do
@@ -43,6 +42,17 @@ RSpec.describe BillingHelper do
       expect(helper.send(:default_plan?, account)).to be(true)
       account.custom_attributes['plan_name'] = 'Startups'
       expect(helper.send(:default_plan?, account)).to be(false)
+    end
+
+    it 'does not enforce billing limits for manytalks accounts without stripe_customer_id' do
+      config = InstallationConfig.find_or_initialize_by(name: 'DEPLOYMENT_ENV')
+      config.value = 'manytalks'
+      config.save!
+
+      expect(helper.send(:enforce_billing_limits?, account)).to be(false)
+
+      account.custom_attributes['stripe_customer_id'] = 'cus_abc'
+      expect(helper.send(:enforce_billing_limits?, account)).to be(true)
     end
   end
 end

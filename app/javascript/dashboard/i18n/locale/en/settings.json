@@ -302,9 +302,23 @@
   },
   "BILLING_SETTINGS": {
     "TITLE": "Billing",
+    "DESCRIPTION": "Manage your subscription here, upgrade your plan and get more for your team.",
     "CURRENT_PLAN": {
       "TITLE": "Current Plan",
-      "PLAN_NOTE": "You are currently subscribed to the **%{plan}** plan with **%{quantity}** licenses"
+      "PLAN_NOTE": "You are currently subscribed to the **%{plan}** plan with **%{quantity}** licenses",
+      "SEAT_COUNT": "Number of seats",
+      "RENEWS_ON": "Renews on",
+      "DUE_ON": "Payment due on",
+      "ENDED_ON": "Ended on",
+      "STATUS": "Status",
+      "STATUS_OPTIONS": {
+        "active": "Active",
+        "trialing": "Trial",
+        "past_due": "Payment overdue",
+        "unpaid": "Unpaid",
+        "canceled": "Canceled",
+        "incomplete": "Incomplete"
+      }
     },
     "MANAGE_SUBSCRIPTION": {
       "TITLE": "Manage your subscription",
@@ -314,9 +328,10 @@
     "CHAT_WITH_US": {
       "TITLE": "Need help?",
       "DESCRIPTION": "Do you face any issues in billing? We are here to help.",
-      "BUTTON_TXT": "Chat with us"
+      "BUTTON_TXT": "Chat with us",
+      "UNAVAILABLE": "Support chat is not configured on this installation. Please contact your administrator."
     },
-    "NO_BILLING_USER": "Your billing account is being configured. Please refresh the page and try again."
+    "NO_BILLING_USER": "This account is not linked to a Stripe subscription yet. Contact support if you need billing access."
   },
   "CREATE_ACCOUNT": {
     "NO_ACCOUNT_WARNING": "Uh oh! We could not find any ManyTalks accounts. Please create a new account to continue.",

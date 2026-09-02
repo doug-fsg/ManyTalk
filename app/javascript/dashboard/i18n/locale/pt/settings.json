@@ -303,9 +303,23 @@
   },
   "BILLING_SETTINGS": {
     "TITLE": "Cobrança",
+    "DESCRIPTION": "Gerencie a sua subscrição, acompanhe o plano e aceda ao portal de pagamento.",
     "CURRENT_PLAN": {
       "TITLE": "Plano atual",
-      "PLAN_NOTE": "Atualmente tem o **%{plan}* subscrito com **%{quantity}** licenças"
+      "PLAN_NOTE": "Atualmente tem o **%{plan}* subscrito com **%{quantity}** licenças",
+      "SEAT_COUNT": "Número de assentos",
+      "RENEWS_ON": "Renova em",
+      "DUE_ON": "Vencimento",
+      "ENDED_ON": "Encerrado em",
+      "STATUS": "Estado",
+      "STATUS_OPTIONS": {
+        "active": "Ativo",
+        "trialing": "Período de teste",
+        "past_due": "Pagamento em atraso",
+        "unpaid": "Não pago",
+        "canceled": "Cancelado",
+        "incomplete": "Incompleto"
+      }
     },
     "MANAGE_SUBSCRIPTION": {
       "TITLE": "Administrar o seu serviço",
@@ -315,7 +329,8 @@
     "CHAT_WITH_US": {
       "TITLE": "Precisa de ajuda?",
       "DESCRIPTION": "Está com dificuldade em efetuar o seu pagamento? Estamos aqui para ajudar.",
-      "BUTTON_TXT": "Fale connosco"
+      "BUTTON_TXT": "Fale connosco",
+      "UNAVAILABLE": "O chat de suporte não está configurado nesta instalação. Contacte o administrador."
     },
     "NO_BILLING_USER": "Os seus dados de pagamento estão a ser configurados. Atualize a página e tente novamente."
   },

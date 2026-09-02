@@ -35,6 +35,7 @@ email:
   description: 'Manage your email customer interactions from Chatwoot.'
   enabled: true
   icon: 'icon-mail-send-fill'
+  config_key: 'email'
 messenger:
   name: 'Messenger'
   description: 'Stay connected with your customers on Facebook & Instagram.'
@@ -46,6 +47,7 @@ whatsapp:
   description: 'Manage your WhatsApp business interactions from Chatwoot.'
   enabled: true
   icon: 'icon-whatsapp-line'
+  config_key: 'whatsapp_embedded'
 telegram:
   name: 'Telegram'
   description: 'Manage your Telegram customer interactions from Chatwoot.'
@@ -72,3 +74,10 @@ microsoft:
   enabled: true
   icon: 'icon-microsoft'
   config_key: 'microsoft'
+support_chat:
+  name: 'Support Chat'
+  description: 'Widget de suporte no dashboard (cobrança e menu).'
+  enabled: true
+  icon: 'icon-chat-help'
+  config_key: 'support_chat'
+  enterprise: true

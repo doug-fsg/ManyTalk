@@ -299,9 +299,23 @@
   },
   "BILLING_SETTINGS": {
     "TITLE": "Facturación",
+    "DESCRIPTION": "Administre su suscripción, consulte su plan y acceda al portal de pagos.",
     "CURRENT_PLAN": {
       "TITLE": "Plan actual",
-      "PLAN_NOTE": "Actualmente está suscrito al plan **%{plan}** con **%{quantity}** licencias"
+      "PLAN_NOTE": "Actualmente está suscrito al plan **%{plan}** con **%{quantity}** licencias",
+      "SEAT_COUNT": "Número de asientos",
+      "RENEWS_ON": "Renueva el",
+      "DUE_ON": "Vencimiento",
+      "ENDED_ON": "Finalizado el",
+      "STATUS": "Estado",
+      "STATUS_OPTIONS": {
+        "active": "Activo",
+        "trialing": "Periodo de prueba",
+        "past_due": "Pago atrasado",
+        "unpaid": "Sin pagar",
+        "canceled": "Cancelado",
+        "incomplete": "Incompleto"
+      }
     },
     "MANAGE_SUBSCRIPTION": {
       "TITLE": "Administre su suscripción",
@@ -311,7 +325,8 @@
     "CHAT_WITH_US": {
       "TITLE": "¿Necesitas ayuda?",
       "DESCRIPTION": "¿Tienes a algún problema en la facturación? Estamos aquí para ayudarte.",
-      "BUTTON_TXT": "Chatea con nosotros"
+      "BUTTON_TXT": "Chatea con nosotros",
+      "UNAVAILABLE": "El chat de soporte no está configurado en esta instalación. Contacte al administrador."
     },
     "NO_BILLING_USER": "Tu cuenta de facturación está siendo configurada. Por favor, actualiza la página e inténtalo de nuevo."
   },

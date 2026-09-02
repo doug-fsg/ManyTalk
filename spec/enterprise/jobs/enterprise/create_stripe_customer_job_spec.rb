@@ -12,7 +12,18 @@ RSpec.describe Enterprise::CreateStripeCustomerJob, type: :job do
       .on_queue('default')
   end
 
-  it 'executes perform' do
+  it 'does not call the create service when auto provision is disabled' do
+    allow(Enterprise::Billing::CreateStripeCustomerService).to receive(:new)
+
+    perform_enqueued_jobs { job }
+
+    expect(Enterprise::Billing::CreateStripeCustomerService).not_to have_received(:new)
+  end
+
+  it 'executes perform when auto provision is enabled' do
+    config = InstallationConfig.find_or_initialize_by(name: 'STRIPE_AUTO_PROVISION_CUSTOMERS')
+    config.value = true
+    config.save!
     create_stripe_customer_service = double
     allow(Enterprise::Billing::CreateStripeCustomerService)
       .to receive(:new)

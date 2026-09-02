@@ -207,7 +207,7 @@ const settings = accountId => ({
       },
       toState: frontendURL(`accounts/${accountId}/settings/billing`),
       toStateName: 'billing_settings_index',
-      showOnlyOnCloud: true,
+      showOnlyOnBillingDeployment: true,
     },
     {
       icon: 'window-new',

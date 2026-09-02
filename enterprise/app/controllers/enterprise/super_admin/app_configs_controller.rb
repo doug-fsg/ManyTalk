@@ -9,6 +9,8 @@ module Enterprise::SuperAdmin::AppConfigsController
       @allowed_configs = custom_branding_options
     when 'internal'
       @allowed_configs = internal_config_options
+    when 'support_chat'
+      @allowed_configs = support_chat_config_options
     else
       super
     end
@@ -32,5 +34,9 @@ module Enterprise::SuperAdmin::AppConfigsController
 
   def internal_config_options
     %w[CHATWOOT_INBOX_TOKEN CHATWOOT_INBOX_HMAC_KEY ANALYTICS_TOKEN CLEARBIT_API_KEY DASHBOARD_SCRIPTS]
+  end
+
+  def support_chat_config_options
+    %w[CHATWOOT_INBOX_TOKEN CHATWOOT_INBOX_HMAC_KEY DASHBOARD_SCRIPTS]
   end
 end
