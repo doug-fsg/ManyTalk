@@ -25,9 +25,9 @@ export default {
 </script>
 
 <template>
-  <tr class="space-x-2">
-    <td class="max-w-2xl">
-      <div class="font-medium break-words text-slate-700 dark:text-slate-100">
+  <tr>
+    <td class="min-w-0">
+      <div class="font-medium break-all text-slate-700 dark:text-slate-100">
         {{ webhook.url }}
       </div>
       <span class="text-xs text-slate-500 dark:text-slate-400">
@@ -37,23 +37,25 @@ export default {
         <ShowMore :text="subscribedEvents" :limit="60" />
       </span>
     </td>
-    <td class="min-w-[7rem] flex gap-1 justify-end flex-shrink-0">
-      <woot-button
-        v-tooltip.top="$t('INTEGRATION_SETTINGS.WEBHOOK.EDIT.BUTTON_TEXT')"
-        variant="smooth"
-        size="tiny"
-        color-scheme="secondary"
-        icon="edit"
-        @click="$emit('edit', webhook)"
-      />
-      <woot-button
-        v-tooltip.top="$t('INTEGRATION_SETTINGS.WEBHOOK.DELETE.BUTTON_TEXT')"
-        variant="smooth"
-        color-scheme="alert"
-        size="tiny"
-        icon="dismiss-circle"
-        @click="$emit('delete', webhook, index)"
-      />
+    <td class="w-24 text-right align-top whitespace-nowrap">
+      <div class="button-wrapper justify-end min-w-0">
+        <woot-button
+          v-tooltip.top="$t('INTEGRATION_SETTINGS.WEBHOOK.EDIT.BUTTON_TEXT')"
+          variant="smooth"
+          size="tiny"
+          color-scheme="secondary"
+          icon="edit"
+          @click="$emit('edit', webhook)"
+        />
+        <woot-button
+          v-tooltip.top="$t('INTEGRATION_SETTINGS.WEBHOOK.DELETE.BUTTON_TEXT')"
+          variant="smooth"
+          color-scheme="alert"
+          size="tiny"
+          icon="dismiss-circle"
+          @click="$emit('delete', webhook, index)"
+        />
+      </div>
     </td>
   </tr>
 </template>

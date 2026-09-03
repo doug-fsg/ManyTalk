@@ -32,6 +32,11 @@ RSpec.describe Workflows::NodeLabel do
       expect(described_class.for_node(node)).to eq('Conversa criada')
     end
 
+    it 'translates kanban created trigger' do
+      node = { 'type' => 'trigger', 'data' => { 'event_name' => 'contact_kanban_stage_created' } }
+      expect(described_class.for_node(node)).to eq('Estágio criado no pipeline')
+    end
+
     it 'translates wait nodes with duration' do
       node = { 'type' => 'wait', 'data' => { 'duration' => 2, 'unit' => 'hours' } }
       expect(described_class.for_node(node)).to eq('Espera · 2 hora(s)')

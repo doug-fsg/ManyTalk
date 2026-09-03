@@ -62,6 +62,8 @@ const TRIGGER_LABEL_I18N_KEYS = {
   conversation_resolved: 'WORKFLOW.LIST.TRIGGER_LABELS.conversation_resolved',
   message_created: 'WORKFLOW.LIST.TRIGGER_LABELS.message_created',
   manual: 'WORKFLOW.LIST.TRIGGER_LABELS.manual',
+  contact_kanban_stage_created:
+    'WORKFLOW.LIST.TRIGGER_LABELS.contact_kanban_stage_created',
   contact_kanban_stage_changed:
     'WORKFLOW.LIST.TRIGGER_LABELS.contact_kanban_stage_changed',
   contact_kanban_stage_idle:

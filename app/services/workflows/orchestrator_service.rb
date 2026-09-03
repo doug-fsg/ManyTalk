@@ -136,7 +136,8 @@ module Workflows
         contact = account.contacts.find_by(id: contact_id)
         return if contact.blank?
 
-        workflows = account.workflows.for_trigger_event('contact_kanban_stage_changed').limit(Constants::MAX_WORKFLOWS_PER_EVENT)
+        event_name = previous_stage_id.blank? ? 'contact_kanban_stage_created' : 'contact_kanban_stage_changed'
+        workflows = account.workflows.for_trigger_event(event_name).limit(Constants::MAX_WORKFLOWS_PER_EVENT)
         return if workflows.empty?
 
         conversations = contact.conversations.open
@@ -149,7 +150,7 @@ module Workflows
             process_workflow_trigger(workflow, conversation, nil, {
               'pipeline_id' => [nil, pipeline_id.to_s],
               'stage_id' => [previous_stage_id, stage_id]
-            })
+            }, event_name: event_name)
           end
         end
       end

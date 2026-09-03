@@ -72,6 +72,7 @@
         "conversation_resolved": "Conversa resolvida",
         "message_created": "Mensagem criada",
         "manual": "Início manual",
+        "contact_kanban_stage_created": "Estágio criado no pipeline",
         "contact_kanban_stage_changed": "Estágio do CRM alterado",
         "contact_kanban_stage_idle": "Parado no estágio do CRM",
         "form_submitted": "Formulário enviado"

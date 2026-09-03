@@ -72,6 +72,7 @@
         "conversation_resolved": "Conversation resolved",
         "message_created": "Message created",
         "manual": "Manual start",
+        "contact_kanban_stage_created": "CRM stage created",
         "contact_kanban_stage_changed": "CRM stage changed",
         "contact_kanban_stage_idle": "Idle on CRM stage",
         "form_submitted": "Form submitted"

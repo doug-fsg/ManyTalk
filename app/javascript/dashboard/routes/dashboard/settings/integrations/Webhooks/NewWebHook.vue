@@ -39,7 +39,7 @@ export default {
 </script>
 
 <template>
-  <div class="h-auto overflow-auto flex flex-col">
+  <div class="h-auto overflow-auto flex flex-col min-w-0 max-w-full">
     <woot-modal-header
       :header-title="$t('INTEGRATION_SETTINGS.WEBHOOK.ADD.TITLE')"
       :header-content="

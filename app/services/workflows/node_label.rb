@@ -40,6 +40,7 @@ module Workflows
 
     TRIGGER_EVENT_LABELS = {
       'manual' => 'Início manual (pela conversa)',
+      'contact_kanban_stage_created' => 'Estágio criado no pipeline',
       'contact_kanban_stage_changed' => 'Estágio do CRM alterado',
       'contact_kanban_stage_idle' => 'Parado no estágio do CRM (sem atividade)',
       'conversation_created' => 'Conversa criada',

@@ -72,6 +72,12 @@ const WORKFLOW_EXTRA_CONDITIONS = [
   },
 ];
 
+export const KANBAN_TRIGGER_EVENT_KEYS = [
+  'contact_kanban_stage_created',
+  'contact_kanban_stage_changed',
+  'contact_kanban_stage_idle',
+];
+
 let cachedWorkflowAutomationTypes = null;
 
 /** Automation types catalog: v1 events + merged list for flow condition nodes. */
@@ -98,25 +104,29 @@ export const buildWorkflowAutomationTypes = () => {
 
   types.manual = { conditions: [], actions: [] };
 
-  types.contact_kanban_stage_changed = {
-    conditions: [
-      {
-        key: 'kanban_pipeline_id',
-        name: 'Pipeline CRM',
-        attributeI18nKey: 'KANBAN_PIPELINE',
-        inputType: 'search_select',
-        filterOperators: OPERATOR_TYPES_3,
-      },
-      {
-        key: 'kanban_stage_id',
-        name: 'Estágio CRM',
-        attributeI18nKey: 'KANBAN_STAGE',
-        inputType: 'plain_text',
-        filterOperators: OPERATOR_TYPES_1,
-      },
-    ],
-    actions: [],
-  };
+  const kanbanTriggerConditions = [
+    {
+      key: 'kanban_pipeline_id',
+      name: 'Pipeline CRM',
+      attributeI18nKey: 'KANBAN_PIPELINE',
+      inputType: 'search_select',
+      filterOperators: OPERATOR_TYPES_3,
+    },
+    {
+      key: 'kanban_stage_id',
+      name: 'Estágio CRM',
+      attributeI18nKey: 'KANBAN_STAGE',
+      inputType: 'kanban_stage_select',
+      filterOperators: OPERATOR_TYPES_1,
+    },
+  ];
+
+  KANBAN_TRIGGER_EVENT_KEYS.forEach(eventKey => {
+    types[eventKey] = {
+      conditions: JSON.parse(JSON.stringify(kanbanTriggerConditions)),
+      actions: [],
+    };
+  });
 
   return types;
 };
@@ -136,6 +146,7 @@ export const resetWorkflowAutomationTypesCache = () => {
 export const WORKFLOW_TRIGGER_EVENTS = [
   ...AUTOMATION_RULE_EVENTS,
   { key: 'manual', value: 'Início manual (pela conversa)' },
+  { key: 'contact_kanban_stage_created', value: 'Estágio criado no pipeline' },
   { key: 'contact_kanban_stage_changed', value: 'Estágio do CRM alterado' },
   { key: 'contact_kanban_stage_idle', value: 'Parado no estágio do CRM (sem atividade)' },
 ];

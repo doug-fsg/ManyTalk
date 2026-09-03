@@ -453,4 +453,66 @@ RSpec.describe Workflows::OrchestratorService do
       expect(enrollment.reload.status).to eq('waiting')
     end
   end
+
+  describe '.on_contact_kanban_stage_changed' do
+    let(:pipeline) { create(:custom_attribute_definition, :kanban, account: account) }
+
+    def build_kanban_workflow(event_name)
+      create(
+        :workflow,
+        account: account,
+        active: true,
+        graph: {
+          'nodes' => [
+            {
+              'id' => 'trigger_1',
+              'type' => 'trigger',
+              'data' => { 'event_name' => event_name, 'conditions' => [] }
+            },
+            {
+              'id' => 'action_1',
+              'type' => 'action',
+              'data' => { 'action_name' => 'add_label', 'action_params' => ['support'] }
+            }
+          ],
+          'edges' => [{ 'id' => 'e1', 'source' => 'trigger_1', 'target' => 'action_1' }],
+          'settings' => {}
+        }
+      )
+    end
+
+    it 'enrolls created trigger when contact enters the pipeline' do
+      created_workflow = build_kanban_workflow('contact_kanban_stage_created')
+      changed_workflow = build_kanban_workflow('contact_kanban_stage_changed')
+      conversation
+
+      described_class.on_contact_kanban_stage_changed(
+        account_id: account.id,
+        contact_id: contact.id,
+        pipeline_id: pipeline.id,
+        stage_id: 'Estágio 1',
+        previous_stage_id: nil
+      )
+
+      expect(created_workflow.workflow_enrollments.count).to eq(1)
+      expect(changed_workflow.workflow_enrollments.count).to eq(0)
+    end
+
+    it 'enrolls changed trigger when contact moves between stages' do
+      created_workflow = build_kanban_workflow('contact_kanban_stage_created')
+      changed_workflow = build_kanban_workflow('contact_kanban_stage_changed')
+      conversation
+
+      described_class.on_contact_kanban_stage_changed(
+        account_id: account.id,
+        contact_id: contact.id,
+        pipeline_id: pipeline.id,
+        stage_id: 'Estágio 2',
+        previous_stage_id: 'Estágio 1'
+      )
+
+      expect(created_workflow.workflow_enrollments.count).to eq(0)
+      expect(changed_workflow.workflow_enrollments.count).to eq(1)
+    end
+  end
 end

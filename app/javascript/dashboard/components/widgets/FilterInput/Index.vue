@@ -253,7 +253,7 @@ export default {
         if (!this.value) return null;
         const val = this.value.values;
         // Handle empty string values - convert to null for multiselect/search_select
-        if (val === '' && (this.inputType === 'multi_select' || this.inputType === 'search_select')) {
+        if (val === '' && (this.inputType === 'multi_select' || this.inputType === 'search_select' || this.inputType === 'kanban_stage_select')) {
           return null;
         }
         // Ensure array for multi_select

@@ -76,8 +76,8 @@ export default {
 </script>
 
 <template>
-  <form class="flex flex-col w-full" @submit.prevent="onSubmit">
-    <div class="w-full">
+  <form class="flex flex-col w-full min-w-0 max-w-full" @submit.prevent="onSubmit">
+    <div class="w-full min-w-0">
       <label :class="{ error: v$.url.$error }">
         {{ $t('INTEGRATION_SETTINGS.WEBHOOK.FORM.END_POINT.LABEL') }}
         <input
@@ -94,11 +94,11 @@ export default {
       <label :class="{ error: v$.url.$error }" class="mb-2">
         {{ $t('INTEGRATION_SETTINGS.WEBHOOK.FORM.SUBSCRIPTIONS.LABEL') }}
       </label>
-      <div class="flex flex-col gap-2.5 mb-4">
+      <div class="flex flex-col gap-2 mb-4 max-h-[min(20rem,50vh)] overflow-y-auto min-w-0 pr-1">
         <div
           v-for="event in supportedWebhookEvents"
           :key="event"
-          class="flex items-center"
+          class="flex items-start min-w-0"
         >
           <input
             :id="event"
@@ -106,9 +106,9 @@ export default {
             type="checkbox"
             :value="event"
             name="subscriptions"
-            class="checkbox"
+            class="checkbox mt-0.5 shrink-0"
           />
-          <label :for="event" class="text-sm">
+          <label :for="event" class="text-sm min-w-0 leading-snug break-all">
             {{ `${getEventLabel(event)} (${event})` }}
           </label>
         </div>

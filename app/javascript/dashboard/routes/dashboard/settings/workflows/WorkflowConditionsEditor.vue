@@ -17,6 +17,7 @@ import { OPERATOR_TYPES_1 } from '../automation/operators';
 import { serializeWorkflowConditions } from 'dashboard/helper/workflowConditionHelper';
 import {
   getWorkflowAutomationTypes,
+  KANBAN_TRIGGER_EVENT_KEYS,
   WORKFLOW_FLOW_EVENT_KEY,
   WORKFLOW_REPLY_CONDITION_KEYS,
 } from './constants';
@@ -95,7 +96,7 @@ export default {
       if (!this.isReady || !newVal || newVal === oldVal || this.eventName === null) return;
       if (
         newVal === 'manual' ||
-        newVal === 'contact_kanban_stage_changed' ||
+        KANBAN_TRIGGER_EVENT_KEYS.includes(newVal) ||
         newVal === FORM_SUBMITTED_EVENT_KEY
       ) {
         this.localConditions = [];
@@ -280,7 +281,9 @@ export default {
         if (op === 'days_before' || op === 'months_before') return 'plain_text';
       }
       const customAttribute = this.findCustomAttribute(key);
-      if (customAttribute && customAttribute.is_kanban) return 'kanban_stage_select';
+      if (key === 'kanban_stage_id' || (customAttribute && customAttribute.is_kanban)) {
+        return 'kanban_stage_select';
+      }
       if (this.isReplyConditionKey(key)) return 'search_select';
       return getInputType(
         this.allCustomAttributes,
@@ -297,6 +300,7 @@ export default {
       const key = condition.attribute_key;
       if (this.isReplyConditionKey(key)) return this.replyBooleanOptions;
       const customAttribute = this.findCustomAttribute(key);
+      if (key === 'kanban_stage_id') return this.kanbanStageOptions();
       if (customAttribute && customAttribute.is_kanban) {
         return (customAttribute.attribute_values || []).map(stage => ({
           id: stage,
@@ -324,6 +328,21 @@ export default {
     },
     getCustomAttributeTypeForKey(key) {
       return getCustomAttributeType(this.automationTypes, this.automationStub, key);
+    },
+    pipelineIdFromLocalConditions() {
+      const cond = this.localConditions.find(c => c.attribute_key === 'kanban_pipeline_id');
+      if (!cond) return null;
+      const first = Array.isArray(cond.values) ? cond.values[0] : cond.values;
+      if (first && typeof first === 'object') return first.id;
+      return first;
+    },
+    kanbanStageOptions() {
+      const pipelineId = this.pipelineIdFromLocalConditions();
+      if (pipelineId == null || pipelineId === '') return [];
+      const attr = (this.allCustomAttributes || []).find(
+        a => a.is_kanban && String(a.id) === String(pipelineId)
+      );
+      return (attr?.attribute_values || []).map(stage => ({ id: stage, name: stage }));
     },
   },
 };

@@ -4,6 +4,7 @@ module Workflows
   module Constants
     ALLOWED_TRIGGER_EVENTS = %w[
       manual
+      contact_kanban_stage_created
       contact_kanban_stage_changed
       contact_kanban_stage_idle
       conversation_created

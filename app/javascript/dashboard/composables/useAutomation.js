@@ -193,6 +193,17 @@ export function useAutomation() {
       if (inputType === 'plain_text' || inputType === 'date') {
         return { ...condition, values: condition.values[0] };
       }
+      if (inputType === 'kanban_stage_select') {
+        const raw = Array.isArray(condition.values)
+          ? condition.values[0]
+          : condition.values;
+        const id = raw && typeof raw === 'object' ? raw.id : raw;
+        return {
+          ...condition,
+          query_operator: condition.query_operator || 'and',
+          values: id == null || id === '' ? null : { id, name: String(id) },
+        };
+      }
       if (inputType === 'comma_separated_plain_text') {
         return { ...condition, values: condition.values.join(',') };
       }

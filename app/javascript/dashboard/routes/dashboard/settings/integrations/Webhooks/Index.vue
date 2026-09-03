@@ -75,7 +75,7 @@ export default {
 </script>
 
 <template>
-  <div class="flex-1 p-4 overflow-auto">
+  <div class="flex-1 min-w-0 p-4 overflow-auto">
     <woot-button
       color-scheme="success"
       class-names="button--fixed-top"
@@ -85,8 +85,8 @@ export default {
       {{ $t('INTEGRATION_SETTINGS.WEBHOOK.HEADER_BTN_TXT') }}
     </woot-button>
 
-    <div class="flex flex-row gap-4">
-      <div class="w-full lg:w-3/5">
+    <div class="flex flex-row gap-4 min-w-0 w-full">
+      <div class="w-full lg:w-3/5 min-w-0">
         <p
           v-if="!uiFlags.fetchingList && !records.length"
           class="flex flex-col items-center justify-center h-full"
@@ -100,18 +100,20 @@ export default {
 
         <table
           v-if="!uiFlags.fetchingList && records.length"
-          class="woot-table"
+          class="woot-table table-fixed"
         >
           <thead>
-            <th
-              v-for="thHeader in $t(
-                'INTEGRATION_SETTINGS.WEBHOOK.LIST.TABLE_HEADER'
-              )"
-              :key="thHeader"
-              class="last:text-right"
-            >
-              {{ thHeader }}
-            </th>
+            <tr>
+              <th
+                v-for="thHeader in $t(
+                  'INTEGRATION_SETTINGS.WEBHOOK.LIST.TABLE_HEADER'
+                )"
+                :key="thHeader"
+                class="last:w-24 last:text-right"
+              >
+                {{ thHeader }}
+              </th>
+            </tr>
           </thead>
           <tbody>
             <WebhookRow
