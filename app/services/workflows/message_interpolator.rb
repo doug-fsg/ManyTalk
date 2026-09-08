@@ -11,13 +11,11 @@ module Workflows
     end
 
     def interpolate(template)
-      return template if template.blank?
+      interpolate_with(template, escape: true)
+    end
 
-      template.gsub(VARIABLE_PATTERN) do
-        key = Regexp.last_match(1)
-        value = resolve(key)
-        ERB::Util.html_escape(value.to_s)
-      end
+    def interpolate_plain(template)
+      interpolate_with(template, escape: false)
     end
 
     def self.available_variables
@@ -37,6 +35,16 @@ module Workflows
     end
 
     private
+
+    def interpolate_with(template, escape:)
+      return template if template.blank?
+
+      template.gsub(VARIABLE_PATTERN) do
+        key = Regexp.last_match(1)
+        value = resolve(key).to_s
+        escape ? ERB::Util.html_escape(value) : value
+      end
+    end
 
     def resolve(key)
       case key

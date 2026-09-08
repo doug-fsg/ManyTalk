@@ -64,4 +64,26 @@ describe('#filterQueryGenerator', () => {
       filterQueryGenerator(testData).payload.every(i => Array.isArray(i.values))
     ).toBe(true);
   });
+
+  it('serializes kanban stage objects to stage name strings', () => {
+    const result = filterQueryGenerator([
+      {
+        attribute_key: 'kanban_stage_id',
+        filter_operator: 'equal_to',
+        values: { id: 'Etapa 1', name: 'Etapa 1' },
+      },
+    ]);
+    expect(result.payload[0].values).toEqual(['Etapa 1']);
+  });
+
+  it('serializes kanban stage color objects saved as raw values', () => {
+    const result = filterQueryGenerator([
+      {
+        attribute_key: 'kanban_stage_id',
+        filter_operator: 'equal_to',
+        values: { name: 'Etapa 1', color: '#8B5CF6' },
+      },
+    ]);
+    expect(result.payload[0].values).toEqual(['Etapa 1']);
+  });
 });

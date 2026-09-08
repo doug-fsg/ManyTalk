@@ -628,6 +628,8 @@
       "WHATSAPP_SECTION_UPDATE_TITLE": "Update API Key",
       "WHATSAPP_SECTION_UPDATE_PLACEHOLDER": "Enter the new API Key here",
       "WHATSAPP_SECTION_UPDATE_BUTTON": "Update",
+      "SEND_AGENT_NAME_TITLE": "Agent name on WhatsApp",
+      "SEND_AGENT_NAME_SUBHEADER": "When enabled, outgoing text messages from this inbox prepend the agent name. Defaults to enabled.",
       "WHATSAPP_WEBHOOK_TITLE": "Webhook Verification Token",
       "WHATSAPP_CONNECT": "Connect",
       "WHATSAPP_DISCONNECT": "Disconnect",

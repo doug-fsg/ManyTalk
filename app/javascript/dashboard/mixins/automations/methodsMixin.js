@@ -16,6 +16,7 @@ import {
   isCustomAttribute,
   generateCustomAttributes,
 } from 'dashboard/helper/automationHelper';
+import { extractAttributeValueLabel } from 'shared/helpers/formFieldHelpers';
 import { mapGetters } from 'vuex';
 import { useAlert } from 'dashboard/composables';
 
@@ -245,18 +246,16 @@ export default {
           };
         }
         if (inputType === 'kanban_stage_select') {
-          // Para atributos kanban, os valores salvos são apenas o nome do estágio
-          // Precisamos converter para o formato que o multiselect espera
-          const stageName = condition.values[0];
+          const stageName = extractAttributeValueLabel(condition.values[0]);
           if (stageName) {
             return {
               ...condition,
-              values: [{ id: stageName, name: stageName }]
+              values: [{ id: stageName, name: stageName }],
             };
           }
           return {
             ...condition,
-            values: []
+            values: [],
           };
         }
         return {

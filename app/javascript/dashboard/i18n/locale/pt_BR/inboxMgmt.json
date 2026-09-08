@@ -629,6 +629,8 @@
       "WHATSAPP_SECTION_UPDATE_TITLE": "Atualizar Chave de API",
       "WHATSAPP_SECTION_UPDATE_PLACEHOLDER": "Digite a nova chave de API aqui",
       "WHATSAPP_SECTION_UPDATE_BUTTON": "Atualizar",
+      "SEND_AGENT_NAME_TITLE": "Nome do atendente no WhatsApp",
+      "SEND_AGENT_NAME_SUBHEADER": "Quando ativo, as mensagens de texto enviadas por esta caixa incluem o nome do atendente no início. O padrão é ativo.",
       "WHATSAPP_WEBHOOK_TITLE": "Token de verificação do Webhook",
       "WHATSAPP_WEBHOOK_SUBHEADER": "Este token é usado para verificar a autenticidade do webhook endpoint.",
       "WHATSAPP_CONNECT": "Conectar",

@@ -18,6 +18,10 @@ describe Whatsapp::Providers::WhatsappCloudService do
   let(:response_headers) { { 'Content-Type' => 'application/json' } }
   let(:whatsapp_response) { { messages: [{ id: 'message_id' }] } }
 
+  def text_with_agent_name(msg)
+    "*#{msg.sender_name}*: \n#{msg.content}"
+  end
+
   before do
     stub_request(:get, 'https://graph.facebook.com/v22.0/123456789/message_templates')
       .with(headers: { 'Authorization' => 'Bearer test_key' })
@@ -32,11 +36,40 @@ describe Whatsapp::Providers::WhatsappCloudService do
               messaging_product: 'whatsapp',
               context: nil,
               to: '+123456789',
-              text: { body: message.content },
+              text: { body: text_with_agent_name(message) },
               type: 'text'
             }.to_json
           )
           .to_return(status: 200, body: whatsapp_response.to_json, headers: response_headers)
+        expect(service.send_message('+123456789', message)).to eq 'message_id'
+      end
+
+      it 'omits the agent name when inbox preference is explicitly disabled' do
+        whatsapp_channel.provider_config['send_agent_name'] = false
+
+        stub_request(:post, 'https://graph.facebook.com/v13.0/123456789/messages')
+          .with(
+            body: hash_including(
+              text: { body: message.content }
+            )
+          )
+          .to_return(status: 200, body: whatsapp_response.to_json, headers: response_headers)
+
+        expect(service.send_message('+123456789', message)).to eq 'message_id'
+      end
+
+      it 'prepends the agent name when inbox preference is explicitly enabled' do
+        whatsapp_channel.provider_config['send_agent_name'] = true
+        expected_body = text_with_agent_name(message)
+
+        stub_request(:post, 'https://graph.facebook.com/v13.0/123456789/messages')
+          .with(
+            body: hash_including(
+              text: { body: expected_body }
+            )
+          )
+          .to_return(status: 200, body: whatsapp_response.to_json, headers: response_headers)
+
         expect(service.send_message('+123456789', message)).to eq 'message_id'
       end
 
@@ -49,7 +82,7 @@ describe Whatsapp::Providers::WhatsappCloudService do
                 message_id: message.source_id
               },
               to: '+123456789',
-              text: { body: message_with_reply.content },
+              text: { body: text_with_agent_name(message_with_reply) },
               type: 'text'
             }.to_json
           )

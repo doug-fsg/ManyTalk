@@ -161,11 +161,17 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
   end
 
   def format_content(message)
-    feature = whatsapp_channel.inbox.account.feature_enabled?('send_agent_name_in_whatsapp_message')
-    config = whatsapp_channel.provider_config['send_agent_name']
-    return message.content if !feature && !config
+    return message.content unless send_agent_name_enabled?
 
     message&.sender_name.present? ? "*#{message&.sender_name}*: \n#{message.content}" : message.content
+  end
+
+  # Inbox preference. Default true when unset so existing production inboxes keep sending the name.
+  def send_agent_name_enabled?
+    config = whatsapp_channel.provider_config&.[]('send_agent_name')
+    return true if config.nil? || config == ''
+
+    ActiveModel::Type::Boolean.new.cast(config)
   end
 
   def send_attachment_message(phone_number, message)

@@ -24,6 +24,7 @@ module Workflows
       'remove_label' => 'Remover uma etiqueta',
       'send_email_to_team' => 'Enviar um email para a equipe',
       'send_email_transcript' => 'Enviar transcrição por email',
+      'send_email_to_contact' => 'Enviar e-mail ao contato',
       'mute_conversation' => 'Silenciar conversa',
       'snooze_conversation' => 'Sonecar conversa',
       'resolve_conversation' => 'Resolver conversa',

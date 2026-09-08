@@ -95,8 +95,9 @@
   enabled: false
 - name: hide_filters_for_agent
   enabled: false
+# Deprecated: use inbox provider_config.send_agent_name. Do not remove (flag bit order).
 - name: send_agent_name_in_whatsapp_message
-  enabled: true
+  enabled: false
 - name: read_message
   enabled: true
 #- name: disable_whatsapp_messaging_window

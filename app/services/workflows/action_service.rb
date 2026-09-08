@@ -127,6 +127,34 @@ module Workflows
       )
     end
 
+    def send_email_to_contact(params)
+      raw_subject = params[0].to_s
+      raw_body = params[1].to_s.strip
+      return false if raw_body.blank?
+
+      contact = @conversation.contact
+      return false if contact.blank? || contact.email.blank?
+
+      interpolator = Workflows::MessageInterpolator.new(@conversation)
+      subject = interpolator.interpolate_plain(raw_subject).strip
+      body = interpolator.interpolate_plain(raw_body)
+      subject = "[##{@conversation.display_id}] #{@conversation.inbox.name}" if subject.blank?
+
+      ConversationReplyMailer.with(account: @account).workflow_contact_message(
+        @conversation,
+        subject,
+        body
+      )&.deliver_later
+
+      Workflows::ActivityLogger.log(
+        @conversation,
+        'email_to_contact',
+        workflow_name: @workflow.name,
+        contact_email: contact.email
+      )
+      true
+    end
+
     def send_whatsapp_external(params)
       inbox_id = params[0].to_i
       phone_number = params[1]

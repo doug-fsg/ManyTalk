@@ -1,13 +1,27 @@
+import { extractAttributeValueLabel } from 'shared/helpers/formFieldHelpers';
+
+const serializeFilterValue = value => {
+  if (value == null) return value;
+  if (typeof value !== 'object') return value;
+  if (value.id != null && typeof value.id !== 'object') return value.id;
+  const label = extractAttributeValueLabel(value);
+  return label != null ? label : value;
+};
+
 const setArrayValues = item => {
-  return item.values[0]?.id ? item.values.map(val => val.id) : item.values;
+  if (item.values[0] && typeof item.values[0] === 'object') {
+    return item.values.map(val => serializeFilterValue(val));
+  }
+  return item.values;
 };
 
 const contentValuesToArray = values => {
   if (Array.isArray(values)) {
-    return values.map(v => (v && typeof v === 'object' && v.id != null ? v.id : v));
+    return values.map(v => serializeFilterValue(v));
   }
-  if (values && typeof values === 'object' && values.id != null) {
-    return [values.id];
+  if (values && typeof values === 'object') {
+    const serialized = serializeFilterValue(values);
+    return serialized != null && serialized !== '' ? [serialized] : [];
   }
   const text = values == null ? '' : String(values);
   return text
@@ -24,7 +38,8 @@ const generateValues = item => {
     return setArrayValues(item);
   }
   if (typeof item.values === 'object') {
-    return [item.values.id];
+    const serialized = serializeFilterValue(item.values);
+    return serialized != null && serialized !== '' ? [serialized] : [];
   }
   if (!item.values) {
     return [];

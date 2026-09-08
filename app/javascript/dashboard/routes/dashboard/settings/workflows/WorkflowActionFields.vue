@@ -109,6 +109,13 @@ const toggleLabel = labelTitle => {
   patchAction({ action_params: params });
 };
 
+const updateContactEmailParam = (index, value) => {
+  const params = [...(actionParams.value.length ? actionParams.value : ['', ''])];
+  while (params.length < 2) params.push('');
+  params[index] = typeof value === 'string' ? value : (value && value.target && value.target.value) || '';
+  patchAction({ action_params: params });
+};
+
 const onKanbanStageChange = value => {
   if (!value || !value.length) {
     patchAction({ action_params: [] });
@@ -296,6 +303,36 @@ const testWhatsappExternal = async () => {
       >
         {{ $t('WORKFLOW.EDITOR.WHATSAPP_TEST') }}
       </woot-button>
+    </div>
+
+    <div v-else-if="actionInputType === 'contact_email'" class="space-y-3">
+      <p class="text-xs text-slate-500 dark:text-slate-400">
+        {{ $t('WORKFLOW.EDITOR.CONTACT_EMAIL_HINT') }}
+      </p>
+      <div>
+        <label :class="labelClass">{{ $t('WORKFLOW.EDITOR.CONTACT_EMAIL_SUBJECT_LABEL') }}</label>
+        <input
+          type="text"
+          name="workflow-action-contact-email-subject"
+          :value="actionParams[0] || ''"
+          :disabled="readOnly"
+          :class="inputClass"
+          :placeholder="$t('WORKFLOW.EDITOR.CONTACT_EMAIL_SUBJECT_PLACEHOLDER')"
+          autocomplete="off"
+          @input="updateContactEmailParam(0, $event.target.value)"
+        />
+      </div>
+      <div>
+        <label :class="labelClass">{{ $t('WORKFLOW.EDITOR.MESSAGE_LABEL') }}</label>
+        <WorkflowMessageInput
+          :value="actionParams[1] || ''"
+          :disabled="readOnly"
+          :input-class="inputClass + ' min-h-[100px]'"
+          :placeholder="$t('WORKFLOW.EDITOR.MESSAGE_PLACEHOLDER')"
+          :hint="$t('WORKFLOW.EDITOR.MESSAGE_VARIABLES_HINT')"
+          @input="updateContactEmailParam(1, $event)"
+        />
+      </div>
     </div>
 
     <div v-else-if="actionInputType === 'kanban_stage_select'" class="space-y-2">

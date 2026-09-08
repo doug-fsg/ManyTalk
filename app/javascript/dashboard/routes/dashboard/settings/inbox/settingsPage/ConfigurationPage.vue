@@ -35,6 +35,7 @@ export default {
     return {
       hmacMandatory: false,
       whatsAppInboxAPIKey: '',
+      sendAgentName: true,
     };
   },
   validations: {
@@ -79,6 +80,30 @@ export default {
   methods: {
     setDefaults() {
       this.hmacMandatory = this.inbox.hmac_mandatory || false;
+      const sendAgentName = this.inbox.provider_config?.send_agent_name;
+      this.sendAgentName = sendAgentName == null ? true : Boolean(sendAgentName);
+    },
+    handleSendAgentNameFlag(value) {
+      this.sendAgentName = value;
+      this.updateSendAgentName();
+    },
+    async updateSendAgentName() {
+      try {
+        const payload = {
+          id: this.inbox.id,
+          formData: false,
+          channel: {
+            provider_config: {
+              ...this.inbox.provider_config,
+              send_agent_name: this.sendAgentName,
+            },
+          },
+        };
+        await this.$store.dispatch('inboxes/updateInbox', payload);
+        useAlert(this.$t('INBOX_MGMT.EDIT.API.SUCCESS_MESSAGE'));
+      } catch (error) {
+        useAlert(this.$t('INBOX_MGMT.EDIT.API.ERROR_MESSAGE'));
+      }
     },
     handleHmacFlag() {
       this.updateInbox();
@@ -254,6 +279,19 @@ export default {
         </woot-button>
       </SettingsSection>
 
+      <SettingsSection
+        v-if="isAWhatsAppCloudChannel"
+        :title="$t('INBOX_MGMT.SETTINGS_POPUP.SEND_AGENT_NAME_TITLE')"
+        :sub-title="$t('INBOX_MGMT.SETTINGS_POPUP.SEND_AGENT_NAME_SUBHEADER')"
+      >
+        <label class="flex items-center gap-2">
+          <woot-switch
+            :value="sendAgentName"
+            @input="handleSendAgentNameFlag"
+          />
+          {{ $t('INBOX_MGMT.ADD.WHATSAPP.SEND_AGENT_NAME.LABEL') }}
+        </label>
+      </SettingsSection>
       <SettingsSection
         :title="$t('INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_WEBHOOK_TITLE')"
         :sub-title="$t('INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_WEBHOOK_SUBHEADER')"

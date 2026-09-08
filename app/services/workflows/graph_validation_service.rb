@@ -196,6 +196,9 @@ module Workflows
         end
         add_error('WhatsApp action requires a message', node_id: node['id']) if params[2].blank?
         validate_external_whatsapp_inbox(params[0], node) if params[0].present?
+      when 'send_email_to_contact'
+        params = data['action_params'] || []
+        add_error('Email action requires a message body', node_id: node['id']) if params[1].blank?
       end
     end
 

@@ -21,6 +21,7 @@ import {
   WORKFLOW_FLOW_EVENT_KEY,
   WORKFLOW_REPLY_CONDITION_KEYS,
 } from './constants';
+import { extractAttributeValueLabel } from 'shared/helpers/formFieldHelpers';
 import { ensureWorkflowEditorBootstrapped } from './useWorkflowEditorBootstrap';
 import {
   buildFormSubmittedAutomationTypes,
@@ -302,10 +303,13 @@ export default {
       const customAttribute = this.findCustomAttribute(key);
       if (key === 'kanban_stage_id') return this.kanbanStageOptions();
       if (customAttribute && customAttribute.is_kanban) {
-        return (customAttribute.attribute_values || []).map(stage => ({
-          id: stage,
-          name: stage,
-        }));
+        return (customAttribute.attribute_values || [])
+          .map(stage => {
+            const stageName = extractAttributeValueLabel(stage);
+            if (!stageName) return null;
+            return { id: stageName, name: stageName };
+          })
+          .filter(Boolean);
       }
       return this.getConditionDropdownValues(key);
     },
@@ -342,7 +346,13 @@ export default {
       const attr = (this.allCustomAttributes || []).find(
         a => a.is_kanban && String(a.id) === String(pipelineId)
       );
-      return (attr?.attribute_values || []).map(stage => ({ id: stage, name: stage }));
+      return (attr?.attribute_values || [])
+        .map(stage => {
+          const stageName = extractAttributeValueLabel(stage);
+          if (!stageName) return null;
+          return { id: stageName, name: stageName };
+        })
+        .filter(Boolean);
     },
   },
 };

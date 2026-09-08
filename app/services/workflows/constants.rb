@@ -30,6 +30,7 @@ module Workflows
       snooze_conversation
       change_priority
       send_email_transcript
+      send_email_to_contact
       change_kanban_stage
       add_private_note
       send_whatsapp_external

@@ -1,6 +1,8 @@
 # Variables
 APP_NAME := chatwoot
 RAILS_ENV ?= development
+DEV_PORT ?= 3001
+DEV_PROCFILE := tmp/Procfile.dev.$(DEV_PORT)
 
 # Targets
 setup:
@@ -43,6 +45,19 @@ force_run:
 	rm -f ./.overmind.sock
 	overmind start -f Procfile.dev
 
+run_dev:
+	@if [ -f ./.overmind.sock ]; then \
+		echo "Overmind is already running. Use 'make force_run_dev' to start a new instance."; \
+	else \
+		sed 's/-p 3000/-p $(DEV_PORT)/' Procfile.dev > $(DEV_PROCFILE); \
+		overmind start -d . -f $(DEV_PROCFILE); \
+	fi
+
+force_run_dev:
+	rm -f ./.overmind.sock
+	sed 's/-p 3000/-p $(DEV_PORT)/' Procfile.dev > $(DEV_PROCFILE)
+	overmind start -d . -f $(DEV_PROCFILE)
+
 debug:
 	overmind connect backend
 
@@ -52,4 +67,4 @@ debug_worker:
 docker: 
 	docker build -t $(APP_NAME) -f ./docker/Dockerfile .
 
-.PHONY: setup db_create db_migrate db_seed db_reset db console server burn docker run force_run debug debug_worker
+.PHONY: setup db_create db_migrate db_seed db_reset db console server burn docker run force_run run_dev force_run_dev debug debug_worker

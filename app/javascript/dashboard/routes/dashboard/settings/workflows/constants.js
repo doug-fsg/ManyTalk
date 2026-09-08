@@ -163,6 +163,11 @@ export const WORKFLOW_ACTION_TYPES = [
     label: 'Enviar para WhatsApp externo',
     inputType: 'whatsapp_external',
   },
+  {
+    key: 'send_email_to_contact',
+    label: 'Enviar e-mail ao contato',
+    inputType: 'contact_email',
+  },
 ];
 
 export const WORKFLOW_WAIT_RESPONDERS = [

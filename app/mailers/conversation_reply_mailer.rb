@@ -57,6 +57,22 @@ class ConversationReplyMailer < ApplicationMailer
          })
   end
 
+  def workflow_contact_message(conversation, subject, body)
+    return unless smtp_config_set_or_development?
+
+    init_conversation_attributes(conversation)
+    return if @contact&.email.blank?
+
+    @email_body = body
+    mail({
+           to: @contact.email,
+           from: from_email_with_name,
+           subject: subject
+         }) do |format|
+      format.text { render plain: @email_body }
+    end
+  end
+
   private
 
   def init_conversation_attributes(conversation)

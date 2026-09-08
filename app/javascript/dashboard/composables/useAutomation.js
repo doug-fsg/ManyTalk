@@ -16,6 +16,7 @@ import {
   isCustomAttribute,
   generateCustomAttributes,
 } from 'dashboard/helper/automationHelper';
+import { extractAttributeValueLabel } from 'shared/helpers/formFieldHelpers';
 
 /**
  * Composable for handling automation-related functionality.
@@ -197,11 +198,14 @@ export function useAutomation() {
         const raw = Array.isArray(condition.values)
           ? condition.values[0]
           : condition.values;
-        const id = raw && typeof raw === 'object' ? raw.id : raw;
+        const stageName = extractAttributeValueLabel(raw);
         return {
           ...condition,
           query_operator: condition.query_operator || 'and',
-          values: id == null || id === '' ? null : { id, name: String(id) },
+          values:
+            stageName == null || stageName === ''
+              ? null
+              : { id: stageName, name: stageName },
         };
       }
       if (inputType === 'comma_separated_plain_text') {

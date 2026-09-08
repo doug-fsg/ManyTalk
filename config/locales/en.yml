@@ -213,6 +213,7 @@ en:
         webhook_sent: "%{workflow_name} sent a webhook"
         email_to_team: "%{workflow_name} sent an email to team %{team_name}"
         email_transcript: "%{workflow_name} sent the conversation transcript by email"
+        email_to_contact: "%{workflow_name} sent an email to %{contact_email}"
         whatsapp_external: "%{workflow_name} sent a message to external WhatsApp"
         wait_kinds:
           wait: "wait"

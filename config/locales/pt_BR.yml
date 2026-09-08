@@ -192,6 +192,7 @@ pt_BR:
         webhook_sent: "%{workflow_name} enviou um webhook"
         email_to_team: "%{workflow_name} enviou e-mail à equipe %{team_name}"
         email_transcript: "%{workflow_name} enviou a transcrição por e-mail"
+        email_to_contact: "%{workflow_name} enviou e-mail para %{contact_email}"
         whatsapp_external: "%{workflow_name} enviou mensagem para WhatsApp externo"
         wait_kinds:
           wait: "espera"
