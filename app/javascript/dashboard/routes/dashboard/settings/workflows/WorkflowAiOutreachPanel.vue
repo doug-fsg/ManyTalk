@@ -1,21 +1,33 @@
 <script setup>
 import { computed, ref } from 'vue';
+import { useStore } from 'dashboard/composables/store';
 import { useI18n } from 'dashboard/composables/useI18n';
 import {
   AI_OUTREACH_OBJECTIVES,
   AI_OUTREACH_TONES,
   AI_OUTREACH_LANGUAGES,
+  KANBAN_TRIGGER_EVENT_KEYS,
   composeAiOutreachPrompt,
   getAiOutreachObjectivePrompt,
 } from './constants';
+import { listExternalWhatsappInboxes } from './workflowWhatsappHelper';
 
 const props = defineProps({
   nodeProps: { type: Object, default: () => ({}) },
   readOnly: { type: Boolean, default: false },
+  triggerEventName: { type: String, default: '' },
 });
 
 const emit = defineEmits(['update-node']);
 const { t } = useI18n();
+const store = useStore();
+
+const whatsappInboxes = computed(() =>
+  listExternalWhatsappInboxes(store.getters['inboxes/getInboxes'] || [])
+);
+const requiresInbox = computed(() =>
+  KANBAN_TRIGGER_EVENT_KEYS.includes(props.triggerEventName)
+);
 
 const showAdvanced = ref(false);
 const isEditingPrompt = ref(false);
@@ -94,6 +106,35 @@ const labelClass =
 
 <template>
   <div class="space-y-5">
+    <div v-if="requiresInbox" class="space-y-1.5">
+      <label :class="labelClass">{{ $t('WORKFLOW.EDITOR.ACTION_INBOX_LABEL') }}</label>
+      <select
+        :value="nodeProps.inbox_id || ''"
+        :disabled="readOnly"
+        :class="inputClass"
+        name="workflow-ai-outreach-inbox"
+        @change="updateFields({ inbox_id: $event.target.value || '' })"
+      >
+        <option value="">{{ $t('WORKFLOW.EDITOR.ACTION_INBOX_PLACEHOLDER') }}</option>
+        <option
+          v-for="inbox in whatsappInboxes"
+          :key="inbox.id"
+          :value="inbox.id"
+        >
+          {{ inbox.name }}
+        </option>
+      </select>
+      <p class="text-xs text-slate-500 dark:text-slate-400">
+        {{ $t('WORKFLOW.EDITOR.ACTION_INBOX_HINT') }}
+      </p>
+      <p
+        v-if="!whatsappInboxes.length"
+        class="text-xs text-amber-600 dark:text-amber-400"
+      >
+        {{ $t('WORKFLOW.EDITOR.WHATSAPP_NO_INBOX') }}
+      </p>
+    </div>
+
     <div>
       <label :class="labelClass">{{ $t('WORKFLOW.EDITOR.AI_OBJECTIVE_LABEL') }}</label>
       <div class="grid grid-cols-2 gap-2">

@@ -184,7 +184,16 @@ module Workflows
       end
     end
 
+    def kanban_trigger?
+      event = nodes.find { |n| n['type'] == 'trigger' }&.dig('data', 'event_name')
+      Constants::KANBAN_TRIGGER_EVENTS.include?(event)
+    end
+
     def validate_action_params(name, data, node)
+      if kanban_trigger? && Constants::ACTIONS_REQUIRING_INBOX_ON_KANBAN.include?(name)
+        validate_kanban_action_inbox(data, node)
+      end
+
       case name
       when 'send_whatsapp_external'
         params = data['action_params'] || []
@@ -200,6 +209,22 @@ module Workflows
         params = data['action_params'] || []
         add_error('Email action requires a message body', node_id: node['id']) if params[1].blank?
       end
+    end
+
+    def validate_kanban_action_inbox(data, node)
+      inbox_id = data['inbox_id']
+      if inbox_id.blank?
+        add_error('Kanban action requires an inbox', node_id: node['id'])
+        return
+      end
+
+      inbox = account&.inboxes&.find_by(id: inbox_id)
+      add_error('Kanban action inbox not found', node_id: node['id']) if inbox.blank?
+      return if inbox.blank?
+
+      return if inbox.external_whatsapp_capable?
+
+      add_error('Kanban action requires a WhatsApp or WhatsApp Web (API) inbox', node_id: node['id'])
     end
 
     def validate_external_whatsapp_inbox(inbox_id, node)
@@ -242,6 +267,8 @@ module Workflows
           node_id: node['id']
         )
       end
+
+      validate_kanban_action_inbox(data, node) if kanban_trigger?
     end
 
     def validate_ai_conversation_analysis_node(data, node)

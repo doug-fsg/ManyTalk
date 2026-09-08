@@ -336,6 +336,29 @@ RSpec.describe WorkflowEnrollment, type: :model do
       expect(enrollment.reload.status).to eq('cancelled')
     end
 
+    it 'does not cancel when cancel_on_conversation_resolved is disabled' do
+      graph_no_cancel = workflow.graph.merge('settings' => { 'cancel_on_conversation_resolved' => false })
+      no_cancel_workflow = create(:workflow, account: account, graph: graph_no_cancel)
+      enrollment = create(:workflow_enrollment, account: account, conversation: conversation,
+                                                workflow: no_cancel_workflow, status: 'active')
+      described_class.cancel_for_conversation!(conversation, reason: 'conversation_resolved')
+      expect(enrollment.reload.status).to eq('active')
+    end
+
+    it 'cancels a contact-scoped enrollment when its conversation is resolved' do
+      enrollment = create(
+        :workflow_enrollment,
+        account: account,
+        conversation: conversation,
+        workflow: workflow,
+        status: 'active',
+        enrollment_scope: 'contact',
+        contact_id: conversation.contact_id
+      )
+      described_class.cancel_for_conversation!(conversation, reason: 'conversation_resolved')
+      expect(enrollment.reload.status).to eq('cancelled')
+    end
+
     it 'respects cancel_on_contact_reply setting' do
       graph_no_cancel = workflow.graph.merge('settings' => { 'cancel_on_contact_reply' => false })
       no_cancel_workflow = create(:workflow, account: account, graph: graph_no_cancel)

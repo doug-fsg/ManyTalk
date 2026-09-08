@@ -240,5 +240,16 @@ module Workflows
     }.freeze
 
     ENROLLMENT_SCOPES = %w[contact conversation].freeze
+
+    KANBAN_TRIGGER_EVENTS = %w[
+      contact_kanban_stage_created
+      contact_kanban_stage_changed
+      contact_kanban_stage_idle
+    ].freeze
+
+    ACTIONS_REQUIRING_INBOX_ON_KANBAN = %w[
+      send_message
+      send_attachment
+    ].freeze
   end
 end

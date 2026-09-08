@@ -8,6 +8,7 @@ const cloneParams = params => {
 const normalizeActionItem = action => ({
   action_name: (action && action.action_name) || 'send_message',
   action_params: cloneParams(action && action.action_params),
+  inbox_id: action && action.inbox_id ? action.inbox_id : '',
 });
 
 const paramsHaveContent = params =>
@@ -52,6 +53,7 @@ export const normalizeActionsList = data => {
 export const defaultWorkflowAction = () => ({
   action_name: 'send_message',
   action_params: [''],
+  inbox_id: '',
 });
 
 /** Persist actions[] and mirror the first item on legacy fields for canvas/compat. */
@@ -65,6 +67,7 @@ export const syncActionNodeFields = actions => {
     actions: list,
     action_name: first.action_name,
     action_params: cloneParams(first.action_params),
+    inbox_id: first.inbox_id || '',
   };
 };
 

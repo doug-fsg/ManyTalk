@@ -378,6 +378,21 @@ RSpec.describe Workflows::OrchestratorService do
       end.not_to change(WorkflowEnrollment, :count)
     end
 
+    it 'enrolls on a resolved conversation when cancel_on_conversation_resolved is disabled' do
+      graph = workflow.graph.deep_dup
+      graph['settings'] = Workflows::Constants::DEFAULT_SETTINGS.merge('cancel_on_conversation_resolved' => false)
+      workflow.update!(graph: graph)
+      conversation.resolved!
+
+      expect do
+        described_class.on_event(
+          event_name: 'conversation_created',
+          account_id: account.id,
+          conversation_id: conversation.id
+        )
+      end.to change(WorkflowEnrollment, :count).by(1)
+    end
+
     it 'enrolls when the trigger is conversation_resolved' do
       resolved_graph = workflow.graph.deep_dup
       resolved_graph['nodes'][0]['data']['event_name'] = 'conversation_resolved'
@@ -513,6 +528,73 @@ RSpec.describe Workflows::OrchestratorService do
 
       expect(created_workflow.workflow_enrollments.count).to eq(0)
       expect(changed_workflow.workflow_enrollments.count).to eq(1)
+    end
+
+    it 'enrolls created trigger when contact has no conversations but a WhatsApp inbox exists' do
+      created_workflow = build_kanban_workflow('contact_kanban_stage_created')
+      create(:channel_whatsapp, account: account, validate_provider_config: false, sync_templates: false)
+      contact.update!(phone_number: '+5511999999999')
+
+      expect do
+        described_class.on_contact_kanban_stage_changed(
+          account_id: account.id,
+          contact_id: contact.id,
+          pipeline_id: pipeline.id,
+          stage_id: 'Estágio 1',
+          previous_stage_id: nil
+        )
+      end.to change(Conversation, :count).by(1)
+
+      expect(created_workflow.workflow_enrollments.count).to eq(1)
+    end
+
+    it 'does not enroll when contact has no conversations and no WhatsApp inbox' do
+      created_workflow = build_kanban_workflow('contact_kanban_stage_created')
+
+      expect do
+        described_class.on_contact_kanban_stage_changed(
+          account_id: account.id,
+          contact_id: contact.id,
+          pipeline_id: pipeline.id,
+          stage_id: 'Estágio 1',
+          previous_stage_id: nil
+        )
+      end.not_to change(Conversation, :count)
+
+      expect(created_workflow.workflow_enrollments.count).to eq(0)
+    end
+
+    it 'does not enroll on a resolved conversation when cancel on resolve is enabled' do
+      created_workflow = build_kanban_workflow('contact_kanban_stage_created')
+      conversation.update!(status: :resolved)
+
+      described_class.on_contact_kanban_stage_changed(
+        account_id: account.id,
+        contact_id: contact.id,
+        pipeline_id: pipeline.id,
+        stage_id: 'Estágio 1',
+        previous_stage_id: nil
+      )
+
+      expect(created_workflow.workflow_enrollments.count).to eq(0)
+    end
+
+    it 'enrolls on a resolved conversation when cancel on resolve is disabled' do
+      created_workflow = build_kanban_workflow('contact_kanban_stage_created')
+      graph = created_workflow.graph.deep_dup
+      graph['settings'] = Workflows::Constants::DEFAULT_SETTINGS.merge('cancel_on_conversation_resolved' => false)
+      created_workflow.update!(graph: graph)
+      conversation.update!(status: :resolved)
+
+      described_class.on_contact_kanban_stage_changed(
+        account_id: account.id,
+        contact_id: contact.id,
+        pipeline_id: pipeline.id,
+        stage_id: 'Estágio 1',
+        previous_stage_id: nil
+      )
+
+      expect(created_workflow.workflow_enrollments.count).to eq(1)
     end
   end
 end

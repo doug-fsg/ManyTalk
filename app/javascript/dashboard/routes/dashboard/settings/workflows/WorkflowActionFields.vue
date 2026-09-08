@@ -4,7 +4,7 @@ import { useStore } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
 import { useI18n } from 'dashboard/composables/useI18n';
 import WorkflowsAPI from 'dashboard/api/workflows';
-import { WORKFLOW_ACTION_TYPES } from './constants';
+import { KANBAN_TRIGGER_EVENT_KEYS, WORKFLOW_ACTION_TYPES } from './constants';
 import KanbanStageSelect from 'dashboard/routes/dashboard/settings/macros/components/KanbanStageSelect.vue';
 import AutomationFileInput from 'dashboard/components/widgets/AutomationFileInput.vue';
 import {
@@ -17,6 +17,7 @@ import WorkflowMessageInput from './WorkflowMessageInput.vue';
 const props = defineProps({
   action: { type: Object, required: true },
   readOnly: { type: Boolean, default: false },
+  triggerEventName: { type: String, default: '' },
 });
 
 const emit = defineEmits(['update']);
@@ -35,6 +36,16 @@ const whatsappInboxes = computed(() =>
 const actionName = computed(() => props.action?.action_name);
 const actionParams = computed(() =>
   Array.isArray(props.action?.action_params) ? props.action.action_params : []
+);
+
+const isKanbanTrigger = computed(() =>
+  KANBAN_TRIGGER_EVENT_KEYS.includes(props.triggerEventName)
+);
+
+const requiresInbox = computed(
+  () =>
+    isKanbanTrigger.value &&
+    ['send_message', 'send_attachment'].includes(actionName.value)
 );
 
 const actionInputType = computed(() => {
@@ -91,7 +102,11 @@ const onMessageInput = value => {
 };
 
 const onActionNameChange = newName => {
-  patchAction({ action_name: newName, action_params: [] });
+  patchAction({ action_name: newName, action_params: [], inbox_id: '' });
+};
+
+const onInboxChange = value => {
+  patchAction({ inbox_id: value || '' });
 };
 
 const onSingleSelectChange = value => {
@@ -193,6 +208,35 @@ const testWhatsappExternal = async () => {
           {{ item.label }}
         </option>
       </select>
+    </div>
+
+    <div v-if="requiresInbox" class="space-y-1.5">
+      <label :class="labelClass">{{ $t('WORKFLOW.EDITOR.ACTION_INBOX_LABEL') }}</label>
+      <select
+        :value="action.inbox_id || ''"
+        :disabled="readOnly"
+        :class="inputClass"
+        name="workflow-action-inbox"
+        @change="onInboxChange($event.target.value)"
+      >
+        <option value="">{{ $t('WORKFLOW.EDITOR.ACTION_INBOX_PLACEHOLDER') }}</option>
+        <option
+          v-for="inbox in whatsappInboxes"
+          :key="inbox.id"
+          :value="inbox.id"
+        >
+          {{ inbox.name }}
+        </option>
+      </select>
+      <p class="text-xs text-slate-500 dark:text-slate-400">
+        {{ $t('WORKFLOW.EDITOR.ACTION_INBOX_HINT') }}
+      </p>
+      <p
+        v-if="!whatsappInboxes.length"
+        class="text-xs text-amber-600 dark:text-amber-400"
+      >
+        {{ $t('WORKFLOW.EDITOR.WHATSAPP_NO_INBOX') }}
+      </p>
     </div>
 
     <div

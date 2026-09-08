@@ -12,6 +12,7 @@ const props = defineProps({
   nodeId: { type: [String, Number], default: '' },
   nodeProps: { type: Object, default: () => ({}) },
   readOnly: { type: Boolean, default: false },
+  triggerEventName: { type: String, default: '' },
 });
 
 const emit = defineEmits(['update-node']);
@@ -96,6 +97,7 @@ const removeAction = index => {
             <WorkflowActionFields
               :action="action"
               :read-only="readOnly"
+              :trigger-event-name="triggerEventName"
               @update="onUpdateAction(index, $event)"
             />
           </div>

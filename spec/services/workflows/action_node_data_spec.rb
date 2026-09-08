@@ -30,5 +30,17 @@ RSpec.describe Workflows::ActionNodeData do
     it 'returns empty list when no action is configured' do
       expect(described_class.items({})).to eq([])
     end
+
+    it 'keeps inbox_id when present' do
+      expect(described_class.items(
+               'action_name' => 'send_message',
+               'action_params' => ['Oi'],
+               'inbox_id' => 42
+             )).to eq([{
+                         'action_name' => 'send_message',
+                         'action_params' => ['Oi'],
+                         'inbox_id' => 42
+                       }])
+    end
   end
 end

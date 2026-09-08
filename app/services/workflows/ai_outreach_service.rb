@@ -23,6 +23,7 @@ module Workflows
         workflow_id: workflow.id,
         workflow_node_id: node['id'],
         enrollment_id: enrollment.id,
+        inbox_id: selected_inbox_id(data),
         context: { last_messages: last_messages_payload }
       )
 
@@ -57,8 +58,14 @@ module Workflows
         tone_preset: data['tone_preset'].presence || 'friendly',
         language: data['language'].presence || 'client',
         include_last_messages: true,
-        prompt_customized: ActiveModel::Type::Boolean.new.cast(data['prompt_customized'])
-      }
+        prompt_customized: ActiveModel::Type::Boolean.new.cast(data['prompt_customized']),
+        inbox_id: selected_inbox_id(data)
+      }.compact
+    end
+
+    def selected_inbox_id(data)
+      id = data['inbox_id'].presence || conversation.inbox_id
+      id.to_i
     end
 
     def last_messages_payload

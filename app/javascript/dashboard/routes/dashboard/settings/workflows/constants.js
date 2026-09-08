@@ -310,6 +310,7 @@ export const AI_OUTREACH_DEFAULTS = {
   prompt: getAiOutreachObjectivePrompt('reengagement'),
   prompt_customized: false,
   include_last_messages: true,
+  inbox_id: '',
 };
 
 export const AI_INTENT_CATALOG = [

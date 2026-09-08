@@ -103,6 +103,12 @@ const editingNodeErrors = computed(() => {
   return raw.map(message => humanizeValidationError(message, t));
 });
 
+const triggerEventName = computed(() => {
+  const nodes = workflow.value?.graph?.nodes || [];
+  const trigger = nodes.find(node => node.type === 'trigger');
+  return trigger?.data?.event_name || '';
+});
+
 const NODE_TYPE_LABEL_KEYS = {
   trigger: 'WORKFLOW.EDITOR.NODE_TRIGGER',
   wait: 'WORKFLOW.EDITOR.NODE_WAIT',
@@ -782,6 +788,7 @@ const activeStatusLabel = computed(() =>
             :node="editingNode"
             :read-only="readOnlyGraph"
             :node-errors="editingNodeErrors"
+            :trigger-event-name="triggerEventName"
             as-modal
             @update-node="onUpdateNode"
           />

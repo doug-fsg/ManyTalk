@@ -16,8 +16,9 @@ module Workflows
 
           {
             'action_name' => entry[:action_name].to_s,
-            'action_params' => Array(entry[:action_params])
-          }
+            'action_params' => Array(entry[:action_params]),
+            'inbox_id' => entry[:inbox_id]
+          }.compact
         end
       end
 
@@ -25,8 +26,9 @@ module Workflows
 
       [{
         'action_name' => payload[:action_name].to_s,
-        'action_params' => Array(payload[:action_params])
-      }]
+        'action_params' => Array(payload[:action_params]),
+        'inbox_id' => payload[:inbox_id]
+      }.compact]
     end
   end
 end

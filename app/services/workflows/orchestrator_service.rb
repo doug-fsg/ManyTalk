@@ -140,13 +140,10 @@ module Workflows
         workflows = account.workflows.for_trigger_event(event_name).limit(Constants::MAX_WORKFLOWS_PER_EVENT)
         return if workflows.empty?
 
-        conversations = contact.conversations.open
-        conversations = conversations.order(updated_at: :desc).limit(1)
+        workflows.each do |workflow|
+          next if workflow.settings['allow_manual_start_only']
 
-        conversations.each do |conversation|
-          workflows.each do |workflow|
-            next if workflow.settings['allow_manual_start_only']
-
+          KanbanEnrollmentConversations.new(contact).resolve_for(workflow).each do |conversation|
             process_workflow_trigger(workflow, conversation, nil, {
               'pipeline_id' => [nil, pipeline_id.to_s],
               'stage_id' => [previous_stage_id, stage_id]
@@ -158,7 +155,7 @@ module Workflows
       private
 
       def process_workflow_trigger(workflow, conversation, message, changed_attributes, event_name: nil)
-        return if skip_resolved_conversation?(conversation, event_name)
+        return if skip_resolved_conversation?(conversation, event_name, workflow)
         return if skip_enrollment_for_older_conversation?(workflow, conversation)
 
         trigger = workflow.trigger_node
@@ -195,8 +192,11 @@ module Workflows
         advance_from(workflow, enrollment, conversation, trigger['id'], depth: 0)
       end
 
-      def skip_resolved_conversation?(conversation, event_name)
-        conversation.resolved? && event_name.to_s != 'conversation_resolved'
+      def skip_resolved_conversation?(conversation, event_name, workflow)
+        return false if event_name.to_s == 'conversation_resolved'
+        return false unless conversation.resolved?
+
+        workflow.settings['cancel_on_conversation_resolved'] != false
       end
 
       def skip_enrollment_for_older_conversation?(workflow, conversation)

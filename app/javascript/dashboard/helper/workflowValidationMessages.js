@@ -13,6 +13,12 @@ const ERROR_RULES = [
     /Wait for reply edges must use sourceHandle/i,
     'WORKFLOW.VALIDATION.WAIT_REPLY_BRANCHES',
   ],
+  [/Kanban action requires an inbox/i, 'WORKFLOW.VALIDATION.KANBAN_ACTION_INBOX'],
+  [/Kanban action inbox not found/i, 'WORKFLOW.VALIDATION.KANBAN_ACTION_INBOX_NOT_FOUND'],
+  [
+    /Kanban action requires a WhatsApp/i,
+    'WORKFLOW.VALIDATION.KANBAN_ACTION_INBOX_TYPE',
+  ],
   [/WhatsApp action requires an inbox/i, 'WORKFLOW.VALIDATION.WHATSAPP_INBOX'],
   [
     /WhatsApp action requires a phone number/i,

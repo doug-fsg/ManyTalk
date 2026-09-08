@@ -351,4 +351,113 @@ RSpec.describe Workflows::GraphValidationService do
       expect(Workflows::GraphValidationService.error_messages(result[:errors]).join).to include('unpublished form')
     end
   end
+
+  describe 'kanban trigger action inbox' do
+    let(:whatsapp_inbox) do
+      create(:channel_whatsapp, account: account, validate_provider_config: false, sync_templates: false).inbox
+    end
+
+    def kanban_graph(action_data)
+      {
+        'nodes' => [
+          {
+            'id' => 'trigger_1',
+            'type' => 'trigger',
+            'data' => { 'event_name' => 'contact_kanban_stage_created', 'conditions' => [] }
+          },
+          { 'id' => 'action_1', 'type' => 'action', 'data' => action_data }
+        ],
+        'edges' => [{ 'id' => 'e1', 'source' => 'trigger_1', 'target' => 'action_1' }],
+        'settings' => {}
+      }
+    end
+
+    it 'rejects send_message without inbox on a Kanban trigger' do
+      result = described_class.new(
+        graph: kanban_graph('action_name' => 'send_message', 'action_params' => ['Oi']),
+        account: account
+      ).perform
+      expect(result[:valid]).to be false
+      expect(Workflows::GraphValidationService.error_messages(result[:errors]).join).to include('Kanban action requires an inbox')
+    end
+
+    it 'accepts send_message with a WhatsApp inbox on a Kanban trigger' do
+      result = described_class.new(
+        graph: kanban_graph(
+          'action_name' => 'send_message',
+          'action_params' => ['Oi'],
+          'inbox_id' => whatsapp_inbox.id
+        ),
+        account: account
+      ).perform
+      expect(result[:valid]).to be true
+    end
+
+    it 'does not require inbox for send_message on conversation_created' do
+      graph = build(:workflow).graph
+      graph['nodes'][1]['data'] = { 'action_name' => 'send_message', 'action_params' => ['Oi'] }
+      result = described_class.new(graph: graph, account: account).perform
+      expect(result[:valid]).to be true
+    end
+
+    it 'rejects ai_outreach without inbox on a Kanban trigger' do
+      account.enable_features!('inteligencia_artificial')
+      graph = {
+        'nodes' => [
+          {
+            'id' => 'trigger_1',
+            'type' => 'trigger',
+            'data' => { 'event_name' => 'contact_kanban_stage_created', 'conditions' => [] }
+          },
+          {
+            'id' => 'ai_1',
+            'type' => 'ai_outreach',
+            'data' => {
+              'objective_preset' => 'reengagement',
+              'tone_preset' => 'friendly',
+              'language' => 'client',
+              'prompt' => 'Retome o contato.',
+              'prompt_customized' => false
+            }
+          }
+        ],
+        'edges' => [{ 'id' => 'e1', 'source' => 'trigger_1', 'target' => 'ai_1' }],
+        'settings' => {}
+      }
+
+      result = described_class.new(graph: graph, account: account).perform
+      expect(result[:valid]).to be false
+      expect(Workflows::GraphValidationService.error_messages(result[:errors]).join).to include('Kanban action requires an inbox')
+    end
+
+    it 'accepts ai_outreach with a WhatsApp inbox on a Kanban trigger' do
+      account.enable_features!('inteligencia_artificial')
+      graph = {
+        'nodes' => [
+          {
+            'id' => 'trigger_1',
+            'type' => 'trigger',
+            'data' => { 'event_name' => 'contact_kanban_stage_created', 'conditions' => [] }
+          },
+          {
+            'id' => 'ai_1',
+            'type' => 'ai_outreach',
+            'data' => {
+              'objective_preset' => 'reengagement',
+              'tone_preset' => 'friendly',
+              'language' => 'client',
+              'prompt' => 'Retome o contato.',
+              'prompt_customized' => false,
+              'inbox_id' => whatsapp_inbox.id
+            }
+          }
+        ],
+        'edges' => [{ 'id' => 'e1', 'source' => 'trigger_1', 'target' => 'ai_1' }],
+        'settings' => {}
+      }
+
+      result = described_class.new(graph: graph, account: account).perform
+      expect(result[:valid]).to be true
+    end
+  end
 end

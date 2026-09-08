@@ -20,6 +20,7 @@ const props = defineProps({
   readOnly: { type: Boolean, default: false },
   nodeErrors: { type: Array, default: () => [] },
   asModal: { type: Boolean, default: false },
+  triggerEventName: { type: String, default: '' },
 });
 
 const emit = defineEmits(['update-node']);
@@ -343,6 +344,7 @@ const stepLabelTitleClass =
           :node-id="node && node.id"
           :node-props="nodeProps"
           :read-only="readOnly"
+          :trigger-event-name="triggerEventName"
           @update-node="patch => emit('update-node', patch)"
         />
       </template>
@@ -351,6 +353,7 @@ const stepLabelTitleClass =
         <WorkflowAiOutreachPanel
           :node-props="nodeProps"
           :read-only="readOnly"
+          :trigger-event-name="triggerEventName"
           @update-node="patch => emit('update-node', patch)"
         />
       </template>

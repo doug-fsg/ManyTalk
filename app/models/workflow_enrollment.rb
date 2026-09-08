@@ -137,7 +137,7 @@ class WorkflowEnrollment < ApplicationRecord
     end
 
     def cancel_for_conversation!(conversation, reason:)
-      in_progress.where(conversation_id: conversation.id).find_each do |enrollment|
+      enrollments_for_conversation(conversation).find_each do |enrollment|
         next unless cancel_enabled?(enrollment.workflow, reason)
 
         enrollment.cancel!(reason)

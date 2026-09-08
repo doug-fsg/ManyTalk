@@ -67,6 +67,17 @@ RSpec.describe Workflows::AiOutreachService do
       expect(result[:success]).to be true
     end
 
+    it 'includes the selected inbox_id in the webhook payload' do
+      node['data']['inbox_id'] = inbox.id
+
+      expect(WebhookJob).to receive(:perform_later) do |_url, payload|
+        expect(payload[:inbox_id]).to eq(inbox.id)
+        expect(payload[:ai_config][:inbox_id]).to eq(inbox.id)
+      end
+
+      service.perform!
+    end
+
     it 'sends only interpolated prompt when prompt_customized is true' do
       node['data']['prompt_customized'] = true
 
