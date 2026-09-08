@@ -51,6 +51,7 @@ RSpec.describe Workflows::AiOutreachService do
         hash_including(
           event: 'workflow.ai_outreach',
           prompt: include('Tom amigável e próximo.', 'cliente'),
+          account_id: account.id,
           workflow_id: workflow.id,
           workflow_node_id: 'ai_1',
           enrollment_id: enrollment.id,

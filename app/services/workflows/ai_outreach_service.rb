@@ -20,6 +20,7 @@ module Workflows
         event: 'workflow.ai_outreach',
         prompt: prompt,
         ai_config: ai_config_payload(data),
+        account_id: workflow.account_id,
         workflow_id: workflow.id,
         workflow_node_id: node['id'],
         enrollment_id: enrollment.id,
