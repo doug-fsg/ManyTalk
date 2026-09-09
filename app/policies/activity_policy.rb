@@ -41,6 +41,8 @@ class ActivityPolicy < ApplicationPolicy
   end
 
   def owner_or_assignee?
+    return false unless record.is_a?(Activity)
+
     record.user_id == user.id || record.assignee_id == user.id
   end
 end

@@ -4,7 +4,11 @@
 
 json.meta do
   json.sender do
-    json.partial! 'api/v1/models/contact', formats: [:json], resource: conversation.contact
+    if conversation.contact.present?
+      json.partial! 'api/v1/models/contact', formats: [:json], resource: conversation.contact
+    else
+      json.nil!
+    end
   end
   json.channel conversation.inbox.try(:channel_type)
   if conversation.assignee&.account
