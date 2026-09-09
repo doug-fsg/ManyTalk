@@ -637,6 +637,19 @@ RSpec.describe 'Contacts API', type: :request do
         expect(response).to have_http_status(:success)
         expect(response.parsed_body['payload']['contact']['id']).to eq(existing.id)
       end
+
+      it 'reuses existing contact when identifier already exists' do
+        existing = create(:contact, account: account, identifier: '558774001105@s.whatsapp.net', name: 'Existing')
+
+        expect do
+          post "/api/v1/accounts/#{account.id}/contacts",
+               headers: admin.create_new_auth_token,
+               params: { name: 'New name', identifier: existing.identifier }
+        end.not_to change(Contact, :count)
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body['payload']['contact']['id']).to eq(existing.id)
+      end
     end
   end
 
@@ -703,6 +716,35 @@ RSpec.describe 'Contacts API', type: :request do
 
         expect(response).to have_http_status(:unprocessable_entity)
         expect(response.parsed_body['attributes']).to include('phone_number')
+      end
+
+      it 'prevents updating with an existing identifier' do
+        other_contact = create(:contact, account: account, identifier: '36778325106866@lid')
+
+        patch "/api/v1/accounts/#{account.id}/contacts/#{contact.id}",
+              headers: admin.create_new_auth_token,
+              params: valid_params.merge({ identifier: other_contact.identifier }),
+              as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.parsed_body['attributes']).to include('identifier')
+      end
+
+      it 'does not overwrite a whatsapp contact_inbox source_id that already belongs to another contact' do
+        whatsapp_inbox = create(:inbox, account: account)
+        whatsapp_inbox.update_column(:channel_type, 'Channel::Whatsapp')
+        contact.update!(phone_number: '+5588999372356')
+        contact_inbox = create(:contact_inbox, contact: contact, inbox: whatsapp_inbox, source_id: 'old-source')
+        other_contact = create(:contact, account: account)
+        create(:contact_inbox, contact: other_contact, inbox: whatsapp_inbox, source_id: '5588999372356')
+
+        patch "/api/v1/accounts/#{account.id}/contacts/#{contact.id}",
+              headers: admin.create_new_auth_token,
+              params: valid_params.merge({ phone_number: contact.phone_number }),
+              as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(contact_inbox.reload.source_id).to eq('old-source')
       end
 
       it 'updates avatar' do

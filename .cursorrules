@@ -1,0 +1,47 @@
+📝 ESTRUTURA DO COMMIT
+
+A mensagem deve ter duas partes quando houver conteúdo relevante para explicar:
+
+1. RESUMO
+- A primeira linha deve seguir Conventional Commits.
+- Deve ser curta e representar a principal alteração.
+- Exemplo:
+  ✨ feat: adiciona filtro de contatos por atendente
+
+2. DESCRIÇÃO
+- Depois de uma linha em branco, adicione uma descrição mais completa quando
+  a alteração tiver contexto, impacto ou várias partes importantes.
+- Explique de forma objetiva o que foi alterado.
+- Quando fizer sentido, explique também o motivo da alteração.
+- Pode mencionar as principais áreas, funcionalidades ou comportamentos afetados.
+- Não precisa descrever cada arquivo modificado.
+- Não repita simplesmente o título.
+- Não invente informações que não possam ser identificadas pelas alterações.
+
+📌 QUANDO USAR UMA DESCRIÇÃO MAIOR
+
+- Para alterações simples, apenas o resumo pode ser suficiente.
+- Para funcionalidades novas, correções complexas, refatorações importantes
+  ou alterações que envolvam várias partes do sistema, inclua uma descrição.
+- Quanto mais significativa for a alteração, mais contexto a descrição pode trazer.
+- Evite descrições desnecessariamente longas para mudanças pequenas.
+
+📐 FORMATO PREFERENCIAL
+
+tipo(escopo): resumo
+
+Descrição explicando o que foi alterado, o contexto e, quando relevante,
+o motivo ou impacto da alteração.
+
+🎯 OBJETIVO
+
+O commit deve funcionar como um registro útil para consultar posteriormente.
+A primeira linha deve permitir entender rapidamente a alteração, enquanto a
+descrição deve fornecer contexto suficiente para compreender o que foi feito
+sem precisar analisar imediatamente todo o código.
+
+🌎 IDIOMA
+
+- Sempre português do Brasil (PT-BR).
+- Use linguagem natural de desenvolvedor.
+- Evite traduções artificiais ou excessivamente formais.

@@ -58,7 +58,7 @@ class WorkflowEnrollment < ApplicationRecord
   belongs_to :account
   belongs_to :contact, optional: true
 
-  has_many :workflow_step_executions, dependent: :destroy_async
+  has_many :workflow_step_executions, dependent: :destroy
 
   validates :status, inclusion: { in: STATUSES }
   validates :enrollment_scope, inclusion: { in: Workflows::Constants::ENROLLMENT_SCOPES }, allow_nil: true

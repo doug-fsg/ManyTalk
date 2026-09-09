@@ -15,6 +15,7 @@ RSpec.describe User do
     it { is_expected.to have_many(:accounts).through(:account_users) }
     it { is_expected.to have_many(:account_users) }
     it { is_expected.to have_many(:assigned_conversations).class_name('Conversation').dependent(:nullify) }
+    it { is_expected.to have_many(:assigned_pipeline_positions).class_name('ContactPipelinePosition').dependent(:nullify) }
     it { is_expected.to have_many(:inbox_members).dependent(:destroy_async) }
     it { is_expected.to have_many(:notification_settings).dependent(:destroy_async) }
     it { is_expected.to have_many(:messages) }
@@ -108,6 +109,18 @@ RSpec.describe User do
     it 'downcases the email on save' do
       new_user = create(:user, email: 'Test123@test.com')
       expect(new_user.email).to eq('test123@test.com')
+    end
+  end
+
+  describe 'destroying a user assigned to pipeline positions' do
+    it 'nullifies assignee_id instead of raising a foreign key error' do
+      account = create(:account)
+      agent = create(:user, account: account)
+      contact = create(:contact, account: account)
+      position = create(:contact_pipeline_position, contact: contact, assignee: agent)
+
+      expect { agent.destroy! }.not_to raise_error
+      expect(position.reload.assignee_id).to be_nil
     end
   end
 end

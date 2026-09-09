@@ -123,18 +123,19 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
       @contact_inbox = build_contact_inbox
       process_avatar_from_url
     end
+  rescue ActiveRecord::RecordNotUnique => e
+    render_contact_not_unique(e)
   end
 
   def update
     @contact.assign_attributes(contact_update_params)
-    # 'Channel::TwilioSms', 'Channel::Whatsapp', 'Channel::Sms'
     Contact.transaction do
-      @contact.contact_inboxes
-              .select { |ci| ['Channel::Whatsapp'].include?(ci.inbox.channel_type) }
-              .each { |ci| ci.update_attribute(:source_id, @contact.phone_number.delete('+').to_s) }
+      sync_whatsapp_contact_inbox_source_ids
       @contact.save!
     end
     process_avatar_from_url
+  rescue ActiveRecord::RecordNotUnique => e
+    render_contact_not_unique(e)
   end
 
   def destroy
@@ -223,7 +224,42 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
       return existing if existing
     end
 
+    identifier = permitted_params[:identifier]
+    if identifier.present?
+      existing = Current.account.contacts.find_by(identifier: identifier)
+      return existing if existing
+    end
+
     Current.account.contacts.new
+  end
+
+  def sync_whatsapp_contact_inbox_source_ids
+    return if @contact.phone_number.blank?
+
+    source_id = @contact.phone_number.delete('+').to_s
+    return if source_id.blank?
+
+    @contact.contact_inboxes.each do |contact_inbox|
+      next unless contact_inbox.inbox.channel_type == 'Channel::Whatsapp'
+      next if contact_inbox.source_id == source_id
+      next if ContactInbox.where(inbox_id: contact_inbox.inbox_id, source_id: source_id).where.not(id: contact_inbox.id).exists?
+
+      contact_inbox.update_attribute(:source_id, source_id)
+    end
+  end
+
+  def render_contact_not_unique(exception)
+    attribute = if exception.message.include?('uniq_identifier_per_account_contact')
+                  :identifier
+                elsif exception.message.include?('index_contact_inboxes_on_inbox_id_and_source_id')
+                  :phone_number
+                else
+                  :base
+                end
+
+    @contact ||= Current.account.contacts.new
+    @contact.errors.add(attribute, :taken)
+    render_record_invalid(ActiveRecord::RecordInvalid.new(@contact))
   end
 
   def build_contact_inbox

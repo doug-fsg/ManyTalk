@@ -18,6 +18,20 @@ RSpec.describe Conversation do
     it { is_expected.to belong_to(:assignee).optional }
     it { is_expected.to belong_to(:team).optional }
     it { is_expected.to belong_to(:campaign).optional }
+    it { is_expected.to have_many(:workflow_enrollments).dependent(:destroy) }
+  end
+
+  describe 'destroying a conversation with workflow enrollments' do
+    it 'deletes enrollments and step executions in the same transaction' do
+      conversation = create(:conversation)
+      workflow = create(:workflow, account: conversation.account)
+      enrollment = create(:workflow_enrollment, workflow: workflow, conversation: conversation,
+                                                account: conversation.account, contact: conversation.contact)
+      create(:workflow_step_execution, workflow_enrollment: enrollment)
+
+      expect { conversation.destroy! }.to change(WorkflowEnrollment, :count).by(-1)
+                                           .and change(WorkflowStepExecution, :count).by(-1)
+    end
   end
 
   describe 'concerns' do
