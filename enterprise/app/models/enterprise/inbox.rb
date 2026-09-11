@@ -15,7 +15,10 @@ module Enterprise::Inbox
   end
 
   def response_bot_enabled?
-    account.feature_enabled?('response_bot') && response_sources.any?
+    return false unless account.feature_enabled?('response_bot')
+    return false unless respond_to?(:response_sources)
+
+    response_sources.any?
   end
 
   private

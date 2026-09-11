@@ -182,7 +182,7 @@ export default {
           path: 'workflows',
           name: 'workflow_reports',
           meta: {
-            permissions: ['administrator', 'agent'],
+            permissions: ['administrator', 'agent', 'report_manage'],
           },
           component: WorkflowReports,
         },

@@ -1,0 +1,64 @@
+{
+  "CUSTOM_ROLE": {
+    "HEADER": "Custom roles",
+    "HEADER_BTN_TXT": "Add role",
+    "LOADING": "Fetching custom roles",
+    "DESCRIPTION": "Grant agents a subset of permissions without making them administrators.",
+    "LIST": {
+      "404": "No custom roles yet",
+      "NAME": "Name",
+      "PERMISSIONS": "Permissions"
+    },
+    "ADD": {
+      "TITLE": "Add custom role"
+    },
+    "EDIT": {
+      "TITLE": "Edit custom role"
+    },
+    "FORM": {
+      "NAME": {
+        "LABEL": "Name"
+      },
+      "DESCRIPTION": {
+        "LABEL": "Description"
+      },
+      "PERMISSIONS": {
+        "LABEL": "Permissions"
+      },
+      "SUBMIT": "Save",
+      "CANCEL": "Cancel",
+      "API": {
+        "SUCCESS_MESSAGE": "Custom role saved",
+        "ERROR_MESSAGE": "Could not save custom role"
+      }
+    },
+    "DELETE": {
+      "CONFIRM": {
+        "TITLE": "Delete custom role",
+        "MESSAGE": "Are you sure you want to delete",
+        "YES": "Yes, delete",
+        "NO": "No, keep it"
+      },
+      "API": {
+        "SUCCESS_MESSAGE": "Custom role deleted",
+        "ERROR_MESSAGE": "Could not delete custom role"
+      }
+    },
+    "AGENT_LABEL": "Custom role",
+    "NONE": "None",
+    "PERMISSIONS": {
+      "CONVERSATION_MANAGE": "Manage all conversations",
+      "CONVERSATION_UNASSIGNED_MANAGE": "Manage unassigned conversations",
+      "CONVERSATION_PARTICIPATING_MANAGE": "Manage participating conversations",
+      "CONTACT_MANAGE": "Import, export and delete contacts",
+      "REPORT_MANAGE": "View reports",
+      "KNOWLEDGE_BASE_MANAGE": "Manage help center",
+      "WORKFLOW_MANAGE": "Manage workflows",
+      "AUTOMATION_MANAGE": "Manage automations",
+      "FORM_MANAGE": "Manage forms",
+      "CRM_MANAGE": "Manage CRM pipelines",
+      "CAMPAIGN_MANAGE": "Manage campaigns",
+      "BILLING_MANAGE": "Manage billing and payments (Stripe)"
+    }
+  }
+}

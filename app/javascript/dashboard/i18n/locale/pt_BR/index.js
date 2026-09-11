@@ -34,6 +34,7 @@ import signup from './signup.json';
 import teamsSettings from './teamsSettings.json';
 import whatsappTemplates from './whatsappTemplates.json';
 import sla from './sla.json';
+import customRole from './customRole.json';
 import inbox from './inbox.json';
 import general from './general.json';
 import datePicker from './datePicker.json';
@@ -73,6 +74,7 @@ export default {
   ...settings,
   ...signup,
   ...sla,
+  ...customRole,
   ...teamsSettings,
   ...whatsappTemplates,
   ...inbox,

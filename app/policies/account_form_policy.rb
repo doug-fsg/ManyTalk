@@ -43,3 +43,4 @@ class AccountFormPolicy < ApplicationPolicy
     @account.feature_enabled?('workflows')
   end
 end
+AccountFormPolicy.prepend_mod_with('AccountFormPolicy')

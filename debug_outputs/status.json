@@ -1,0 +1,20 @@
+{
+  "phase": "verified_with_regression_tests",
+  "permissions_covered": [
+    "conversation_manage",
+    "conversation_unassigned_manage",
+    "conversation_participating_manage",
+    "contact_manage",
+    "report_manage",
+    "knowledge_base_manage",
+    "workflow_manage",
+    "automation_manage",
+    "form_manage",
+    "campaign_manage",
+    "crm_manage"
+  ],
+  "test_commands": [
+    "bundle exec rspec spec/enterprise/custom_roles/permissions_matrix_spec.rb",
+    "pnpm test app/javascript/dashboard/helper/specs/permissionsHelper.spec.js"
+  ]
+}

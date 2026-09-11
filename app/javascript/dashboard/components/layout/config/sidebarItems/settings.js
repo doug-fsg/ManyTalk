@@ -1,4 +1,5 @@
 import { FEATURE_FLAGS } from '../../../../featureFlags';
+import { BILLING_ROUTE_PERMISSIONS } from '../../../../constants/permissions';
 import { frontendURL } from '../../../../helper/URLHelper';
 
 const settings = accountId => ({
@@ -16,6 +17,7 @@ const settings = accountId => ({
     'auditlogs_list',
     'billing_settings_index',
     'canned_list',
+    'custom_roles_list',
     'general_settings_index',
     'general_settings',
     'labels_list',
@@ -203,7 +205,7 @@ const settings = accountId => ({
       label: 'BILLING',
       hasSubMenu: false,
       meta: {
-        permissions: ['administrator', 'agent'],
+        permissions: BILLING_ROUTE_PERMISSIONS,
       },
       toState: frontendURL(`accounts/${accountId}/settings/billing`),
       toStateName: 'billing_settings_index',

@@ -168,6 +168,7 @@ const toggleAutomation = async ({ id, name, status }) => {
 
 <template>
   <SettingsLayout
+    compact
     :is-loading="uiFlags.isFetching"
     :loading-message="$t('AUTOMATION.LOADING')"
     :no-records-found="!records.length"
@@ -175,15 +176,15 @@ const toggleAutomation = async ({ id, name, status }) => {
   >
     <template #header>
       <BaseSettingsHeader
+        compact
         :title="$t('AUTOMATION.HEADER')"
         :description="$t('AUTOMATION.DESCRIPTION')"
-        :link-text="$t('AUTOMATION.LEARN_MORE')"
         feature-name="automation"
       >
         <template #actions>
           <woot-button
             v-if="isAdministrator"
-            class="button nice rounded-md"
+            class="button nice rounded-lg"
             icon="add-circle"
             @click="openAddPopup"
           >

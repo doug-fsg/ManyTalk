@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from 'vue';
 import Thumbnail from 'dashboard/components/widgets/Thumbnail.vue';
 import { useI18n } from 'dashboard/composables/useI18n';
 import { useStoreGetters, useStore } from 'dashboard/composables/store';
+import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
 import AddAgent from './AddAgent.vue';
 import EditAgent from './EditAgent.vue';
@@ -34,10 +35,36 @@ const deleteMessage = computed(() => {
 const agentList = computed(() => getters['agents/getAgents'].value);
 const uiFlags = computed(() => getters['agents/getUIFlags'].value);
 const currentUserId = computed(() => getters.getCurrentUserID.value);
+const accountId = computed(() => getters.getCurrentAccountId.value);
+const customRolesEnabled = computed(() =>
+  getters['accounts/isFeatureEnabledonAccount'].value(
+    accountId.value,
+    FEATURE_FLAGS.CUSTOM_ROLES
+  )
+);
+const customRoles = computed(() => getters['customRoles/getCustomRoles'].value);
+const customRoleNameById = computed(() =>
+  Object.fromEntries(customRoles.value.map(role => [role.id, role.name]))
+);
 
 onMounted(() => {
   store.dispatch('agents/get');
+  if (customRolesEnabled.value) {
+    store.dispatch('customRoles/get');
+  }
 });
+
+const agentPermissionLabel = agent => {
+  if (agent.role === 'administrator') {
+    return '—';
+  }
+
+  if (!agent.custom_role_id) {
+    return t('CUSTOM_ROLE.NONE');
+  }
+
+  return customRoleNameById.value[agent.custom_role_id] || '—';
+};
 
 const verifiedAdministrators = computed(() => {
   return agentList.value.filter(
@@ -122,19 +149,60 @@ const confirmDeletion = () => {
         :link-text="$t('AGENT_MGMT.LEARN_MORE')"
         feature-name="agents"
       >
+        <template #description>
+          <span>{{ $t('AGENT_MGMT.DESCRIPTION') }}</span>
+          <router-link
+            v-if="customRolesEnabled"
+            :to="{ name: 'custom_roles_list' }"
+            class="mt-2 inline-flex w-fit items-center gap-1 text-sm font-medium text-woot-500 dark:text-woot-500 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-woot-400 rounded-sm"
+          >
+            {{ $t('AGENT_MGMT.CUSTOM_PERMISSIONS_LINK') }}
+            <fluent-icon
+              icon="chevron-right"
+              size="16"
+              type="outline"
+              class="flex-shrink-0"
+            />
+          </router-link>
+        </template>
         <template #actions>
-    <woot-button
+          <woot-button
             class="button nice rounded-lg"
-      icon="add-circle"
+            icon="add-circle"
             @click="openAddPopup"
-    >
-      {{ $t('AGENT_MGMT.HEADER_BTN_TXT') }}
-    </woot-button>
+          >
+            {{ $t('AGENT_MGMT.HEADER_BTN_TXT') }}
+          </woot-button>
         </template>
       </BaseSettingsHeader>
     </template>
     <template #body>
-      <table class="divide-y divide-slate-75 dark:divide-slate-700">
+      <table class="min-w-full divide-y divide-slate-75 dark:divide-slate-700">
+        <thead v-if="customRolesEnabled">
+          <tr>
+            <th
+              class="py-3 ltr:pr-4 rtl:pl-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300"
+            >
+              {{ $t('AGENT_MGMT.LIST.NAME') }}
+            </th>
+            <th
+              class="py-3 ltr:pr-4 rtl:pl-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300"
+            >
+              {{ $t('AGENT_MGMT.LIST.ROLE') }}
+            </th>
+            <th
+              class="py-3 ltr:pr-4 rtl:pl-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300"
+            >
+              {{ $t('CUSTOM_ROLE.AGENT_LABEL') }}
+            </th>
+            <th
+              class="py-3 ltr:pr-4 rtl:pl-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300"
+            >
+              {{ $t('AGENT_MGMT.LIST.STATUS') }}
+            </th>
+            <th />
+          </tr>
+        </thead>
         <tbody
           class="divide-y divide-slate-50 dark:divide-slate-800 text-slate-700 dark:text-slate-300"
         >
@@ -160,6 +228,12 @@ const confirmDeletion = () => {
               <span class="block font-medium capitalize">
                 {{ $t(`AGENT_MGMT.AGENT_TYPES.${agent.role.toUpperCase()}`) }}
                   </span>
+            </td>
+            <td
+              v-if="customRolesEnabled"
+              class="py-4 ltr:pr-4 rtl:pl-4 text-sm"
+            >
+              {{ agentPermissionLabel(agent) }}
             </td>
             <td class="py-4 ltr:pr-4 rtl:pl-4">
                   <span v-if="agent.confirmed">
@@ -211,6 +285,7 @@ const confirmDeletion = () => {
         :type="currentAgent.role"
         :email="currentAgent.email"
         :availability="currentAgent.availability_status"
+        :custom-role-id="currentAgent.custom_role_id"
         :on-close="hideEditPopup"
       />
     </woot-modal>

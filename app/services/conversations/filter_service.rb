@@ -7,7 +7,7 @@ class Conversations::FilterService < FilterService
   end
 
   def perform
-    @conversations = query_builder(@filters['conversations'])
+    @conversations = scoped_conversations
     mine_count, unassigned_count, all_count, = set_count_for_all_conversations
     assigned_count = all_count - unassigned_count
 
@@ -42,4 +42,10 @@ class Conversations::FilterService < FilterService
   def conversations
     @conversations.sort_on_last_activity_at.page(current_page)
   end
+
+  def scoped_conversations
+    query_builder(@filters['conversations'])
+  end
 end
+
+Conversations::FilterService.prepend_mod_with('Conversations::FilterService')

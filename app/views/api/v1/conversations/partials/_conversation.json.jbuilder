@@ -11,7 +11,7 @@ json.meta do
     end
   end
   json.channel conversation.inbox.try(:channel_type)
-  if conversation.assignee&.account
+  if conversation.assignee.present?
     json.assignee do
       json.partial! 'api/v1/models/agent', formats: [:json], resource: conversation.assignee
     end

@@ -1,4 +1,6 @@
 import { frontendURL } from '../../../../helper/URLHelper';
+import { CAMPAIGN_ROUTE_PERMISSIONS } from '../../../../constants/permissions';
+
 const SettingsContent = () => import('../Wrapper.vue');
 const Index = () => import('./Index.vue');
 
@@ -20,7 +22,7 @@ export default {
           path: 'ongoing',
           name: 'ongoing_campaigns',
           meta: {
-            permissions: ['administrator', 'agent'],
+            permissions: CAMPAIGN_ROUTE_PERMISSIONS,
           },
           component: Index,
         },
@@ -38,7 +40,7 @@ export default {
           path: 'one_off',
           name: 'one_off',
           meta: {
-            permissions: ['administrator', 'agent'],
+            permissions: CAMPAIGN_ROUTE_PERMISSIONS,
           },
           component: Index,
         },

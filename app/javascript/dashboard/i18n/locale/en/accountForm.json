@@ -81,7 +81,8 @@
       "PAUSED": "Paused"
     },
     "LIST": {
-      "EMPTY": "No forms created yet.",
+      "EMPTY": "Create forms to capture leads and connect them to your service flows.",
+      "EMPTY_TITLE": "No forms yet",
       "CREATE": "New",
       "CREATE_TOOLTIP": "New form",
       "BACK_TO_WORKFLOWS": "Service flows",

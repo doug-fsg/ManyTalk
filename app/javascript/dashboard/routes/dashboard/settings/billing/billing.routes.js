@@ -1,4 +1,5 @@
 import { frontendURL } from '../../../../helper/URLHelper';
+import { BILLING_ROUTE_PERMISSIONS } from '../../../../constants/permissions';
 
 const SettingsWrapper = () => import('../SettingsWrapper.vue');
 const Index = () => import('./Index.vue');
@@ -8,7 +9,7 @@ export default {
     {
       path: frontendURL('accounts/:accountId/settings/billing'),
       meta: {
-        permissions: ['administrator'],
+        permissions: BILLING_ROUTE_PERMISSIONS,
       },
       component: SettingsWrapper,
       children: [
@@ -17,7 +18,7 @@ export default {
           name: 'billing_settings_index',
           component: Index,
           meta: {
-            permissions: ['administrator'],
+            permissions: BILLING_ROUTE_PERMISSIONS,
           },
         },
       ],

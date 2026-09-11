@@ -1,7 +1,7 @@
 {
   "AGENT_MGMT": {
-    "HEADER": "Agents",
-    "HEADER_BTN_TXT": "Add Agent",
+    "HEADER": "Users",
+    "HEADER_BTN_TXT": "Add user",
     "LOADING": "Fetching Agent List",
     "DESCRIPTION": "An agent is a member of your customer support team who can view and reply to user messages. The list below shows all agents in your account.",
     "LEARN_MORE": "Learn more about user roles",
@@ -10,12 +10,15 @@
       "ADMINISTRATOR": "Administrator",
       "AGENT": "Agent"
     },
+    "CUSTOM_ROLE": "Custom permission",
+    "CUSTOM_PERMISSIONS_LINK": "Manage custom permissions",
     "LIST": {
       "404": "There are no agents associated to this account",
       "TITLE": "Manage agents in your team",
       "DESC": "You can add/remove agents to/in your team.",
       "NAME": "Name",
       "EMAIL": "EMAIL",
+      "ROLE": "Role",
       "STATUS": "Status",
       "ACTIONS": "Actions",
       "VERIFIED": "Verified",

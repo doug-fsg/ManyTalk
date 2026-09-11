@@ -27,6 +27,14 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  backButtonUrl: {
+    type: [String, Object],
+    default: '',
+  },
+  compact: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const helpURL = getHelpUrlForFeature(props.featureName);
@@ -43,8 +51,12 @@ const openInNewTab = url => {
       v-if="backButtonLabel"
       compact
       :button-label="backButtonLabel"
+      :back-url="backButtonUrl"
     />
-    <div class="flex items-center justify-between w-full gap-4">
+    <div
+      v-if="!compact"
+      class="flex items-center justify-between w-full gap-4"
+    >
       <div class="flex items-center gap-3">
         <div
           v-if="iconName"
@@ -72,12 +84,22 @@ const openInNewTab = url => {
         <slot name="actions" />
       </div>
     </div>
-    <div class="flex flex-col gap-3 text-slate-600 dark:text-slate-300 w-full">
+    <div
+      class="flex flex-col gap-3 text-slate-600 dark:text-slate-300 w-full"
+      :class="compact ? 'sm:flex-row sm:items-start sm:justify-between sm:gap-4' : ''"
+    >
       <p
         class="mb-0 text-base font-normal line-clamp-5 sm:line-clamp-none max-w-3xl tracking-[-0.1px]"
+        :class="compact ? 'sm:flex-1 sm:max-w-none' : ''"
       >
         <slot name="description">{{ description }}</slot>
       </p>
+      <div
+        v-if="compact"
+        class="flex items-start gap-2 shrink-0"
+      >
+        <slot name="actions" />
+      </div>
       <!-- Links comentados conforme solicitado -->
       <!--
       <CustomBrandPolicyWrapper :show-on-custom-branded-instance="false">
@@ -100,6 +122,7 @@ const openInNewTab = url => {
       -->
     </div>
     <div
+      v-if="!compact"
       class="flex items-start justify-start w-full gap-3 sm:hidden flex-wrap"
     >
       <slot name="actions" />

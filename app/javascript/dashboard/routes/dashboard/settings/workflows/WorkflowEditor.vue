@@ -540,18 +540,12 @@ const activeStatusLabel = computed(() =>
       <div
         class="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3"
       >
-        <div class="flex items-center gap-2 shrink-0">
+        <div class="flex items-center gap-2 shrink-0 min-w-0">
           <BackButton
             compact
             :back-url="workflowsListRoute"
-            :button-label="$t('WORKFLOW.EDITOR.BACK')"
+            :button-label="$t('WORKFLOW.EDITOR.BACK_TO_LIST')"
           />
-          <span
-            class="hidden md:inline text-xs text-slate-500 dark:text-slate-400"
-            translate="no"
-          >
-            {{ $t('WORKFLOW.EDITOR.BACK_TO_LIST') }}
-          </span>
         </div>
 
         <div

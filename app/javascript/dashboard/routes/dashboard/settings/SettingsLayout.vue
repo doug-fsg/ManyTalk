@@ -1,5 +1,9 @@
 <script setup>
   defineProps({
+    compact: {
+      type: Boolean,
+      default: false,
+    },
     isLoading: {
       type: Boolean,
       default: false,
@@ -20,7 +24,10 @@
   </script>
   
   <template>
-    <div class="flex flex-col w-full h-full gap-10 font-inter">
+    <div
+      class="flex flex-col w-full h-full font-inter"
+      :class="compact ? 'gap-5' : 'gap-10'"
+    >
       <slot name="header" />
       <!-- Added to render any templates that should be rendered before body -->
       <div>

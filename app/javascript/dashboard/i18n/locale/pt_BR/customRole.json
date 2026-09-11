@@ -1,0 +1,64 @@
+{
+  "CUSTOM_ROLE": {
+    "HEADER": "Permissões personalizadas",
+    "HEADER_BTN_TXT": "Adicionar permissão",
+    "LOADING": "Carregando permissões personalizadas",
+    "DESCRIPTION": "Conceda aos atendentes um subconjunto de permissões sem torná-los administradores.",
+    "LIST": {
+      "404": "Nenhuma permissão personalizada cadastrada",
+      "NAME": "Nome",
+      "PERMISSIONS": "Permissões"
+    },
+    "ADD": {
+      "TITLE": "Adicionar permissão personalizada"
+    },
+    "EDIT": {
+      "TITLE": "Editar permissão personalizada"
+    },
+    "FORM": {
+      "NAME": {
+        "LABEL": "Nome"
+      },
+      "DESCRIPTION": {
+        "LABEL": "Descrição"
+      },
+      "PERMISSIONS": {
+        "LABEL": "Permissões"
+      },
+      "SUBMIT": "Salvar",
+      "CANCEL": "Cancelar",
+      "API": {
+        "SUCCESS_MESSAGE": "Permissão personalizada salva com sucesso",
+        "ERROR_MESSAGE": "Não foi possível salvar a permissão personalizada"
+      }
+    },
+    "DELETE": {
+      "CONFIRM": {
+        "TITLE": "Excluir permissão personalizada",
+        "MESSAGE": "Tem certeza que deseja excluir",
+        "YES": "Sim, excluir",
+        "NO": "Não, manter"
+      },
+      "API": {
+        "SUCCESS_MESSAGE": "Permissão personalizada excluída",
+        "ERROR_MESSAGE": "Não foi possível excluir a permissão personalizada"
+      }
+    },
+    "AGENT_LABEL": "Permissão personalizada",
+    "NONE": "Nenhuma",
+    "PERMISSIONS": {
+      "CONVERSATION_MANAGE": "Gerenciar todas as conversas",
+      "CONVERSATION_UNASSIGNED_MANAGE": "Gerenciar conversas não atribuídas",
+      "CONVERSATION_PARTICIPATING_MANAGE": "Gerenciar conversas em que participa",
+      "CONTACT_MANAGE": "Importar, exportar e excluir contatos",
+      "REPORT_MANAGE": "Visualizar relatórios",
+      "KNOWLEDGE_BASE_MANAGE": "Gerenciar central de ajuda",
+      "WORKFLOW_MANAGE": "Gerenciar fluxos de trabalho",
+      "AUTOMATION_MANAGE": "Gerenciar automações",
+      "FORM_MANAGE": "Gerenciar formulários",
+      "CRM_MANAGE": "Gerenciar pipelines do CRM",
+      "CAMPAIGN_MANAGE": "Gerenciar campanhas",
+      "BILLING_MANAGE": "Gerenciar cobrança e pagamentos (Stripe)"
+    }
+  }
+}

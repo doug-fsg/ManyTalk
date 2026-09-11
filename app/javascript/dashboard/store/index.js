@@ -44,6 +44,7 @@ import notifications from './modules/notifications';
 import portals from './modules/helpCenterPortals';
 import reports from './modules/reports';
 import sla from './modules/sla';
+import customRoles from './modules/customRoles';
 import teamMembers from './modules/teamMembers';
 import teams from './modules/teams';
 import userNotificationSettings from './modules/userNotificationSettings';
@@ -104,6 +105,7 @@ export default new Vuex.Store({
     webhooks,
     draftMessages,
     sla,
+    customRoles,
     slaReports: SLAReports,
   },
   plugins,

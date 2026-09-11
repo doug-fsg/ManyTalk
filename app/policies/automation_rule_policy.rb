@@ -23,3 +23,4 @@ class AutomationRulePolicy < ApplicationPolicy
     @account_user.administrator?
   end
 end
+AutomationRulePolicy.prepend_mod_with('AutomationRulePolicy')

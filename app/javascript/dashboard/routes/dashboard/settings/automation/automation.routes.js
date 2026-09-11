@@ -4,6 +4,11 @@ import {
   isWorkflowsFeatureEnabled,
 } from '../../../../helper/workflowsFeatureGuard';
 import { requireFormsAccess } from '../../../../helper/formsFeatureGuard';
+import {
+  AUTOMATION_ROUTE_PERMISSIONS,
+  FORM_ROUTE_PERMISSIONS,
+  WORKFLOW_ROUTE_PERMISSIONS,
+} from '../../../../constants/permissions';
 
 const SettingsWrapper = () => import('../SettingsWrapper.vue');
 const AutomationHub = () => import('./AutomationHub.vue');
@@ -13,8 +18,6 @@ const FormsIndex = () => import('../forms/FormsIndex.vue');
 const FormDetail = () => import('../forms/FormDetail.vue');
 const WorkflowEditorWrapper = () => import('../workflows/WorkflowEditorWrapper.vue');
 const WorkflowEditor = () => import('../workflows/WorkflowEditor.vue');
-
-const agentPermissions = ['administrator', 'agent'];
 
 export default {
   routes: [
@@ -42,7 +45,7 @@ export default {
               name: 'automation_list',
               component: Automation,
               meta: {
-                permissions: agentPermissions,
+                permissions: AUTOMATION_ROUTE_PERMISSIONS,
               },
             },
             {
@@ -51,7 +54,7 @@ export default {
               component: WorkflowsIndex,
               beforeEnter: requireWorkflowsFeature,
               meta: {
-                permissions: agentPermissions,
+                permissions: WORKFLOW_ROUTE_PERMISSIONS,
               },
             },
             {
@@ -60,7 +63,7 @@ export default {
               component: FormsIndex,
               beforeEnter: requireFormsAccess,
               meta: {
-                permissions: agentPermissions,
+                permissions: FORM_ROUTE_PERMISSIONS,
               },
             },
             {
@@ -69,7 +72,7 @@ export default {
               component: FormDetail,
               beforeEnter: requireFormsAccess,
               meta: {
-                permissions: agentPermissions,
+                permissions: FORM_ROUTE_PERMISSIONS,
               },
             },
           ],
@@ -86,7 +89,7 @@ export default {
           component: WorkflowEditor,
           beforeEnter: requireWorkflowsFeature,
           meta: {
-            permissions: agentPermissions,
+            permissions: WORKFLOW_ROUTE_PERMISSIONS,
           },
         },
         {
@@ -95,7 +98,7 @@ export default {
           component: WorkflowEditor,
           beforeEnter: requireWorkflowsFeature,
           meta: {
-            permissions: agentPermissions,
+            permissions: WORKFLOW_ROUTE_PERMISSIONS,
           },
         },
       ],

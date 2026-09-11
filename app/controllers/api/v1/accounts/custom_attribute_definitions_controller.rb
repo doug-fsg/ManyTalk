@@ -19,6 +19,13 @@ class Api::V1::Accounts::CustomAttributeDefinitionsController < Api::V1::Account
   def show; end
 
   def create
+    if kanban_attribute? && !Current.user.administrator? && Current.account_user.permissions.exclude?('crm_manage')
+      render json: {
+        error: 'Você não tem permissão para criar pipelines Kanban'
+      }, status: :forbidden
+      return
+    end
+
     @custom_attribute_definition = Current.account.custom_attribute_definitions.create!(
       permitted_payload
     )
@@ -27,7 +34,7 @@ class Api::V1::Accounts::CustomAttributeDefinitionsController < Api::V1::Account
   def update
     # Verificar se atendente está tentando modificar permissões
     permissions_param = params[:custom_attribute_definition]&.dig(:permissions) || params[:permissions]
-    if permissions_param.present? && !Current.user.administrator?
+    if permissions_param.present? && !Current.user.administrator? && Current.account_user.permissions.exclude?('crm_manage')
       render json: {
         error: 'Você não tem permissão para modificar permissões do pipeline'
       }, status: :forbidden
@@ -46,7 +53,7 @@ class Api::V1::Accounts::CustomAttributeDefinitionsController < Api::V1::Account
 
   def destroy
     # Verificar permissões para exclusão de pipelines Kanban
-    if @custom_attribute_definition.is_kanban && !Current.user.administrator?
+    if @custom_attribute_definition.is_kanban && !Current.user.administrator? && Current.account_user.permissions.exclude?('crm_manage')
       permission = @custom_attribute_definition.user_permission(Current.user)
       unless permission == :admin
         render json: {

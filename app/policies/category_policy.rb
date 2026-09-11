@@ -29,3 +29,4 @@ class CategoryPolicy < ApplicationPolicy
     @record.first.portal.members.include?(@user)
   end
 end
+CategoryPolicy.prepend_mod_with('CategoryPolicy')

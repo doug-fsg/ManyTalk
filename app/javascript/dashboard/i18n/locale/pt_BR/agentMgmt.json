@@ -1,7 +1,7 @@
 {
   "AGENT_MGMT": {
-    "HEADER": "Atendentes",
-    "HEADER_BTN_TXT": "Adicionar Atendente",
+    "HEADER": "Usuários",
+    "HEADER_BTN_TXT": "Adicionar usuário",
     "LOADING": "Buscando lista de atendente",
     "DESCRIPTION": "Um atendente é um membro da sua equipe de suporte ao cliente que pode visualizar e responder às mensagens dos usuários. A lista abaixo mostra todos os atendentes da sua conta.",
     "LEARN_MORE": "Saiba mais sobre funções de usuário",
@@ -10,12 +10,15 @@
       "ADMINISTRATOR": "Administrador",
       "AGENT": "Atendente"
     },
+    "CUSTOM_ROLE": "Permissão personalizada",
+    "CUSTOM_PERMISSIONS_LINK": "Gerenciar permissões personalizadas",
     "LIST": {
       "404": "Não existem atendentes associados a esta conta",
       "TITLE": "Gerenciar atendentes da sua equipe",
       "DESC": "Você pode adicionar e/ou remover atendentes de um time.",
       "NAME": "Nome",
       "EMAIL": "E-mail",
+      "ROLE": "Função",
       "STATUS": "SItuação",
       "ACTIONS": "Ações",
       "VERIFIED": "Verificado",

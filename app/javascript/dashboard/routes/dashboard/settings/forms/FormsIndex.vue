@@ -10,6 +10,7 @@ import ConfirmationModal from 'dashboard/components/widgets/modal/ConfirmationMo
 import FormCreateModal from './FormCreateModal.vue';
 import FormListToolbar from './FormListToolbar.vue';
 import FormListRow from './FormListRow.vue';
+import EmptyState from 'dashboard/components/widgets/EmptyState.vue';
 import WorkflowCreateModal from '../workflows/WorkflowCreateModal.vue';
 import { useFormListFilters } from './useFormListFilters';
 import { buildContactsByFormRoute } from '../../contacts/utils/contactsNavigationHelper';
@@ -126,20 +127,23 @@ const requestDelete = async form => {
 
 <template>
   <SettingsLayout
+    compact
     :is-loading="uiFlags.isFetching"
     :loading-message="$t('ACCOUNT_FORM.LOADING')"
-    :no-records-found="!records.length && !fetchError"
-    :no-records-message="$t('ACCOUNT_FORM.LIST.EMPTY')"
+    :no-records-found="false"
   >
     <template #header>
       <BaseSettingsHeader
+        compact
         :title="$t('ACCOUNT_FORM.HEADER')"
         :description="$t('ACCOUNT_FORM.DESCRIPTION')"
         feature-name=""
       >
         <template #actions>
           <woot-button
+            v-if="records.length || fetchError"
             v-tooltip.top="$t('ACCOUNT_FORM.LIST.CREATE_TOOLTIP')"
+            class="button nice rounded-lg"
             icon="add-circle"
             @click="openCreate"
           >
@@ -166,6 +170,20 @@ const requestDelete = async form => {
           {{ $t('WORKFLOW.EDITOR.RETRY') }}
         </woot-button>
       </div>
+
+      <EmptyState
+        v-else-if="!records.length"
+        :title="$t('ACCOUNT_FORM.LIST.EMPTY_TITLE')"
+        :message="$t('ACCOUNT_FORM.LIST.EMPTY')"
+      >
+        <woot-button
+          class="button nice rounded-lg"
+          icon="add-circle"
+          @click="openCreate"
+        >
+          {{ $t('ACCOUNT_FORM.LIST.CREATE') }}
+        </woot-button>
+      </EmptyState>
 
       <template v-else>
         <FormListToolbar

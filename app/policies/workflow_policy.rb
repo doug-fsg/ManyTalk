@@ -59,3 +59,4 @@ class WorkflowPolicy < ApplicationPolicy
     @account_user.present?
   end
 end
+WorkflowPolicy.prepend_mod_with('WorkflowPolicy')

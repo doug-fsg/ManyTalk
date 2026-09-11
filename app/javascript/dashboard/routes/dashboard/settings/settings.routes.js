@@ -17,6 +17,7 @@ import macros from './macros/macros.routes';
 import reports from './reports/reports.routes';
 import store from '../../../store';
 import sla from './sla/sla.routes';
+import customRoles from './customRoles/customRoles.routes';
 import teams from './teams/teams.routes';
 import profile from './profile/profile.routes';
 import ia from './config_ia/ia.routes';
@@ -53,6 +54,7 @@ export default {
     ...macros.routes,
     ...reports.routes,
     ...sla.routes,
+    ...customRoles.routes,
     ...teams.routes,
     ...profile.routes,
     ...ia.routes,

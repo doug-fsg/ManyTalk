@@ -81,7 +81,8 @@
       "PAUSED": "Pausado"
     },
     "LIST": {
-      "EMPTY": "Nenhum formulário criado ainda.",
+      "EMPTY": "Crie formulários para capturar leads e conectá-los aos seus fluxos de atendimento.",
+      "EMPTY_TITLE": "Nenhum formulário ainda",
       "CREATE": "Novo",
       "CREATE_TOOLTIP": "Novo formulário",
       "BACK_TO_WORKFLOWS": "Fluxos de atendimento",

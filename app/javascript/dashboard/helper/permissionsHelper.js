@@ -2,6 +2,12 @@ export const hasPermissions = (
   requiredPermissions = [],
   availablePermissions = []
 ) => {
+  if (availablePermissions.includes('custom_role')) {
+    return requiredPermissions
+      .filter(permission => permission !== 'agent')
+      .some(permission => availablePermissions.includes(permission));
+  }
+
   return requiredPermissions.some(permission =>
     availablePermissions.includes(permission)
   );

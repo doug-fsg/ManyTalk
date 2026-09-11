@@ -8,6 +8,7 @@ import ConfirmationModal from 'dashboard/components/widgets/modal/ConfirmationMo
 import WorkflowActivateConfirmModal from './WorkflowActivateConfirmModal.vue';
 import WorkflowCreateModal from './WorkflowCreateModal.vue';
 import WorkflowCard from './WorkflowCard.vue';
+import EmptyState from 'dashboard/components/widgets/EmptyState.vue';
 import SettingsLayout from '../SettingsLayout.vue';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 
@@ -85,21 +86,22 @@ const requestDeleteWorkflow = async workflow => {
 
 <template>
   <SettingsLayout
+    compact
     :is-loading="uiFlags.isFetching"
     :loading-message="$t('WORKFLOW.LOADING')"
-    :no-records-found="!records.length && !fetchError"
-    :no-records-message="$t('WORKFLOW.LIST.EMPTY')"
+    :no-records-found="false"
   >
     <template #header>
       <BaseSettingsHeader
+        compact
         :title="$t('WORKFLOW.HEADER')"
         :description="$t('WORKFLOW.DESCRIPTION')"
-        :link-text="$t('WORKFLOW.LEARN_MORE')"
         feature-name=""
       >
         <template #actions>
           <woot-button
-            class="button nice rounded-md"
+            v-if="records.length || fetchError"
+            class="button nice rounded-lg"
             icon="add-circle"
             @click="openNew"
           >
@@ -126,6 +128,19 @@ const requestDeleteWorkflow = async workflow => {
           {{ $t('WORKFLOW.EDITOR.RETRY') }}
         </woot-button>
       </div>
+      <EmptyState
+        v-else-if="!records.length"
+        :title="$t('WORKFLOW.LIST.EMPTY_TITLE')"
+        :message="$t('WORKFLOW.LIST.EMPTY')"
+      >
+        <woot-button
+          class="button nice rounded-lg"
+          icon="add-circle"
+          @click="openNew"
+        >
+          {{ $t('WORKFLOW.LIST.CREATE') }}
+        </woot-button>
+      </EmptyState>
       <div
         v-else
         class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 w-full min-w-0"

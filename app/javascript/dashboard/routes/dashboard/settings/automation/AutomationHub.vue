@@ -174,20 +174,26 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
-      <!-- Classic mode — secondary, top-right -->
-      <button
-        type="button"
-        class="shrink-0 text-xs transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:underline"
-        :class="
-          activeTab === 'automations'
-            ? 'text-slate-500 dark:text-slate-400 font-medium'
-            : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-        "
-        :aria-current="activeTab === 'automations' ? 'page' : undefined"
-        @click="switchTab('automations')"
-      >
-        {{ $t('AUTOMATION.TABS.CLASSIC') }}
-      </button>
+      <!-- Classic mode — tertiary nav, visually subordinate to primary tabs -->
+      <div class="flex items-center gap-3 shrink-0">
+        <span
+          class="hidden sm:block w-px h-4 bg-slate-200 dark:bg-slate-600"
+          aria-hidden="true"
+        />
+        <button
+          type="button"
+          class="text-xs transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-woot-400 rounded-sm px-1"
+          :class="
+            activeTab === 'automations'
+              ? 'text-slate-600 dark:text-slate-300 font-medium'
+              : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+          "
+          :aria-current="activeTab === 'automations' ? 'page' : undefined"
+          @click="switchTab('automations')"
+        >
+          {{ $t('AUTOMATION.TABS.CLASSIC') }}
+        </button>
+      </div>
     </div>
 
     <div

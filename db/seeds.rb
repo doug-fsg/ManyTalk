@@ -20,10 +20,12 @@ unless Rails.env.production?
   account = Account.create!(
     name: 'Acme Inc'
   )
+  account.enable_features!('custom_roles')
 
   secondary_account = Account.create!(
     name: 'Acme Org'
   )
+  secondary_account.enable_features!('custom_roles')
 
   user = User.new(name: 'John', email: 'john@acme.inc', password: 'Password1!', type: 'SuperAdmin')
   user.skip_confirmation!

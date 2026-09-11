@@ -43,3 +43,4 @@ class CampaignPolicy < ApplicationPolicy
     true  # Permite reenviar campanha completa
   end
 end
+CampaignPolicy.prepend_mod_with('CampaignPolicy')

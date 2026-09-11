@@ -133,3 +133,5 @@
 # TODO: remove whatsapp_voice_notes after production validation (temporary flag)
 - name: whatsapp_voice_notes
   enabled: false
+- name: custom_roles
+  enabled: false

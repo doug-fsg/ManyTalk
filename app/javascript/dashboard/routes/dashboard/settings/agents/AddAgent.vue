@@ -2,6 +2,7 @@
 import { useVuelidate } from '@vuelidate/core';
 import { required, minLength, email } from 'vuelidate/lib/validators';
 import { mapGetters } from 'vuex';
+import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import { useAlert } from 'dashboard/composables';
 
 export default {
@@ -19,6 +20,7 @@ export default {
       agentName: '',
       agentEmail: '',
       agentType: 'agent',
+      customRoleId: null,
       vertical: 'bottom',
       horizontal: 'center',
       roles: [
@@ -37,7 +39,16 @@ export default {
   computed: {
     ...mapGetters({
       uiFlags: 'agents/getUIFlags',
+      customRoles: 'customRoles/getCustomRoles',
+      currentAccountId: 'getCurrentAccountId',
+      isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
     }),
+    customRolesEnabled() {
+      return this.isFeatureEnabledonAccount(
+        this.currentAccountId,
+        FEATURE_FLAGS.CUSTOM_ROLES
+      );
+    },
   },
   validations: {
     agentName: {
@@ -52,7 +63,11 @@ export default {
       required,
     },
   },
-
+  mounted() {
+    if (this.customRolesEnabled) {
+      this.$store.dispatch('customRoles/get');
+    }
+  },
   methods: {
     async addAgent() {
       try {
@@ -60,6 +75,8 @@ export default {
           name: this.agentName,
           email: this.agentEmail,
           role: this.agentType,
+          custom_role_id:
+            this.agentType === 'agent' ? this.customRoleId : null,
         });
         useAlert(this.$t('AGENT_MGMT.ADD.API.SUCCESS_MESSAGE'));
         this.onClose();
@@ -121,6 +138,21 @@ export default {
             <span v-if="v$.agentType.$error" class="message">
               {{ $t('AGENT_MGMT.ADD.FORM.AGENT_TYPE.ERROR') }}
             </span>
+          </label>
+        </div>
+        <div v-if="customRolesEnabled && agentType === 'agent'" class="w-full">
+          <label>
+            {{ $t('CUSTOM_ROLE.AGENT_LABEL') }}
+            <select v-model="customRoleId">
+              <option :value="null">{{ $t('CUSTOM_ROLE.NONE') }}</option>
+              <option
+                v-for="role in customRoles"
+                :key="role.id"
+                :value="role.id"
+              >
+                {{ role.name }}
+              </option>
+            </select>
           </label>
         </div>
         <div class="w-full">

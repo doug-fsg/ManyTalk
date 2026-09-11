@@ -5,6 +5,7 @@ import { mapGetters } from 'vuex';
 import { useAlert } from 'dashboard/composables';
 import WootSubmitButton from '../../../../components/buttons/FormSubmitButton.vue';
 import Modal from '../../../../components/Modal.vue';
+import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import Auth from '../../../../api/auth';
 import wootConstants from 'dashboard/constants/globals';
 
@@ -36,6 +37,10 @@ export default {
       type: String,
       default: '',
     },
+    customRoleId: {
+      type: Number,
+      default: null,
+    },
     onClose: {
       type: Function,
       required: true,
@@ -59,6 +64,7 @@ export default {
       agentName: this.name,
       agentAvailability: this.availability,
       agentType: this.type,
+      customRoleId: this.customRoleId,
       agentCredentials: {
         email: this.email,
       },
@@ -83,7 +89,16 @@ export default {
     },
     ...mapGetters({
       uiFlags: 'agents/getUIFlags',
+      customRoles: 'customRoles/getCustomRoles',
+      currentAccountId: 'getCurrentAccountId',
+      isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
     }),
+    customRolesEnabled() {
+      return this.isFeatureEnabledonAccount(
+        this.currentAccountId,
+        FEATURE_FLAGS.CUSTOM_ROLES
+      );
+    },
     availabilityStatuses() {
       return this.$t('PROFILE_SETTINGS.FORM.AVAILABILITY.STATUSES_LIST').map(
         (statusLabel, index) => ({
@@ -95,6 +110,11 @@ export default {
       );
     },
   },
+  mounted() {
+    if (this.customRolesEnabled) {
+      this.$store.dispatch('customRoles/get');
+    }
+  },
   methods: {
     async editAgent() {
       try {
@@ -103,6 +123,8 @@ export default {
           name: this.agentName,
           role: this.agentType,
           availability: this.agentAvailability,
+          custom_role_id:
+            this.agentType === 'agent' ? this.customRoleId : null,
         });
         useAlert(this.$t('AGENT_MGMT.EDIT.API.SUCCESS_MESSAGE'));
         this.onClose();
@@ -152,6 +174,22 @@ export default {
             <span v-if="v$.agentType.$error" class="message">
               {{ $t('AGENT_MGMT.EDIT.FORM.AGENT_TYPE.ERROR') }}
             </span>
+          </label>
+        </div>
+
+        <div v-if="customRolesEnabled && agentType === 'agent'" class="w-full">
+          <label>
+            {{ $t('CUSTOM_ROLE.AGENT_LABEL') }}
+            <select v-model="customRoleId">
+              <option :value="null">{{ $t('CUSTOM_ROLE.NONE') }}</option>
+              <option
+                v-for="role in customRoles"
+                :key="role.id"
+                :value="role.id"
+              >
+                {{ role.name }}
+              </option>
+            </select>
           </label>
         </div>
 

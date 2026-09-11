@@ -41,7 +41,7 @@ class Api::V1::ProfilesController < Api::BaseController
   private
 
   def set_user
-    @user = current_user
+    @user = User.includes(account_users: :account).find(current_user.id)
   end
 
   def availability_params

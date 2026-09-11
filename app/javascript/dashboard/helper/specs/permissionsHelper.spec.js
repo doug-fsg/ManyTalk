@@ -8,14 +8,36 @@ describe('hasPermissions', () => {
     expect(
       hasPermissions(['contact_manage'], ['team_manage', 'contact_manage'])
     ).toBe(true);
+    expect(
+      hasPermissions(['administrator', 'report_manage'], ['custom_role', 'report_manage'])
+    ).toBe(true);
   });
 
-  it('returns true if permission is not present', () => {
+  it('returns false if permission is not present', () => {
     expect(
       hasPermissions(['contact_manage'], ['team_manage', 'user_manage'])
     ).toBe(false);
     expect(hasPermissions()).toBe(false);
     expect(hasPermissions([])).toBe(false);
+  });
+
+  it('does not grant agent routes to custom roles without explicit permissions', () => {
+    expect(
+      hasPermissions(['administrator', 'agent', 'campaign_manage'], ['custom_role', 'report_manage'])
+    ).toBe(false);
+  });
+
+  it('allows custom role agents into conversation routes with conversation permissions', () => {
+    expect(
+      hasPermissions(
+        ['administrator', 'agent', 'conversation_participating_manage'],
+        ['custom_role', 'conversation_participating_manage']
+      )
+    ).toBe(true);
+  });
+
+  it('keeps default agent access for non-custom-role users', () => {
+    expect(hasPermissions(['administrator', 'agent'], ['agent'])).toBe(true);
   });
 });
 

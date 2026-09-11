@@ -24,7 +24,9 @@ class Api::V1::Accounts::AgentsController < Api::V1::Accounts::BaseController
 
   def update
     @agent.update!(agent_params.slice(:name).compact)
-    @agent.current_account_user.update!(agent_params.slice(:role, :availability, :auto_offline).compact)
+    account_user_attrs = agent_params.slice(:role, :availability, :auto_offline).compact
+    account_user_attrs[:custom_role_id] = agent_params[:custom_role_id] if agent_params.key?(:custom_role_id)
+    @agent.current_account_user.update!(account_user_attrs)
   end
 
   def destroy
@@ -68,11 +70,11 @@ class Api::V1::Accounts::AgentsController < Api::V1::Accounts::BaseController
   end
 
   def agent_params
-    params.require(:agent).permit(:name, :email, :name, :role, :availability, :auto_offline)
+    params.require(:agent).permit(:name, :email, :role, :availability, :auto_offline, :custom_role_id)
   end
 
   def new_agent_params
-    params.require(:agent).permit(:email, :name, :role, :availability, :auto_offline)
+    params.require(:agent).permit(:email, :name, :role, :availability, :auto_offline, :custom_role_id)
   end
 
   def agents
@@ -101,3 +103,4 @@ class Api::V1::Accounts::AgentsController < Api::V1::Accounts::BaseController
     DeleteObjectJob.perform_later(agent) if agent.reload.account_users.blank?
   end
 end
+Api::V1::Accounts::AgentsController.prepend_mod_with('Api::V1::Accounts::AgentsController')

@@ -12,7 +12,9 @@
     >
       {{ message }}
     </p>
-    <slot />
+    <div class="flex justify-center w-full mt-2">
+      <slot />
+    </div>
   </div>
 </template>
 

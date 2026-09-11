@@ -5,3 +5,4 @@ class WorkflowReportPolicy < ApplicationPolicy
     @account_user.present?
   end
 end
+WorkflowReportPolicy.prepend_mod_with('WorkflowReportPolicy')
