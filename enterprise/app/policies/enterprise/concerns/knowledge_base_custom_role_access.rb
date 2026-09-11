@@ -1,10 +1,12 @@
 module Enterprise::Concerns::KnowledgeBaseCustomRoleAccess
   extend ActiveSupport::Concern
 
-  included do
-    const_get(:ACTIONS).each do |method_name|
-      define_method(method_name) do |*args, **kwargs, &block|
-        custom_role_kb_access? { super(*args, **kwargs, &block) }
+  class_methods do
+    def knowledge_base_actions(actions)
+      actions.each do |method_name|
+        define_method(method_name) do |*args, **kwargs, &block|
+          custom_role_kb_access? { super(*args, **kwargs, &block) }
+        end
       end
     end
   end
