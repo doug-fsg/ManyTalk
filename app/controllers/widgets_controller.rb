@@ -52,7 +52,11 @@ class WidgetsController < ActionController::Base
   end
 
   def ensure_account_is_active
-    render json: { error: 'Account is suspended' }, status: :unauthorized unless @web_widget.inbox.account.active?
+    account = @web_widget.inbox.account
+    return if account.operationally_available?
+
+    error = account.billing_locked? ? 'Account billing is locked' : 'Account is suspended'
+    render json: { error: error }, status: :unauthorized
   end
 
   def ensure_location_is_supported; end

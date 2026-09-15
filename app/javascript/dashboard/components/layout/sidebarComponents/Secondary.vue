@@ -7,7 +7,7 @@
     <div v-if="showComposeButton" class="px-0 pt-2 pb-1">
       <button
         type="button"
-        class="group flex items-center w-full p-2 text-sm font-medium leading-4 rounded-xl cursor-pointer
+        class="group flex items-center w-full p-2 text-sm font-medium leading-4 rounded-xl
                text-slate-700 dark:text-slate-100
                border border-slate-100 dark:border-slate-800/80
                bg-slate-25/70 dark:bg-slate-800/40
@@ -15,6 +15,12 @@
                hover:border-woot-200 dark:hover:border-woot-700/40
                hover:shadow-sm
                transition-all duration-200 ease-smooth"
+        :class="
+          navigationLocked
+            ? 'opacity-40 cursor-not-allowed pointer-events-none'
+            : 'cursor-pointer'
+        "
+        :disabled="navigationLocked"
         @click="showComposeModal = true"
       >
         <fluent-icon
@@ -40,7 +46,7 @@
         :menu-item="menuItem"
       />
       <secondary-nav-item
-        v-for="menuItem in additionalSecondaryMenuItems[menuConfig.parentNav]"
+        v-for="menuItem in additionalMenuItemsForNav"
         :key="menuItem.key"
         :menu-item="menuItem"
         @add-label="showAddLabelPopup"
@@ -114,6 +120,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    navigationLocked: {
+      type: Boolean,
+      default: false,
+    },
   },
   computed: {
     ...mapGetters({
@@ -160,11 +170,22 @@ export default {
           return this.isOnChatwootCloud;
         }
         return true;
-      });
+      }).map(item => ({
+        ...item,
+        disabled:
+          this.navigationLocked &&
+          item.toStateName !== 'billing_settings_index',
+      }));
     },
 
     showComposeButton() {
       return this.menuConfig.parentNav === 'conversations';
+    },
+    additionalMenuItemsForNav() {
+      const items =
+        this.additionalSecondaryMenuItems[this.menuConfig.parentNav] || [];
+      if (!this.navigationLocked) return items;
+      return items.map(item => ({ ...item, disabled: true }));
     },
     hideAllInboxForAgents() {
     return (

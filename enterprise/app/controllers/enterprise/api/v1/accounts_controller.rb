@@ -15,7 +15,7 @@ class Enterprise::Api::V1::AccountsController < Api::BaseController
   def limits
     limits = { 'conversation' => {}, 'non_web_inboxes' => {} }
 
-    if enforce_billing_limits?(@account) && default_plan?(@account)
+    if cloud_freemium_limits?(@account)
       limits = {
         'conversation' => {
           'allowed' => 500,

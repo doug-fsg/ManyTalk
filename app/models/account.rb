@@ -88,6 +88,14 @@ class Account < ApplicationRecord
   enum locale: LANGUAGES_CONFIG.map { |key, val| [val[:iso_639_1_code], key] }.to_h
   enum status: { active: 0, suspended: 1 }
 
+  def billing_locked?
+    false
+  end
+
+  def operationally_available?
+    active? && !billing_locked?
+  end
+
   before_validation :validate_limit_keys
   after_create_commit :notify_creation
   after_destroy :remove_account_sequences

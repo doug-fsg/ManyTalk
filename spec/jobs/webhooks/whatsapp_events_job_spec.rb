@@ -81,6 +81,17 @@ RSpec.describe Webhooks::WhatsappEventsJob do
       expect(Whatsapp::IncomingMessageService).not_to receive(:new)
       job.perform_now(params)
     end
+
+    it 'will not enqueue Whatsapp::IncomingMessageWhatsappCloudService if billing is locked' do
+      account = channel.account
+      account.update!(custom_attributes: { 'subscription_status' => 'unpaid' })
+      allow(Whatsapp::IncomingMessageWhatsappCloudService).to receive(:new).and_return(process_service)
+      allow(Whatsapp::IncomingMessageService).to receive(:new).and_return(process_service)
+
+      expect(Whatsapp::IncomingMessageWhatsappCloudService).not_to receive(:new)
+      expect(Whatsapp::IncomingMessageService).not_to receive(:new)
+      job.perform_now(params)
+    end
   end
 
   context 'when default provider' do

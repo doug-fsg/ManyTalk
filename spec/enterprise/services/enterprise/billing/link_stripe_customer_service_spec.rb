@@ -1,14 +1,24 @@
 require 'rails_helper'
 
 describe Enterprise::Billing::LinkStripeCustomerService do
-  subject(:service) { described_class.new(account: account, stripe_customer_id: customer_id) }
+  subject(:service) do
+    described_class.new(
+      account: account,
+      stripe_customer_id: customer_id,
+      stripe_subscription_id: stripe_subscription_id,
+      stripe_subscription_item_id: stripe_subscription_item_id
+    )
+  end
 
   let(:account) { create(:account, custom_attributes: { onboarding_step: 'keep-me' }) }
   let(:customer_id) { 'cus_abc123' }
+  let(:stripe_subscription_id) { nil }
+  let(:stripe_subscription_item_id) { nil }
   let(:customer) { double(id: customer_id, name: 'Acme', email: 'acme@example.com') }
-  let(:subscription) { double(status: 'active') }
+  let(:subscription) { double(id: 'sub_123', status: 'active') }
 
   before do
+    InstallationConfig.find_or_initialize_by(name: 'DEPLOYMENT_ENV').update!(value: 'cloud')
     config = InstallationConfig.find_or_initialize_by(name: 'CHATWOOT_CLOUD_PLANS')
     config.value = [
       { 'name' => 'Hacker', 'product_id' => ['prod_hacker'], 'price_ids' => ['price_1'] },
@@ -23,6 +33,7 @@ describe Enterprise::Billing::LinkStripeCustomerService do
     allow(subscription).to receive(:[]).with('plan').and_return({ 'id' => 'price_2', 'product' => product })
     allow(subscription).to receive(:[]).with('quantity').and_return(5)
     allow(subscription).to receive(:[]).with('current_period_end').and_return(1_686_567_520)
+    allow(subscription).to receive(:items).and_return(nil)
     allow(Stripe::Customer).to receive(:retrieve).with(customer_id).and_return(customer)
     allow(Stripe::Subscription).to receive(:list)
       .with(customer: customer_id, status: 'all', limit: 100)
@@ -41,6 +52,7 @@ describe Enterprise::Billing::LinkStripeCustomerService do
       expect(account.reload.custom_attributes).to include(
         'onboarding_step' => 'keep-me',
         'stripe_customer_id' => customer_id,
+        'stripe_subscription_id' => 'sub_123',
         'stripe_customer_name' => 'Acme',
         'stripe_customer_email' => 'acme@example.com',
         'stripe_price_id' => 'price_2',
@@ -81,7 +93,7 @@ describe Enterprise::Billing::LinkStripeCustomerService do
     end
 
     it 'rejects when there is no usable subscription' do
-      canceled = double(status: 'canceled')
+      canceled = double(id: 'sub_canceled', status: 'canceled')
       allow(canceled).to receive(:[]).with('plan').and_return({ 'id' => 'price_2', 'product' => 'prod_startups' })
       allow(Stripe::Customer).to receive(:retrieve).with(customer_id).and_return(customer)
       allow(Stripe::Subscription).to receive(:list)
@@ -90,14 +102,52 @@ describe Enterprise::Billing::LinkStripeCustomerService do
       expect { service.perform }.to raise_error(described_class::Error, /não tem assinatura/)
     end
 
-    it 'rejects when there are multiple active subscriptions' do
-      first = double(status: 'active')
-      second = double(status: 'trialing')
+    it 'asks which subscription to use when there are multiple active subscriptions' do
+      first = double(id: 'sub_first', status: 'active')
+      second = double(id: 'sub_second', status: 'trialing')
+      allow(first).to receive(:items).and_return(nil)
+      allow(second).to receive(:items).and_return(nil)
       allow(Stripe::Customer).to receive(:retrieve).with(customer_id).and_return(customer)
       allow(Stripe::Subscription).to receive(:list)
         .and_return(double(data: [first, second]))
 
-      expect { service.perform }.to raise_error(described_class::Error, /mais de uma assinatura/)
+      expect { service.perform }.to raise_error(described_class::AmbiguousSubscriptionError) do |error|
+        expect(error.choice_type).to eq('subscription')
+        expect(error.choices.pluck('id')).to eq(%w[sub_first sub_second])
+      end
+    end
+
+    it 'links the selected subscription when multiple are available' do
+      first = double(id: 'sub_first', status: 'active')
+      second = double(id: 'sub_second', status: 'trialing')
+      allow(first).to receive(:items).and_return(nil)
+      allow(second).to receive(:[]).with('plan').and_return({ 'id' => 'price_2', 'product' => 'prod_startups' })
+      allow(second).to receive(:[]).with('quantity').and_return(5)
+      allow(second).to receive(:[]).with('current_period_end').and_return(1_686_567_520)
+      allow(second).to receive(:items).and_return(nil)
+      allow(Stripe::Customer).to receive(:retrieve).with(customer_id).and_return(customer)
+      allow(Stripe::Subscription).to receive(:list)
+        .and_return(double(data: [first, second]))
+
+      described_class.new(
+        account: account,
+        stripe_customer_id: customer_id,
+        stripe_subscription_id: 'sub_second'
+      ).perform
+
+      expect(account.reload.custom_attributes['stripe_subscription_id']).to eq('sub_second')
+    end
+
+    it 'asks which subscription item to use when the subscription has multiple items' do
+      item_one = double(id: 'si_one', quantity: 3, price: double(product: 'prod_a', id: 'price_a'))
+      item_two = double(id: 'si_two', quantity: 7, price: double(product: 'prod_b', id: 'price_b'))
+      stub_usable_subscription(product: 'prod_startups')
+      allow(subscription).to receive(:items).and_return(double(data: [item_one, item_two]))
+
+      expect { service.perform }.to raise_error(described_class::AmbiguousSubscriptionError) do |error|
+        expect(error.choice_type).to eq('subscription_item')
+        expect(error.choices.pluck('id')).to eq(%w[si_one si_two])
+      end
     end
 
     it 'rejects when the product is not in CHATWOOT_CLOUD_PLANS' do
@@ -105,6 +155,46 @@ describe Enterprise::Billing::LinkStripeCustomerService do
 
       expect { service.perform }.to raise_error(described_class::Error, /CHATWOOT_CLOUD_PLANS/)
       expect(account.reload.custom_attributes).to eq({ 'onboarding_step' => 'keep-me' })
+    end
+
+    context 'when DEPLOYMENT_ENV is manytalks' do
+      before do
+        InstallationConfig.find_or_initialize_by(name: 'DEPLOYMENT_ENV').update!(value: 'manytalks')
+      end
+
+      it 'links any stripe product without CHATWOOT_CLOUD_PLANS' do
+        stub_usable_subscription(product: 'prod_custom_client')
+        product = double(name: 'Cliente Acme — 12 seats')
+        allow(Stripe::Product).to receive(:retrieve).with('prod_custom_client').and_return(product)
+
+        service.perform
+
+        expect(account.reload.custom_attributes).to include(
+          'stripe_product_id' => 'prod_custom_client',
+          'plan_name' => 'Cliente Acme — 12 seats',
+          'subscribed_quantity' => 5
+        )
+      end
+
+      it 'falls back to the product id when stripe product lookup fails' do
+        stub_usable_subscription(product: 'prod_custom_client')
+        allow(Stripe::Product).to receive(:retrieve)
+          .and_raise(Stripe::InvalidRequestError.new('No such product', 'id'))
+
+        service.perform
+
+        expect(account.reload.custom_attributes['plan_name']).to eq('prod_custom_client')
+      end
+
+      it 'uses a clearer error when the subscription product cannot be identified' do
+        allow(subscription).to receive(:[]).with('plan').and_return(nil)
+        allow(subscription).to receive(:items).and_return(double(data: []))
+        allow(Stripe::Customer).to receive(:retrieve).with(customer_id).and_return(customer)
+        allow(Stripe::Subscription).to receive(:list)
+          .and_return(double(data: [subscription]))
+
+        expect { service.perform }.to raise_error(described_class::Error, /Não foi possível identificar o produto/)
+      end
     end
   end
 end

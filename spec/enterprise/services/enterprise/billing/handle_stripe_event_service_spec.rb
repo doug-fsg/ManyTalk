@@ -5,10 +5,11 @@ describe Enterprise::Billing::HandleStripeEventService do
 
   let(:event) { double }
   let(:data) { double }
-  let(:subscription) { double }
+  let(:subscription) { double(id: 'sub_123', status: 'active') }
   let!(:account) { create(:account, custom_attributes: { stripe_customer_id: 'cus_123', onboarding_step: 'keep-me' }) }
 
   before do
+    InstallationConfig.find_or_initialize_by(name: 'DEPLOYMENT_ENV').update!(value: 'cloud')
     allow(event).to receive(:data).and_return(data)
     allow(data).to receive(:object).and_return(subscription)
     allow(subscription).to receive(:[]).with('plan')
@@ -19,6 +20,7 @@ describe Enterprise::Billing::HandleStripeEventService do
     allow(subscription).to receive(:[]).with('status').and_return('active')
     allow(subscription).to receive(:[]).with('current_period_end').and_return(1_686_567_520)
     allow(subscription).to receive(:customer).and_return('cus_123')
+    allow(subscription).to receive(:items).and_return(nil)
     config = InstallationConfig.find_or_initialize_by(name: 'CHATWOOT_CLOUD_PLANS')
     config.value = [
       {
@@ -38,10 +40,10 @@ describe Enterprise::Billing::HandleStripeEventService do
   describe '#perform' do
     it 'handle customer.subscription.updated' do
       allow(event).to receive(:type).and_return('customer.subscription.updated')
-      allow(subscription).to receive(:customer).and_return('cus_123')
       stripe_event_service.new.perform(event: event)
       expect(account.reload.custom_attributes).to include(
         'stripe_customer_id' => 'cus_123',
+        'stripe_subscription_id' => 'sub_123',
         'stripe_price_id' => 'test',
         'stripe_product_id' => 'plan_id',
         'plan_name' => 'Hacker',
@@ -52,9 +54,17 @@ describe Enterprise::Billing::HandleStripeEventService do
       )
     end
 
+    it 'finds the account when customer is expanded in the webhook payload' do
+      allow(event).to receive(:type).and_return('customer.subscription.updated')
+      allow(subscription).to receive(:customer).and_return(double(id: 'cus_123'))
+
+      stripe_event_service.new.perform(event: event)
+
+      expect(account.reload.custom_attributes['subscription_status']).to eq('active')
+    end
+
     it 'does not change features on customer.subscription.updated' do
       allow(event).to receive(:type).and_return('customer.subscription.updated')
-      allow(subscription).to receive(:customer).and_return('cus_123')
       account.enable_features('channel_email', 'help_center')
       account.save!
 
@@ -68,7 +78,7 @@ describe Enterprise::Billing::HandleStripeEventService do
       expect(account).to be_feature_enabled('help_center')
     end
 
-    it 'suspends the account on customer.subscription.deleted without changing features' do
+    it 'marks subscription canceled on customer.subscription.deleted without suspending the account' do
       allow(event).to receive(:type).and_return('customer.subscription.deleted')
       allow(Enterprise::Billing::CreateStripeCustomerService).to receive(:new)
       allow(Stripe::Customer).to receive(:create)
@@ -82,7 +92,8 @@ describe Enterprise::Billing::HandleStripeEventService do
       expect(Enterprise::Billing::CreateStripeCustomerService).not_to have_received(:new)
       expect(Stripe::Customer).not_to have_received(:create)
       expect(Stripe::Subscription).not_to have_received(:create)
-      expect(account.reload).to be_suspended
+      expect(account.reload).to be_active
+      expect(account).to be_billing_locked
       expect(account.custom_attributes).to include(
         'stripe_customer_id' => 'cus_123',
         'subscription_status' => 'canceled',
@@ -93,15 +104,64 @@ describe Enterprise::Billing::HandleStripeEventService do
       expect(account).to be_feature_enabled('help_center')
     end
 
-    it 'reactivates the account when subscription becomes active again' do
-      account.update!(status: :suspended, custom_attributes: account.custom_attributes.merge('subscription_status' => 'canceled'))
+    it 'locks billing when subscription.updated arrives with canceled status without suspending' do
       allow(event).to receive(:type).and_return('customer.subscription.updated')
-      allow(subscription).to receive(:customer).and_return('cus_123')
+      allow(subscription).to receive(:status).and_return('canceled')
+      allow(subscription).to receive(:[]).with('status').and_return('canceled')
 
       stripe_event_service.new.perform(event: event)
 
       expect(account.reload).to be_active
+      expect(account).to be_billing_locked
+      expect(account.custom_attributes['subscription_status']).to eq('canceled')
+    end
+
+    it 'does not change account status on past_due' do
+      allow(event).to receive(:type).and_return('customer.subscription.updated')
+      allow(subscription).to receive(:status).and_return('past_due')
+      allow(subscription).to receive(:[]).with('status').and_return('past_due')
+
+      stripe_event_service.new.perform(event: event)
+
+      expect(account.reload).to be_active
+      expect(account).not_to be_billing_locked
+      expect(account.custom_attributes['subscription_status']).to eq('past_due')
+    end
+
+    it 'does not unsuspend a manually suspended account when subscription becomes active' do
+      account.update!(status: :suspended, custom_attributes: account.custom_attributes.merge('subscription_status' => 'canceled'))
+      allow(event).to receive(:type).and_return('customer.subscription.updated')
+
+      stripe_event_service.new.perform(event: event)
+
+      expect(account.reload).to be_suspended
       expect(account.custom_attributes['subscription_status']).to eq('active')
+    end
+
+    it 'ignores webhook events for a different linked subscription id' do
+      account.update!(custom_attributes: account.custom_attributes.merge('stripe_subscription_id' => 'sub_other'))
+      allow(event).to receive(:type).and_return('customer.subscription.updated')
+
+      stripe_event_service.new.perform(event: event)
+
+      expect(account.reload.custom_attributes).not_to include('plan_name' => 'Hacker')
+    end
+
+    context 'when DEPLOYMENT_ENV is manytalks' do
+      before do
+        InstallationConfig.find_or_initialize_by(name: 'DEPLOYMENT_ENV').update!(value: 'manytalks')
+        account.update!(custom_attributes: account.custom_attributes.merge('plan_name' => 'Plano salvo'))
+      end
+
+      it 'does not call Stripe Product API on webhook sync' do
+        allow(event).to receive(:type).and_return('customer.subscription.updated')
+        allow(Stripe::Product).to receive(:retrieve)
+
+        stripe_event_service.new.perform(event: event)
+
+        expect(Stripe::Product).not_to have_received(:retrieve)
+        expect(account.reload.custom_attributes['plan_name']).to eq('Plano salvo')
+      end
     end
   end
 
@@ -115,11 +175,12 @@ describe Enterprise::Billing::HandleStripeEventService do
                                                      })
       allow(subscription).to receive(:[]).with('quantity').and_return('10')
       allow(subscription).to receive(:customer).and_return('cus_123')
+      account.disable_features('channel_email', 'help_center')
+      account.save!
     end
 
     it 'does not change features on customer.subscription.updated' do
       allow(event).to receive(:type).and_return('customer.subscription.updated')
-      allow(subscription).to receive(:customer).and_return('cus_123')
 
       stripe_event_service.new.perform(event: event)
       expect(account.reload.custom_attributes).to include(

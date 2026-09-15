@@ -17,6 +17,7 @@
         :to="menuItem.toState"
         :is-child-menu-active="menuItem.key === activeMenuItem"
         :beta="menuItem.beta"
+        :disabled="menuItem.disabled"
       />
     </div>
     <div class="flex flex-col items-center justify-end pb-6">
@@ -25,8 +26,11 @@
         name="DOCS"
         :open-in-new-page="true"
         :to="helpDocsURL"
+        :disabled="navigationLocked"
       />
-      <notification-bell @open-notification-panel="openNotificationPanel" />
+      <div :class="{ 'pointer-events-none opacity-40': navigationLocked }">
+        <notification-bell @open-notification-panel="openNotificationPanel" />
+      </div>
       <agent-details @toggle-menu="toggleOptions" />
       <options-menu
         :show="showOptionsMenu"
@@ -82,6 +86,10 @@ export default {
     activeMenuItem: {
       type: String,
       default: '',
+    },
+    navigationLocked: {
+      type: Boolean,
+      default: false,
     },
   },
   data() {

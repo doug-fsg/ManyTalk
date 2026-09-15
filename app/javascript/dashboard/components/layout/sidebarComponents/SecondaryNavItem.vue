@@ -1,5 +1,9 @@
 <template>
-  <li v-show="isMenuItemVisible" class="mt-1">
+  <li
+    v-show="isMenuItemVisible"
+    class="mt-1"
+    :class="{ 'pointer-events-none opacity-40': menuItem.disabled }"
+  >
     <div v-if="hasSubMenu" class="flex justify-between">
       <span
         class="px-2 pt-1 my-2 text-sm font-semibold text-slate-700 dark:text-slate-200"
@@ -20,8 +24,10 @@
     <router-link
       v-else
       class="flex items-center p-2 m-0 text-sm font-medium leading-4 rounded-xl text-slate-700 dark:text-slate-100 hover:bg-slate-25 dark:hover:bg-slate-800 transition-all duration-200 ease-smooth"
-      :class="computedClass"
+      :class="[computedClass, { 'pointer-events-none opacity-40 cursor-not-allowed': menuItem.disabled }]"
       :to="menuItem && menuItem.toState"
+      :tabindex="menuItem.disabled ? -1 : 0"
+      :aria-disabled="menuItem.disabled"
     >
       <fluent-icon
         :icon="menuItem.icon"

@@ -179,8 +179,8 @@
   value:
   description: 'Config to features and their associated plans'
 - name: DEPLOYMENT_ENV
-  value: self-hosted
-  description: 'Deployment mode: self-hosted | cloud | manytalks. Use manytalks for Stripe billing via Super Admin cus_ linking (unlinked accounts are untouched).'
+  value: manytalks
+  description: 'Deployment mode: manytalks (default) | cloud | self-hosted. ManyTalks uses Stripe billing via Super Admin cus_ linking (unlinked accounts are untouched).'
 - name: ANALYTICS_TOKEN
   value:
   display_title: 'Analytics Token'

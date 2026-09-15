@@ -54,5 +54,21 @@ RSpec.describe BillingHelper do
       account.custom_attributes['stripe_customer_id'] = 'cus_abc'
       expect(helper.send(:enforce_billing_limits?, account)).to be(true)
     end
+
+    it 'does not apply cloud freemium limits on manytalks even when linked' do
+      InstallationConfig.find_or_initialize_by(name: 'DEPLOYMENT_ENV').update!(value: 'manytalks')
+      account.custom_attributes['stripe_customer_id'] = 'cus_abc'
+
+      expect(helper.send(:cloud_freemium_limits?, account)).to be(false)
+    end
+
+    it 'applies cloud freemium limits only on cloud default plans' do
+      InstallationConfig.find_or_initialize_by(name: 'DEPLOYMENT_ENV').update!(value: 'cloud')
+
+      expect(helper.send(:cloud_freemium_limits?, account)).to be(true)
+
+      account.custom_attributes['plan_name'] = 'Startups'
+      expect(helper.send(:cloud_freemium_limits?, account)).to be(false)
+    end
   end
 end

@@ -8,7 +8,8 @@ class Enterprise::Billing::DeploymentEnv
   BILLING_ENABLED = [CLOUD, MANYTALKS].freeze
 
   def self.value
-    InstallationConfig.find_by(name: CONFIG_NAME)&.value.to_s
+    stored = InstallationConfig.find_by(name: CONFIG_NAME)&.value.to_s
+    stored.presence || MANYTALKS
   end
 
   def self.cloud?

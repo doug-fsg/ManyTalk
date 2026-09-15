@@ -13,8 +13,13 @@
       @open-announcements-modal="openAnnouncementsModal"
     />
     <section class="flex flex-1 h-full min-h-0 px-0 overflow-hidden main-content-section">
-      <router-view />
-      <command-bar />
+      <router-view v-if="showMainContent" />
+      <div
+        v-else
+        class="flex-1 h-full bg-slate-25 dark:bg-slate-900"
+        aria-hidden="true"
+      />
+      <command-bar v-if="!billingLocked" />
       <account-selector
         :show-account-modal="showAccountModal"
         @close-account-modal="toggleAccountModal"
@@ -36,6 +41,10 @@
       <woot-modal :show.sync="showAddLabelModal" :on-close="hideAddLabelPopup">
         <add-label-modal @close="hideAddLabelPopup" />
       </woot-modal>
+      <billing-lock-modal
+        :account-switcher-open="showAccountModal"
+        @switch-account="toggleAccountModal"
+      />
     </section>
   </div>
 </template>
@@ -48,8 +57,13 @@ import AddAccountModal from 'dashboard/components/layout/sidebarComponents/AddAc
 import AccountSelector from 'dashboard/components/layout/sidebarComponents/AccountSelector.vue';
 import AddLabelModal from 'dashboard/routes/dashboard/settings/labels/AddLabel.vue';
 import NotificationPanel from 'dashboard/routes/dashboard/notifications/components/NotificationPanel.vue';
+import { computed } from 'vue';
 import { useUISettings } from 'dashboard/composables/useUISettings';
+import { useBillingAccess } from 'dashboard/composables/useBillingAccess';
+import { useRoute } from 'dashboard/composables/route';
 import wootConstants from 'dashboard/constants/globals';
+import BillingLockModal from 'dashboard/components/app/BillingLockModal.vue';
+
 const CommandBar = () => import('./commands/commandbar.vue');
 
 export default {
@@ -61,13 +75,24 @@ export default {
     AccountSelector,
     AddLabelModal,
     NotificationPanel,
+    BillingLockModal,
   },
   setup() {
     const { uiSettings, updateUISettings } = useUISettings();
+    const { billingLocked } = useBillingAccess();
+    const route = useRoute();
+    const isOnBillingPage = computed(
+      () => route.name === 'billing_settings_index'
+    );
+    const showMainContent = computed(
+      () => !billingLocked.value || isOnBillingPage.value
+    );
 
     return {
       uiSettings,
       updateUISettings,
+      billingLocked,
+      showMainContent,
     };
   },
   data() {

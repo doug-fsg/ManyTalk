@@ -34,6 +34,14 @@ describe '/widget', type: :request do
       expect(response.body).to include('Account is suspended')
     end
 
+    it 'returns 401 if billing is locked' do
+      account.update!(custom_attributes: { 'subscription_status' => 'canceled' })
+
+      get widget_url(website_token: web_widget.website_token)
+      expect(response).to have_http_status(:unauthorized)
+      expect(response.body).to include('Account billing is locked')
+    end
+
     it 'returns 404 if the webwidget is deleted' do
       web_widget.delete
 

@@ -7,6 +7,15 @@ RSpec.describe Enterprise::Billing::DeploymentEnv do
     config.save!
   end
 
+  describe '.value' do
+    it 'defaults to manytalks when DEPLOYMENT_ENV is missing' do
+      InstallationConfig.where(name: 'DEPLOYMENT_ENV').delete_all
+
+      expect(described_class.value).to eq('manytalks')
+      expect(described_class).to be_manytalks
+    end
+  end
+
   describe '.billing_enabled?' do
     it 'is true for cloud' do
       set_deployment_env('cloud')

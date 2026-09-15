@@ -20,6 +20,12 @@ module BillingHelper
       (Enterprise::Billing::DeploymentEnv.manytalks? && stripe_linked?(account))
   end
 
+  def cloud_freemium_limits?(account)
+    Enterprise::Billing::DeploymentEnv.cloud? &&
+      enforce_billing_limits?(account) &&
+      default_plan?(account)
+  end
+
   def conversations_this_month(account)
     account.conversations.where('created_at > ?', 30.days.ago).count
   end

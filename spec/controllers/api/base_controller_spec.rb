@@ -121,5 +121,18 @@ RSpec.describe 'API Base', type: :request do
         expect(response).to have_http_status(:unauthorized)
       end
     end
+
+    context 'when billing is locked' do
+      it 'returns 401 unauthorized' do
+        account.update!(custom_attributes: { 'subscription_status' => 'unpaid' })
+
+        post "/api/v1/accounts/#{account.id}/canned_responses",
+             headers: { api_access_token: user.access_token.token },
+             as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(response.parsed_body['error']).to eq('Account billing is locked')
+      end
+    end
   end
 end

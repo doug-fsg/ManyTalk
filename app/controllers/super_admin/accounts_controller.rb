@@ -60,13 +60,24 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
   def link_stripe
     result = Enterprise::Billing::LinkStripeCustomerService.new(
       account: requested_resource,
-      stripe_customer_id: params[:stripe_customer_id]
+      stripe_customer_id: params[:stripe_customer_id],
+      stripe_subscription_id: params[:stripe_subscription_id],
+      stripe_subscription_item_id: params[:stripe_subscription_item_id]
     ).perform
     customer = result.customer
+    session.delete(:stripe_link_choices)
     redirect_back(
       fallback_location: [namespace, requested_resource],
       notice: "Linked Stripe customer #{customer.id} (#{customer.name} / #{customer.email})"
     )
+  rescue Enterprise::Billing::LinkStripeCustomerService::AmbiguousSubscriptionError => e
+    session[:stripe_link_choices] = {
+      choice_type: e.choice_type,
+      choices: e.choices,
+      stripe_customer_id: params[:stripe_customer_id],
+      stripe_subscription_id: params[:stripe_subscription_id]
+    }
+    redirect_back(fallback_location: [namespace, requested_resource], alert: e.message)
   rescue Enterprise::Billing::LinkStripeCustomerService::Error => e
     redirect_back(fallback_location: [namespace, requested_resource], alert: e.message)
   end

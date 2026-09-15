@@ -58,6 +58,17 @@ RSpec.describe '/api/v1/widget/config', type: :request do
 
         expect(response).to have_http_status(:unauthorized)
       end
+
+      it 'returns 401 if billing is locked' do
+        account.update!(custom_attributes: { 'subscription_status' => 'unpaid' })
+
+        post '/api/v1/widget/config',
+             params: params,
+             headers: { 'X-Auth-Token' => token },
+             as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+      end
     end
 
     context 'with correct website token and invalid X-Auth-Token' do

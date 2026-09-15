@@ -1,0 +1,230 @@
+.stripe-billing {
+  &__header {
+    align-items: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-normal;
+    justify-content: space-between;
+    margin-bottom: $space-normal;
+  }
+
+  &__title {
+    font-size: $font-size-medium;
+    font-weight: $font-weight-medium;
+    margin: 0 0 $space-one;
+  }
+
+  &__description {
+    color: $hint-grey;
+    font-size: $font-size-small;
+    margin: 0;
+    max-width: 40rem;
+  }
+
+  &__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-small;
+    margin-bottom: $space-one;
+  }
+
+  &__badge {
+    border-radius: 9999px;
+    display: inline-flex;
+    font-size: $font-size-mini;
+    font-weight: $font-weight-medium;
+    line-height: 1.25;
+    padding: $space-micro $space-slab;
+  }
+
+  &__badge--neutral {
+    background-color: $grey-1;
+    color: $color-body;
+  }
+
+  &__badge--active {
+    background-color: mix($white, $success-color, 75%);
+    color: darken($success-color, 18%);
+  }
+
+  &__badge--warning {
+    background-color: mix($white, $warning-color, 70%);
+    color: darken($warning-color, 28%);
+  }
+
+  &__badge--danger {
+    background-color: mix($white, $alert-color, 82%);
+    color: darken($alert-color, 8%);
+  }
+
+  &__notice {
+    border-radius: $base-border-radius;
+    font-size: $font-size-small;
+    margin-bottom: $space-normal;
+    padding: $space-slab $space-normal;
+  }
+
+  &__notice--info {
+    background-color: $color-background-light;
+    border: 1px solid $color-border;
+    color: $color-body;
+  }
+
+  &__notice--warning {
+    background-color: mix($white, $warning-color, 82%);
+    border: 1px solid mix($white, $warning-color, 55%);
+    color: darken($warning-color, 30%);
+  }
+
+  &__overview {
+    margin-bottom: $space-normal;
+  }
+
+  &__summary {
+    border: $base-border;
+    border-radius: $base-border-radius;
+    display: grid;
+    gap: $space-normal;
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    margin: 0 0 $space-normal;
+    padding: $space-normal;
+  }
+
+  &__summary-item {
+    margin: 0;
+    min-width: 0;
+  }
+
+  &__summary-item dt {
+    color: $hint-grey;
+    font-size: $font-size-mini;
+    font-weight: $font-weight-normal;
+    margin-bottom: $space-micro;
+  }
+
+  &__summary-item dd {
+    font-size: $font-size-small;
+    font-weight: $font-weight-medium;
+    margin: 0;
+    word-break: break-word;
+  }
+
+  &__summary-item dd.is-mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: $font-size-mini;
+    font-weight: $font-weight-normal;
+  }
+
+  &__empty {
+    border: $base-border;
+    border-radius: $base-border-radius;
+    color: $hint-grey;
+    font-size: $font-size-small;
+    margin: 0 0 $space-normal;
+    padding: $space-normal;
+    text-align: center;
+  }
+
+  &__technical {
+    border: $base-border;
+    border-radius: $base-border-radius;
+    margin-bottom: $space-normal;
+    padding: $space-slab $space-normal;
+  }
+
+  &__technical summary {
+    color: $color-body;
+    cursor: pointer;
+    font-size: $font-size-small;
+    font-weight: $font-weight-medium;
+    list-style: none;
+    user-select: none;
+  }
+
+  &__technical summary::-webkit-details-marker {
+    display: none;
+  }
+
+  &__technical summary::before {
+    content: '▸';
+    display: inline-block;
+    margin-right: $space-small;
+    transition: transform $base-duration $base-timing;
+  }
+
+  &__technical[open] summary::before {
+    transform: rotate(90deg);
+  }
+
+  &__technical-list {
+    display: grid;
+    gap: $space-slab;
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    margin: $space-normal 0 0;
+    padding: 0;
+  }
+
+  &__technical-item {
+    margin: 0;
+    min-width: 0;
+  }
+
+  &__technical-item dt {
+    color: $hint-grey;
+    font-size: $font-size-mini;
+    margin-bottom: $space-micro;
+  }
+
+  &__technical-item dd {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: $font-size-mini;
+    margin: 0;
+    word-break: break-all;
+  }
+
+  &__form-panel {
+    margin-left: 0;
+    max-width: none;
+    width: 100%;
+  }
+
+  &__form-panel legend {
+    font-size: $font-size-small;
+    font-weight: $font-weight-medium;
+    margin-bottom: $space-normal;
+  }
+
+  &__hint {
+    color: $hint-grey;
+    font-size: $font-size-mini;
+    margin: $space-small 0 0;
+  }
+
+  &__choices {
+    background-color: mix($white, $warning-color, 82%);
+    border: 1px solid mix($white, $warning-color, 55%);
+    border-radius: $base-border-radius;
+    margin-top: $space-normal;
+    padding: $space-normal;
+  }
+
+  &__choices-title {
+    font-size: $font-size-small;
+    font-weight: $font-weight-medium;
+    margin: 0 0 $space-normal;
+  }
+
+  &__form-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-normal;
+    margin-top: $space-normal;
+  }
+
+  &__form-note {
+    color: $hint-grey;
+    font-size: $font-size-mini;
+    margin: 0;
+  }
+}

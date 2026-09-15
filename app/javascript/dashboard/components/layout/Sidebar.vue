@@ -7,6 +7,7 @@
       :account-id="accountId"
       :menu-items="primaryMenuItems"
       :active-menu-item="activePrimaryMenu.key"
+      :navigation-locked="billingLocked"
       @toggle-accounts="toggleAccountModal"
       @key-shortcut-modal="toggleKeyShortcutModal"
       @open-notification-panel="openNotificationPanel"
@@ -26,6 +27,7 @@
       :is-on-chatwoot-cloud="isOnChatwootCloud"
       :is-billing-deployment="isBillingDeployment"
       :is-many-talks-deployment="isManyTalksDeployment"
+      :navigation-locked="billingLocked"
       @add-label="showAddLabelPopup"
       @toggle-accounts="toggleAccountModal"
     />
@@ -45,6 +47,7 @@ import SecondarySidebar from './sidebarComponents/Secondary.vue';
 import keyboardEventListenerMixins from 'shared/mixins/keyboardEventListenerMixins';
 import router, { routesWithPermissions } from '../../routes';
 import { hasPermissions } from '../../helper/permissionsHelper';
+import { useBillingAccess } from 'dashboard/composables/useBillingAccess';
 
 export default {
   components: {
@@ -61,6 +64,10 @@ export default {
       type: String,
       default: '',
     },
+  },
+  setup() {
+    const { billingLocked, canManageBilling } = useBillingAccess();
+    return { billingLocked, canManageBilling };
   },
   data() {
     return {
@@ -143,12 +150,18 @@ export default {
           }
           return true;
         })
-        .map(menuItem =>
-          resolvePrimaryMenuItem(menuItem, {
+        .map(menuItem => {
+          const resolvedItem = resolvePrimaryMenuItem(menuItem, {
             accountId: this.accountId,
             currentRole: this.currentRole,
-          })
-        );
+          });
+          const settingsAllowed =
+            resolvedItem.key === 'settings' && this.canManageBilling;
+          return {
+            ...resolvedItem,
+            disabled: this.billingLocked && !settingsAllowed,
+          };
+        });
     },
     activeSecondaryMenu() {
       const { secondaryMenu } = this.sideMenuConfig;
@@ -197,6 +210,7 @@ export default {
     },
   },
   mounted() {
+    if (this.billingLocked) return;
     this.$store.dispatch('labels/get');
     this.$store.dispatch('labelGroups/get');
     this.$store.dispatch('accountForms/get');
@@ -238,6 +252,7 @@ export default {
       };
     },
     navigateToRoute(routeName) {
+      if (this.billingLocked) return;
       if (!this.isCurrentRouteSameAsNavigation(routeName)) {
         router.push({ name: routeName });
       }

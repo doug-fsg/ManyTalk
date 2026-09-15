@@ -1,4 +1,8 @@
 module Enterprise::Account
+  def billing_locked?
+    Enterprise::Billing::Lock.locked?(self)
+  end
+
   def usage_limits
     {
       agents: agent_limits.to_i,
@@ -7,6 +11,8 @@ module Enterprise::Account
   end
 
   def subscribed_features
+    return [] if Enterprise::Billing::DeploymentEnv.manytalks?
+
     plan_features = InstallationConfig.find_by(name: 'CHATWOOT_CLOUD_PLAN_FEATURES')&.value
     return [] if plan_features.blank?
 

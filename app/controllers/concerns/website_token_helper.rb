@@ -7,7 +7,10 @@ module WebsiteTokenHelper
     @web_widget = ::Channel::WebWidget.find_by!(website_token: permitted_params[:website_token])
     @current_account = @web_widget.inbox.account
 
-    render json: { error: 'Account is suspended' }, status: :unauthorized unless @current_account.active?
+    unless @current_account.operationally_available?
+      error = @current_account.billing_locked? ? 'Account billing is locked' : 'Account is suspended'
+      render json: { error: error }, status: :unauthorized
+    end
   end
 
   def set_contact

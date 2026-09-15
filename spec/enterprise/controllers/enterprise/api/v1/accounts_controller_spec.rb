@@ -5,6 +5,10 @@ RSpec.describe 'Enterprise Billing APIs', type: :request do
   let(:admin) { create(:user, account: account, role: :administrator) }
   let(:agent) { create(:user, account: account, role: :agent) }
 
+  before do
+    InstallationConfig.find_or_initialize_by(name: 'DEPLOYMENT_ENV').update!(value: 'cloud')
+  end
+
   describe 'POST /enterprise/api/v1/accounts/{account.id}/subscription' do
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do
@@ -162,7 +166,7 @@ RSpec.describe 'Enterprise Billing APIs', type: :request do
         before do
           create(:conversation, account: account)
           create(:channel_api, account: account)
-          InstallationConfig.where(name: 'DEPLOYMENT_ENV').first_or_create(value: 'cloud')
+          InstallationConfig.find_or_initialize_by(name: 'DEPLOYMENT_ENV').update!(value: 'cloud')
           InstallationConfig.where(name: 'CHATWOOT_CLOUD_PLANS').first_or_create(value: [{ 'name': 'Hacker' }])
         end
 
@@ -256,7 +260,7 @@ RSpec.describe 'Enterprise Billing APIs', type: :request do
           )
         end
 
-        it 'returns plan limits when stripe_customer_id is linked and plan is default' do
+        it 'does not apply cloud freemium limits when stripe_customer_id is linked' do
           account.update!(custom_attributes: {
                             plan_name: 'Hacker',
                             stripe_customer_id: 'cus_linked123'
@@ -266,10 +270,14 @@ RSpec.describe 'Enterprise Billing APIs', type: :request do
               headers: admin.create_new_auth_token,
               as: :json
 
-          body = JSON.parse(response.body)
           expect(response).to have_http_status(:ok)
-          expect(body['limits']['conversation']['allowed']).to eq(500)
-          expect(body['limits']['non_web_inboxes']['allowed']).to eq(0)
+          expect(JSON.parse(response.body)).to eq(
+            'id' => account.id,
+            'limits' => {
+              'conversation' => {},
+              'non_web_inboxes' => {}
+            }
+          )
         end
       end
     end

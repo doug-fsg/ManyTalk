@@ -51,6 +51,14 @@
     "UPDATE_CHATWOOT": "Hay una actualización %{latestManyTalksVersion} para ManyTalks disponible. Por favor, actualiza tu instancia.",
     "LEARN_MORE": "Más información",
     "PAYMENT_PENDING": "Tu pago está pendiente. Por favor actualiza tu información de pago para seguir usando ManyTalks",
+    "BILLING_LOCK": {
+      "TITLE_MANAGER": "Pago requerido",
+      "TITLE_AGENT": "Cuenta no disponible",
+      "MESSAGE_MANAGER": "Actualiza la suscripción para volver a usar esta cuenta.",
+      "MESSAGE_AGENT": "Esta cuenta no está disponible ahora. Habla con el administrador o usa otra cuenta.",
+      "OPEN_BILLING": "Ir a facturación",
+      "SWITCH_ACCOUNT": "Cambiar de cuenta"
+    },
     "LIMITS_UPGRADE": "Su cuenta ha excedido los límites de uso, por favor actualice su plan para seguir usando ManyTalks",
     "OPEN_BILLING": "Abrir facturación"
   },

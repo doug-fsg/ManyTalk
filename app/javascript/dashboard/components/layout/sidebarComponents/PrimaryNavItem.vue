@@ -4,14 +4,19 @@
       v-tooltip.right="tooltipText"
       :href="href"
       :aria-label="accessibleLabel"
-      class="group text-white/75 dark:text-slate-300 w-10 h-10 my-1 flex items-center justify-center rounded-xl cursor-pointer relative transition-all duration-200 ease-out hover:bg-white/15 hover:text-white dark:hover:bg-white/10 dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-woot-600 dark:focus-visible:ring-offset-woot-800 motion-reduce:transition-none"
+      class="group text-white/75 dark:text-slate-300 w-10 h-10 my-1 flex items-center justify-center rounded-xl relative transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-woot-600 dark:focus-visible:ring-offset-woot-800 motion-reduce:transition-none"
       :class="{
+        'cursor-pointer hover:bg-white/15 hover:text-white dark:hover:bg-white/10 dark:hover:text-white':
+          !disabled,
+        'pointer-events-none opacity-40 cursor-not-allowed': disabled,
         'bg-white text-woot-600 shadow-sm hover:bg-white hover:text-woot-600 dark:bg-slate-100 dark:text-woot-600 dark:hover:bg-slate-100 dark:shadow-md dark:shadow-woot-500/15':
           isActive || isChildMenuActive,
       }"
+      :aria-disabled="disabled"
+      :tabindex="disabled ? -1 : 0"
       :rel="openInNewPage ? 'noopener noreferrer nofollow' : undefined"
       :target="openInNewPage ? '_blank' : undefined"
-      @click="navigate"
+      @click="event => onClick(event, navigate)"
     >
       <fluent-icon
         :icon="icon"
@@ -69,6 +74,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
   },
   computed: {
     accessibleLabel() {
@@ -79,6 +88,15 @@ export default {
         return `${this.accessibleLabel} (${this.$t('SIDEBAR.BETA')})`;
       }
       return this.accessibleLabel;
+    },
+  },
+  methods: {
+    onClick(event, navigate) {
+      if (this.disabled) {
+        event.preventDefault();
+        return;
+      }
+      navigate(event);
     },
   },
 };

@@ -102,6 +102,7 @@ RSpec.describe Account do
     end
 
     before do
+      InstallationConfig.find_or_initialize_by(name: 'DEPLOYMENT_ENV').update!(value: 'cloud')
       InstallationConfig.where(name: 'CHATWOOT_CLOUD_PLAN_FEATURES').first_or_create(value: plan_features)
     end
 
@@ -124,11 +125,28 @@ RSpec.describe Account do
     end
 
     context 'when plan_features is blank' do
+      before do
+        InstallationConfig.find_by(name: 'CHATWOOT_CLOUD_PLAN_FEATURES')&.update!(value: nil)
+      end
+
       it 'returns an empty array' do
         account.custom_attributes = {}
         account.save!
 
-        expect(account.subscribed_features).to be_nil
+        expect(account.subscribed_features).to eq([])
+      end
+    end
+
+    context 'when DEPLOYMENT_ENV is manytalks' do
+      before do
+        InstallationConfig.find_or_initialize_by(name: 'DEPLOYMENT_ENV').update!(value: 'manytalks')
+      end
+
+      it 'does not resolve features from CHATWOOT_CLOUD_PLAN_FEATURES' do
+        account.custom_attributes = { 'plan_name': 'startups' }
+        account.save!
+
+        expect(account.subscribed_features).to eq([])
       end
     end
   end
