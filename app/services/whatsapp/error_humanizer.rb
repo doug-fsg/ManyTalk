@@ -13,6 +13,8 @@ module Whatsapp::ErrorHumanizer
       I18n.t('conversations.messages.whatsapp.errors.payment_issue')
     when 131_053
       I18n.t('conversations.messages.whatsapp.errors.media_format_not_supported')
+    when 133_010
+      I18n.t('conversations.messages.whatsapp.errors.channel_disconnected')
     else
       if details.present?
         "#{code}: #{details}"

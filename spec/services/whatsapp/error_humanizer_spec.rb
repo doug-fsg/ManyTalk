@@ -28,6 +28,12 @@ RSpec.describe Whatsapp::ErrorHumanizer do
       )
     end
 
+    it 'returns channel disconnected message for error 133010' do
+      expect(described_class.humanize(code: 133_010)).to eq(
+        I18n.t('conversations.messages.whatsapp.errors.channel_disconnected')
+      )
+    end
+
     it 'falls back to code and details for unknown codes' do
       expect(described_class.humanize(code: 999, details: 'Unknown error')).to eq('999: Unknown error')
     end

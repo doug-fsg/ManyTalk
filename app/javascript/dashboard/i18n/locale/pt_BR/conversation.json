@@ -220,7 +220,8 @@
       "MARKETING_LIMIT": "Limite de marketing da Meta. Aguarde 24h para reenviar.",
       "DISPLAY_NAME_NOT_APPROVED": "WhatsApp: nome pendente ou número não registrado na Meta.",
       "MEDIA_FORMAT_NOT_SUPPORTED": "Formato não suportado. Converta para MP3.",
-      "PAYMENT_ISSUE": "Problema de pagamento na Meta. Verifique a cobrança."
+      "PAYMENT_ISSUE": "Problema de pagamento na Meta. Verifique a cobrança.",
+      "CHANNEL_DISCONNECTED": "Inbox WhatsApp desconectado. Um administrador precisa reconectar em Configurações → Caixas de entrada."
     },
     "ASSIGNMENT": {
       "SELECT_AGENT": "Selecione Atendentes",

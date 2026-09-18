@@ -162,6 +162,7 @@ en:
           marketing_limit_reached: 'Meta marketing limit reached. Wait 24h to resend.'
           media_format_not_supported: 'Unsupported format. Convert to MP3.'
           payment_issue: 'Meta payment issue. Check billing setup.'
+          channel_disconnected: 'WhatsApp inbox is disconnected. An administrator must reconnect it in inbox settings.'
         pricing:
           cost_unavailable: 'Meta partner billing — cost unavailable via API.'
     activity:
