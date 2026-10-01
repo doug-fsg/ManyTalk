@@ -48,7 +48,7 @@ module Workflows
     def fetch_enrollments(internal_ids, contact_ids)
       scope = @account.workflow_enrollments
                       .in_progress
-                      .includes(:workflow, :workflow_step_executions)
+                      .includes(:workflow)
 
       scope = scope.joins(:conversation).where(conversations: { inbox_id: assigned_inbox_ids }) unless administrator?
 
@@ -69,7 +69,6 @@ module Workflows
 
     def summary_for(enrollment)
       workflow = enrollment.workflow
-      counts = TimelineBuilder.new(enrollment).step_counts
       current_node = workflow.find_node(enrollment.current_node_id)
 
       {
@@ -78,9 +77,7 @@ module Workflows
         workflow_name: workflow.name,
         status: enrollment.status,
         current_node_label: Workflows::NodeLabel.for_node(current_node),
-        current_node_type: current_node&.dig('type'),
-        step_index: counts[:step_index],
-        total_steps: counts[:total_steps]
+        current_node_type: current_node&.dig('type')
       }
     end
 

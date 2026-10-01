@@ -1,0 +1,19 @@
+{
+  "issue": "performance-workflows-inbox",
+  "phase": "implemented_tests_green",
+  "structural_bug_confirmed": true,
+  "structural_bug_fixed": true,
+  "resolution_plan": "docs/plano-correcao-performance-workflows-inbox.md",
+  "feedback_loop": {
+    "command": "node debug_outputs/performance-workflows-inbox/verify-structural-bug.mjs",
+    "last_result": "BUG STRUCTURAL: 0/5",
+    "exit_code": 0
+  },
+  "tests": {
+    "vitest": "yarn test app/javascript/dashboard/helper/specs/workflowEnrollmentSummaryFetch.spec.js",
+    "vitest_result": "8 passed",
+    "rspec": "bundle exec rspec spec/services/workflows/enrollment_summary_service_spec.rb spec/services/workflows/enrollment_payload_builder_spec.rb",
+    "rspec_result": "5 examples, 0 failures"
+  },
+  "production_nginx_validation": "pending_deploy"
+}

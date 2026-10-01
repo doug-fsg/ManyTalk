@@ -146,6 +146,11 @@ import { CONVERSATION_EVENTS } from '../helper/AnalyticsHelper/events';
 import IntersectionObserver from './IntersectionObserver.vue';
 import debounce from 'lodash/debounce';
 import WorkflowEnrollmentSummariesAPI from 'dashboard/api/workflowEnrollmentSummaries';
+import {
+  applyEnrollmentCableUpdate,
+  visibleConversationIdsKey,
+  VISIBLE_ENROLLMENT_SUMMARY_LIMIT,
+} from 'dashboard/helper/workflowEnrollmentSummaryFetch';
 
 export default {
   components: {
@@ -458,6 +463,9 @@ export default {
       }
       return conversationList;
     },
+    visibleConversationIdsKey() {
+      return visibleConversationIdsKey(this.conversationList);
+    },
     activeFolder() {
       if (this.foldersId) {
         const activeView = this.folders.filter(
@@ -528,11 +536,10 @@ export default {
         this.$store.dispatch('updateChatListFilters', newVal);
       }
     },
-    conversationList: {
-      handler() {
+    visibleConversationIdsKey() {
+      if (this.debouncedFetchEnrollmentSummaries) {
         this.debouncedFetchEnrollmentSummaries();
-      },
-      deep: true,
+      }
     },
   },
   created() {
@@ -562,7 +569,7 @@ export default {
     this.$emitter.on('workflow_enrollment.updated', this.onWorkflowEnrollmentUpdated);
 
     if (this.isFeatureEnabledonAccount(this.accountId, 'workflows')) {
-      this.fetchEnrollmentSummaries();
+      this.debouncedFetchEnrollmentSummaries();
     }
 
     this.$nextTick(() => {
@@ -600,19 +607,26 @@ export default {
       if (!this.isFeatureEnabledonAccount(this.accountId, 'workflows')) return;
 
       const conversationId = Number(payload.conversation_id);
-      // Skip noise from enrollments outside the visible list
       const isVisible = this.conversationList.some(
         conversation => conversation.id === conversationId
       );
       if (!isVisible) return;
 
-      // Reuse the same debounce as conversationList watcher to avoid API storms
-      this.debouncedFetchEnrollmentSummaries();
+      this.enrollmentSummaries = applyEnrollmentCableUpdate(
+        this.enrollmentSummaries,
+        payload
+      );
+      this.updateVirtualListProps(
+        'enrollmentSummaries',
+        this.enrollmentSummaries
+      );
     },
     async fetchEnrollmentSummaries() {
       if (!this.isFeatureEnabledonAccount(this.accountId, 'workflows')) return;
 
-      const ids = this.conversationList.map(c => c.id).slice(0, 50);
+      const ids = this.conversationList
+        .map(c => c.id)
+        .slice(0, VISIBLE_ENROLLMENT_SUMMARY_LIMIT);
       if (!ids.length) {
         this.enrollmentSummaries = {};
         this.updateVirtualListProps('enrollmentSummaries', {});

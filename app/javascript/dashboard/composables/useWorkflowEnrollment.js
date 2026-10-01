@@ -117,7 +117,10 @@ export function useWorkflowEnrollment(conversationId) {
   };
 
   onMounted(fetchActive);
-  watch(conversationId, fetchActive);
+  watch(conversationId, (id, previousId) => {
+    if (id === previousId) return;
+    fetchActive();
+  });
 
   return {
     enrollment,
