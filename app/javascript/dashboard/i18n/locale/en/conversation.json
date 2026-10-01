@@ -220,7 +220,8 @@
       "MARKETING_LIMIT": "Meta marketing limit reached. Wait 24h to resend.",
       "DISPLAY_NAME_NOT_APPROVED": "WhatsApp: display name pending or number not registered.",
       "MEDIA_FORMAT_NOT_SUPPORTED": "Unsupported format. Convert to MP3.",
-      "PAYMENT_ISSUE": "Meta payment issue. Check billing setup."
+      "PAYMENT_ISSUE": "Meta payment issue. Check billing setup.",
+      "CHANNEL_DISCONNECTED": "WhatsApp inbox is disconnected. An administrator must reconnect it in inbox settings."
     },
     "ASSIGNMENT": {
       "SELECT_AGENT": "Select Agent",

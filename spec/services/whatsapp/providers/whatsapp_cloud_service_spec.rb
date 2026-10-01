@@ -197,6 +197,45 @@ describe Whatsapp::Providers::WhatsappCloudService do
             .with { |req| body = JSON.parse(req.body); body['type'] == 'audio' && !body.dig('audio')&.key?('voice') }
         ).to have_been_made.once
       end
+
+      it 'prompts reconnection on 133010 account not registered' do
+        stub_request(:post, 'https://graph.facebook.com/v13.0/123456789/messages')
+          .to_return(
+            status: 400,
+            headers: response_headers,
+            body: {
+              error: {
+                message: '(#133010) Account not registered',
+                code: 133_010,
+                type: 'OAuthException'
+              }
+            }.to_json
+          )
+
+        expect(service.send_message('+123456789', message)).to be_nil
+        expect(message.reload.status).to eq('failed')
+        expect(message.reload.external_error).to eq(
+          I18n.t('conversations.messages.whatsapp.errors.channel_disconnected')
+        )
+        expect(whatsapp_channel.reauthorization_required?).to be(true)
+      end
+
+      it 'does not prompt reconnection on marketing limit errors' do
+        stub_request(:post, 'https://graph.facebook.com/v13.0/123456789/messages')
+          .to_return(
+            status: 400,
+            headers: response_headers,
+            body: {
+              error: {
+                message: 'Healthy ecosystem engagement',
+                code: 131_049
+              }
+            }.to_json
+          )
+
+        expect(service.send_message('+123456789', message)).to be_nil
+        expect(whatsapp_channel.reauthorization_required?).to be(false)
+      end
     end
   end
 
@@ -339,7 +378,7 @@ describe Whatsapp::Providers::WhatsappCloudService do
         expect(whatsapp_channel.reauthorization_required?).to be(false)
       end
 
-      it 'marks reauthorization required after repeated Meta permission failures' do
+      it 'marks reauthorization required immediately on Meta permission failures' do
         stub_request(:get, 'https://graph.facebook.com/v22.0/123456789/message_templates')
           .with(headers: { 'Authorization' => 'Bearer test_key' })
           .to_return(
@@ -355,9 +394,7 @@ describe Whatsapp::Providers::WhatsappCloudService do
             }.to_json
           )
 
-        2.times do
-          expect { subject.sync_templates }.to raise_error(StandardError)
-        end
+        expect { subject.sync_templates }.to raise_error(StandardError)
         expect(whatsapp_channel.reauthorization_required?).to be(true)
       end
 

@@ -133,6 +133,13 @@
         <div class="activity-wrap">
           <div class="is-text">
             <span>{{ whatsappDeliveryErrorMessage }}</span>
+            <router-link
+              v-if="shouldShowWhatsAppReconnectCta"
+              class="ml-1 underline"
+              :to="whatsappReconnectPath"
+            >
+              {{ $t('INBOX_MGMT.CLICK_TO_RECONNECT') }}
+            </router-link>
           </div>
           <div class="message-text--metadata">
             <span class="time">{{ whatsappDeliveryErrorTime }}</span>
@@ -181,7 +188,10 @@ import { LOCAL_STORAGE_KEYS } from 'dashboard/constants/localStorage';
 import { LocalStorage } from 'shared/helpers/localStorage';
 import { getDayDifferenceFromNow } from 'shared/helpers/DateHelper';
 import { messageTimestamp } from 'shared/helpers/timeHelper';
-import { resolveWhatsappDeliveryError } from 'dashboard/helper/whatsappErrorHelper';
+import {
+  isWhatsappChannelDisconnectError,
+  resolveWhatsappDeliveryError,
+} from 'dashboard/helper/whatsappErrorHelper';
 import * as Sentry from '@sentry/browser';
 
 export default {
@@ -459,6 +469,15 @@ export default {
       return resolveWhatsappDeliveryError(this.externalError, key =>
         this.$t(key)
       );
+    },
+    shouldShowWhatsAppReconnectCta() {
+      return isWhatsappChannelDisconnectError(this.externalError);
+    },
+    whatsappReconnectPath() {
+      return {
+        name: 'settings_inbox_show',
+        params: { inboxId: this.data.inbox_id },
+      };
     },
     whatsappDeliveryErrorTime() {
       return messageTimestamp(this.createdAt, 'LLL d, h:mm a');

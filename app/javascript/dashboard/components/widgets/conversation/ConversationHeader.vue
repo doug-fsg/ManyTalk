@@ -1,7 +1,8 @@
 <template>
-  <div
-    class="flex flex-col items-center justify-between px-4 py-2 bg-white border-b dark:bg-slate-900 border-slate-50 dark:border-slate-800/50 md:flex-row"
-  >
+  <div class="flex flex-col w-full">
+    <div
+      class="flex flex-col items-center justify-between px-4 py-2 bg-white border-b dark:bg-slate-900 border-slate-50 dark:border-slate-800/50 md:flex-row"
+    >
     <div
       class="flex flex-col items-center justify-center flex-1 w-full min-w-0"
       :class="isInboxView ? 'sm:flex-row' : 'md:flex-row'"
@@ -89,6 +90,16 @@
         <more-actions :conversation-id="currentChat.id" />
       </div>
     </div>
+    </div>
+    <Banner
+      v-if="inboxNeedsReconnect"
+      color-scheme="alert"
+      class="w-full rounded-none"
+      :banner-message="$t('INBOX_MGMT.RECONNECTION_REQUIRED')"
+      :action-button-label="$t('INBOX_MGMT.CLICK_TO_RECONNECT')"
+      has-action-button
+      @click="goToInboxReconnect"
+    />
   </div>
 </template>
 <script>
@@ -106,6 +117,7 @@ import wootConstants from 'dashboard/constants/globals';
 import { conversationListPageURL } from 'dashboard/helper/URLHelper';
 import { snoozedReopenTime } from 'dashboard/helper/snoozeHelpers';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
+import Banner from 'dashboard/components/ui/Banner.vue';
 import Linear from './linear/index.vue';
 import ReguaRelacionamento from './regua/index.vue';
 
@@ -119,6 +131,7 @@ export default {
     SLACardLabel,
     Linear,
     ReguaRelacionamento,
+    Banner,
   },
   mixins: [inboxMixin, agentMixin, keyboardEventListenerMixins],
   props: {
@@ -220,6 +233,9 @@ export default {
         FEATURE_FLAGS.WORKFLOWS
       );
     },
+    inboxNeedsReconnect() {
+      return Boolean(this.inbox?.reauthorization_required);
+    },
   },
 
   methods: {
@@ -229,6 +245,14 @@ export default {
           action: () => this.$emit('contact-panel-toggle'),
         },
       };
+    },
+    goToInboxReconnect() {
+      if (!this.inbox?.id) return;
+
+      this.$router.push({
+        name: 'settings_inbox_show',
+        params: { inboxId: this.inbox.id },
+      });
     },
   },
 };

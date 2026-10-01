@@ -120,12 +120,16 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
     meta_error(response)&.dig('message') || 'Failed to sync WhatsApp templates'
   end
 
-  # Meta auth/permission failures → existing Reauthorizable flow (banner after threshold).
-  # 190 = invalid/expired token; 100/33 = object inaccessible / missing permissions.
+  # Meta auth/permission failures → Reauthorizable flow (banner + reconnect).
+  # 190 = invalid/expired token (threshold); 100/33 and 133010 = channel unusable (prompt immediately).
   def record_authorization_error_from_meta!(response)
     return unless meta_authorization_error?(response)
 
-    whatsapp_channel.authorization_error!
+    if channel_disconnected_error?(response)
+      whatsapp_channel.prompt_reauthorization! unless whatsapp_channel.reauthorization_required?
+    else
+      whatsapp_channel.authorization_error!
+    end
   end
 
   def meta_authorization_error?(response)
@@ -136,7 +140,16 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
 
     code = error['code'].to_i
     subcode = error['error_subcode'].to_i
-    code == 190 || (code == 100 && subcode == 33)
+    code == 190 || code == 133_010 || (code == 100 && subcode == 33)
+  end
+
+  def channel_disconnected_error?(response)
+    error = meta_error(response)
+    return false unless error
+
+    code = error['code'].to_i
+    subcode = error['error_subcode'].to_i
+    code == 133_010 || (code == 100 && subcode == 33)
   end
 
   def meta_error(response)
@@ -240,6 +253,7 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
       response['messages'].first['id']
     else
       Rails.logger.error response.body
+      record_authorization_error_from_meta!(response)
       external_error = humanize_whatsapp_error(response)
       message.update!(status: :failed, external_error: external_error)
       nil

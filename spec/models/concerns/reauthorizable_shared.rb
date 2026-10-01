@@ -40,6 +40,22 @@ shared_examples_for 'reauthorizable' do
     expect(mailer_method).to have_received(:deliver_later)
   end
 
+  it 'notifies only once while reauthorization remains required' do
+    next if %w[Integrations::Hook AutomationRule].include?(model.to_s)
+
+    obj = FactoryBot.create(model.to_s.underscore.tr('/', '_').to_sym)
+    mailer = double
+    mailer_method = double
+    allow(AdministratorNotifications::ChannelNotificationsMailer).to receive(:with).and_return(mailer)
+    allow(mailer).to receive(:method_missing).and_return(mailer_method)
+    allow(mailer_method).to receive(:deliver_later)
+
+    obj.prompt_reauthorization!
+    obj.prompt_reauthorization!
+
+    expect(AdministratorNotifications::ChannelNotificationsMailer).to have_received(:with).once
+  end
+
   it 'reauthorized!' do
     obj = FactoryBot.create(model.to_s.underscore.tr('/', '_').to_sym)
     # setting up the object with the errors to validate its cleared on action
