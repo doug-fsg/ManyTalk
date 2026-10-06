@@ -365,6 +365,7 @@ import {
   isValidKanbanSort,
   sortKanbanContacts,
 } from '../utils/kanbanSortHelper';
+import { matchesKanbanDateRange } from '../utils/kanbanDateFilterHelper';
 import { parseOpenCardModalPayload } from '../utils/crmNavigationHelper';
 
 // Criar um barramento de eventos global compartilhado
@@ -713,30 +714,18 @@ export default {
         }
 
         // Date Range filter usando created_at de contact_pipeline_positions
+        // Parse local de YYYY-MM-DD (type=date) — evita new Date("YYYY-MM-DD") = UTC
         let matchesDateRange = true;
         if (this.kanbanFilters.dateFrom || this.kanbanFilters.dateTo) {
           if (!this.selectedAttribute) {
             matchesDateRange = false;
           } else {
-            // Usar created_at da position do pipeline (quando o card foi criado no pipeline)
             const createdAt = getCreatedAt(contact, this.selectedAttribute.id);
-            if (!createdAt) {
-              matchesDateRange = false;
-            } else {
-              const createdDate = new Date(createdAt); // created_at vem como ISO string
-              
-              if (this.kanbanFilters.dateFrom) {
-                const fromDate = new Date(this.kanbanFilters.dateFrom);
-                fromDate.setHours(0, 0, 0, 0);
-                matchesDateRange = matchesDateRange && createdDate >= fromDate;
-              }
-              if (this.kanbanFilters.dateTo) {
-                const toDate = new Date(this.kanbanFilters.dateTo);
-                // Para dateTo, queremos incluir o dia inteiro até 23:59:59.999
-                toDate.setHours(23, 59, 59, 999);
-                matchesDateRange = matchesDateRange && createdDate <= toDate;
-              }
-            }
+            matchesDateRange = matchesKanbanDateRange(
+              createdAt,
+              this.kanbanFilters.dateFrom,
+              this.kanbanFilters.dateTo
+            );
           }
         }
 
@@ -1122,20 +1111,11 @@ export default {
             if (!this.selectedAttribute) matchesDateRange = false;
             else {
               const createdAt = getCreatedAt(contact, this.selectedAttribute.id);
-              if (!createdAt) matchesDateRange = false;
-              else {
-                const createdDate = new Date(createdAt);
-                if (this.kanbanFilters.dateFrom) {
-                  const fromDate = new Date(this.kanbanFilters.dateFrom);
-                  fromDate.setHours(0, 0, 0, 0);
-                  matchesDateRange = matchesDateRange && createdDate >= fromDate;
-                }
-                if (this.kanbanFilters.dateTo) {
-                  const toDate = new Date(this.kanbanFilters.dateTo);
-                  toDate.setHours(23, 59, 59, 999);
-                  matchesDateRange = matchesDateRange && createdDate <= toDate;
-                }
-              }
+              matchesDateRange = matchesKanbanDateRange(
+                createdAt,
+                this.kanbanFilters.dateFrom,
+                this.kanbanFilters.dateTo
+              );
             }
           }
 
