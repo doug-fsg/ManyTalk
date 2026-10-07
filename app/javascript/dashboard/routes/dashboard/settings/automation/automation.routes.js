@@ -14,6 +14,8 @@ const SettingsWrapper = () => import('../SettingsWrapper.vue');
 const AutomationHub = () => import('./AutomationHub.vue');
 const Automation = () => import('./Index.vue');
 const WorkflowsIndex = () => import('../workflows/WorkflowsIndex.vue');
+const WorkflowSchedulesIndex = () =>
+  import('../workflows/WorkflowSchedulesIndex.vue');
 const FormsIndex = () => import('../forms/FormsIndex.vue');
 const FormDetail = () => import('../forms/FormDetail.vue');
 const WorkflowEditorWrapper = () => import('../workflows/WorkflowEditorWrapper.vue');
@@ -52,6 +54,15 @@ export default {
               path: 'workflows',
               name: 'workflows_list',
               component: WorkflowsIndex,
+              beforeEnter: requireWorkflowsFeature,
+              meta: {
+                permissions: WORKFLOW_ROUTE_PERMISSIONS,
+              },
+            },
+            {
+              path: 'schedules',
+              name: 'workflows_schedules',
+              component: WorkflowSchedulesIndex,
               beforeEnter: requireWorkflowsFeature,
               meta: {
                 permissions: WORKFLOW_ROUTE_PERMISSIONS,

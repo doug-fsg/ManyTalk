@@ -222,6 +222,9 @@ module Workflows
     MAX_WORKFLOWS_PER_EVENT = 100
     # After this many synchronous node advances, enqueue StepJob to avoid long-running jobs
     MAX_SYNC_ADVANCE_DEPTH = 5
+    SCHEDULE_BATCH_SIZE = 25
+    SCHEDULE_BATCH_DELAY = 5
+    SCHEDULE_DUE_CLAIM_LIMIT = 10
 
     DEFAULT_SETTINGS = {
       'cancel_on_contact_reply' => false,

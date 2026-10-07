@@ -21,6 +21,13 @@ module Workflows
         end
       end
 
+      def enroll_conversation(workflow:, conversation:, event_name:, changed_attributes: nil)
+        return if workflow.blank? || conversation.blank?
+        return unless workflow.active?
+
+        process_workflow_trigger(workflow, conversation, nil, changed_attributes, event_name: event_name)
+      end
+
       def advance_from_node(workflow, enrollment, conversation, node_id)
         conversation = EnrollmentFollowService.new.ensure_actionable_conversation!(enrollment) || conversation
         advance_from(workflow, enrollment, conversation, node_id, depth: 0)

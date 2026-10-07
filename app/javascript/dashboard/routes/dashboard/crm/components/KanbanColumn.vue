@@ -7,7 +7,9 @@
   >
     <div 
       class="column-header"
-      :class="{ 'column-header--draggable': allowColumnReorder }"
+      :class="{
+        'column-header--draggable': allowColumnReorder,
+      }"
       :data-title="column.title"
       :style="{ backgroundColor: getHeaderColor(column.color) }"
     >
@@ -19,6 +21,54 @@
         <div class="column-header-right">
           <div v-if="columnTotal > 0" class="column-total dark:text-white">
             {{ formatCurrency(columnTotal) }}
+          </div>
+          <div
+            v-if="canScheduleRecurring"
+            class="schedule-control"
+            @mousedown.stop
+          >
+            <woot-button
+              :icon="scheduleIcon"
+              size="tiny"
+              variant="clear"
+              color-scheme="secondary"
+              :class="
+                hasActiveSchedule
+                  ? 'schedule-control__button--on'
+                  : 'add-contact-btn'
+              "
+              :style="scheduleActiveStyle"
+              @click.stop="onScheduleClick"
+              v-tooltip.top="scheduleTooltip"
+            />
+            <div
+              v-if="showScheduleMenu"
+              class="schedule-menu"
+            >
+              <button
+                type="button"
+                class="schedule-menu__item"
+                @click.stop="editSchedule"
+              >
+                {{ $t('WORKFLOW.LIST.EDIT') }}
+              </button>
+              <button
+                v-if="columnSchedule.active"
+                type="button"
+                class="schedule-menu__item"
+                @click.stop="deactivateSchedule"
+              >
+                {{ $t('WORKFLOW.SCHEDULES.DEACTIVATE') }}
+              </button>
+              <button
+                v-else
+                type="button"
+                class="schedule-menu__item"
+                @click.stop="activateSchedule"
+              >
+                {{ $t('WORKFLOW.LIST.ACTIVATE') }}
+              </button>
+            </div>
           </div>
           <woot-button
             icon="add"
@@ -90,11 +140,13 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
 import draggable from 'vuedraggable';
 import KanbanCard from './KanbanCard.vue';
 import IntersectionObserver from 'dashboard/components/IntersectionObserver.vue';
 import Spinner from 'shared/components/Spinner.vue';
 import { getDealValue } from '../utils/pipelinePositionsHelper';
+import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
 export default {
   name: 'KanbanColumn',
@@ -133,6 +185,10 @@ export default {
       type: Boolean,
       default: true,
     },
+    columnSchedule: {
+      type: Object,
+      default: null,
+    },
   },
   data() {
     return {
@@ -141,9 +197,42 @@ export default {
       isLoadingMore: false, // Flag para indicar carregamento
       scrollDebounce: null, // Debounce para eventos de scroll
       isDragging: false, // Flag para indicar se está arrastando (renderiza todos os itens)
+      showScheduleMenu: false,
     };
   },
   computed: {
+    ...mapGetters({
+      accountId: 'getCurrentAccountId',
+      isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
+    }),
+    canScheduleRecurring() {
+      if (this.isViewerMode) return false;
+      if (typeof this.isFeatureEnabledonAccount !== 'function') return false;
+      return this.isFeatureEnabledonAccount(
+        this.accountId,
+        FEATURE_FLAGS.WORKFLOWS
+      );
+    },
+    hasActiveSchedule() {
+      return Boolean(this.columnSchedule && this.columnSchedule.active);
+    },
+    scheduleIcon() {
+      return this.hasActiveSchedule ? 'calendar-clock' : 'calendar';
+    },
+    scheduleTooltip() {
+      if (this.hasActiveSchedule) {
+        return this.$t('WORKFLOW.SCHEDULES.KANBAN_MANAGE');
+      }
+      return this.$t('WORKFLOW.SCHEDULES.KANBAN_ACTION');
+    },
+    scheduleActiveStyle() {
+      if (!this.hasActiveSchedule) return {};
+      const bg = this.getVividColumnColor(this.column.color);
+      return {
+        '--schedule-on-bg': bg,
+        '--schedule-on-bg-hover': this.shadeColumnColor(bg, 0.14),
+      };
+    },
     columnItems: {
       get() {
         return this.column.items;
@@ -206,39 +295,90 @@ export default {
     },
   },
   methods: {
-    getLightColor(hexColor) {
-      // Função para criar uma versão mais clara da cor
-      if (!hexColor) return 'rgba(245, 245, 250, 0.3)'; // Cor padrão clara
-      
-      // Converter hex para RGB e adicionar transparência
+    onScheduleClick() {
+      if (this.columnSchedule) {
+        this.showScheduleMenu = !this.showScheduleMenu;
+        return;
+      }
+      this.$emit('create-schedule', {
+        pipelineId: this.pipelineId,
+        stageId: this.column.title,
+        stageTitle: this.column.title,
+      });
+    },
+    editSchedule() {
+      this.showScheduleMenu = false;
+      this.$emit('edit-schedule', this.columnSchedule);
+    },
+    deactivateSchedule() {
+      this.showScheduleMenu = false;
+      this.$emit('deactivate-schedule', this.columnSchedule);
+    },
+    activateSchedule() {
+      this.showScheduleMenu = false;
+      this.$emit('activate-schedule', this.columnSchedule);
+    },
+    closeScheduleMenu() {
+      this.showScheduleMenu = false;
+    },
+    onDocumentClick(event) {
+      if (!this.showScheduleMenu) return;
+      if (this.$el && this.$el.querySelector('.schedule-control')?.contains(event.target)) {
+        return;
+      }
+      this.showScheduleMenu = false;
+    },
+    parseColumnColorRgb(hexColor) {
+      if (!hexColor) return null;
       let hex = hexColor.replace('#', '');
       if (hex.length === 3) {
         hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
       }
-      
-      const r = parseInt(hex.substring(0, 2), 16);
-      const g = parseInt(hex.substring(2, 4), 16);
-      const b = parseInt(hex.substring(4, 6), 16);
-      
-      // Retorna uma versão clara com opacidade mais próxima da cor original
-      return `rgba(${r}, ${g}, ${b}, 0.18)`;
+      if (hex.length !== 6) return null;
+      return {
+        r: parseInt(hex.substring(0, 2), 16),
+        g: parseInt(hex.substring(2, 4), 16),
+        b: parseInt(hex.substring(4, 6), 16),
+      };
+    },
+    rgbToHex({ r, g, b }) {
+      const toPart = value =>
+        Math.min(255, Math.max(0, Math.round(value)))
+          .toString(16)
+          .padStart(2, '0');
+      return `#${toPart(r)}${toPart(g)}${toPart(b)}`;
+    },
+    shadeColumnColor(hexColor, towardBlack = 0.12) {
+      const rgb = this.parseColumnColorRgb(hexColor);
+      if (!rgb) return hexColor;
+      const shade = channel =>
+        Math.round(channel * (1 - towardBlack));
+      return this.rgbToHex({
+        r: shade(rgb.r),
+        g: shade(rgb.g),
+        b: shade(rgb.b),
+      });
+    },
+    getVividColumnColor(hexColor) {
+      const rgb = this.parseColumnColorRgb(hexColor);
+      if (!rgb) return '#5D5FEF';
+      const luminance =
+        (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+      let hex = this.rgbToHex(rgb);
+      if (luminance > 0.62) {
+        hex = this.shadeColumnColor(hex, 0.18);
+      }
+      return hex;
+    },
+    getLightColor(hexColor) {
+      const rgb = this.parseColumnColorRgb(hexColor);
+      if (!rgb) return 'rgba(245, 245, 250, 0.3)';
+      return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`;
     },
     getHeaderColor(hexColor) {
-      // Função para criar uma versão mais forte da cor para o cabeçalho
-      if (!hexColor) return 'rgba(245, 245, 250, 0.5)'; // Cor padrão para o cabeçalho
-      
-      // Converter hex para RGB e adicionar transparência
-      let hex = hexColor.replace('#', '');
-      if (hex.length === 3) {
-        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
-      }
-      
-      const r = parseInt(hex.substring(0, 2), 16);
-      const g = parseInt(hex.substring(2, 4), 16);
-      const b = parseInt(hex.substring(4, 6), 16);
-      
-      // Retorna uma versão mais forte com opacidade maior, mais próxima da cor original
-      return `rgba(${r}, ${g}, ${b}, 0.25)`;
+      const rgb = this.parseColumnColorRgb(hexColor);
+      if (!rgb) return 'rgba(245, 245, 250, 0.5)';
+      return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`;
     },
     onDragStart() {
       // Ativar flag de drag imediatamente para renderizar todos os itens
@@ -353,6 +493,10 @@ export default {
   mounted() {
     // Resetar página quando os itens mudarem
     this.currentPage = 1;
+    document.addEventListener('click', this.onDocumentClick);
+  },
+  beforeDestroy() {
+    document.removeEventListener('click', this.onDocumentClick);
   },
   watch: {
     // Resetar paginação quando os itens da coluna mudarem
@@ -401,6 +545,62 @@ export default {
   .dark-mode & {
     border-color: var(--b-600);
   }
+}
+
+.schedule-control {
+  position: relative;
+}
+
+.schedule-control__button--on {
+  opacity: 1 !important;
+  background-color: var(--schedule-on-bg) !important;
+  color: var(--white) !important;
+  border-radius: var(--border-radius-normal);
+
+  &:hover {
+    opacity: 1 !important;
+    background-color: var(--schedule-on-bg-hover) !important;
+  }
+
+  ::v-deep .icon,
+  ::v-deep svg {
+    color: var(--white) !important;
+  }
+}
+
+.schedule-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 140px;
+  padding: 4px;
+  background: var(--white);
+  border: 1px solid var(--s-100);
+  border-radius: var(--border-radius-normal);
+  box-shadow: var(--shadow-small);
+}
+
+.dark-mode .schedule-menu {
+  background: var(--b-800);
+  border-color: var(--b-600);
+}
+
+.schedule-menu__item {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  text-align: left;
+  font-size: var(--font-size-mini);
+  color: var(--s-700);
+  background: transparent;
+  border: 0;
+  border-radius: var(--border-radius-small);
+  cursor: pointer;
+}
+
+.schedule-menu__item:hover {
+  background: var(--s-25);
 }
 
 .column-header-content {

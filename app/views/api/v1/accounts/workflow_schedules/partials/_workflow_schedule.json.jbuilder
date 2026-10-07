@@ -1,0 +1,23 @@
+json.id schedule.id
+json.account_id schedule.account_id
+json.name schedule.name
+json.workflow_id schedule.workflow_id
+json.workflow_name schedule.workflow&.name
+json.workflow_active schedule.workflow&.active?
+json.pipeline_id schedule.pipeline_id
+json.pipeline_name schedule.pipeline&.attribute_display_name
+json.stage_id schedule.stage_id
+json.weekday schedule.weekday
+json.hour schedule.hour
+json.minute schedule.minute
+json.time_zone schedule.time_zone
+json.recurring schedule.recurring?
+json.active schedule.active?
+json.audience_count local_assigns.fetch(:audience_count) { schedule.audience_count }
+json.next_run_at schedule.next_run_at&.iso8601
+json.last_enqueued_at schedule.last_enqueued_at&.iso8601
+json.last_finished_at schedule.last_finished_at&.iso8601
+json.last_run_status schedule.last_run_status
+json.last_run_stats schedule.last_run_stats
+json.created_on schedule.created_at.to_i
+json.updated_on schedule.updated_at.to_i

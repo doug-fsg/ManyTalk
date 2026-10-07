@@ -28,6 +28,9 @@ class TriggerScheduledItemsJob < ApplicationJob
 
     # Job to process scheduled activities
     Activities::ProcessScheduledActivitiesJob.perform_later
+
+    # Recurring workflow schedules — cheap claim query, fan-out happens on :low
+    Workflows::DueSchedulesTickJob.perform_later
   end
 end
 

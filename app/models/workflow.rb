@@ -35,6 +35,7 @@ class Workflow < ApplicationRecord
   belongs_to :created_by, class_name: 'User', optional: true
   belongs_to :updated_by, class_name: 'User', optional: true
   has_many :workflow_enrollments, dependent: :destroy_async
+  has_many :workflow_schedules, dependent: :destroy
 
   validates :name, presence: true
   validates :account_id, presence: true

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_14_210000) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_07_020000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1170,6 +1170,34 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_14_210000) do
     t.index ["workflow_id"], name: "index_workflow_enrollments_on_workflow_id"
   end
 
+  create_table "workflow_schedules", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "workflow_id", null: false
+    t.bigint "pipeline_id", null: false
+    t.string "stage_id", null: false
+    t.string "name", null: false
+    t.integer "weekday"
+    t.integer "hour", null: false
+    t.integer "minute", default: 0, null: false
+    t.string "time_zone", default: "America/Sao_Paulo", null: false
+    t.boolean "active", default: false, null: false
+    t.datetime "next_run_at"
+    t.datetime "last_enqueued_at"
+    t.datetime "last_finished_at"
+    t.string "last_run_status"
+    t.jsonb "last_run_stats", default: {}, null: false
+    t.integer "run_token", default: 0, null: false
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "recurring", default: true, null: false
+    t.index ["account_id", "active"], name: "idx_workflow_schedules_account_active"
+    t.index ["account_id"], name: "index_workflow_schedules_on_account_id"
+    t.index ["active", "next_run_at"], name: "idx_workflow_schedules_due", where: "(active = true)"
+    t.index ["pipeline_id"], name: "index_workflow_schedules_on_pipeline_id"
+    t.index ["workflow_id"], name: "index_workflow_schedules_on_workflow_id"
+  end
+
   create_table "workflow_step_executions", force: :cascade do |t|
     t.bigint "workflow_enrollment_id", null: false
     t.string "node_id", null: false
@@ -1252,6 +1280,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_14_210000) do
   add_foreign_key "workflow_enrollments", "users", column: "paused_by_id"
   add_foreign_key "workflow_enrollments", "users", column: "started_by_id"
   add_foreign_key "workflow_enrollments", "workflows"
+  add_foreign_key "workflow_schedules", "accounts"
+  add_foreign_key "workflow_schedules", "custom_attribute_definitions", column: "pipeline_id"
+  add_foreign_key "workflow_schedules", "users", column: "created_by_id"
+  add_foreign_key "workflow_schedules", "workflows"
   add_foreign_key "workflow_step_executions", "workflow_enrollments"
   add_foreign_key "workflows", "accounts"
   add_foreign_key "workflows", "users", column: "created_by_id"

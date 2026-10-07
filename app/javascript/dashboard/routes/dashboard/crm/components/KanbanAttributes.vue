@@ -201,6 +201,11 @@
             @open-card-modal="handleOpenCardModal"
             @assign-self-as-owner="handleAssignSelfAsOwner"
             @show-assign-owner-confirmation="handleShowAssignOwnerConfirmation"
+            :column-schedule="scheduleForColumn(column)"
+            @create-schedule="openCreateColumnSchedule"
+            @edit-schedule="openEditColumnSchedule"
+            @deactivate-schedule="toggleColumnSchedule"
+            @activate-schedule="toggleColumnSchedule"
           />
         </draggable>
       </div>
@@ -326,6 +331,15 @@
       @stage-changed="handleStageChangeFromModal"
       @assignee-updated="handleAssigneeUpdated"
     />
+
+    <WorkflowScheduleModal
+      :show="showScheduleModal"
+      :schedule="scheduleModalRecord"
+      :preset="scheduleModalPreset"
+      lock-audience
+      @close="closeScheduleModal"
+      @save="saveColumnSchedule"
+    />
   </div>
 </template>
 
@@ -344,6 +358,8 @@ import WinLostModal from './WinLostModal.vue';
 import AddContactToStageModal from './AddContactToStageModal.vue';
 import KanbanCardModal from './KanbanCardModal.vue';
 import KanbanEmptyState from './KanbanEmptyState.vue';
+import WorkflowScheduleModal from '../../settings/workflows/WorkflowScheduleModal.vue';
+import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import { KanbanOperationManager } from '../utils/KanbanOperationManager';
 import { PipelineCacheManager } from '../services/PipelineCacheManager';
 import { KanbanLogger } from '../utils/KanbanLogger';
@@ -387,6 +403,7 @@ export default {
     AddContactToStageModal,
     KanbanCardModal,
     KanbanEmptyState,
+    WorkflowScheduleModal,
   },
   data() {
     return {
@@ -471,6 +488,9 @@ export default {
       assignOwnerModalContact: null,
       assignOwnerModalCallbacks: null,
       assignOwnerModalMessage: '',
+      showScheduleModal: false,
+      scheduleModalRecord: null,
+      scheduleModalPreset: {},
     };
   },
   created() {
@@ -493,6 +513,7 @@ export default {
     this.$store.dispatch('agents/get').finally(() => {
       this.applyCrmRouteQueryFilters();
     });
+    this.loadWorkflowSchedules();
 
     this.$nextTick(() => {
       this.updateTranslations();
@@ -522,6 +543,9 @@ export default {
       contacts: 'contacts/getContacts',
       uiFlags: 'attributes/getUIFlags',
       getPipelinePermission: 'kanban/getPipelinePermission',
+      accountId: 'getCurrentAccountId',
+      isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
+      workflowSchedules: 'workflowSchedules/getSchedules',
     }),
     // Permissão efetiva do pipeline atual (API user_permission)
     // supervisor é serializado como 'admin' no backend
@@ -850,6 +874,70 @@ export default {
     },
   },
   methods: {
+    loadWorkflowSchedules() {
+      if (
+        typeof this.isFeatureEnabledonAccount !== 'function' ||
+        !this.isFeatureEnabledonAccount(this.accountId, FEATURE_FLAGS.WORKFLOWS)
+      ) {
+        return;
+      }
+      this.$store.dispatch('workflowSchedules/get');
+      this.$store.dispatch('workflows/get');
+    },
+    scheduleForColumn(column) {
+      const schedules = this.workflowSchedules || [];
+      const pipelineId = Number(this.selectedAttribute && this.selectedAttribute.id);
+      const matches = schedules.filter(schedule => {
+        return (
+          Number(schedule.pipeline_id) === pipelineId &&
+          String(schedule.stage_id) === String(column.title)
+        );
+      });
+      return matches.find(schedule => schedule.active) || matches[0] || null;
+    },
+    openCreateColumnSchedule({ pipelineId, stageId, stageTitle }) {
+      this.scheduleModalRecord = null;
+      this.scheduleModalPreset = { pipelineId, stageId, stageTitle };
+      this.showScheduleModal = true;
+    },
+    openEditColumnSchedule(schedule) {
+      this.scheduleModalRecord = schedule;
+      this.scheduleModalPreset = {
+        pipelineId: schedule.pipeline_id,
+        stageId: schedule.stage_id,
+        stageTitle: schedule.stage_id,
+      };
+      this.showScheduleModal = true;
+    },
+    closeScheduleModal() {
+      this.showScheduleModal = false;
+      this.scheduleModalRecord = null;
+      this.scheduleModalPreset = {};
+    },
+    async saveColumnSchedule(payload) {
+      try {
+        if (payload.id) {
+          await this.$store.dispatch('workflowSchedules/update', payload);
+          useAlert(this.$t('WORKFLOW.SCHEDULES.UPDATE_SUCCESS'));
+        } else {
+          await this.$store.dispatch('workflowSchedules/create', payload);
+          useAlert(this.$t('WORKFLOW.SCHEDULES.CREATE_SUCCESS'));
+        }
+        this.closeScheduleModal();
+      } catch (error) {
+        const apiError = error?.response?.data?.error;
+        const message = Array.isArray(apiError) ? apiError.join(', ') : apiError;
+        useAlert(message || this.$t('WORKFLOW.SCHEDULES.SAVE_ERROR'));
+      }
+    },
+    async toggleColumnSchedule(schedule) {
+      try {
+        await this.$store.dispatch('workflowSchedules/toggleActive', schedule.id);
+        useAlert(this.$t('WORKFLOW.SCHEDULES.TOGGLE_SUCCESS'));
+      } catch (error) {
+        useAlert(error?.message || this.$t('WORKFLOW.SCHEDULES.TOGGLE_ERROR'));
+      }
+    },
     async initializeComponent() {
       await this.initializeServices();
       await this.loadInitialData();

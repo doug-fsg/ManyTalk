@@ -35,6 +35,11 @@ RSpec.describe TriggerScheduledItemsJob do
     described_class.perform_now
   end
 
+  it 'triggers Workflows::DueSchedulesTickJob' do
+    expect(Workflows::DueSchedulesTickJob).to receive(:perform_later).once
+    described_class.perform_now
+  end
+
   context 'when unexecuted Scheduled campaign jobs' do
     let!(:twilio_sms) { create(:channel_twilio_sms) }
     let!(:twilio_inbox) { create(:inbox, channel: twilio_sms) }

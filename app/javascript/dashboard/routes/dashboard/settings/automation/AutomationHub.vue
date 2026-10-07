@@ -37,20 +37,26 @@ const activeTab = computed(() => {
   if (route.name === 'workflows_list') {
     return 'workflows';
   }
+  if (route.name === 'workflows_schedules') {
+    return 'schedules';
+  }
   return 'automations';
 });
 
 const viewToggleContainer = ref(null);
 const workflowsButton = ref(null);
+const schedulesButton = ref(null);
 const formsButton = ref(null);
 const badgeStyle = ref({ left: '2px', width: '0px', opacity: 1 });
 
 const switchTab = tab => {
   if (tab === 'workflows' && !isWorkflowsEnabled.value) return;
+  if (tab === 'schedules' && !isWorkflowsEnabled.value) return;
   if (tab === 'forms' && !showFormsTab.value) return;
 
   const routeNames = {
     workflows: 'workflows_list',
+    schedules: 'workflows_schedules',
     forms: 'forms_list',
     automations: 'automation_list',
   };
@@ -69,8 +75,12 @@ const updateBadgePosition = () => {
       return;
     }
 
-    const activeButton =
-      activeTab.value === 'forms' ? formsButton.value : workflowsButton.value;
+    const buttonByTab = {
+      forms: formsButton.value,
+      workflows: workflowsButton.value,
+      schedules: schedulesButton.value,
+    };
+    const activeButton = buttonByTab[activeTab.value];
 
     if (!activeButton) return;
 
@@ -91,7 +101,10 @@ watch(showFormsTab, updateBadgePosition);
 watch(
   [() => route.name, isWorkflowsEnabled],
   () => {
-    if (!isWorkflowsEnabled.value && route.name === 'workflows_list') {
+    if (
+      !isWorkflowsEnabled.value &&
+      ['workflows_list', 'workflows_schedules'].includes(route.name)
+    ) {
       router.replace({
         name: 'automation_list',
         params: { accountId: route.params.accountId },
@@ -145,10 +158,25 @@ onBeforeUnmount(() => {
         >
           <fluent-icon icon="flash-settings" size="14" />
           <span>{{ $t('WORKFLOW.TABS.WORKFLOWS') }}</span>
+        </button>
+
+        <button
+          ref="schedulesButton"
+          type="button"
+          :class="[
+            'px-2.5 py-1.5 rounded-lg transition-colors duration-200 ease-smooth flex items-center gap-1.5 text-xs font-medium relative z-10',
+            activeTab === 'schedules'
+              ? 'text-white'
+              : 'text-slate-600 dark:text-slate-300',
+          ]"
+          @click="switchTab('schedules')"
+        >
+          <fluent-icon icon="calendar" size="14" />
+          <span>{{ $t('WORKFLOW.TABS.SCHEDULES') }}</span>
           <span
             class="inline-block px-1 font-medium leading-4 rounded-lg text-xxs border"
             :class="
-              activeTab === 'workflows'
+              activeTab === 'schedules'
                 ? 'text-green-200 border-green-300'
                 : 'text-green-500 border-green-400'
             "

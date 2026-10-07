@@ -91,6 +91,14 @@ Rails.application.routes.draw do
             resources :enrollments, only: [:index], controller: 'workflow_enrollments'
           end
           resources :workflow_enrollment_summaries, only: [:index]
+          resources :workflow_schedules, only: [:index, :create, :show, :update, :destroy] do
+            collection do
+              get :audience_count
+            end
+            member do
+              post :toggle_active
+            end
+          end
           resources :macros, only: [:index, :create, :show, :update, :destroy] do
             post :execute, on: :member
           end
