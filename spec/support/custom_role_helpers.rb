@@ -9,12 +9,25 @@ module CustomRoleHelpers
     enable_custom_roles!(account)
     user = create(:user, account: account, role: :agent)
     custom_role = create(:custom_role, account: account, permissions: Array(permissions))
-    user.current_account_user.update!(custom_role: custom_role)
+    account_user_for(user, account).update!(custom_role: custom_role)
     user
   end
 
-  def account_user_for(user)
-    user.current_account_user
+  def account_user_for(user, account = nil)
+    target_account_id = account&.id || Current.account&.id
+    if target_account_id
+      user.account_users.find { |account_user| account_user.account_id == target_account_id }
+    else
+      user.account_users.first
+    end
+  end
+
+  def policy_context(user, account = Current.account)
+    {
+      user: user,
+      account: account,
+      account_user: account_user_for(user, account)
+    }
   end
 end
 

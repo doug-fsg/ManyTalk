@@ -1,7 +1,47 @@
 import {
   buildPermissionsFromRouter,
+  getCurrentAccount,
+  getUserPermissions,
   hasPermissions,
 } from '../permissionsHelper';
+
+describe('#getCurrentAccount', () => {
+  it('returns the account matching the id', () => {
+    expect(getCurrentAccount({ accounts: [{ id: 1 }] }, 1)).toEqual({ id: 1 });
+    expect(getCurrentAccount({ accounts: [{ id: 1 }] }, '1')).toEqual({ id: 1 });
+    expect(getCurrentAccount({ accounts: [] }, 1)).toBeUndefined();
+  });
+});
+
+describe('#getUserPermissions', () => {
+  it('prefers permissions from the current account entry', () => {
+    const user = {
+      permissions: ['agent'],
+      accounts: [
+        { id: 1, permissions: ['custom_role', 'report_manage'] },
+        { id: 2, permissions: ['agent'] },
+      ],
+    };
+
+    expect(getUserPermissions(user, 1)).toEqual([
+      'custom_role',
+      'report_manage',
+    ]);
+    expect(getUserPermissions(user, 2)).toEqual(['agent']);
+  });
+
+  it('uses account permissions and falls back to the top-level list', () => {
+    const user = {
+      permissions: ['custom_role', 'report_manage'],
+      accounts: [{ id: 1, role: 'agent' }],
+    };
+
+    expect(getUserPermissions(user, 1)).toEqual([
+      'custom_role',
+      'report_manage',
+    ]);
+  });
+});
 
 describe('hasPermissions', () => {
   it('returns true if permission is present', () => {

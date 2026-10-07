@@ -36,7 +36,8 @@ RSpec.describe Enterprise::CustomRoleConversationScope do
         account: account,
         permissions: ['conversation_participating_manage']
       )
-      agent.current_account_user.update!(custom_role: custom_role)
+      account_user_for(agent, account).update!(custom_role: custom_role)
+      create(:inbox_member, inbox: inbox, user: agent)
 
       assigned = create(:conversation, account: account, inbox: inbox, assignee: agent)
       participating = create(:conversation, account: account, inbox: inbox, assignee: other_agent)
@@ -49,7 +50,7 @@ RSpec.describe Enterprise::CustomRoleConversationScope do
 
     it 'returns none when the custom role has no conversation permissions' do
       custom_role = create(:custom_role, account: account, permissions: ['report_manage'])
-      agent.current_account_user.update!(custom_role: custom_role)
+      account_user_for(agent, account).update!(custom_role: custom_role)
       create(:conversation, account: account, inbox: inbox, assignee: agent)
 
       expect(apply_scope(agent)).to be_empty

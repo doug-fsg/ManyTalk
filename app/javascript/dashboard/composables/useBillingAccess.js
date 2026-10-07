@@ -1,7 +1,10 @@
 import { computed } from 'vue';
 import { useStoreGetters } from 'dashboard/composables/store';
 import { useAccount } from 'dashboard/composables/useAccount';
-import { hasPermissions } from 'dashboard/helper/permissionsHelper';
+import {
+  getUserPermissions,
+  hasPermissions,
+} from 'dashboard/helper/permissionsHelper';
 import { BILLING_ROUTE_PERMISSIONS } from 'dashboard/constants/permissions';
 import {
   isBillingLocked,
@@ -17,7 +20,10 @@ export function useBillingAccess() {
   );
   const currentUser = computed(() => getters.getCurrentUser.value || {});
   const canManageBilling = computed(() =>
-    hasPermissions(BILLING_ROUTE_PERMISSIONS, currentUser.value.permissions)
+    hasPermissions(
+      BILLING_ROUTE_PERMISSIONS,
+      getUserPermissions(currentUser.value, accountId.value)
+    )
   );
   const billingLocked = computed(() => isBillingLocked(currentAccount.value));
   const billingWarning = computed(() => isBillingWarning(currentAccount.value));

@@ -1,7 +1,8 @@
 <script setup>
 import { useStoreGetters } from 'dashboard/composables/store';
 import { computed } from 'vue';
-import { hasPermissions } from '../helper/permissionsHelper';
+import { useAccount } from 'dashboard/composables/useAccount';
+import { getUserPermissions, hasPermissions } from '../helper/permissionsHelper';
 const props = defineProps({
   permissions: {
     type: Array,
@@ -10,9 +11,13 @@ const props = defineProps({
 });
 
 const getters = useStoreGetters();
+const { accountId } = useAccount();
 const user = getters.getCurrentUser.value;
 const hasPermission = computed(() =>
-  hasPermissions(props.permissions, user.permissions)
+  hasPermissions(
+    props.permissions,
+    getUserPermissions(user, accountId.value)
+  )
 );
 </script>
 

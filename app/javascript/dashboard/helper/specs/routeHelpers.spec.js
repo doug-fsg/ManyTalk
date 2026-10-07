@@ -69,6 +69,35 @@ describe('#validateLoggedInRoutes', () => {
             )
           ).toEqual(null);
         });
+
+        it('uses account-scoped permissions for custom role report access', () => {
+          expect(
+            validateLoggedInRoutes(
+              {
+                name: 'account_overview_reports',
+                params: { accountId: 2 },
+                meta: { permissions: ['administrator', 'report_manage'] },
+              },
+              {
+                permissions: ['agent'],
+                accounts: [
+                  {
+                    id: 1,
+                    role: 'agent',
+                    permissions: ['agent'],
+                    status: 'active',
+                  },
+                  {
+                    id: 2,
+                    role: 'agent',
+                    permissions: ['custom_role', 'report_manage'],
+                    status: 'active',
+                  },
+                ],
+              }
+            )
+          ).toEqual(null);
+        });
       });
       describe('when route is not accessible', () => {
         it('returns dashboard url', () => {

@@ -13,7 +13,7 @@ module Enterprise
     end
 
     def apply
-      account_user = @user.current_account_user
+      account_user = @user.account_users.find { |membership| membership.account_id == @account.id }
       return @relation unless account_user&.custom_role_agent?
 
       permissions = account_user.custom_role.permissions

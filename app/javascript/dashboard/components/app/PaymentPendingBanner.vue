@@ -11,7 +11,10 @@
 
 <script>
 import { mapGetters } from 'vuex';
-import { hasPermissions } from 'dashboard/helper/permissionsHelper';
+import {
+  getUserPermissions,
+  hasPermissions,
+} from 'dashboard/helper/permissionsHelper';
 import { BILLING_ROUTE_PERMISSIONS } from 'dashboard/constants/permissions';
 import Banner from 'dashboard/components/ui/Banner.vue';
 import accountMixin from 'dashboard/mixins/account';
@@ -30,7 +33,7 @@ export default {
     canManageBilling() {
       return hasPermissions(
         BILLING_ROUTE_PERMISSIONS,
-        this.currentUser?.permissions
+        getUserPermissions(this.currentUser, this.accountId)
       );
     },
     bannerMessage() {

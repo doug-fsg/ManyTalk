@@ -46,7 +46,10 @@ import PrimarySidebar from './sidebarComponents/Primary.vue';
 import SecondarySidebar from './sidebarComponents/Secondary.vue';
 import keyboardEventListenerMixins from 'shared/mixins/keyboardEventListenerMixins';
 import router, { routesWithPermissions } from '../../routes';
-import { hasPermissions } from '../../helper/permissionsHelper';
+import {
+  getUserPermissions,
+  hasPermissions,
+} from '../../helper/permissionsHelper';
 import { useBillingAccess } from 'dashboard/composables/useBillingAccess';
 
 export default {
@@ -115,7 +118,10 @@ export default {
       return getSidebarItems(this.accountId);
     },
     primaryMenuItems() {
-      const userPermissions = this.currentUser.permissions;
+      const userPermissions = getUserPermissions(
+        this.currentUser,
+        this.accountId
+      );
       const menuItems = this.sideMenuConfig.primaryMenu;
       return menuItems
         .filter(menuItem => {
