@@ -55,7 +55,10 @@
       "SHOW_LABELS": "Show labels",
       "HIDE_LABELS": "Hide labels",
       "SHOW_STAGES": "Show stages",
-      "HIDE_STAGES": "Hide stages"
+      "HIDE_STAGES": "Hide stages",
+      "KANBAN_PIPELINE": "Pipeline",
+      "KANBAN_STAGE": "Stage",
+      "KANBAN_TIME_IN_STAGE": "Time in stage"
     },
     "HEADER": {
       "RESOLVE_ACTION": "Resolve",

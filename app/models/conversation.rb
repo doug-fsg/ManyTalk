@@ -101,6 +101,8 @@ class Conversation < ApplicationRecord
 
   has_many :mentions, dependent: :destroy_async
   has_many :messages, dependent: :destroy_async, autosave: true
+  has_one :latest_incoming_message, -> { incoming.reorder(created_at: :desc, id: :desc) },
+          class_name: 'Message', inverse_of: :conversation
   has_one :csat_survey_response, dependent: :destroy_async
   has_many :conversation_participants, dependent: :destroy_async
   has_many :notifications, as: :primary_actor, dependent: :destroy_async
@@ -131,7 +133,28 @@ class Conversation < ApplicationRecord
   end
 
   def last_incoming_message
-    messages&.incoming&.last
+    return latest_incoming_message if association(:latest_incoming_message).loaded?
+
+    messages.incoming.last
+  end
+
+  def self.preload_latest_incoming_messages(conversations)
+    records = conversations.respond_to?(:to_a) ? conversations.to_a : Array(conversations)
+    return conversations if records.empty?
+
+    latest_by_conversation_id = Message.incoming.except(:order)
+                                       .where(conversation_id: records.map(&:id))
+                                       .select('DISTINCT ON (conversation_id) messages.*')
+                                       .order(Arel.sql('conversation_id, created_at DESC, id DESC'))
+                                       .index_by(&:conversation_id)
+
+    records.each do |conversation|
+      association = conversation.association(:latest_incoming_message)
+      association.loaded!
+      association.target = latest_by_conversation_id[conversation.id]
+    end
+
+    conversations
   end
 
   def last_message_in_messaging_window?(time)

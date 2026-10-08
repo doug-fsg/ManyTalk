@@ -21,6 +21,8 @@ export default {
     PRIORITY_DESC: 'priority_desc',
     WAITING_SINCE_ASC: 'waiting_since_asc',
     WAITING_SINCE_DESC: 'waiting_since_desc',
+    SLA_URGENCY_ASC: 'sla_urgency_asc',
+    MESSAGING_WINDOW_EXPIRES_ASC: 'messaging_window_expires_asc',
   },
   ARTICLE_STATUS_TYPES: {
     DRAFT: 0,

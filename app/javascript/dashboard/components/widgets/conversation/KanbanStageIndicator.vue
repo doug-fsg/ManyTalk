@@ -13,61 +13,60 @@
         v-for="(stage, index) in kanbanStages"
         :key="`pipeline-${stage.id}-${stage.stageName}`"
         :to="kanbanLinkForStage(stage)"
-        class="relative inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full tooltip-container cursor-pointer hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-woot-500"
+        class="relative inline-flex shrink-0 items-center px-2 py-0.5 text-xs font-medium rounded-full tooltip-container cursor-pointer hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-woot-500"
         :class="[
           { hidden: !showAllStages && index > stagePosition },
           stage.statusType === 'won' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' :
           stage.statusType === 'lost' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' :
           'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300'
         ]"
-        :title="$t('ACTIVITIES.DETAIL.OPEN_IN_PIPELINE')"
+        :aria-label="kanbanAccessibleLabel(stage)"
         @click.native.stop
       >
         <span class="truncate max-w-16">{{ stage.displayText }}</span>
-        <fluent-icon
-          icon="info"
-          size="12"
-          class="cursor-help"
-        />
-          
-        <!-- Tooltip customizado -->
-        <div class="tooltip-content">
-          <div class="mb-1">
-            <span class="font-semibold">Pipeline:</span> {{ stage.pipelineName }}
-          </div>
-          
-          <!-- Status e data para ganho/perdido -->
-          <div v-if="stage.statusType === 'won'" class="mb-1">
-            <span class="font-semibold">Status:</span> 
-            <span class="text-green-400">Ganho</span>
-            <span v-if="stage.statusDate" class="ml-2 text-gray-300">
-              em {{ formatDate(stage.statusDate) }}
+
+        <div
+          class="tooltip-content"
+          role="tooltip"
+        >
+          <p
+            v-if="kanbanStatusLabel(stage)"
+            class="inline-flex items-center px-2 py-0.5 mb-2 rounded-full text-xs font-medium"
+            :class="kanbanStatusPopoverClass(stage)"
+          >
+            {{ kanbanStatusLabel(stage) }}
+          </p>
+
+          <div class="mb-2">
+            <span class="font-semibold text-slate-300">
+              {{ $t('CONVERSATION.CARD.KANBAN_PIPELINE') }}
             </span>
+            <p class="mt-0.5 text-white break-words line-clamp-2">
+              {{ stage.pipelineName }}
+            </p>
           </div>
-          
-          <div v-if="stage.statusType === 'lost'" class="mb-1">
-            <span class="font-semibold">Status:</span> 
-            <span class="text-red-400">Perdido</span>
-            <span v-if="stage.statusDate" class="ml-2 text-gray-300">
-              em {{ formatDate(stage.statusDate) }}
+
+          <div
+            v-if="stage.statusType === 'active'"
+            class="mb-2"
+          >
+            <span class="font-semibold text-slate-300">
+              {{ $t('CONVERSATION.CARD.KANBAN_STAGE') }}
             </span>
+            <p class="mt-0.5 text-white break-words line-clamp-2">
+              {{ stage.stageName }}
+            </p>
           </div>
-          
-          <!-- Etapa ativa -->
-          <div v-if="stage.statusType === 'active'" class="mb-1">
-            <span class="font-semibold">Etapa:</span> {{ stage.stageName }}
-          </div>
-          
-          <div v-if="stage.timeInStage" class="mb-1">
-            <span class="font-semibold">Tempo na etapa:</span> {{ stage.timeInStage }}
-          </div>
-          
-          <div v-if="stage.dealValue">
-            <span class="font-semibold">Valor do negócio:</span> {{ formatCurrency(stage.dealValue) }}
-          </div>
-          
-          <!-- Seta do tooltip - agora apontando para cima -->
-          <div class="tooltip-arrow"></div>
+
+          <p
+            v-if="stage.statusType === 'active' && stage.timeInStage"
+            class="text-xs text-slate-300 tabular-nums"
+          >
+            {{ $t('CONVERSATION.CARD.KANBAN_TIME_IN_STAGE') }} ·
+            {{ stage.timeInStage }}
+          </p>
+
+          <div class="tooltip-arrow" />
         </div>
       </router-link>
 
@@ -239,29 +238,34 @@ export default {
         pipelineId: stage.id,
       });
     },
-    formatCurrency(value) {
-      if (!value) return '';
-      // Simples formatação de moeda - pode ser melhorada conforme necessário
-      return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-      }).format(value);
-    },
-    formatDate(dateString) {
-      if (!dateString) return '';
-      
-      try {
-        const date = new Date(dateString);
-        return new Intl.DateTimeFormat('pt-BR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        }).format(date);
-      } catch (error) {
-        return dateString;
+    kanbanStatusLabel(stage) {
+      if (stage.statusType === 'won') {
+        return this.$t('KANBAN.CONTACT_LIST.WON');
       }
+      if (stage.statusType === 'lost') {
+        return this.$t('KANBAN.CONTACT_LIST.LOST');
+      }
+      return '';
+    },
+    kanbanStatusPopoverClass(stage) {
+      if (stage.statusType === 'won') {
+        return 'bg-green-500/20 text-green-200';
+      }
+      if (stage.statusType === 'lost') {
+        return 'bg-red-500/20 text-red-200';
+      }
+      return '';
+    },
+    kanbanAccessibleLabel(stage) {
+      const openHint = this.$t('ACTIVITIES.DETAIL.OPEN_IN_PIPELINE');
+      const parts = [openHint, stage.pipelineName];
+      if (stage.statusType === 'active') {
+        parts.push(stage.stageName);
+      } else {
+        const status = this.kanbanStatusLabel(stage);
+        if (status) parts.push(status);
+      }
+      return parts.filter(Boolean).join(', ');
     },
     handleAttributesUpdate() {
       // Forçar re-render quando attributes são atualizados
@@ -330,41 +334,40 @@ export default {
 .tooltip-content {
   position: absolute;
   top: calc(100% + 0.5rem);
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
   z-index: 50;
   padding: 0.75rem 1rem;
   font-size: 0.75rem;
+  line-height: 1.35;
   background-color: #1e293b;
   color: white;
   border-radius: 0.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  max-width: 20rem;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  width: max-content;
+  max-width: 16rem;
   white-space: normal;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.15s ease-in-out, visibility 0.15s ease-in-out;
+  transition:
+    opacity 0.15s ease-in-out,
+    visibility 0.15s ease-in-out;
   pointer-events: none;
 }
 
 .tooltip-arrow {
   position: absolute;
   top: -0.25rem;
-  left: 50%;
-  transform: translateX(-50%) rotate(45deg);
+  left: 1rem;
+  transform: rotate(45deg);
   width: 0.5rem;
   height: 0.5rem;
   background-color: #1e293b;
 }
 
-/* Hover na pílula inteira */
-.tooltip-container:hover .tooltip-content {
-  opacity: 1;
-  visibility: visible;
-}
-
-/* Hover no tooltip também */
-.tooltip-content:hover {
+.tooltip-container:hover .tooltip-content,
+.tooltip-container:focus-visible .tooltip-content {
   opacity: 1;
   visibility: visible;
 }

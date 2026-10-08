@@ -3,6 +3,7 @@ require 'rails_helper'
 RSpec.describe 'Inboxes sync_templates API', type: :request do
   let(:account) { create(:account) }
   let(:admin) { create(:user, account: account, role: :administrator) }
+  let(:agent) { create(:user, account: account, role: :agent) }
   let(:channel) do
     create(
       :channel_whatsapp,
@@ -18,12 +19,30 @@ RSpec.describe 'Inboxes sync_templates API', type: :request do
     allow_any_instance_of(Whatsapp::Providers::WhatsappCloudService).to receive(:sync_templates).and_return(true)
   end
 
-  it 'syncs templates for whatsapp cloud inbox' do
+  it 'syncs templates for whatsapp cloud inbox as administrator' do
     post "/api/v1/accounts/#{account.id}/inboxes/#{inbox.id}/sync_templates",
          headers: admin.create_new_auth_token,
          as: :json
 
     expect(response).to have_http_status(:success)
     expect(response.parsed_body['message_templates']).to be_present
+  end
+
+  it 'syncs templates when the agent is assigned to the inbox' do
+    create(:inbox_member, user: agent, inbox: inbox)
+
+    post "/api/v1/accounts/#{account.id}/inboxes/#{inbox.id}/sync_templates",
+         headers: agent.create_new_auth_token,
+         as: :json
+
+    expect(response).to have_http_status(:success)
+  end
+
+  it 'returns unauthorized when the agent is not assigned to the inbox' do
+    post "/api/v1/accounts/#{account.id}/inboxes/#{inbox.id}/sync_templates",
+         headers: agent.create_new_auth_token,
+         as: :json
+
+    expect(response).to have_http_status(:unauthorized)
   end
 end

@@ -11,6 +11,8 @@ class ConversationFinder
     'priority_desc' => %w[sort_on_priority desc],
     'waiting_since_asc' => %w[sort_on_waiting_since asc],
     'waiting_since_desc' => %w[sort_on_waiting_since desc],
+    'sla_urgency_asc' => %w[sort_on_sla_urgency asc],
+    'messaging_window_expires_asc' => %w[sort_on_messaging_window_expires asc],
 
     # To be removed in v3.5.0
     'latest' => %w[sort_on_last_activity_at desc],
@@ -182,9 +184,18 @@ class ConversationFinder
   end
 
   def conversations_base_query
-    @conversations.includes(
-      :inbox, { assignee: { avatar_attachment: [:blob] } }, { contact: { avatar_attachment: [:blob] } }, :team, :contact_inbox
-    )
+    preloads = [
+      { inbox: :channel },
+      { contact: { avatar_attachment: [:blob] } },
+      :team,
+      :contact_inbox
+    ]
+    # "Me" tab assignees are Current.user (already in memory); preloading them trips Bullet.
+    unless @assignee_type == 'me'
+      preloads << { assignee: [:account_users, { avatar_attachment: [:blob] }] }
+    end
+
+    @conversations.preload(*preloads)
   end
 
   def conversations
@@ -193,11 +204,14 @@ class ConversationFinder
     sort_by, sort_order = SORT_OPTIONS[params[:sort_by]] || SORT_OPTIONS['last_activity_at_desc']
     @conversations = @conversations.send(sort_by, sort_order)
 
-    if params[:updated_within].present?
-      @conversations.where('conversations.updated_at > ?', Time.zone.now - params[:updated_within].to_i.seconds)
-    else
-      @conversations.page(current_page).per(ENV.fetch('CONVERSATION_RESULTS_PER_PAGE', '25').to_i)
-    end
+    scoped = if params[:updated_within].present?
+               @conversations.where('conversations.updated_at > ?', Time.zone.now - params[:updated_within].to_i.seconds)
+             else
+               @conversations.page(current_page).per(ENV.fetch('CONVERSATION_RESULTS_PER_PAGE', '25').to_i)
+             end
+
+    Conversation.preload_latest_incoming_messages(scoped)
+    scoped
   end
 end
 ConversationFinder.prepend_mod_with('ConversationFinder')

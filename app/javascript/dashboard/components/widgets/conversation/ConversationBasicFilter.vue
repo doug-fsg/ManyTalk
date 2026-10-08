@@ -33,7 +33,7 @@
         <filter-item
           type="sort"
           :selected-value="sortFilter"
-          :items="chatSortItems"
+          :items="chatSortItemsForAccount"
           path-prefix="CHAT_LIST.SORT_ORDER_ITEMS"
           @onChangeFilter="onChangeFilter"
         />
@@ -44,6 +44,7 @@
 
 <script>
 import wootConstants from 'dashboard/constants/globals';
+import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import { mapGetters } from 'vuex';
 import FilterItem from './FilterItem.vue';
 import { useUISettings } from 'dashboard/composables/useUISettings';
@@ -70,14 +71,48 @@ export default {
     ...mapGetters({
       chatStatusFilter: 'getChatStatusFilter',
       chatSortFilter: 'getChatSortFilter',
+      accountId: 'getCurrentAccountId',
+      isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
+      inboxes: 'inboxes/getInboxes',
     }),
+    isSlaEnabled() {
+      return this.isFeatureEnabledonAccount(this.accountId, FEATURE_FLAGS.SLA);
+    },
+    hasWhatsappInbox() {
+      return this.inboxes.some(
+        inbox => inbox.channel_type === 'Channel::Whatsapp'
+      );
+    },
+    chatSortItemsForAccount() {
+      const items = { ...this.chatSortItems };
+      if (!this.isSlaEnabled) {
+        delete items[wootConstants.SORT_BY_TYPE.SLA_URGENCY_ASC];
+      }
+      if (!this.hasWhatsappInbox) {
+        delete items[wootConstants.SORT_BY_TYPE.MESSAGING_WINDOW_EXPIRES_ASC];
+      }
+      return items;
+    },
     chatStatus() {
       return this.chatStatusFilter || wootConstants.STATUS_TYPE.OPEN;
     },
     sortFilter() {
-      return (
-        this.chatSortFilter || wootConstants.SORT_BY_TYPE.LAST_ACTIVITY_AT_DESC
-      );
+      const selected =
+        this.chatSortFilter || wootConstants.SORT_BY_TYPE.LAST_ACTIVITY_AT_DESC;
+      if (
+        selected === wootConstants.SORT_BY_TYPE.SLA_URGENCY_ASC &&
+        !this.isSlaEnabled
+      ) {
+        return wootConstants.SORT_BY_TYPE.LAST_ACTIVITY_AT_DESC;
+      }
+      if (
+        selected ===
+          wootConstants.SORT_BY_TYPE.MESSAGING_WINDOW_EXPIRES_ASC &&
+        !this.hasWhatsappInbox
+      ) {
+        return wootConstants.SORT_BY_TYPE.LAST_ACTIVITY_AT_DESC;
+      }
+      return selected;
     },
   },
   methods: {

@@ -53,11 +53,11 @@
       
       <!-- Kanban Stage Indicator - Acima do nome -->
       <div class="mx-2 mb-1 flex flex-wrap items-center gap-1">
-        <woot-feature-toggle feature-key="kanban">
-          <kanban-stage-indicator :contact="currentContact" />
-        </woot-feature-toggle>
         <woot-feature-toggle feature-key="workflows">
           <regua-enrollment-badge :summary="enrollmentSummary" />
+        </woot-feature-toggle>
+        <woot-feature-toggle feature-key="kanban">
+          <kanban-stage-indicator :contact="currentContact" />
         </woot-feature-toggle>
       </div>
       

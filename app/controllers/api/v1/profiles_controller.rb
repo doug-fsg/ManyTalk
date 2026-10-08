@@ -41,7 +41,11 @@ class Api::V1::ProfilesController < Api::BaseController
   private
 
   def set_user
-    @user = User.includes(account_users: [:account, :custom_role]).find(current_user.id)
+    @user = if %w[show update auto_offline availability].include?(action_name)
+              User.includes(account_users: [:account, :custom_role]).find(current_user.id)
+            else
+              User.find(current_user.id)
+            end
   end
 
   def availability_params

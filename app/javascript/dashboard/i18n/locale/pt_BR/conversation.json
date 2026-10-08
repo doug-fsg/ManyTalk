@@ -55,7 +55,10 @@
       "SHOW_LABELS": "Mostrar rótulos",
       "HIDE_LABELS": "Ocultar os rótulos",
       "SHOW_STAGES": "Mostrar etapas",
-      "HIDE_STAGES": "Ocultar etapas"
+      "HIDE_STAGES": "Ocultar etapas",
+      "KANBAN_PIPELINE": "Funil",
+      "KANBAN_STAGE": "Etapa",
+      "KANBAN_TIME_IN_STAGE": "Tempo na etapa"
     },
     "HEADER": {
       "RESOLVE_ACTION": "Resolver",

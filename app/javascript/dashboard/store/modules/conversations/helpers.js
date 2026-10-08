@@ -1,4 +1,6 @@
 import { CONVERSATION_PRIORITY_ORDER } from 'shared/constants/messages';
+import { getSlaUrgencyScore } from 'dashboard/helper/slaUrgency';
+import { getMessagingWindowSortScore } from 'dashboard/helper/messagingWindow';
 
 export const findPendingMessageIndex = (chat, message) => {
   const { echo_id: tempMessageId } = message;
@@ -71,6 +73,8 @@ const SORT_OPTIONS = {
   priority_desc: ['sortOnPriority', 'desc'],
   waiting_since_asc: ['sortOnWaitingSince', 'asc'],
   waiting_since_desc: ['sortOnWaitingSince', 'desc'],
+  sla_urgency_asc: ['sortOnSlaUrgency', 'asc'],
+  messaging_window_expires_asc: ['sortOnMessagingWindowExpires', 'asc'],
 };
 const sortAscending = (valueA, valueB) => valueA - valueB;
 const sortDescending = (valueA, valueB) => valueB - valueA;
@@ -105,10 +109,36 @@ const sortConfig = {
 
     return sortFunc(a.waiting_since, b.waiting_since);
   },
+
+  sortOnSlaUrgency: (a, b, sortDirection) => {
+    const scoreA = getSlaUrgencyScore(a);
+    const scoreB = getSlaUrgencyScore(b);
+    const cmp = getSortOrderFunction(sortDirection)(scoreA, scoreB);
+    if (cmp !== 0) return cmp;
+    return sortConfig.sortOnLastActivityAt(a, b, 'desc');
+  },
+
+  sortOnMessagingWindowExpires: (a, b, sortDirection, getInbox) => {
+    const inboxA = getInbox ? getInbox(a.inbox_id) : null;
+    const inboxB = getInbox ? getInbox(b.inbox_id) : null;
+    const scoreA = getMessagingWindowSortScore(a, inboxA);
+    const scoreB = getMessagingWindowSortScore(b, inboxB);
+    const cmp = getSortOrderFunction(sortDirection)(scoreA, scoreB);
+    if (cmp !== 0) return cmp;
+    return sortConfig.sortOnLastActivityAt(a, b, 'desc');
+  },
 };
 
-export const sortComparator = (a, b, sortKey) => {
+export const sortComparator = (a, b, sortKey, { getInbox } = {}) => {
   const [sortMethod, sortDirection] =
     SORT_OPTIONS[sortKey] || SORT_OPTIONS.last_activity_at_desc;
+  if (sortMethod === 'sortOnMessagingWindowExpires') {
+    return sortConfig.sortOnMessagingWindowExpires(
+      a,
+      b,
+      sortDirection,
+      getInbox
+    );
+  }
   return sortConfig[sortMethod](a, b, sortDirection);
 };

@@ -75,6 +75,12 @@
       },
       "waiting_since_desc": {
         "TEXT": "Resposta pendente: Curtas primeiro"
+      },
+      "sla_urgency_asc": {
+        "TEXT": "VAR: mais urgente primeiro"
+      },
+      "messaging_window_expires_asc": {
+        "TEXT": "WhatsApp: janela expira primeiro"
       }
     },
     "ATTACHMENTS": {

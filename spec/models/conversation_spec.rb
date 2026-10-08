@@ -19,6 +19,22 @@ RSpec.describe Conversation do
     it { is_expected.to belong_to(:team).optional }
     it { is_expected.to belong_to(:campaign).optional }
     it { is_expected.to have_many(:workflow_enrollments).dependent(:destroy) }
+    it { is_expected.to have_one(:latest_incoming_message).class_name('Message') }
+  end
+
+  describe '.preload_latest_incoming_messages' do
+    it 'loads the newest incoming message per conversation in one query' do
+      conversation = create(:conversation)
+      create(:message, conversation: conversation, account: conversation.account, inbox: conversation.inbox,
+                       message_type: :incoming, created_at: 2.hours.ago)
+      newest = create(:message, conversation: conversation, account: conversation.account, inbox: conversation.inbox,
+                                message_type: :incoming, created_at: 1.minute.ago)
+
+      described_class.preload_latest_incoming_messages([conversation])
+
+      expect(conversation.association(:latest_incoming_message)).to be_loaded
+      expect(conversation.last_incoming_message).to eq(newest)
+    end
   end
 
   describe 'destroying a conversation with workflow enrollments' do

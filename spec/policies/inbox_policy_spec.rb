@@ -23,6 +23,26 @@ RSpec.describe InboxPolicy, type: :policy do
     end
   end
 
+  permissions :sync_templates? do
+    context 'when administrator' do
+      it { expect(inbox_policy).to permit(administrator_context, inbox) }
+    end
+
+    context 'when agent' do
+      before { allow(Current).to receive(:user).and_return(agent) }
+
+      it 'permits when the agent is assigned to the inbox' do
+        allow(agent).to receive(:assigned_inboxes).and_return([inbox])
+        expect(inbox_policy).to permit(agent_context, inbox)
+      end
+
+      it 'denies when the agent is not assigned to the inbox' do
+        allow(agent).to receive(:assigned_inboxes).and_return([])
+        expect(inbox_policy).not_to permit(agent_context, inbox)
+      end
+    end
+  end
+
   permissions :index? do
     context 'when administrator' do
       it { expect(inbox_policy).to permit(administrator_context, inbox) }

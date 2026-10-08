@@ -170,6 +170,16 @@ describe ConversationFinder do
       end
     end
 
+    context 'with messaging window sort' do
+      let(:params) { { status: 'open', assignee_type: 'me', sort_by: 'messaging_window_expires_asc' } }
+
+      it 'returns conversations ordered by last incoming message expiry' do
+        result = conversation_finder.perform
+        expect(result[:conversations]).to all(be_a(Conversation))
+        expect(result[:conversations].first.association(:latest_incoming_message)).to be_loaded
+      end
+    end
+
     context 'with pagination' do
       let(:params) { { status: 'open', assignee_type: 'me', page: 1 } }
 

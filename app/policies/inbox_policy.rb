@@ -50,6 +50,12 @@ class InboxPolicy < ApplicationPolicy
     @account_user.administrator?
   end
 
+  def sync_templates?
+    return true if @account_user.administrator?
+
+    show?
+  end
+
   def destroy?
     @account_user.administrator?
   end

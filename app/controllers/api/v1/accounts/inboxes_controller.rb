@@ -72,7 +72,7 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   end
 
   def sync_templates
-    authorize @inbox, :update?
+    authorize @inbox, :sync_templates?
 
     unless @inbox.whatsapp? && @inbox.channel.is_a?(Channel::Whatsapp)
       return render json: { error: 'WhatsApp inbox required' }, status: :unprocessable_entity
@@ -81,6 +81,8 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
     @inbox.channel.sync_templates
     @inbox.reload
     render :show
+  rescue Pundit::NotAuthorizedError
+    raise
   rescue StandardError => e
     Rails.logger.error "[WHATSAPP] Template sync failed for inbox #{@inbox.id}: #{e.message}"
     render json: { error: e.message }, status: :unprocessable_entity
