@@ -11,8 +11,14 @@ const buildContact = (overrides = {}) => ({
       stage_id: 'Stage',
       position: overrides.position ?? 0,
       deal_value: overrides.deal_value ?? 0,
-      entered_at: overrides.entered_at || '2024-01-01T00:00:00Z',
-      created_at: overrides.card_created_at || '2024-01-01T00:00:00Z',
+      entered_at:
+        overrides.entered_at === undefined
+          ? '2024-01-01T00:00:00Z'
+          : overrides.entered_at,
+      created_at:
+        overrides.card_created_at === undefined
+          ? '2024-01-01T00:00:00Z'
+          : overrides.card_created_at,
     },
   ],
 });
@@ -82,5 +88,29 @@ describe('sortKanbanContacts', () => {
 
     const sorted = sortKanbanContacts(contacts, 'recently_updated', pipelineId);
     expect(sorted.map(c => c.id)).toEqual([2, 3, 1]);
+  });
+
+  it('sorts time_in_stage by entered_at only; missing entered_at goes last', () => {
+    const contacts = [
+      buildContact({
+        id: 1,
+        name: 'Sem entered',
+        entered_at: null,
+        card_created_at: '2020-01-01T00:00:00Z',
+      }),
+      buildContact({
+        id: 2,
+        name: 'Há 1 dia',
+        entered_at: new Date(Date.now() - 86400000).toISOString(),
+      }),
+      buildContact({
+        id: 3,
+        name: 'Há 10 dias',
+        entered_at: new Date(Date.now() - 10 * 86400000).toISOString(),
+      }),
+    ];
+
+    const sorted = sortKanbanContacts(contacts, 'time_in_stage', pipelineId);
+    expect(sorted.map(c => c.id)).toEqual([3, 2, 1]);
   });
 });

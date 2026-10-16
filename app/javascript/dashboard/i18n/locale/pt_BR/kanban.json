@@ -145,6 +145,7 @@
       "ADD_VALUE": "Adicionar valor",
       "EDIT_DEAL_VALUE": "Editar valor do negócio",
       "ADD_DEAL_VALUE": "Adicionar valor do negócio",
+      "FUNNEL_ENTRY_DATE": "Data de entrada no funil · {date}",
       "DEAL_VALUE_MODAL": {
         "TITLE": "Valor do Negócio",
         "LABEL": "Valor",
@@ -198,7 +199,7 @@
       "DEAL_VALUE": "Valor do Negócio",
       "MIN_VALUE": "Mínimo",
       "MAX_VALUE": "Máximo",
-      "DATE_RANGE": "Data de Criação",
+      "DATE_RANGE": "Data de entrada no funil",
       "FROM_DATE": "Data inicial",
       "TO_DATE": "Data final",
       "STATUS": "Status",

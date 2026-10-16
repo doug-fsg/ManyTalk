@@ -14,7 +14,8 @@
         "RESOLVED": "Resuelta",
         "PENDING": "Pendiente",
         "SNOOZED": "Pausada"
-      }
+      },
+      "FUNNEL_ENTRY_DATE": "Fecha de entrada al embudo · {date}"
     },
     "PERMISSIONS": {
       "TITLE": "Permisos",
@@ -86,7 +87,7 @@
       "DEAL_VALUE": "Valor del Negocio",
       "MIN_VALUE": "Mínimo",
       "MAX_VALUE": "Máximo",
-      "DATE_RANGE": "Fecha de Creación",
+      "DATE_RANGE": "Fecha de entrada al embudo",
       "FROM_DATE": "Fecha inicial",
       "TO_DATE": "Fecha final",
       "STATUS": "Estado",

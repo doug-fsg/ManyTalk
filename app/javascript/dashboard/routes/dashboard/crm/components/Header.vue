@@ -262,7 +262,7 @@ export default {
         dateFrom: null,
         dateTo: null,
         assignees: [],
-        winLost: 'all',
+        winLost: 'open',
       }),
     },
     showAssigneeFilter: {

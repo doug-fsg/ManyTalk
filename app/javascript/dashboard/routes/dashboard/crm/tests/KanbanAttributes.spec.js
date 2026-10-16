@@ -8,6 +8,7 @@ import ContactAPI from 'dashboard/api/contacts';
 vi.mock('dashboard/api/contacts', () => ({
   default: {
     updatePipelinePosition: vi.fn(),
+    reorderPipelinePositions: vi.fn(),
   },
 }));
 
@@ -85,6 +86,7 @@ describe('KanbanAttributes.vue', () => {
         assignee: null,
       },
     });
+    ContactAPI.reorderPipelinePositions.mockResolvedValue({ status: 200 });
 
     wrapper = shallowMount(KanbanAttributes, {
       store,
@@ -136,6 +138,18 @@ describe('KanbanAttributes.vue', () => {
         attribute_key: 'pipeline-123',
       },
       contacts: contactsWithPositions,
+      columns: [
+        {
+          id: 'column-1ºcontato',
+          title: '1ºcontato',
+          items: [contactsWithPositions[0]],
+        },
+        {
+          id: 'column-2ºcontato',
+          title: '2ºcontato',
+          items: [contactsWithPositions[1], contactsWithPositions[0]],
+        },
+      ],
     });
 
     await wrapper.vm.onItemMoved({
@@ -143,9 +157,63 @@ describe('KanbanAttributes.vue', () => {
       sourceColumnTitle: '1ºcontato',
       targetColumnTitle: '2ºcontato',
       oldIndex: 0,
+      newIndex: 1,
+    });
+
+    expect(ContactAPI.reorderPipelinePositions).toHaveBeenCalled();
+    const [, positions] = ContactAPI.reorderPipelinePositions.mock.calls[0];
+    const moved = positions.find(p => p.contact_id === 1);
+    expect(moved.entered_at).toBeTruthy();
+    expect(moved.stage_id).toBe('2ºcontato');
+  });
+
+  it('same-stage reorder does not send entered_at and renumbers column', async () => {
+    const a = {
+      id: 10,
+      name: 'A',
+      pipeline_positions: [
+        { pipeline_id: pipelineId, stage_id: '1ºcontato', position: 0, entered_at: '2024-01-01T00:00:00Z' },
+      ],
+    };
+    const b = {
+      id: 11,
+      name: 'B',
+      pipeline_positions: [
+        { pipeline_id: pipelineId, stage_id: '1ºcontato', position: 1, entered_at: '2024-01-02T00:00:00Z' },
+      ],
+    };
+    const c = {
+      id: 12,
+      name: 'C',
+      pipeline_positions: [
+        { pipeline_id: pipelineId, stage_id: '1ºcontato', position: 2, entered_at: '2024-01-03T00:00:00Z' },
+      ],
+    };
+
+    wrapper.setData({
+      selectedAttribute: { id: pipelineId, attribute_key: 'pipeline-123' },
+      contacts: [a, b, c],
+      columns: [
+        {
+          id: 'column-1ºcontato',
+          title: '1ºcontato',
+          items: [c, a, b],
+        },
+      ],
+    });
+
+    await wrapper.vm.onItemMoved({
+      contactId: 12,
+      sourceColumnTitle: '1ºcontato',
+      targetColumnTitle: '1ºcontato',
+      oldIndex: 2,
       newIndex: 0,
     });
 
-    expect(ContactAPI.updatePipelinePosition).toHaveBeenCalled();
+    expect(ContactAPI.reorderPipelinePositions).toHaveBeenCalled();
+    const [, positions] = ContactAPI.reorderPipelinePositions.mock.calls[0];
+    expect(positions.map(p => p.contact_id)).toEqual([12, 10, 11]);
+    expect(positions.map(p => p.position)).toEqual([0, 1, 2]);
+    expect(positions.every(p => !p.entered_at)).toBe(true);
   });
 });

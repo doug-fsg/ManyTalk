@@ -300,5 +300,155 @@ describe Contacts::FilterService do
         expect(result[:contacts].pluck(:id)).to include(el_contact.id)
       end
     end
+
+    context 'with pipeline position filters' do
+      let!(:pipeline) { create(:custom_attribute_definition, :kanban, account: account, attribute_key: 'sales_funnel') }
+      let!(:in_range_contact) { create(:contact, account: account, name: 'In Range') }
+      let!(:out_of_range_contact) { create(:contact, account: account, name: 'Out Of Range') }
+      let!(:won_contact) { create(:contact, account: account, name: 'Won Deal') }
+
+      before do
+        Time.zone = 'America/Sao_Paulo'
+        create(:contact_pipeline_position,
+               contact: in_range_contact,
+               pipeline: pipeline,
+               stage_id: 'Estágio 1',
+               created_at: Time.zone.parse('2026-10-06 12:00:00'),
+               deal_value: 100)
+        create(:contact_pipeline_position,
+               contact: out_of_range_contact,
+               pipeline: pipeline,
+               stage_id: 'Estágio 1',
+               created_at: Time.zone.parse('2026-09-01 12:00:00'),
+               deal_value: 50)
+        create(:contact_pipeline_position,
+               contact: won_contact,
+               pipeline: pipeline,
+               stage_id: 'Estágio 2',
+               created_at: Time.zone.parse('2026-10-06 15:00:00'),
+               deal_value: 200,
+               metadata: { 'win_lost' => { 'status' => 'won' } })
+      end
+
+      def kanban_present_filter
+        {
+          attribute_key: 'sales_funnel',
+          filter_operator: 'is_present',
+          values: [],
+          query_operator: 'AND'
+        }.with_indifferent_access
+      end
+
+      it 'filters by pipeline created_at day range (inclusive local day)' do
+        params[:payload] = [
+          kanban_present_filter,
+          {
+            attribute_key: '_pipeline_created_at',
+            filter_operator: 'is_greater_than',
+            values: ['2026-10-06'],
+            query_operator: 'AND'
+          }.with_indifferent_access,
+          {
+            attribute_key: '_pipeline_created_at',
+            filter_operator: 'is_less_than',
+            values: ['2026-10-06'],
+            query_operator: nil
+          }.with_indifferent_access
+        ]
+
+        result = filter_service.new(account, first_user, params).perform
+        ids = result[:contacts].pluck(:id)
+
+        expect(ids).to include(in_range_contact.id, won_contact.id)
+        expect(ids).not_to include(out_of_range_contact.id)
+      end
+
+      it 'keeps YYYY-MM-DD day bounds in America/Sao_Paulo even when Time.zone is UTC' do
+        Time.zone = 'UTC'
+        # 06/10 22:00 BRT = 07/10 01:00 UTC — entra no dia civil BRT, não no dia UTC
+        late_brt = create(:contact, account: account, name: 'Late BRT')
+        create(:contact_pipeline_position,
+               contact: late_brt,
+               pipeline: pipeline,
+               stage_id: 'Estágio 1',
+               created_at: Time.find_zone('America/Sao_Paulo').parse('2026-10-06 22:00:00'))
+
+        params[:payload] = [
+          kanban_present_filter,
+          {
+            attribute_key: '_pipeline_created_at',
+            filter_operator: 'is_greater_than',
+            values: ['2026-10-06'],
+            query_operator: 'AND'
+          }.with_indifferent_access,
+          {
+            attribute_key: '_pipeline_created_at',
+            filter_operator: 'is_less_than',
+            values: ['2026-10-06'],
+            query_operator: nil
+          }.with_indifferent_access
+        ]
+
+        ids = filter_service.new(account, first_user, params).perform[:contacts].pluck(:id)
+        expect(ids).to include(late_brt.id)
+      end
+
+      it 'filters by deal value range' do
+        params[:payload] = [
+          kanban_present_filter,
+          {
+            attribute_key: '_pipeline_deal_value',
+            filter_operator: 'is_greater_than',
+            values: [100],
+            query_operator: 'AND'
+          }.with_indifferent_access,
+          {
+            attribute_key: '_pipeline_deal_value',
+            filter_operator: 'is_less_than',
+            values: [200],
+            query_operator: nil
+          }.with_indifferent_access
+        ]
+
+        result = filter_service.new(account, first_user, params).perform
+        ids = result[:contacts].pluck(:id)
+
+        expect(ids).to include(in_range_contact.id, won_contact.id)
+        expect(ids).not_to include(out_of_range_contact.id)
+      end
+
+      it 'filters by win_lost open status' do
+        params[:payload] = [
+          kanban_present_filter,
+          {
+            attribute_key: '_pipeline_win_lost',
+            filter_operator: 'equal_to',
+            values: ['open'],
+            query_operator: nil
+          }.with_indifferent_access
+        ]
+
+        result = filter_service.new(account, first_user, params).perform
+        ids = result[:contacts].pluck(:id)
+
+        expect(ids).to include(in_range_contact.id, out_of_range_contact.id)
+        expect(ids).not_to include(won_contact.id)
+      end
+
+      it 'filters by win_lost won status' do
+        params[:payload] = [
+          kanban_present_filter,
+          {
+            attribute_key: '_pipeline_win_lost',
+            filter_operator: 'equal_to',
+            values: ['won'],
+            query_operator: nil
+          }.with_indifferent_access
+        ]
+
+        result = filter_service.new(account, first_user, params).perform
+        expect(result[:contacts].pluck(:id)).to eq([won_contact.id])
+      end
+    end
   end
 end

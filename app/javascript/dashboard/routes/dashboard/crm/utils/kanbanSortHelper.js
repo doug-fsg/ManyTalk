@@ -1,9 +1,15 @@
 import {
   getCreatedAt,
   getDealValue,
-  getEnteredAt,
+  getPipelinePosition,
   getPosition,
 } from './pipelinePositionsHelper';
+
+/** entered_at da etapa atual — sem fallback para created_at (Ordenar > Tempo na etapa) */
+const getPipelineStageEnteredAt = (contact, pipelineId) => {
+  const position = getPipelinePosition(contact, pipelineId);
+  return position?.entered_at ?? null;
+};
 
 export const KANBAN_SORT_OPTIONS = [
   'name',
@@ -109,8 +115,17 @@ export function sortKanbanContacts(contacts, sortBy = DEFAULT_KANBAN_SORT, pipel
 
     case 'time_in_stage':
       return list.sort((a, b) => {
-        const enteredA = toTimestamp(getEnteredAt(a, pipelineId));
-        const enteredB = toTimestamp(getEnteredAt(b, pipelineId));
+        // Usar só entered_at da etapa (sem fallback de created_at):
+        // missing/null não pode virar epoch 0 e "ganhar" o topo.
+        const rawA = getPipelineStageEnteredAt(a, pipelineId);
+        const rawB = getPipelineStageEnteredAt(b, pipelineId);
+        const hasA = rawA != null && rawA !== '';
+        const hasB = rawB != null && rawB !== '';
+        if (!hasA && !hasB) return compareName(a, b);
+        if (!hasA) return 1;
+        if (!hasB) return -1;
+        const enteredA = toTimestamp(rawA);
+        const enteredB = toTimestamp(rawB);
         // Mais tempo na etapa = entered_at mais antigo primeiro
         if (enteredA !== enteredB) return enteredA - enteredB;
         return compareName(a, b);

@@ -40,8 +40,24 @@ export function endOfLocalDayFromDateInput(dateString) {
 }
 
 /**
+ * Normaliza intervalo invertido (from > to) trocando as datas.
+ * Strings YYYY-MM-DD comparam lexicograficamente de forma correta.
+ */
+export function normalizeKanbanDateRange(dateFrom, dateTo) {
+  let from = dateFrom || null;
+  let to = dateTo || null;
+
+  if (from && to && from > to) {
+    [from, to] = [to, from];
+  }
+
+  return { dateFrom: from, dateTo: to };
+}
+
+/**
  * Verifica se createdAt (ISO/Date) está dentro do intervalo [dateFrom, dateTo]
  * dos inputs type="date", interpretados no fuso local.
+ * Intervalos invertidos são normalizados (swap) antes da comparação.
  */
 export function matchesKanbanDateRange(createdAt, dateFrom, dateTo) {
   if (!createdAt) return false;
@@ -49,13 +65,15 @@ export function matchesKanbanDateRange(createdAt, dateFrom, dateTo) {
   const createdDate = createdAt instanceof Date ? createdAt : new Date(createdAt);
   if (Number.isNaN(createdDate.getTime())) return false;
 
-  if (dateFrom) {
-    const fromDate = startOfLocalDayFromDateInput(dateFrom);
+  const { dateFrom: from, dateTo: to } = normalizeKanbanDateRange(dateFrom, dateTo);
+
+  if (from) {
+    const fromDate = startOfLocalDayFromDateInput(from);
     if (!fromDate || createdDate < fromDate) return false;
   }
 
-  if (dateTo) {
-    const toDate = endOfLocalDayFromDateInput(dateTo);
+  if (to) {
+    const toDate = endOfLocalDayFromDateInput(to);
     if (!toDate || createdDate > toDate) return false;
   }
 

@@ -1,36 +1,64 @@
-# Plano de patch — Custom Roles
+# Patch plan — Filtros Kanban (data)
 
-## Arquivos alterados
+**Modo:** safe-debug — **não aplicar** sem aprovação explícita  
+**Diagnóstico:** `debug_outputs/DIAGNOSIS.md`
 
-| Arquivo | Mudança |
-|---------|---------|
-| `enterprise/app/services/enterprise/custom_role_conversation_scope.rb` | Novo — escopo único de conversas |
-| `enterprise/app/services/enterprise/conversations/filter_service.rb` | Prepend — aplica escopo no filter |
-| `enterprise/app/finders/enterprise/conversation_finder.rb` | Usa serviço compartilhado |
-| `app/services/conversations/filter_service.rb` | Hook `scoped_conversations` + prepend |
-| `enterprise/app/policies/enterprise/contact_policy.rb` | Restringe contatos por custom role |
-| `enterprise/app/models/custom_role.rb` | Exige ≥1 permissão |
-| `app/controllers/.../custom_attribute_definitions_controller.rb` | `crm_manage` no create Kanban |
-| `db/seeds.rb` | Habilita `custom_roles` em dev |
+---
 
-## Risco
+## Prioridade
 
-| Área | Risco | Mitigação |
-|------|-------|-----------|
-| Agentes normais (sem custom role) | Baixo | Escopo/policy só ativam com `custom_role_agent?` |
-| Filter de conversas | Médio | Mesma lógica já usada no index |
-| Contatos | Médio | Spec de policy; agente padrão inalterado |
-| Seeds | Baixo | Só dev, idempotente via `enable_features!` |
+| Pri | ID | Ação | Risco | Savepoint? |
+|-----|-----|------|-------|------------|
+| 1 | C1 | Finalizar / revisar / commit do WIP já presente (payload `_pipeline_*` + FilterService + refetch) | médio | branch recomendada |
+| 2 | C2 | Garantir bound de dia no mesmo fuso que o usuário (ex. `America/Sao_Paulo` ou timezone da conta) | baixo-médio | opcional |
+| 3 | C3 | Já no WIP (promover open→all com data); só revisar copy/UX se necessário | baixo | não |
 
-## Regressão recomendada
+---
 
-```bash
-bundle exec rspec spec/enterprise/services/enterprise/custom_role_conversation_scope_spec.rb \
-  spec/enterprise/policies/enterprise/contact_policy_spec.rb \
-  spec/models/custom_role_spec.rb \
-  spec/models/account_user_spec.rb
-```
+## P1 — Entregar WIP de filtro server-side (C1)
 
-## Rollback
+**Já existe no working tree (não commitado):**
 
-Reverter commit; migration `custom_roles` permanece (sem down necessário para este patch).
+- `app/services/contacts/filter_service.rb` — `_pipeline_created_at|deal_value|assignee_id|win_lost`
+- `app/javascript/.../kanbanFilterQueryHelper.js` (+ spec)
+- `KanbanAttributes.vue` — `buildKanbanQueryPayload` + `reloadContactsForActiveFilters`
+- `KanbanFilters.vue` — normalize range + promote winLost
+- Specs Ruby/Vitest
+
+**Menor fix adicional se algo faltar na review:** nenhum refactor — só validar que `loadContactsPage` (lista) e `loadAllContacts` (kanban) usam o mesmo payload.
+
+**Testes mínimos antes do merge:**
+
+1. Spec Ruby: range inclusivo `2026-10-06` com `Time.zone = America/Sao_Paulo` (já no WT)
+2. Vitest: `normalizeKanbanDateRange` + `matchesKanbanDateRange` (já no WT)
+3. Manual: funil > página; filtrar um dia conhecido; card fora do dia some; card no dia aparece; ganho no dia aparece após auto-`all`
+
+**Não fazer:** refatorar FilterService genérico, renomear operadores, migrar timezone de toda a app sem necessidade.
+
+---
+
+## P2 — Alinhar fuso do bound (C2) — só se C1 mergeado e runtime for UTC
+
+**Opções (escolher a menor):**
+
+A. `config.time_zone = 'America/Sao_Paulo'` (se produto for BR-only) — impacto global; precisa de buy-in.  
+B. Em `parse_pipeline_day_bound`, usar zona fixa do produto / `ActiveSupport::TimeZone['America/Sao_Paulo']` só para kanban.  
+C. Passar offset/timezone do browser no payload e interpretar no backend — mais correto multi-região, maior escopo.
+
+**Recomendação conservadora:** confirmar `Time.zone.name` no processo Rails em runtime. Se já for `America/Sao_Paulo` (initializer/ENV), **P2 dispensável**. Se for `UTC`, preferir **B** localizado ao kanban.
+
+---
+
+## P3 — Sem patch obrigatório
+
+- C4/C5/C6: OK ou já tratado.
+- Não alterar label i18n sem pedido de produto.
+
+---
+
+## Aprovação necessária
+
+- [ ] Aprovar merge/commit do WIP (P1)  
+- [ ] Aprovar ou dispensar P2 após checagem de `Time.zone` em runtime  
+
+Nenhuma mutação de código feita nesta sessão de diagnóstico.

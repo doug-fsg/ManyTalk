@@ -272,6 +272,7 @@ export default {
       showVariablesMenu: false,
       newConversationModalActive: false,
       showArticleSearchPopover: false,
+      isSending: false,
     };
   },
   computed: {
@@ -369,6 +370,7 @@ export default {
       return this.maxLength - this.message.length;
     },
     isReplyButtonDisabled() {
+      if (this.isSending) return true;
       if (this.isATwitterInbox) return true;
       if (this.hasAttachments || this.hasRecordedAudio) return false;
 
@@ -612,10 +614,9 @@ export default {
 
   mounted() {
     this.getFromDraft();
-    // Don't use the keyboard listener mixin here as the events here are supposed to be
-    // working even if input/textarea is focussed.
+    // Paste is bound on document so it works while the editor is focused.
+    // Enter/send shortcuts use keyboardEventListenerMixins + getKeyboardEvents().
     document.addEventListener('paste', this.onPaste);
-    document.addEventListener('keydown', this.handleKeyEvents);
     this.setCCAndToEmailsFromLastChat();
     this.doAutoSaveDraft = debounce(
       () => {
@@ -641,7 +642,6 @@ export default {
   },
   destroyed() {
     document.removeEventListener('paste', this.onPaste);
-    document.removeEventListener('keydown', this.handleKeyEvents);
     this.$emitter.off(
       BUS_EVENTS.TOGGLE_REPLY_TO_MESSAGE,
       this.fetchAndSetReplyTo
@@ -754,6 +754,10 @@ export default {
         },
         Enter: {
           action: e => {
+            if (this.isSending) {
+              e.preventDefault();
+              return;
+            }
             if (this.isAValidEvent('enter')) {
               this.onSendReply();
               e.preventDefault();
@@ -762,7 +766,11 @@ export default {
           allowOnFocusedInput: true,
         },
         '$mod+Enter': {
-          action: () => {
+          action: e => {
+            if (this.isSending) {
+              e.preventDefault();
+              return;
+            }
             if (this.isAValidEvent('cmd_enter')) {
               this.onSendReply();
             }
@@ -832,36 +840,41 @@ export default {
       };
       this.assignedAgent = selfAssign;
     },
-    confirmOnSendReply() {
-      if (this.isReplyButtonDisabled) {
+    async confirmOnSendReply() {
+      if (this.isReplyButtonDisabled || this.isSending) {
         return;
       }
       if (!this.showMentions) {
-        const isOnWhatsApp =
-          this.isATwilioWhatsAppChannel ||
-          this.isAWhatsAppCloudChannel ||
-          this.is360DialogWhatsAppChannel;
-        if (isOnWhatsApp && !this.isPrivate) {
-          this.sendMessageAsMultipleMessages(this.message);
-        } else {
-          const messagePayload = this.getMessagePayload(this.message);
-          this.sendMessage(messagePayload);
-        }
+        this.isSending = true;
+        try {
+          const isOnWhatsApp =
+            this.isATwilioWhatsAppChannel ||
+            this.isAWhatsAppCloudChannel ||
+            this.is360DialogWhatsAppChannel;
+          if (isOnWhatsApp && !this.isPrivate) {
+            await this.sendMessageAsMultipleMessages(this.message);
+          } else {
+            const messagePayload = this.getMessagePayload(this.message);
+            await this.sendMessage(messagePayload);
+          }
 
-        if (!this.isPrivate) {
-          this.clearEmailField();
-        }
+          if (!this.isPrivate) {
+            this.clearEmailField();
+          }
 
-        this.clearMessage();
-        this.hideEmojiPicker();
-        this.$emit('update:popoutReplyBox', false);
+          this.clearMessage();
+          this.hideEmojiPicker();
+          this.$emit('update:popoutReplyBox', false);
+        } finally {
+          this.isSending = false;
+        }
       }
     },
-    sendMessageAsMultipleMessages(message) {
+    async sendMessageAsMultipleMessages(message) {
       const messages = this.getMessagePayloadForWhatsapp(message);
-      messages.forEach(messagePayload => {
-        this.sendMessage(messagePayload);
-      });
+      for (const messagePayload of messages) {
+        await this.sendMessage(messagePayload);
+      }
     },
     sendMessageAnalyticsData(isPrivate) {
       // Analytics data for message signature is enabled or not in channels
@@ -891,10 +904,10 @@ export default {
 
         const ok = await this.$refs.confirmDialog.showConfirmation();
         if (ok) {
-          this.confirmOnSendReply();
+          await this.confirmOnSendReply();
         }
       } else {
-        this.confirmOnSendReply();
+        await this.confirmOnSendReply();
       }
     },
     async sendMessage(messagePayload) {

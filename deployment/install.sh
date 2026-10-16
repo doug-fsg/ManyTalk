@@ -815,8 +815,8 @@ function upgrade() {
   # Navigate to the Chatwoot directory
   cd chatwoot
 
-  # Pull the latest version of the master branch
-  git checkout master && git pull
+  # Pull the latest version of the current branch
+  git pull
 
   # Ensure the ruby version is upto date
   # Parse the latest ruby version

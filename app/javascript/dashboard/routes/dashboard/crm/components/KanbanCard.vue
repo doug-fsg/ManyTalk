@@ -111,21 +111,37 @@
         </span>
       </div>
       
-      <!-- Tempo na etapa -->
-      <div v-if="stageTimeDisplay" class="flex items-center text-sm mb-1 mt-2 pt-2 border-t border-dotted border-black/5 dark:border-white/10 opacity-75">
-        <span class="mr-1.5 text-slate-500 dark:text-slate-400 text-[10px]">
-          <fluent-icon icon="clock" size="12" />
+      <!-- Tempo na etapa + data de entrada no funil -->
+      <div
+        v-if="stageTimeDisplay || funnelEntryDisplay"
+        class="flex items-center gap-3 text-sm mb-1 mt-2 pt-2 border-t border-dotted border-black/5 dark:border-white/10 opacity-75"
+      >
+        <span v-if="stageTimeDisplay" class="inline-flex items-center min-w-0">
+          <span class="mr-1.5 text-slate-500 dark:text-slate-400 text-[10px]" aria-hidden="true">
+            <fluent-icon icon="clock" size="12" />
+          </span>
+          <span
+            class="text-xs font-normal tabular-nums"
+            :class="{
+              'text-slate-600 dark:text-slate-300': stageTimeClass === 'time-normal',
+              'text-orange-600 dark:text-orange-400': stageTimeClass === 'time-warning',
+              'text-red-500 dark:text-red-400 font-medium': stageTimeClass === 'time-overdue'
+            }"
+            v-tooltip="stageTimeTooltip"
+          >
+            {{ stageTimeDisplay }}
+          </span>
         </span>
-        <span 
-          class="text-xs font-normal" 
-          :class="{
-            'text-slate-600 dark:text-slate-300': stageTimeClass === 'time-normal',
-            'text-orange-600 dark:text-orange-400': stageTimeClass === 'time-warning',
-            'text-red-500 dark:text-red-400 font-medium': stageTimeClass === 'time-overdue'
-          }"
-          :title="stageTimeTooltip"
-        >
-          {{ stageTimeDisplay }}
+        <span v-if="funnelEntryDisplay" class="inline-flex items-center min-w-0">
+          <span class="mr-1.5 text-slate-500 dark:text-slate-400 text-[10px]" aria-hidden="true">
+            <fluent-icon icon="calendar" size="12" />
+          </span>
+          <span
+            class="text-xs font-normal tabular-nums text-slate-600 dark:text-slate-300"
+            v-tooltip="funnelEntryTooltip"
+          >
+            {{ funnelEntryDisplay }}
+          </span>
         </span>
       </div>
       
@@ -333,6 +349,7 @@ import FluentIcon from 'shared/components/FluentIcon/DashboardIcon.vue';
 import WootLabel from 'dashboard/components/ui/Label.vue';
 import ContactAPI from 'dashboard/api/contacts';
 import {
+  getCreatedAt,
   getDealValue,
   getEnteredAt,
   getWinLostStatus,
@@ -518,6 +535,31 @@ export default {
     },
     enteredAt() {
       return getEnteredAt(this.contact, this.pipelineId);
+    },
+    funnelEntryAt() {
+      return getCreatedAt(this.contact, this.pipelineId);
+    },
+    funnelEntryDisplay() {
+      if (!this.funnelEntryAt) return null;
+      const date = new Date(this.funnelEntryAt);
+      if (Number.isNaN(date.getTime())) return null;
+      return new Intl.DateTimeFormat(undefined, {
+        day: '2-digit',
+        month: '2-digit',
+      }).format(date);
+    },
+    funnelEntryTooltip() {
+      if (!this.funnelEntryAt) return '';
+      const date = new Date(this.funnelEntryAt);
+      if (Number.isNaN(date.getTime())) return '';
+      const fullDateTime = new Intl.DateTimeFormat(undefined, {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(date);
+      return this.$t('KANBAN.CARD.FUNNEL_ENTRY_DATE', { date: fullDateTime });
     },
     winLostStatus() {
       const winLostData = getWinLostStatus(this.contact, this.pipelineId);

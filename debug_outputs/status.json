@@ -1,20 +1,10 @@
 {
-  "phase": "verified_with_regression_tests",
-  "permissions_covered": [
-    "conversation_manage",
-    "conversation_unassigned_manage",
-    "conversation_participating_manage",
-    "contact_manage",
-    "report_manage",
-    "knowledge_base_manage",
-    "workflow_manage",
-    "automation_manage",
-    "form_manage",
-    "campaign_manage",
-    "crm_manage"
-  ],
-  "test_commands": [
-    "bundle exec rspec spec/enterprise/custom_roles/permissions_matrix_spec.rb",
-    "pnpm test app/javascript/dashboard/helper/specs/permissionsHelper.spec.js"
-  ]
+  "incident": "kanban-date-filters-audit",
+  "date": "2026-10-16",
+  "phase": "simplified_and_deduped",
+  "verdict": "C2_simplified_YYYY-MM-DD_plus_SP; match_loops_unified",
+  "tests": {
+    "vitest": "14 passed",
+    "rspec_pipeline": "5 passed"
+  }
 }

@@ -114,6 +114,7 @@
       "ADD_VALUE": "Add value",
       "EDIT_DEAL_VALUE": "Edit deal value",
       "ADD_DEAL_VALUE": "Add deal value",
+      "FUNNEL_ENTRY_DATE": "Created in pipeline · {date}",
       "DEAL_VALUE_MODAL": {
         "TITLE": "Deal Value",
         "LABEL": "Value",
@@ -167,7 +168,7 @@
       "DEAL_VALUE": "Deal Value",
       "MIN_VALUE": "Min",
       "MAX_VALUE": "Max",
-      "DATE_RANGE": "Creation Date",
+      "DATE_RANGE": "Created in pipeline",
       "FROM_DATE": "From date",
       "TO_DATE": "To date",
       "STATUS": "Status",

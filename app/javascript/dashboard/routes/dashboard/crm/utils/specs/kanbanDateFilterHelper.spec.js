@@ -4,6 +4,7 @@
 import {
   endOfLocalDayFromDateInput,
   matchesKanbanDateRange,
+  normalizeKanbanDateRange,
   parseLocalDateString,
   startOfLocalDayFromDateInput,
 } from '../kanbanDateFilterHelper';
@@ -50,6 +51,26 @@ describe('kanbanDateFilterHelper', () => {
     });
   });
 
+  describe('normalizeKanbanDateRange', () => {
+    it('swaps inverted ranges', () => {
+      expect(normalizeKanbanDateRange('2026-10-10', '2026-10-01')).toEqual({
+        dateFrom: '2026-10-01',
+        dateTo: '2026-10-10',
+      });
+    });
+
+    it('keeps ordered ranges and empty sides', () => {
+      expect(normalizeKanbanDateRange('2026-10-01', '2026-10-10')).toEqual({
+        dateFrom: '2026-10-01',
+        dateTo: '2026-10-10',
+      });
+      expect(normalizeKanbanDateRange('2026-10-06', null)).toEqual({
+        dateFrom: '2026-10-06',
+        dateTo: null,
+      });
+    });
+  });
+
   describe('matchesKanbanDateRange', () => {
     it('includes cards created on the selected local day', () => {
       // 06/10 00:00 BRT
@@ -74,6 +95,15 @@ describe('kanbanDateFilterHelper', () => {
 
     it('returns false when createdAt is missing', () => {
       expect(matchesKanbanDateRange(null, '2026-10-06', null)).toBe(false);
+    });
+
+    it('matches when from > to by swapping the range', () => {
+      expect(
+        matchesKanbanDateRange('2026-10-05T15:00:00.000Z', '2026-10-10', '2026-10-01')
+      ).toBe(true);
+      expect(
+        matchesKanbanDateRange('2026-09-30T15:00:00.000Z', '2026-10-10', '2026-10-01')
+      ).toBe(false);
     });
   });
 });

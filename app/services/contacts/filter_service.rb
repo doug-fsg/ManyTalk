@@ -1,6 +1,14 @@
 class Contacts::FilterService < FilterService
   ATTRIBUTE_MODEL = 'contact_attribute'.freeze
 
+  # Filtros sobre contact_pipeline_positions (JOIN cpp_N gerado pelos atributos kanban).
+  PIPELINE_POSITION_FILTER_KEYS = %w[
+    _pipeline_created_at
+    _pipeline_deal_value
+    _pipeline_assignee_id
+    _pipeline_win_lost
+  ].freeze
+
   def initialize(account, user, params)
     @account = account
     # TODO: Change the order of arguments in FilterService maybe?
@@ -24,8 +32,11 @@ class Contacts::FilterService < FilterService
 
   def query_builder(model_filters)
     @params[:payload].each_with_index do |query_hash, current_index|
-      if query_hash[:attribute_key] == '_any_list'
+      attribute_key = query_hash[:attribute_key].to_s
+      if attribute_key == '_any_list'
         @query_string += " #{build_any_list_query(query_hash, current_index).strip}"
+      elsif PIPELINE_POSITION_FILTER_KEYS.include?(attribute_key)
+        @query_string += " #{build_pipeline_position_filter_query(query_hash, current_index).strip}"
       else
         @query_string += " #{build_condition_query(model_filters, query_hash, current_index).strip}"
       end
@@ -218,5 +229,139 @@ class Contacts::FilterService < FilterService
                      end
 
     "#{query_fragment} #{query_operator}"
+  end
+
+  # Filtros sobre a posição no funil (created_at, deal_value, assignee, win/lost).
+  # Requer JOIN cpp_N via filtro is_present do atributo kanban no mesmo payload.
+  def build_pipeline_position_filter_query(query_hash, current_index)
+    alias_name = primary_pipeline_join_alias
+    raise CustomExceptions::CustomFilter::InvalidAttribute.new(
+      key: query_hash[:attribute_key],
+      allowed_keys: PIPELINE_POSITION_FILTER_KEYS
+    ) if alias_name.blank?
+
+    query_operator = query_hash[:query_operator].presence || 'AND'
+    attribute_key = query_hash[:attribute_key].to_s
+    operator = query_hash[:filter_operator].to_s
+
+    fragment = case attribute_key
+               when '_pipeline_created_at'
+                 build_pipeline_created_at_fragment(alias_name, query_hash, current_index, operator)
+               when '_pipeline_deal_value'
+                 build_pipeline_deal_value_fragment(alias_name, query_hash, current_index, operator)
+               when '_pipeline_assignee_id'
+                 build_pipeline_assignee_fragment(alias_name, query_hash, current_index, operator)
+               when '_pipeline_win_lost'
+                 build_pipeline_win_lost_fragment(alias_name, query_hash, current_index, operator)
+               else
+                 raise CustomExceptions::CustomFilter::InvalidAttribute.new(
+                   key: attribute_key,
+                   allowed_keys: PIPELINE_POSITION_FILTER_KEYS
+                 )
+               end
+
+    "#{fragment} #{query_operator} "
+  end
+
+  def primary_pipeline_join_alias
+    kanban_pipeline_ids = get_kanban_pipeline_ids_from_filters
+    return nil if kanban_pipeline_ids.empty?
+
+    'cpp_0'
+  end
+
+  def build_pipeline_created_at_fragment(alias_name, query_hash, current_index, operator)
+    unless %w[is_greater_than is_less_than].include?(operator)
+      raise CustomExceptions::CustomFilter::InvalidOperator.new(
+        attribute_name: '_pipeline_created_at',
+        allowed_keys: %w[is_greater_than is_less_than]
+      )
+    end
+
+    raw_value = Array(query_hash['values']).first
+    bound = parse_pipeline_day_bound(raw_value, operator == 'is_greater_than' ? :start : :end)
+    raise CustomExceptions::CustomFilter::InvalidValue.new(attribute_name: '_pipeline_created_at') if bound.blank?
+
+    bind_key = "value_#{current_index}"
+    @filter_values[bind_key] = bound
+
+    # is_greater_than = início do dia (inclusivo); is_less_than = fim do dia (inclusivo)
+    comparator = operator == 'is_greater_than' ? '>=' : '<='
+    "(#{alias_name}.created_at #{comparator} :#{bind_key})"
+  end
+
+  def build_pipeline_deal_value_fragment(alias_name, query_hash, current_index, operator)
+    unless %w[is_greater_than is_less_than].include?(operator)
+      raise CustomExceptions::CustomFilter::InvalidOperator.new(
+        attribute_name: '_pipeline_deal_value',
+        allowed_keys: %w[is_greater_than is_less_than]
+      )
+    end
+
+    raw_value = Array(query_hash['values']).first
+    raise CustomExceptions::CustomFilter::InvalidValue.new(attribute_name: '_pipeline_deal_value') if raw_value.nil?
+
+    bind_key = "value_#{current_index}"
+    @filter_values[bind_key] = raw_value.to_f
+    comparator = operator == 'is_greater_than' ? '>=' : '<='
+    "(COALESCE(#{alias_name}.deal_value, 0) #{comparator} :#{bind_key})"
+  end
+
+  def build_pipeline_assignee_fragment(alias_name, query_hash, current_index, operator)
+    unless operator == 'equal_to'
+      raise CustomExceptions::CustomFilter::InvalidOperator.new(
+        attribute_name: '_pipeline_assignee_id',
+        allowed_keys: %w[equal_to]
+      )
+    end
+
+    values = Array(query_hash['values'])
+    raise CustomExceptions::CustomFilter::InvalidValue.new(attribute_name: '_pipeline_assignee_id') if values.empty?
+
+    include_unassigned = values.any?(&:nil?)
+    assignee_ids = values.compact.map(&:to_i)
+
+    conditions = []
+    if assignee_ids.any?
+      bind_key = "value_#{current_index}"
+      @filter_values[bind_key] = assignee_ids
+      conditions << "#{alias_name}.assignee_id IN (:#{bind_key})"
+    end
+    conditions << "#{alias_name}.assignee_id IS NULL" if include_unassigned
+
+    "(#{conditions.join(' OR ')})"
+  end
+
+  def build_pipeline_win_lost_fragment(alias_name, query_hash, current_index, operator)
+    unless operator == 'equal_to'
+      raise CustomExceptions::CustomFilter::InvalidOperator.new(
+        attribute_name: '_pipeline_win_lost',
+        allowed_keys: %w[equal_to]
+      )
+    end
+
+    status = Array(query_hash['values']).first.to_s
+    status_expr = "#{alias_name}.metadata->'win_lost'->>'status'"
+
+    case status
+    when 'open'
+      "(#{status_expr} IS NULL OR #{status_expr} = '')"
+    when 'won', 'lost'
+      bind_key = "value_#{current_index}"
+      @filter_values[bind_key] = status
+      "(#{status_expr} = :#{bind_key})"
+    else
+      raise CustomExceptions::CustomFilter::InvalidValue.new(attribute_name: '_pipeline_win_lost')
+    end
+  end
+
+  # YYYY-MM-DD → início/fim do dia civil em America/Sao_Paulo (não depende do Time.zone da app).
+  def parse_pipeline_day_bound(date_string, bound)
+    return nil if date_string.blank?
+
+    day = ActiveSupport::TimeZone['America/Sao_Paulo']&.parse(date_string.to_s.strip)
+    return nil unless day
+
+    bound == :start ? day.beginning_of_day : day.end_of_day
   end
 end

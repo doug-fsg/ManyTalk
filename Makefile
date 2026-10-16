@@ -1,7 +1,7 @@
 # Variables
 APP_NAME := chatwoot
 RAILS_ENV ?= development
-DEV_PORT ?= 3001
+DEV_PORT ?= 3002
 DEV_PROCFILE := tmp/Procfile.dev.$(DEV_PORT)
 
 # Targets

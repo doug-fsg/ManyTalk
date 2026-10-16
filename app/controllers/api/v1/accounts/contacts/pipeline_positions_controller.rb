@@ -1,7 +1,8 @@
 class Api::V1::Accounts::Contacts::PipelinePositionsController < Api::V1::Accounts::BaseController
   before_action :ensure_pipeline, only: [:stats, :dashboard_stats]
   before_action :ensure_contact, only: [:update, :destroy]
-  before_action :check_pipeline_edit_permission, only: [:update, :destroy, :reorder]
+  before_action :check_pipeline_edit_permission, only: [:update, :destroy]
+  before_action :check_pipeline_reorder_permission, only: [:reorder]
   before_action :check_pipeline_view_permission, only: [:stats, :dashboard_stats]
 
   # Atualizar posição do contato no pipeline
@@ -184,6 +185,10 @@ class Api::V1::Accounts::Contacts::PipelinePositionsController < Api::V1::Accoun
           pipeline_id: pipeline_id
         )
 
+        if editor_reorder_forbidden?(pipeline_position)
+          raise StandardError, 'Você só pode editar cards que são seus ou que não têm dono'
+        end
+
         pipeline_position.assign_attributes(
           stage_id: stage_id,
           position: position
@@ -198,9 +203,10 @@ class Api::V1::Accounts::Contacts::PipelinePositionsController < Api::V1::Accoun
     end
 
     head :ok
-  rescue => e
+  rescue StandardError => e
     Rails.logger.error "Error reordering pipeline positions: #{e.message}"
-    render json: { error: e.message }, status: :unprocessable_entity
+    status = e.message.include?('só pode editar') ? :forbidden : :unprocessable_entity
+    render json: { error: e.message }, status: status
   end
 
   private
@@ -249,40 +255,83 @@ class Api::V1::Accounts::Contacts::PipelinePositionsController < Api::V1::Accoun
       id: params[:pipeline_id],
       is_kanban: true
     )
-    
-    return unless pipeline
-    
+
+    unless pipeline
+      render json: { error: 'Pipeline not found' }, status: :not_found
+      return
+    end
+
     # Admin sempre pode
     return if Current.user.administrator?
-    
+
     # Verificar permissão do pipeline
     permission = pipeline.user_permission(Current.user)
-    
+
     # Admin e Supervisor podem editar qualquer card (sem restrições)
     return if permission == :admin
-    
+
     # Viewer não pode editar
     if permission == :viewer
-      render json: { 
-        error: 'Você não tem permissão para editar este pipeline' 
+      render json: {
+        error: 'Você não tem permissão para editar este pipeline'
       }, status: :forbidden
       return
     end
-    
+
     # Editor pode editar, mas verificar se o card é dele ou sem dono
     if permission == :editor
       position = @contact.contact_pipeline_positions.find_by(
         pipeline_id: params[:pipeline_id]
       )
-      
+
       # Se card tem dono e não é o editor, bloquear
       if position&.assignee_id.present? && position.assignee_id != Current.user.id
-        render json: { 
-          error: 'Você só pode editar cards que são seus ou que não têm dono' 
+        render json: {
+          error: 'Você só pode editar cards que são seus ou que não têm dono'
         }, status: :forbidden
         return
       end
     end
+  end
+
+  # Reorder é collection (sem @contact). Permissão no pipeline; cards de editor
+  # são validados em editor_reorder_forbidden? dentro da transaction.
+  def check_pipeline_reorder_permission
+    pipeline = Current.account.custom_attribute_definitions.find_by(
+      id: params[:pipeline_id],
+      is_kanban: true
+    )
+
+    unless pipeline
+      render json: { error: 'Pipeline not found' }, status: :not_found
+      return
+    end
+
+    return if Current.user.administrator?
+
+    permission = pipeline.user_permission(Current.user)
+    return if permission == :admin
+    return if permission == :editor
+
+    render json: {
+      error: 'Você não tem permissão para editar este pipeline'
+    }, status: :forbidden
+  end
+
+  def editor_reorder_forbidden?(pipeline_position)
+    return false if Current.user&.administrator?
+
+    pipeline = Current.account.custom_attribute_definitions.find_by(
+      id: params[:pipeline_id],
+      is_kanban: true
+    )
+    return false if pipeline&.user_permission(Current.user) == :admin
+
+    permission = pipeline&.user_permission(Current.user)
+    return false unless permission == :editor
+
+    pipeline_position.assignee_id.present? &&
+      pipeline_position.assignee_id != Current.user.id
   end
 
   def check_pipeline_view_permission

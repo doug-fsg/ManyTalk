@@ -109,4 +109,68 @@ RSpec.describe 'Pipeline Positions API', type: :request do
       expect(stage[:total_value]).to eq(150.0)
     end
   end
+
+  describe 'POST /api/v1/accounts/:account_id/contacts/pipeline_positions/reorder' do
+    let(:reorder_url) do
+      "/api/v1/accounts/#{account.id}/contacts/pipeline_positions/reorder"
+    end
+    let!(:contact_a) { create(:contact, account: account) }
+    let!(:contact_b) { create(:contact, account: account) }
+
+    before do
+      create(
+        :contact_pipeline_position,
+        contact: contact_a,
+        pipeline: pipeline,
+        stage_id: 'Estágio 1',
+        position: 0,
+        entered_at: 2.days.ago
+      )
+      create(
+        :contact_pipeline_position,
+        contact: contact_b,
+        pipeline: pipeline,
+        stage_id: 'Estágio 1',
+        position: 1,
+        entered_at: 1.day.ago
+      )
+    end
+
+    it 'renumbers positions without resetting entered_at when omitted' do
+      original_entered = contact_a.contact_pipeline_positions.find_by(pipeline_id: pipeline.id).entered_at
+
+      post reorder_url,
+           params: {
+             pipeline_id: pipeline.id,
+             positions: [
+               { contact_id: contact_b.id, stage_id: 'Estágio 1', position: 0 },
+               { contact_id: contact_a.id, stage_id: 'Estágio 1', position: 1 }
+             ]
+           },
+           headers: admin.create_new_auth_token,
+           as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(contact_b.contact_pipeline_positions.find_by(pipeline_id: pipeline.id).position).to eq(0)
+      expect(contact_a.contact_pipeline_positions.find_by(pipeline_id: pipeline.id).position).to eq(1)
+      expect(contact_a.contact_pipeline_positions.find_by(pipeline_id: pipeline.id).entered_at).to be_within(1.second).of(original_entered)
+    end
+
+    it 'allows editors to reorder without raising on missing @contact' do
+      pipeline.set_user_permission(agent.id, 'editor')
+
+      post reorder_url,
+           params: {
+             pipeline_id: pipeline.id,
+             positions: [
+               { contact_id: contact_b.id, stage_id: 'Estágio 1', position: 0 },
+               { contact_id: contact_a.id, stage_id: 'Estágio 1', position: 1 }
+             ]
+           },
+           headers: agent.create_new_auth_token,
+           as: :json
+
+      expect(response).to have_http_status(:ok)
+    end
+  end
 end

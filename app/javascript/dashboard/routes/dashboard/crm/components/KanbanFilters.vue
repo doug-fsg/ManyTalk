@@ -181,6 +181,7 @@
 <script>
 import { directive as onClickaway } from 'vue-clickaway';
 import { mapGetters } from 'vuex';
+import { normalizeKanbanDateRange } from '../utils/kanbanDateFilterHelper';
 
 export default {
   name: 'KanbanFilters',
@@ -223,13 +224,16 @@ export default {
       dateTo: null,
       selectedAssignees: [],
       winLostFilter: 'open',
+      // Evita promover open→all em datas se o usuário já escolheu status explicitamente
+      winLostTouchedByUser: false,
     };
   },
   computed: {
     ...mapGetters({
       agents: 'agents/getVerifiedAgents',
+      accountLabels: 'labels/getLabels',
     }),
-    // Extrair todas as labels únicas dos contatos
+    // Extrair labels dos contatos; manter seleção mesmo se a lista ficar vazia no reload
     availableLabels() {
       const labelsMap = new Map();
       this.contacts.forEach(contact => {
@@ -239,6 +243,14 @@ export default {
             labelsMap.set(label.id, label);
           }
         });
+      });
+      // Incluir labels já selecionadas (ex.: durante CLEAR_CONTACTS no reload)
+      this.selectedLabels.forEach(labelId => {
+        if (labelsMap.has(labelId)) return;
+        const fromAccount = (this.accountLabels || []).find(l => l.id === labelId);
+        if (fromAccount) {
+          labelsMap.set(labelId, fromAccount);
+        }
       });
       return Array.from(labelsMap.values());
     },
@@ -300,8 +312,8 @@ export default {
     filters: {
       handler(newFilters) {
         this.selectedLabels = newFilters.labels || [];
-        this.dealValueMin = newFilters.dealValueMin || null;
-        this.dealValueMax = newFilters.dealValueMax || null;
+        this.dealValueMin = newFilters.dealValueMin ?? null;
+        this.dealValueMax = newFilters.dealValueMax ?? null;
         this.dateFrom = newFilters.dateFrom || null;
         this.dateTo = newFilters.dateTo || null;
         this.selectedAssignees = newFilters.assignees || [];
@@ -310,9 +322,15 @@ export default {
       immediate: true,
       deep: true,
     },
-    availableLabels(newLabels) {
-      if (!newLabels.length && this.selectedLabels.length) {
-        this.selectedLabels = [];
+    // NÃO limpar selectedLabels quando availableLabels fica vazio no reload
+    // (CLEAR_CONTACTS → contacts=[] → availableLabels=[]). Só soft-prune
+    // contra labels da conta quando a lista da conta está disponível.
+    accountLabels(newLabels) {
+      if (!newLabels?.length || !this.selectedLabels.length) return;
+      const availableIds = new Set(newLabels.map(l => l.id));
+      const pruned = this.selectedLabels.filter(id => availableIds.has(id));
+      if (pruned.length !== this.selectedLabels.length) {
+        this.selectedLabels = pruned;
         this.emitFilters();
       }
     },
@@ -333,14 +351,14 @@ export default {
       }
     },
     handleDealValueChange() {
-      // Emitir mudanças em tempo real (opcional)
       this.emitFilters();
     },
     handleDateChange() {
-      // Emitir mudanças em tempo real (opcional)
+      this.normalizeDatesAndMaybePromoteWinLost();
       this.emitFilters();
     },
     applyFilters() {
+      this.normalizeDatesAndMaybePromoteWinLost();
       this.emitFilters();
       this.closeFilters();
     },
@@ -352,20 +370,36 @@ export default {
       this.dateTo = null;
       this.selectedAssignees = [];
       this.winLostFilter = 'open';
+      this.winLostTouchedByUser = false;
       this.emitFilters();
     },
     setWinLostFilter(value) {
+      this.winLostTouchedByUser = true;
       this.winLostFilter = value;
       this.emitFilters();
     },
     handleAssigneeChange() {
       this.emitFilters();
     },
+    normalizeDatesAndMaybePromoteWinLost() {
+      const normalized = normalizeKanbanDateRange(this.dateFrom, this.dateTo);
+      this.dateFrom = normalized.dateFrom;
+      this.dateTo = normalized.dateTo;
+
+      // Com intervalo de data, o default "open" esconderia ganhos/perdidos criados no período.
+      if (
+        (this.dateFrom || this.dateTo) &&
+        this.winLostFilter === 'open' &&
+        !this.winLostTouchedByUser
+      ) {
+        this.winLostFilter = 'all';
+      }
+    },
     emitFilters() {
       this.$emit('filters-changed', {
         labels: this.selectedLabels,
-        dealValueMin: this.dealValueMin,
-        dealValueMax: this.dealValueMax,
+        dealValueMin: this.dealValueMin ?? null,
+        dealValueMax: this.dealValueMax ?? null,
         dateFrom: this.dateFrom,
         dateTo: this.dateTo,
         assignees: this.selectedAssignees,
@@ -378,8 +412,9 @@ export default {
     if (this.agents.length === 0) {
       this.$store.dispatch('agents/get');
     }
+    if (!this.accountLabels?.length) {
+      this.$store.dispatch('labels/get');
+    }
   },
 };
 </script>
-
-

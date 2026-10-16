@@ -373,15 +373,22 @@ import {
   getDealValue,
   getMetadata,
   getEnteredAt,
-  getCreatedAt,
-  getWinLostStatus
 } from '../utils/pipelinePositionsHelper';
 import {
   DEFAULT_KANBAN_SORT,
   isValidKanbanSort,
   sortKanbanContacts,
 } from '../utils/kanbanSortHelper';
-import { matchesKanbanDateRange } from '../utils/kanbanDateFilterHelper';
+import {
+  applyLocalColumnPositions,
+  buildColumnReorderPositions,
+  enteredAtForMove,
+} from '../utils/kanbanCardMoveHelper';
+import { normalizeKanbanDateRange } from '../utils/kanbanDateFilterHelper';
+import {
+  buildKanbanFilterPayloadItems,
+  contactMatchesKanbanFilters,
+} from '../utils/kanbanFilterQueryHelper';
 import { parseOpenCardModalPayload } from '../utils/crmNavigationHelper';
 
 // Criar um barramento de eventos global compartilhado
@@ -684,90 +691,15 @@ export default {
     },
     // Contatos filtrados para usar no Dashboard e List View
     filteredContacts() {
-      // Aplicar os mesmos filtros que são aplicados nas colunas
-      const searchQuery = (this.searchQuery || '').toLowerCase();
-      const filtered = this.contacts.filter(contact => {
-        // Search filter
-        let matchesSearch = true;
-        if (searchQuery && searchQuery.trim() !== '') {
-          const name = (contact.name || '').toLowerCase();
-          const email = (contact.email || '').toLowerCase();
-          const phone = (contact.phone_number || '').toLowerCase();
-
-          matchesSearch = (
-            name.includes(searchQuery) ||
-            email.includes(searchQuery) ||
-            phone.includes(searchQuery)
-          );
-        }
-
-        // Win/Lost filter usando pipeline_positions
-        let matchesWinLost = true;
-        if (this.winLostFilter && this.winLostFilter !== 'all' && this.selectedAttribute) {
-          const winLostData = getWinLostStatus(contact, this.selectedAttribute.id);
-          const winLostStatus = winLostData?.status;
-          
-          if (this.winLostFilter === 'won') {
-            matchesWinLost = winLostStatus === 'won';
-          } else if (this.winLostFilter === 'lost') {
-            matchesWinLost = winLostStatus === 'lost';
-          } else if (this.winLostFilter === 'open') {
-            matchesWinLost = !winLostStatus || winLostStatus === null || winLostStatus === undefined;
-          }
-        }
-
-        // Labels filter
-        let matchesLabels = true;
-        if (this.kanbanFilters.labels && this.kanbanFilters.labels.length > 0) {
-          const contactLabels = (contact.labels || []).map(l => l.id);
-          matchesLabels = this.kanbanFilters.labels.some(labelId => 
-            contactLabels.includes(labelId)
-          );
-        }
-
-        // Deal Value filter usando pipeline_positions
-        let matchesDealValue = true;
-        if (this.selectedAttribute) {
-          const dealValue = getDealValue(contact, this.selectedAttribute.id) || 0;
-          if (this.kanbanFilters.dealValueMin !== null && this.kanbanFilters.dealValueMin !== '') {
-            matchesDealValue = matchesDealValue && dealValue >= parseFloat(this.kanbanFilters.dealValueMin);
-          }
-          if (this.kanbanFilters.dealValueMax !== null && this.kanbanFilters.dealValueMax !== '') {
-            matchesDealValue = matchesDealValue && dealValue <= parseFloat(this.kanbanFilters.dealValueMax);
-          }
-        }
-
-        // Date Range filter usando created_at de contact_pipeline_positions
-        // Parse local de YYYY-MM-DD (type=date) — evita new Date("YYYY-MM-DD") = UTC
-        let matchesDateRange = true;
-        if (this.kanbanFilters.dateFrom || this.kanbanFilters.dateTo) {
-          if (!this.selectedAttribute) {
-            matchesDateRange = false;
-          } else {
-            const createdAt = getCreatedAt(contact, this.selectedAttribute.id);
-            matchesDateRange = matchesKanbanDateRange(
-              createdAt,
-              this.kanbanFilters.dateFrom,
-              this.kanbanFilters.dateTo
-            );
-          }
-        }
-
-        // Assignee filter usando pipeline_positions
-        let matchesAssignee = true;
-        if (this.kanbanFilters.assignees && this.kanbanFilters.assignees.length > 0 && this.selectedAttribute) {
-          const position = contact.pipeline_positions?.find(
-            p => p.pipeline_id === this.selectedAttribute.id || p.pipeline_id === parseInt(this.selectedAttribute.id, 10)
-          );
-          const assigneeId = position?.assignee?.id || null;
-          const selectedIds = this.kanbanFilters.assignees.map(a => a.id);
-          matchesAssignee = selectedIds.includes(assigneeId) || (selectedIds.includes(null) && assigneeId === null);
-        }
-
-        return matchesSearch && matchesWinLost && matchesLabels && matchesDealValue && matchesDateRange && matchesAssignee;
-      });
-
-      return filtered;
+      const pipelineId = this.selectedAttribute?.id ?? null;
+      return this.contacts.filter(contact =>
+        contactMatchesKanbanFilters(contact, {
+          searchQuery: this.searchQuery,
+          winLostFilter: this.winLostFilter,
+          filters: this.kanbanFilters,
+          pipelineId,
+        })
+      );
     },
     currentUser() {
       return this.$store.getters.getCurrentUser;
@@ -1151,76 +1083,18 @@ export default {
         return;
       }
 
-      const searchQuery = (this.searchQuery || '').toLowerCase();
-      this.filteredColumns = this.columns.map(column => {
-        const filteredItems = column.items.filter(contact => {
-          let matchesSearch = true;
-          if (searchQuery && searchQuery.trim() !== '') {
-            const name = (contact.name || '').toLowerCase();
-            const email = (contact.email || '').toLowerCase();
-            const phone = (contact.phone_number || '').toLowerCase();
-            matchesSearch = (
-              name.includes(searchQuery) ||
-              email.includes(searchQuery) ||
-              phone.includes(searchQuery)
-            );
-          }
-
-          let matchesWinLost = true;
-          if (this.winLostFilter && this.winLostFilter !== 'all' && this.selectedAttribute) {
-            const winLostData = getWinLostStatus(contact, this.selectedAttribute.id);
-            const winLostStatus = winLostData?.status;
-            if (this.winLostFilter === 'won') matchesWinLost = winLostStatus === 'won';
-            else if (this.winLostFilter === 'lost') matchesWinLost = winLostStatus === 'lost';
-            else if (this.winLostFilter === 'open') {
-              matchesWinLost = !winLostStatus || winLostStatus === null || winLostStatus === undefined;
-            }
-          }
-
-          let matchesLabels = true;
-          if (this.kanbanFilters.labels && this.kanbanFilters.labels.length > 0) {
-            const contactLabels = (contact.labels || []).map(l => l.id);
-            matchesLabels = this.kanbanFilters.labels.some(labelId => contactLabels.includes(labelId));
-          }
-
-          let matchesDealValue = true;
-          if (this.selectedAttribute) {
-            const dealValue = getDealValue(contact, this.selectedAttribute.id) || 0;
-            if (this.kanbanFilters.dealValueMin !== null && this.kanbanFilters.dealValueMin !== '') {
-              matchesDealValue = matchesDealValue && dealValue >= parseFloat(this.kanbanFilters.dealValueMin);
-            }
-            if (this.kanbanFilters.dealValueMax !== null && this.kanbanFilters.dealValueMax !== '') {
-              matchesDealValue = matchesDealValue && dealValue <= parseFloat(this.kanbanFilters.dealValueMax);
-            }
-          }
-
-          let matchesDateRange = true;
-          if (this.kanbanFilters.dateFrom || this.kanbanFilters.dateTo) {
-            if (!this.selectedAttribute) matchesDateRange = false;
-            else {
-              const createdAt = getCreatedAt(contact, this.selectedAttribute.id);
-              matchesDateRange = matchesKanbanDateRange(
-                createdAt,
-                this.kanbanFilters.dateFrom,
-                this.kanbanFilters.dateTo
-              );
-            }
-          }
-
-          let matchesAssignee = true;
-          if (this.kanbanFilters.assignees && this.kanbanFilters.assignees.length > 0 && this.selectedAttribute) {
-            const position = contact.pipeline_positions?.find(
-              p => p.pipeline_id === this.selectedAttribute.id || p.pipeline_id === parseInt(this.selectedAttribute.id, 10)
-            );
-            const assigneeId = position?.assignee?.id || null;
-            const selectedIds = this.kanbanFilters.assignees.map(a => a.id);
-            matchesAssignee = selectedIds.includes(assigneeId) || (selectedIds.includes(null) && assigneeId === null);
-          }
-
-          return matchesSearch && matchesWinLost && matchesLabels && matchesDealValue && matchesDateRange && matchesAssignee;
-        });
-        return { ...column, items: filteredItems };
-      });
+      const pipelineId = this.selectedAttribute?.id ?? null;
+      this.filteredColumns = this.columns.map(column => ({
+        ...column,
+        items: column.items.filter(contact =>
+          contactMatchesKanbanFilters(contact, {
+            searchQuery: this.searchQuery,
+            winLostFilter: this.winLostFilter,
+            filters: this.kanbanFilters,
+            pipelineId,
+          })
+        ),
+      }));
     },
 
     handleSearch(query) {
@@ -1314,52 +1188,65 @@ export default {
       }
     },
 
+    buildKanbanQueryPayload() {
+      const payload = [
+        {
+          attribute_key: this.selectedAttribute.attribute_key,
+          filter_operator: 'is_present',
+          values: [],
+          query_operator: 'AND',
+        },
+      ];
+
+      if (this.searchQuery) {
+        payload.push({
+          attribute_key: 'name',
+          filter_operator: 'contains',
+          values: [this.searchQuery],
+          query_operator: 'OR',
+        });
+        payload.push({
+          attribute_key: 'email',
+          filter_operator: 'contains',
+          values: [this.searchQuery],
+          query_operator: 'OR',
+        });
+        payload.push({
+          attribute_key: 'phone_number',
+          filter_operator: 'contains',
+          values: [this.searchQuery],
+          query_operator: 'OR',
+        });
+      }
+
+      const accountLabels = this.$store.getters['labels/getLabels'] || [];
+      const contactLabels = (this.contacts || []).flatMap(c => c.labels || []);
+      const labelsById = new Map();
+      [...accountLabels, ...contactLabels].forEach(label => {
+        if (label?.id != null) labelsById.set(label.id, label);
+      });
+
+      payload.push(
+        ...buildKanbanFilterPayloadItems(this.kanbanFilters, {
+          labels: Array.from(labelsById.values()),
+        })
+      );
+
+      return { payload };
+    },
     async loadAllContacts() {
       try {
         this.pagination.isLoadingMore = true;
-        let currentPage = 1;
         let totalContactsLoaded = 0;
         const existingContacts = [];
         this.contactsLoadedCount = 0;
         this.hasMoreContacts = false;
 
-        // Preparar o payload para a API de filtro
-        const queryPayload = {
-          payload: [
-            {
-              attribute_key: this.selectedAttribute.attribute_key,
-              filter_operator: 'is_present',
-              values: [],
-              query_operator: 'AND',
-            },
-          ],
-        };
-
-        // Adicionar busca se houver
-        if (this.searchQuery) {
-          queryPayload.payload.push({
-            attribute_key: 'name',
-            filter_operator: 'contains',
-            values: [this.searchQuery],
-            query_operator: 'OR',
-          });
-          queryPayload.payload.push({
-            attribute_key: 'email',
-            filter_operator: 'contains',
-            values: [this.searchQuery],
-            query_operator: 'OR',
-          });
-          queryPayload.payload.push({
-            attribute_key: 'phone_number',
-            filter_operator: 'contains',
-            values: [this.searchQuery],
-            query_operator: 'OR',
-          });
-        }
+        const queryPayload = this.buildKanbanQueryPayload();
 
         // Per page maior para Kanban (100 vs 15) - reduz requisições de ~334 para ~50
         const kanbanPerPage = 100;
-        const loadContactsPage = async page => {
+        const fetchContactsPage = async page => {
           try {
             const contacts = await this.$store.dispatch('contacts/filter', {
               page,
@@ -1371,49 +1258,6 @@ export default {
           } catch (error) {
             return [];
           }
-        };
-        
-        // Expor método para carregar uma página (usado no modo lista)
-        this.loadContactsPage = async (page = 1) => {
-          const queryPayload = {
-            payload: [
-              {
-                attribute_key: this.selectedAttribute.attribute_key,
-                filter_operator: 'is_present',
-                values: [],
-                query_operator: 'AND',
-              },
-            ],
-          };
-          
-          if (this.searchQuery) {
-            queryPayload.payload.push({
-              attribute_key: 'name',
-              filter_operator: 'contains',
-              values: [this.searchQuery],
-              query_operator: 'OR',
-            });
-            queryPayload.payload.push({
-              attribute_key: 'email',
-              filter_operator: 'contains',
-              values: [this.searchQuery],
-              query_operator: 'OR',
-            });
-            queryPayload.payload.push({
-              attribute_key: 'phone_number',
-              filter_operator: 'contains',
-              values: [this.searchQuery],
-              query_operator: 'OR',
-            });
-          }
-          
-          const contacts = await this.$store.dispatch('contacts/filter', {
-            page,
-            queryPayload,
-            resetState: page === 1,
-          });
-          
-          return contacts || [];
         };
 
         // Carregar até 3 páginas em paralelo para reduzir tempo total
@@ -1427,7 +1271,7 @@ export default {
           }
 
           const results = await Promise.all(
-            pagesToLoad.map(p => loadContactsPage(p))
+            pagesToLoad.map(p => fetchContactsPage(p))
           );
 
           let lastLoadedPage = startPage - 1;
@@ -1737,91 +1581,65 @@ export default {
       // FASE 1: ATUALIZAÇÃO OTIMISTA (sem tocar nas colunas)
       // ============================================
       // O vuedraggable já moveu o card via handleColumnItemsUpdate - NÃO refazer
-      // Apenas atualizar contact.pipeline_positions para manter dados consistentes
+      // Renumerar positions 0..n-1 nas colunas afetadas; entered_at só se mudou de stage
       this.updateContactStageLocally(contact, targetColumnTitle);
 
-      // Obter deal_value e metadata existentes do pipeline_positions
-      const currentPosition = contact.pipeline_positions?.find(
-        p => p.pipeline_id === this.selectedAttribute.id || p.pipeline_id === parseInt(this.selectedAttribute.id, 10)
-      );
-      const currentDealValue = currentPosition?.deal_value;
-      const currentMetadata = currentPosition?.metadata || {};
+      const pipelineId = this.selectedAttribute.id;
+      const enteredAt = enteredAtForMove(sourceColumnTitle, targetColumnTitle);
+      const targetColumn = this.columns.find(col => col.title === targetColumnTitle);
+      const sourceColumn = this.columns.find(col => col.title === sourceColumnTitle);
+      const targetItems = targetColumn?.items || [];
+      const sourceItems =
+        sourceColumnTitle === targetColumnTitle
+          ? targetItems
+          : (sourceColumn?.items || []).filter(
+              item => Number(item.id) !== Number(contactId)
+            );
+
+      if (targetColumn) {
+        applyLocalColumnPositions(targetItems, pipelineId, targetColumnTitle, {
+          movedContactId: contactId,
+          enteredAt,
+        });
+      }
+      if (sourceColumnTitle !== targetColumnTitle && sourceColumn) {
+        applyLocalColumnPositions(sourceItems, pipelineId, sourceColumnTitle);
+      }
+
+      const positions = buildColumnReorderPositions({
+        sourceStage: sourceColumnTitle,
+        targetStage: targetColumnTitle,
+        sourceItems,
+        targetItems,
+        movedContactId: contactId,
+        enteredAt,
+      });
 
       // ============================================
-      // FASE 2: ATUALIZAR APENAS contact_pipeline_positions
+      // FASE 2: persistir ordem da coluna (bulk) — evita positions duplicadas
       // ============================================
-      // NÃO atualizar tabela contacts - apenas contact_pipeline_positions
-      // Isso é muito mais rápido e não bloqueia a UI
-      
-      // IMPORTANTE: Não enviar assignee_id ao mover card
-      // O backend só permite trocar dono se for admin
-      // Ao mover, queremos manter o dono atual, então não enviamos assignee_id
-      ContactAPI.updatePipelinePosition(
-        contactId,
-        this.selectedAttribute.id,
-        targetColumnTitle,
-        newIndex,
-        new Date().toISOString(),
-        currentDealValue,
-        currentMetadata
-        // Não passar options - mantém assignee atual
-      )
-        .then(async (response) => {
-          // Atualizar o contato no store com os dados de pipeline_positions retornados
-          const updatedContact = this.contacts.find(c => c.id === contactId);
-          if (updatedContact && response.data) {
-            // Atualizar ou criar pipeline_positions no contato
-            if (!updatedContact.pipeline_positions) {
-              this.$set(updatedContact, 'pipeline_positions', []);
-            }
-            
-            // Encontrar ou criar a entrada de pipeline_position
-            const positionIndex = updatedContact.pipeline_positions.findIndex(
-              p => p.pipeline_id === this.selectedAttribute.id
-            );
-            
-            // Backend sempre envia assignee (null quando não tem), então usar diretamente
-            const positionData = {
-              pipeline_id: response.data.pipeline_id,
-              stage_id: response.data.stage_id,
-              position: response.data.position,
-              entered_at: response.data.entered_at,
-              deal_value: response.data.deal_value,
-              metadata: response.data.metadata || {},
-              assignee: response.data.assignee || null, // Backend sempre envia
-            };
-            
-            if (positionIndex >= 0) {
-              this.$set(updatedContact.pipeline_positions, positionIndex, positionData);
-            } else {
-              updatedContact.pipeline_positions.push(positionData);
-            }
-          }
-          
-          // Mostrar notificação de sucesso
+      ContactAPI.reorderPipelinePositions(pipelineId, positions)
+        .then(() => {
           this.safeShowNotification('success', this.$t('KANBAN.SUCCESS.CARD_MOVED'));
-          
-          // NÃO chamar setupColumns - o card já está na coluna correta (update otimista)
-          // Reconstruir colunas causaria "piscar" e voltar o card para a origem
-          // Atualizar stats em background
           this.fetchColumnStats();
-          })
-          .catch(error => {
-            // Se a API falhar, reverter a mudança local
-            this.revertLocalUpdate(contact, sourceColumnTitle);
-            
-            // Verificar se é erro de permissão (403) e mostrar mensagem específica
-            if (error?.response?.status === 403) {
-              // Verificar se é erro de viewer ou outro tipo de permissão
-              const errorMessage = error?.response?.data?.error || '';
-              if (this.isViewerMode || errorMessage.includes('permissão') || errorMessage.includes('permission')) {
-                useAlert(this.$t('KANBAN.ERRORS.VIEWER_CANNOT_MOVE'));
-              } else {
-                useAlert(errorMessage || this.$t('KANBAN.ERRORS.UPDATE_FAILED'));
-              }
+        })
+        .catch(error => {
+          this.setupColumns();
+
+          if (error?.response?.status === 403) {
+            const errorMessage = error?.response?.data?.error || '';
+            if (
+              this.isViewerMode ||
+              errorMessage.includes('permissão') ||
+              errorMessage.includes('permission')
+            ) {
+              useAlert(this.$t('KANBAN.ERRORS.VIEWER_CANNOT_MOVE'));
             } else {
-              useAlert(this.$t('KANBAN.ERRORS.UPDATE_FAILED'));
+              useAlert(errorMessage || this.$t('KANBAN.ERRORS.UPDATE_FAILED'));
             }
+          } else {
+            useAlert(this.$t('KANBAN.ERRORS.UPDATE_FAILED'));
+          }
         });
     },
     openContact(contactId) {
@@ -2740,20 +2558,37 @@ export default {
       }
     },
     handleWinLostFilter(filter) {
+      // Estado local apenas — o refetch vem de filters-changed (emitidos juntos).
       this.winLostFilter = filter;
-      this.kanbanFilters.winLost = filter;
-      // Forçar re-filtragem imediata
-      this.$nextTick(() => {
-        this.handleSearch(this.searchQuery || '');
-      });
+      this.kanbanFilters = { ...this.kanbanFilters, winLost: filter };
     },
     handleFiltersChanged(filters) {
-      this.kanbanFilters = { ...filters };
-      this.winLostFilter = filters.winLost || 'all';
-      // Forçar re-filtragem imediata
-      this.$nextTick(() => {
-        this.handleSearch(this.searchQuery || '');
-      });
+      const { dateFrom, dateTo } = normalizeKanbanDateRange(
+        filters.dateFrom,
+        filters.dateTo
+      );
+      this.kanbanFilters = {
+        ...filters,
+        dateFrom,
+        dateTo,
+        dealValueMin: filters.dealValueMin ?? null,
+        dealValueMax: filters.dealValueMax ?? null,
+      };
+      this.winLostFilter = filters.winLost || 'open';
+      this.reloadContactsForActiveFilters();
+    },
+    async reloadContactsForActiveFilters() {
+      if (!this.selectedAttribute) return;
+
+      if (this.currentView === 'list') {
+        this.listCurrentPage = 1;
+        await this.loadContactsPage(1);
+        return;
+      }
+
+      // Kanban / dashboard: refetch com filtros no payload (paginação e limite 5000 corretos)
+      await this.loadAllContacts();
+      this.setupColumns();
     },
     getContactStage(contact) {
       // Verificar primeiro nas colunas filtradas, depois nas colunas originais
@@ -2779,42 +2614,12 @@ export default {
         currency: 'BRL',
       }).format(dealValue);
     },
-    // Carregar uma página de contatos (modo lista)
+    // Carregar uma página de contatos (modo lista) — filtros kanban vão no payload da API
     async loadContactsPage(page = 1) {
       if (!this.selectedAttribute) return;
-      
-      const queryPayload = {
-        payload: [
-          {
-            attribute_key: this.selectedAttribute.attribute_key,
-            filter_operator: 'is_present',
-            values: [],
-            query_operator: 'AND',
-          },
-        ],
-      };
-      
-      if (this.searchQuery) {
-        queryPayload.payload.push({
-          attribute_key: 'name',
-          filter_operator: 'contains',
-          values: [this.searchQuery],
-          query_operator: 'OR',
-        });
-        queryPayload.payload.push({
-          attribute_key: 'email',
-          filter_operator: 'contains',
-          values: [this.searchQuery],
-          query_operator: 'OR',
-        });
-        queryPayload.payload.push({
-          attribute_key: 'phone_number',
-          filter_operator: 'contains',
-          values: [this.searchQuery],
-          query_operator: 'OR',
-        });
-      }
-      
+
+      const queryPayload = this.buildKanbanQueryPayload();
+
       try {
         await this.$store.dispatch('contacts/filter', {
           page,
@@ -3072,58 +2877,6 @@ export default {
         console.error('[KanbanAttributes] Error assigning self as owner:', error);
         useAlert('Erro ao atribuir');
       }
-    },
-    // Carregar uma página de contatos (modo lista)
-    async loadContactsPage(page = 1) {
-      if (!this.selectedAttribute) return;
-      
-      const queryPayload = {
-        payload: [
-          {
-            attribute_key: this.selectedAttribute.attribute_key,
-            filter_operator: 'is_present',
-            values: [],
-            query_operator: 'AND',
-          },
-        ],
-      };
-      
-      if (this.searchQuery) {
-        queryPayload.payload.push({
-          attribute_key: 'name',
-          filter_operator: 'contains',
-          values: [this.searchQuery],
-          query_operator: 'OR',
-        });
-        queryPayload.payload.push({
-          attribute_key: 'email',
-          filter_operator: 'contains',
-          values: [this.searchQuery],
-          query_operator: 'OR',
-        });
-        queryPayload.payload.push({
-          attribute_key: 'phone_number',
-          filter_operator: 'contains',
-          values: [this.searchQuery],
-          query_operator: 'OR',
-        });
-      }
-      
-      try {
-        await this.$store.dispatch('contacts/filter', {
-          page,
-          queryPayload,
-          resetState: page === 1,
-        });
-      } catch (error) {
-        console.error('[Kanban] Error loading contacts page:', error);
-      }
-    },
-    // Carregar página específica no modo lista
-    async loadListPage(page) {
-      if (page < 1 || page > this.totalListPages) return;
-      this.listCurrentPage = page;
-      await this.loadContactsPage(page);
     },
     getContactCurrentStage(contact) {
       if (!contact || !this.selectedAttribute) return '';
