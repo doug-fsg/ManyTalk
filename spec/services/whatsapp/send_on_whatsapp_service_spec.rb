@@ -38,29 +38,15 @@ describe Whatsapp::SendOnWhatsappService do
         expect(message.reload.source_id).to eq('123456789')
       end
 
-      it 'calls channel.send_template when after 24 hour limit' do
+      it 'fails without calling Meta when outside 24h window and no template_params' do
         allow_any_instance_of(Conversation).to receive(:can_reply?).and_return(false)
         message = create(:message, message_type: :outgoing, content: 'Your package has been shipped. It will be delivered in 3 business days.',
                                    conversation: conversation)
-        allow(HTTParty).to receive(:post).and_return(whatsapp_request)
-        allow(whatsapp_request).to receive(:success?).and_return(true)
-        allow(whatsapp_request).to receive(:[]).with('messages').and_return([{ 'id' => '123456789' }])
-        expect(HTTParty).to receive(:post).with(
-          'https://waba.360dialog.io/v1/messages',
-          headers: { 'D360-API-KEY' => 'test_key', 'Content-Type' => 'application/json' },
-          body: {
-            to: '123456789',
-            template: {
-              name: 'sample_shipping_confirmation',
-              namespace: '23423423_2342423_324234234_2343224',
-              language: { 'policy': 'deterministic', 'code': 'en_US' },
-              components: [{ 'type': 'body', 'parameters': [{ 'type': 'text', 'text': '3' }] }]
-            },
-            type: 'template'
-          }.to_json
-        )
+        expect(HTTParty).not_to receive(:post)
         described_class.new(message: message).perform
-        expect(message.reload.source_id).to eq('123456789')
+        expect(message.reload.status).to eq('failed')
+        expect(message.external_error).to eq(I18n.t('errors.whatsapp.message_outside_messaging_window'))
+        expect(message.source_id).to be_blank
       end
 
       it 'uses TemplateProcessorService for legacy flat processed_params without feature flag' do
@@ -101,6 +87,23 @@ describe Whatsapp::SendOnWhatsappService do
         expect(message.reload.source_id).to eq('123456789')
       end
 
+      it 'sends explicit template even outside 24h window' do
+        allow_any_instance_of(Conversation).to receive(:can_reply?).and_return(false)
+        message = create(
+          :message,
+          additional_attributes: { template_params: template_params },
+          content: 'Your package will be delivered in 3 business days.',
+          conversation: conversation,
+          message_type: :outgoing
+        )
+        allow(HTTParty).to receive(:post).and_return(whatsapp_request)
+        allow(whatsapp_request).to receive(:success?).and_return(true)
+        allow(whatsapp_request).to receive(:[]).with('messages').and_return([{ 'id' => '123456789' }])
+        expect(HTTParty).to receive(:post)
+        described_class.new(message: message).perform
+        expect(message.reload.source_id).to eq('123456789')
+      end
+
       it 'interpolates liquid variables in template processed params before sending' do
         conversation.contact.update!(name: 'Maria Silva')
         liquid_template_params = template_params.merge(
@@ -134,33 +137,24 @@ describe Whatsapp::SendOnWhatsappService do
         expect(message.reload.source_id).to eq('123456789')
       end
 
-      it 'calls channel.send_template when template has regexp characters' do
-        allow_any_instance_of(Conversation).to receive(:can_reply?).and_return(false)
-        message = create(
-          :message,
-          message_type: :outgoing,
-          content: 'عميلنا العزيز الرجاء الرد على هذه الرسالة بكلمة *نعم* للرد على إستفساركم من قبل خدمة العملاء.',
-          conversation: conversation
-        )
+      it 'normalizes BR destination when source_id lacks ninth digit' do
+        contact_inbox.contact.update!(phone_number: '+5595981072593')
+        contact_inbox.update!(source_id: '559581072593')
+        contact_inbox.reload
+        create(:message, message_type: :incoming, content: 'hi', conversation: conversation)
+        message = create(:message, message_type: :outgoing, content: 'test', conversation: conversation)
+        conversation.reload
+
         allow(HTTParty).to receive(:post).and_return(whatsapp_request)
         allow(whatsapp_request).to receive(:success?).and_return(true)
-        allow(whatsapp_request).to receive(:[]).with('messages').and_return([{ 'id' => '123456789' }])
+        allow(whatsapp_request).to receive(:[]).with('messages').and_return([{ 'id' => 'wamid.br' }])
         expect(HTTParty).to receive(:post).with(
           'https://waba.360dialog.io/v1/messages',
           headers: { 'D360-API-KEY' => 'test_key', 'Content-Type' => 'application/json' },
-          body: {
-            to: '123456789',
-            template: {
-              name: 'customer_yes_no',
-              namespace: '2342384942_32423423_23423fdsdaf23',
-              language: { 'policy': 'deterministic', 'code': 'ar' },
-              components: [{ 'type': 'body', 'parameters': [] }]
-            },
-            type: 'template'
-          }.to_json
+          body: { 'to' => '5595981072593', 'text' => { 'body' => 'test' }, 'type' => 'text' }.to_json
         )
         described_class.new(message: message).perform
-        expect(message.reload.source_id).to eq('123456789')
+        expect(message.reload.source_id).to eq('wamid.br')
       end
     end
 

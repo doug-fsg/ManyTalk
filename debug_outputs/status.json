@@ -1,10 +1,25 @@
 {
-  "incident": "kanban-date-filters-audit",
-  "date": "2026-10-16",
-  "phase": "simplified_and_deduped",
-  "verdict": "C2_simplified_YYYY-MM-DD_plus_SP; match_loops_unified",
-  "tests": {
-    "vitest": "14 passed",
-    "rspec_pipeline": "5 passed"
+  "skill": "safe-debug",
+  "scope": "whatsapp_cloud_integration",
+  "date": "2026-10-21",
+  "code_modified": false,
+  "patch_requires_approval": true,
+  "findings_count": 10,
+  "critical_code_bugs": 0,
+  "severe_findings": 4,
+  "artifacts": [
+    "debug_outputs/DIAGNOSIS.md",
+    "debug_outputs/PATCH_PLAN.md",
+    "debug_outputs/status.json"
+  ],
+  "top_verified_issues": [
+    "webhook_post_no_signature_validation",
+    "outbound_br_phone_destination_asymmetry",
+    "campaign_sleep_2_false_success",
+    "can_reply_not_meta_window"
+  ],
+  "agtu_context": {
+    "primary_failure_driver": "meta_131049_marketing_limits",
+    "code_contributes": "partial_131000_via_source_id_mismatch"
   }
 }

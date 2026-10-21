@@ -114,6 +114,12 @@
       "sourceType": "github",
       "skillPath": "skills/web-design-guidelines/SKILL.md",
       "computedHash": "f3bc47f890f42a44db1007ab390709ec368e4b8c089baee6b0007182236ac474"
+    },
+    "whatsapp-cloud-api": {
+      "source": "bellopushon/whatsapp-cloud-api",
+      "sourceType": "github",
+      "skillPath": "skills/whatsapp-cloud-api/SKILL.md",
+      "computedHash": "a22ad0aa051ec4906d9de042cddeeb1fa9c9b71e2db63b8307feb30a3861f28c"
     }
   }
 }

@@ -86,5 +86,6 @@ yarn-debug.log*
 # Local reference copy of upstream Chatwoot (not part of this repo)
 /chatwoot-develop/
 /LICITAÇÕES/
-/debug_outputs/
+/debug_outputs
+/docs/
 /incidente-verificar/

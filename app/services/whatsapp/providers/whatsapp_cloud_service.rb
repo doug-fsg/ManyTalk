@@ -254,10 +254,25 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
     else
       Rails.logger.error response.body
       record_authorization_error_from_meta!(response)
-      external_error = humanize_whatsapp_error(response)
-      message.update!(status: :failed, external_error: external_error)
+      # external_error is a store accessor on content_attributes — merge into one hash
+      # so a full content_attributes assignment does not wipe the humanized error.
+      merged_attributes = message.content_attributes.merge(meta_error_attributes(response))
+      merged_attributes['external_error'] = humanize_whatsapp_error(response)
+      message.update!(status: :failed, content_attributes: merged_attributes)
       nil
     end
+  end
+
+  def meta_error_attributes(response)
+    error = meta_error(response)
+    return {} if error.blank?
+
+    {
+      'meta_error_code' => error['code'],
+      'meta_error_message' => error['message'],
+      'meta_error_details' => error.dig('error_data', 'details'),
+      'fbtrace_id' => error['fbtrace_id']
+    }.compact
   end
 
   def humanize_whatsapp_error(response)

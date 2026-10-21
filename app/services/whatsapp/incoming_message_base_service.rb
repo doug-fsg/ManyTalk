@@ -44,16 +44,31 @@ class Whatsapp::IncomingMessageBaseService
   end
 
   def process_statuses
-    return unless find_message_by_source_id(@processed_params[:statuses].first[:id])
+    status = @processed_params[:statuses].first
+    return if status.blank?
 
-    update_message_with_status(@message, @processed_params[:statuses].first)
+    source_id = status[:id]
+    if find_message_by_source_id(source_id)
+      update_message_with_status(@message, status)
+      return
+    end
+
+    # Race: status webhook can arrive before SendReplyJob persists Meta wamid.
+    Whatsapp::ApplyStatusUpdateJob.perform_later(
+      source_id: source_id,
+      status_payload: status.to_h,
+      inbox_id: inbox.id
+    )
   rescue ArgumentError => e
     Rails.logger.error "Error while processing whatsapp status update #{e.message}"
   end
 
   def update_message_with_status(message, status)
     if status[:status] == 'deleted'
-      message.assign_attributes(content: I18n.t('conversations.messages.deleted'), content_attributes: { deleted: true })
+      message.assign_attributes(
+        content: I18n.t('conversations.messages.deleted'),
+        content_attributes: message.content_attributes.merge(deleted: true)
+      )
     else
       message.status = status[:status]
     end

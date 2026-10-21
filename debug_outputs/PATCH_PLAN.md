@@ -1,64 +1,82 @@
-# Patch plan — Filtros Kanban (data)
+# Plano de patch (propostas — **não aplicadas**)
 
-**Modo:** safe-debug — **não aplicar** sem aprovação explícita  
-**Diagnóstico:** `debug_outputs/DIAGNOSIS.md`
-
----
-
-## Prioridade
-
-| Pri | ID | Ação | Risco | Savepoint? |
-|-----|-----|------|-------|------------|
-| 1 | C1 | Finalizar / revisar / commit do WIP já presente (payload `_pipeline_*` + FilterService + refetch) | médio | branch recomendada |
-| 2 | C2 | Garantir bound de dia no mesmo fuso que o usuário (ex. `America/Sao_Paulo` ou timezone da conta) | baixo-médio | opcional |
-| 3 | C3 | Já no WIP (promover open→all com data); só revisar copy/UX se necessário | baixo | não |
+Requer aprovação explícita antes de qualquer mudança no repositório (safe-debug).
 
 ---
 
-## P1 — Entregar WIP de filtro server-side (C1)
+## Prioridade P0 — Segurança
 
-**Já existe no working tree (não commitado):**
+### P0.1 Validar assinatura Meta nos POSTs de webhook
 
-- `app/services/contacts/filter_service.rb` — `_pipeline_created_at|deal_value|assignee_id|win_lost`
-- `app/javascript/.../kanbanFilterQueryHelper.js` (+ spec)
-- `KanbanAttributes.vue` — `buildKanbanQueryPayload` + `reloadContactsForActiveFilters`
-- `KanbanFilters.vue` — normalize range + promote winLost
-- Specs Ruby/Vitest
+- Implementar verificação `X-Hub-Signature-256` com App Secret (config por app ou `GlobalConfig`).
+- Rejeitar com `401` se assinatura inválida; manter GET `verify` como está.
+- Testes: payload válido/inválido, body raw preservado (middleware ou `request.raw_post`).
 
-**Menor fix adicional se algo faltar na review:** nenhum refactor — só validar que `loadContactsPage` (lista) e `loadAllContacts` (kanban) usam o mesmo payload.
-
-**Testes mínimos antes do merge:**
-
-1. Spec Ruby: range inclusivo `2026-10-06` com `Time.zone = America/Sao_Paulo` (já no WT)
-2. Vitest: `normalizeKanbanDateRange` + `matchesKanbanDateRange` (já no WT)
-3. Manual: funil > página; filtrar um dia conhecido; card fora do dia some; card no dia aparece; ganho no dia aparece após auto-`all`
-
-**Não fazer:** refatorar FilterService genérico, renomear operadores, migrar timezone de toda a app sem necessidade.
+**Risco:** médio (pode bloquear webhooks se secret errado). **Mitigação:** feature flag + log de falhas de assinatura antes de enforce.
 
 ---
 
-## P2 — Alinhar fuso do bound (C2) — só se C1 mergeado e runtime for UTC
+## Prioridade P1 — Entrega BR e campanhas
 
-**Opções (escolher a menor):**
+### P1.1 Destino canônico na saída
 
-A. `config.time_zone = 'America/Sao_Paulo'` (se produto for BR-only) — impacto global; precisa de buy-in.  
-B. Em `parse_pipeline_day_bound`, usar zona fixa do produto / `ActiveSupport::TimeZone['America/Sao_Paulo']` só para kanban.  
-C. Passar offset/timezone do browser no payload e interpretar no backend — mais correto multi-região, maior escopo.
+- Extrair helper (ex. `Whatsapp::OutboundRecipient`) que:
+  - Parte de `contact_inbox.source_id` e `contact.phone_number`
+  - Usa `BrazilPhoneNormalizer.lookup_variants` / preferência pelo `wa_id` mais longo válido
+  - Usar em `send_template_message` e `send_session_message`
+- Specs cobrindo 12 vs 13 dígitos (casos AGTU).
 
-**Recomendação conservadora:** confirmar `Time.zone.name` no processo Rails em runtime. Se já for `America/Sao_Paulo` (initializer/ENV), **P2 dispensável**. Se for `UTC`, preferir **B** localizado ao kanban.
+**Risco:** baixo-médio (mudança de `to` para contatos legados). **Mitigação:** log estruturado quando `to` normalizado ≠ `source_id`.
+
+### P1.2 Saneamento dados inbox 610 (one-off ops)
+
+- Relatório dos `contact_inboxes` com mismatch; corrigir `source_id` onde Meta `wa_id` conhecido (script aprovado, não commit automático).
+
+### P1.3 Campanha: sucesso atrelado ao envio real
+
+- Substituir `sleep(2)` por: aguardar `message.source_id` ou `message.failed?` com timeout (ex. 30–60s) via polling ou callback após `SendReplyJob`.
+- Contar falha se timeout sem `source_id`.
+
+**Risco:** médio (jobs mais longos). **Mitigação:** timeout configurável.
 
 ---
 
-## P3 — Sem patch obrigatório
+## Prioridade P2 — Janela e templates
 
-- C4/C5/C6: OK ou já tratado.
-- Não alterar label i18n sem pedido de produto.
+### P2.1 `can_reply?` / modo de envio
+
+- Opções (escolher uma com produto):
+  - UI bloqueia sessão quando `can_reply?` false (já parcial)
+  - Ou: fora da janela, falhar cedo com mensagem clara em vez de POST que gera 131047
+  - Avaliar não forçar template quando `template_params` presente mas intenção é sessão (`send_mode` explícito)
+
+### P2.2 Persistir erro Meta completo
+
+- Em `process_response`, merge em `content_attributes` (`meta_error_code`, `fbtrace_id`, `error_data`).
 
 ---
 
-## Aprovação necessária
+## Prioridade P3 — Resiliência
 
-- [ ] Aprovar merge/commit do WIP (P1)  
-- [ ] Aprovar ou dispensar P2 após checagem de `Time.zone` em runtime  
+### P3.1 Status webhook atrasado
 
-Nenhuma mutação de código feita nesta sessão de diagnóstico.
+- Fila de retry ou `find_message_by_source_id` com backoff quando status chega antes do `source_id`.
+
+### P3.2 Unificar versão Graph API
+
+- Usar `api_version` também em `phone_id_path` / `media_url`; testar em staging.
+
+---
+
+## O que **não** entra em patch de código (cliente AGTU)
+
+- Reduzir marketing / melhorar qualidade WABA / ticket Meta para 131000 com número correto — ações **Meta + operação**.
+
+---
+
+## Aprovação sugerida por etapa
+
+1. P0.1 (segurança) — branch dedicado + deploy com flag  
+2. P1.1 + specs — menor diff, alto valor BR  
+3. P1.3 — campanhas  
+4. P2/P3 — conforme capacidade

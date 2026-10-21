@@ -73,6 +73,7 @@ en:
       invalid_channel_id: "Invalid slack channel. Please try again"
     whatsapp:
       phone_number_already_exists: "A WhatsApp channel with phone number %{phone_number} already exists"
+      message_outside_messaging_window: 'Message not sent because the WhatsApp 24-hour customer service window is closed and no template parameters were provided. Send an approved template message instead.'
     inboxes:
       imap:
         socket_error: Please check the network connection, IMAP address and try again.

@@ -236,6 +236,29 @@ describe Whatsapp::Providers::WhatsappCloudService do
         expect(service.send_message('+123456789', message)).to be_nil
         expect(whatsapp_channel.reauthorization_required?).to be(false)
       end
+
+      it 'persists Meta error code and fbtrace_id on failed send' do
+        stub_request(:post, 'https://graph.facebook.com/v13.0/123456789/messages')
+          .to_return(
+            status: 400,
+            headers: response_headers,
+            body: {
+              error: {
+                message: 'Something went wrong',
+                code: 131_000,
+                fbtrace_id: 'trace-abc-123',
+                error_data: { details: 'Something went wrong' }
+              }
+            }.to_json
+          )
+
+        expect(service.send_message('+123456789', message)).to be_nil
+        message.reload
+        expect(message.status).to eq('failed')
+        expect(message.content_attributes['meta_error_code']).to eq(131_000)
+        expect(message.content_attributes['fbtrace_id']).to eq('trace-abc-123')
+        expect(message.content_attributes['meta_error_details']).to eq('Something went wrong')
+      end
     end
   end
 
@@ -335,7 +358,7 @@ describe Whatsapp::Providers::WhatsappCloudService do
           )
           .to_return(status: 200, body: whatsapp_response.to_json, headers: response_headers)
 
-        expect(service.send_template('+123456789', template_info)).to eq('message_id')
+        expect(service.send_template(message, '+123456789', template_info)).to eq('message_id')
       end
     end
   end

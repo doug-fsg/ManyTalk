@@ -114,6 +114,15 @@
   description: 'Configure this if you want to use a different WhatsApp API version. Make sure its prefixed with `v`'
   value: 'v22.0'
   locked: false
+- name: WHATSAPP_WEBHOOK_SIGNATURE_ENFORCE
+  display_title: 'WhatsApp Webhook Signature Enforce'
+  description: 'When true, reject WhatsApp Cloud webhook POSTs with invalid or missing X-Hub-Signature-256. Keep false until WHATSAPP_APP_SECRET (or channel app_secret) is configured and verified in staging.'
+  value: 'false'
+  locked: false
+- name: INACTIVE_WHATSAPP_NUMBERS
+  display_title: 'Inactive WhatsApp Numbers'
+  description: 'Comma-separated E.164 phone numbers whose WhatsApp webhooks should be rejected (optional operational kill-switch).'
+  locked: false
 # ------- End of WhatsApp Channel Related Config ------- #
 
 # ------- Facebook Channel Related Config ------- #

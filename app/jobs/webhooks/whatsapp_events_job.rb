@@ -103,10 +103,11 @@ class Webhooks::WhatsappEventsJob < MutexApplicationJob
     value = change.dig(:value, :metadata)
 
     if value.present?
-      phone_number = "+#{value[:display_phone_number]}"
-      phone_number_id = value[:phone_number_id]
-      channel = Channel::Whatsapp.find_by(phone_number: phone_number)
-      return channel if channel && channel.provider_config['phone_number_id'] == phone_number_id
+      channel = Whatsapp::WebhookChannelFinderService.new(
+        display_phone_number: value[:display_phone_number],
+        phone_number_id: value[:phone_number_id]
+      ).perform
+      return channel if channel.present?
     end
 
     find_channel_from_echo_payload(wb_params)

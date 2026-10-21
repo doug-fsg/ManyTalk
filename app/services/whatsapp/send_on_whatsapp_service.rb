@@ -16,12 +16,17 @@ class Whatsapp::SendOnWhatsappService < Base::SendOnChannelService
   end
 
   def perform_reply
-    should_send_template_message = template_params.present? || !message.conversation.can_reply?
-    if should_send_template_message
+    if template_params.present?
       send_template_message
-    else
-      send_session_message
+      return
     end
+
+    return send_session_message if message.conversation.can_reply?
+
+    message.update!(
+      status: :failed,
+      external_error: I18n.t('errors.whatsapp.message_outside_messaging_window')
+    )
   end
 
   def send_template_message
@@ -32,7 +37,7 @@ class Whatsapp::SendOnWhatsappService < Base::SendOnChannelService
       return
     end
 
-    message_id = channel.send_template(message, message.conversation.contact_inbox.source_id, {
+    message_id = channel.send_template(message, outbound_recipient, {
                                          name: name,
                                          namespace: namespace,
                                          lang_code: lang_code,
@@ -44,9 +49,6 @@ class Whatsapp::SendOnWhatsappService < Base::SendOnChannelService
   def resolve_template_delivery
     return template_processor_call(interpolated_template_params) if template_params.present?
 
-    matched_params = template_params_from_content_match
-    return template_processor_call(matched_params) if matched_params.present?
-
     [nil, nil, nil, nil]
   end
 
@@ -56,24 +58,6 @@ class Whatsapp::SendOnWhatsappService < Base::SendOnChannelService
       template_params: params,
       message: message
     ).call
-  end
-
-  def template_params_from_content_match
-    channel.message_templates&.each do |template|
-      match_obj = template_match_object(template)
-      next if match_obj.blank?
-
-      return {
-        'name' => template['name'],
-        'namespace' => template['namespace'],
-        'language' => template['language'],
-        'processed_params' => match_obj.captures.each_with_index.with_object({}) do |(capture, index), params|
-          params[(index + 1).to_s] = capture
-        end
-      }
-    end
-
-    nil
   end
 
   def interpolated_template_params
@@ -89,38 +73,13 @@ class Whatsapp::SendOnWhatsappService < Base::SendOnChannelService
     params
   end
 
-  def template_match_object(template)
-    body_object = validated_body_object(template)
-    return if body_object.blank?
-
-    template_match_regex = build_template_match_regex(body_object['text'])
-    message.content.match(template_match_regex)
-  end
-
-  def build_template_match_regex(template_text)
-    template_text = template_text.gsub(/{{\d}}/, '(.*)')
-    template_text = Regexp.escape(template_text)
-    template_text = template_text.gsub(Regexp.escape('(.*)'), '(.*)')
-
-    template_match_string = "^#{template_text}$"
-    Regexp.new template_match_string
-  end
-
-  def validated_body_object(template)
-    return if template['status'] != 'approved'
-
-    template['components'].find { |obj| obj['type'] == 'BODY' && obj.key?('text') }
-  end
-
   def send_session_message
-    uuid_regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
-    phone_number = if uuid_regex.match?(message.conversation.contact_inbox.source_id)
-                     message.conversation.contact_inbox.contact.phone_number.sub('+', '')
-                   else
-                     message.conversation.contact_inbox.source_id
-                   end
-    message_id = channel.send_message(phone_number, message)
+    message_id = channel.send_message(outbound_recipient, message)
     message.update!(source_id: message_id) if message_id.present?
+  end
+
+  def outbound_recipient
+    Whatsapp::OutboundRecipient.new(contact_inbox: message.conversation.contact_inbox).call
   end
 
   def template_params

@@ -53,6 +53,9 @@ pt_BR:
       invalid_message_type: "Tipo de mensagem inválido. Ação não permitida"
     slack:
       invalid_channel_id: "Canal de slack inválido. Por favor, tente novamente"
+    whatsapp:
+      phone_number_already_exists: "Já existe um canal WhatsApp com o número %{phone_number}"
+      message_outside_messaging_window: 'A mensagem não foi enviada porque a janela de atendimento de 24 horas do WhatsApp foi encerrada e nenhum parâmetro de modelo foi fornecido. Envie uma mensagem de modelo aprovada.'
     inboxes:
       imap:
         socket_error: Por favor, verifique a conexão de rede, endereço IMAP e tente novamente.

@@ -62,7 +62,7 @@ class Campaigns::SendContactJob < ApplicationJob
     else
       # Disparo único: envia a mensagem da campanha
       message = send_message(campaign, conversation, contact_data)
-      
+
       if message.blank? || !message.persisted?
         error_msg = message&.errors&.full_messages&.join(', ').presence || 'Falha ao enfileirar mensagem'
         Rails.logger.error("[SendContactJob] falha na criacao da mensagem: campaign_id=#{campaign.id} error=#{error_msg}")
@@ -70,15 +70,11 @@ class Campaigns::SendContactJob < ApplicationJob
         increment_processed_and_maybe_finalize(campaign)
         return
       end
-      
-      # Espera simplificada para capturar erros de disparos do provedor externo (Ex: 301, WhaTicket, WPPConnect)
-      sleep 2
-      message.reload
-      
-      if message.failed?
-        error_msg = message.external_error.presence || 'Erro ao enviar no provedor (status failed)'
-        Rails.logger.error("[SendContactJob] falha na API: campaign_id=#{campaign.id} error=#{error_msg}")
-        track_failure(campaign, contact_data, error_msg)
+
+      delivery_error = confirm_message_delivery(campaign, message)
+      if delivery_error.present?
+        Rails.logger.error("[SendContactJob] falha na API: campaign_id=#{campaign.id} error=#{delivery_error}")
+        track_failure(campaign, contact_data, delivery_error)
         increment_processed_and_maybe_finalize(campaign)
         return
       end
@@ -229,6 +225,23 @@ class Campaigns::SendContactJob < ApplicationJob
       macro_id: campaign.trigger_rules['macro_id'].presence
     ).perform
     message
+  end
+
+  # WhatsApp Cloud: wait for Meta wamid or failed. Other channels: short sleep + failed check.
+  def confirm_message_delivery(campaign, message)
+    if whatsapp_template_campaign?(campaign)
+      result = Whatsapp::CampaignDeliveryWait.new(message).call
+      return message.external_error.presence || 'Erro ao enviar no provedor (status failed)' if result.failed?
+      return 'Timeout aguardando confirmação de envio WhatsApp (source_id ausente)' if result.timeout?
+
+      return nil
+    end
+
+    sleep 2
+    message.reload
+    return message.external_error.presence || 'Erro ao enviar no provedor (status failed)' if message.failed?
+
+    nil
   end
 
   def substitute_message_variables(text, contact_data, contact = nil)

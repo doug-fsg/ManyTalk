@@ -1,134 +1,156 @@
-# Diagnóstico — Filtros do Kanban (foco em data)
+# Diagnóstico — WhatsApp Cloud (ManyTalks)
 
-**Modo:** safe-debug (somente leitura; sem mutação de código)  
-**Data:** 2026-10-16  
-**Escopo:** filtros do CRM/Kanban, principalmente intervalo de datas (`dateFrom` / `dateTo`)
-
----
-
-## 1. Escopo da análise
-
-| Camada | Arquivos |
-|--------|----------|
-| UI | `KanbanFilters.vue`, `Header.vue`, `KanbanAttributes.vue` |
-| Helpers FE | `kanbanDateFilterHelper.js`, `kanbanFilterQueryHelper.js` (WIP), `pipelinePositionsHelper.js` |
-| API/Backend | `Contacts::FilterService` (`_pipeline_created_at` etc.) |
-| Specs | `kanbanDateFilterHelper.spec.js`, `kanbanFilterQueryHelper.spec.js`, `filter_service_spec.rb` |
-
-Há **duas bases** a considerar:
-
-1. **HEAD (commitado)** — o que o repositório considera “oficial” hoje  
-2. **Working tree (WIP não commitado)** — correção em andamento nos mesmos arquivos
+**Data:** 2026-10-21  
+**Modo:** safe-debug (somente leitura do código + relatórios existentes em `docs/reports/`)  
+**Escopo:** problemas **verificáveis** no código; sem patch aplicado.
 
 ---
 
-## 2. Veredicto
+## Resumo
 
-**Não está OK no HEAD.** O filtro por data (e demais filtros de deal/assignee/labels/win-lost no payload) **não vai para a API**; só filtra no cliente o que já foi carregado.
+Além do bug já documentado (destino na **saída** sem alinhar variantes BR do `contact_inbox.source_id`), há **outros defeitos reais**, mas **nenhum** equivale a “plataforma inteira fora do ar”. O que mais degrada operação em produção continua sendo **limites e qualidade Meta** (ex.: 131049), não regressão única no core.
 
-**O WIP corrige o buraco crítico** (payload + backend + refetch). Parse de `YYYY-MM-DD` no browser já está correto no HEAD (commit `5b0beb54`).
+Classificação usada:
 
-**Risco residual no WIP (médio, não bloqueante se Time.zone = BRT):** backend usa `Time.zone` da app; `config.time_zone` **não está setado** em `config/application.rb` → Rails default **UTC**. Cliente usa fuso do browser. Em bordas de dia (meia-noite BRT) pode haver divergência servidor vs UI.
-
----
-
-## 3. Achados ranqueados
-
-### C1 — Crítico (HEAD): filtros kanban só no cliente
-
-**Evidência:** em HEAD, `loadAllContacts` / `loadContactsPage` montam payload só com `is_present` do funil (+ busca). Datas/deal/assignee/labels/win-lost **não entram** no `contacts/filter`.
-
-`handleFiltersChanged` só faz re-filtro local (`handleSearch`), **sem refetch**.
-
-**Efeito:**
-
-- Pipeline grande (limite `maxContactsToLoad: 5000`) → cards fora do lote carregado **nunca aparecem** mesmo batendo a data.
-- Contagens / colunas podem ficar erradas sob filtro de data.
-- Modo lista pagina no backend **sem** os filtros de data → página “filtrada” incompleta.
-
-**WIP:** `buildKanbanFilterPayloadItems` + `_pipeline_*` no `FilterService` + `reloadContactsForActiveFilters()` → resolve C1 se mergeado/deployado.
+| Nível | Significado |
+|-------|-------------|
+| **Crítico** | Perda silenciosa massiva, segurança grave explotável com baixo esforço, ou canal inutilizável para todos os clientes por bug de código |
+| **Grave** | Falhas frequentes de envio/recebimento, métricas falsas em campanha, ou risco de segurança relevante |
+| **Médio** | Impacto limitado a subset de contatos/fluxos ou inconsistência de status/UI |
+| **Baixo** | Edge case, observabilidade, débito técnico |
 
 ---
 
-### C2 — Médio (WIP): dia civil no backend vs browser
+## Achados confirmados (ordenados por severidade)
 
-**Backend (WIP):**
+### 1. Webhook POST sem validação `X-Hub-Signature-256` — **Grave (segurança)**
 
-```ruby
-# parse_pipeline_day_bound → Time.zone.parse → beginning_of_day / end_of_day
-# comparators inclusivos: >= início, <= fim
-```
+**Evidência:** não há referência a `Hub-Signature` / `X-Hub` no repositório. O controller aceita qualquer corpo e enfileira o job:
 
-**Frontend:** `parseLocalDateString` / `matchesKanbanDateRange` no **fuso local do browser**.
+- `app/controllers/webhooks/whatsapp_controller.rb` → `perform_later(params.to_unsafe_hash)` + `head :ok`
+- Rota: `POST webhooks/whatsapp/:phone_number` (`config/routes.rb`)
 
-**App:** sem `config.time_zone` → tipicamente **UTC**.
+**O que pode ocasionar:** quem conhece ou descobre o número E.164 na URL pode **injetar eventos falsos** (mensagens/status), poluir conversas, disparar automações ou confundir atendentes. A verificação GET (`hub.verify_token`) **não protege** POSTs.
 
-**Efeito (ex. usuário em America/Sao_Paulo):** card criado 06/10 22:00 BRT (= 07/10 01:00 UTC) pode ser **excluído no SQL** ao filtrar “06/10–06/10”, e nunca chegar ao cliente. O re-filtro FE não recupera o que a API não devolveu.
+**Nota:** padrão herdado do Chatwoot upstream; ainda assim é **verdadeiro** no fork.
 
-**Nota:** o comentário no WIP diz “fuso da conta/app”, mas Account **não** aplica timezone no FilterService; é só `Time.zone` global.
+**Crítico?** Não automaticamente — depende de exposição da URL e camadas externas (WAF, secret na URL). Para SaaS multi-tenant, tratar como **grave** até haver assinatura com App Secret.
 
 ---
 
-### C3 — Baixo/médio (HEAD, parcialmente coberto no WIP): default win/lost + data
+### 2. Assimetria entrada/saída do destino BR (9º dígito) — **Grave (entrega), baixa frequência global**
 
-Default UI = `open`. Filtrar por data com status `open` **esconde** ganhos/perdidos do período.
+**Evidência:**
 
-**WIP:** promove `open` → `all` ao escolher data, se o usuário não tocou status (`winLostTouchedByUser`). Comportamento sensato.
+- Entrada: `Contacts::BrazilPhoneNormalizer` em `ContactInboxWithContactBuilder` / `processed_waid`
+- Saída template: sempre `contact_inbox.source_id` (`send_on_whatsapp_service.rb:35`)
+- Saída sessão: `source_id` cru, fallback só para UUID (`send_on_whatsapp_service.rb:115-121`)
 
-HEAD também fazia `winLostFilter = filters.winLost || 'all'` no handler (inconsistente com default `open` do componente).
+**O que pode ocasionar:** POST rejeitado pela Meta (ex. **131000**), mensagem `failed`, campanhas/follow-ups perdidos para contatos com mismatch (286 na inbox 610 no relatório AGTU).
 
----
-
-### C4 — Baixo: intervalo invertido / valor 0
-
-**WIP:** `normalizeKanbanDateRange` troca from/to; deal `0` preservado com `??` (antes `||` zerava). OK.
+**Crítico?** **Não** — ~0,12% dos 131000 em 30 dias no caso AGTU; **grave** para contatos afetados e para confiança em BR.
 
 ---
 
-### C5 — Baixo / produto: `created_at` vs `entered_at`
+### 3. Campanha WhatsApp marca sucesso com `sleep(2)` — **Grave (dados operacionais)**
 
-Filtro usa `contact_pipeline_positions.created_at` (criação do card no funil).  
-i18n PT: “Data de entrada no funil”; EN: “Created in pipeline”.  
-`entered_at` muda ao trocar estágio — **não** é o campo filtrado. Semântica alinhada com “entrada no funil”, desde que ninguém espere “entrada na etapa atual”.
+**Evidência:** `app/jobs/campaigns/send_contact_job.rb` cria mensagem (assíncrono `SendReplyJob`) e após **2 segundos** considera sucesso se `message.failed?` for falso.
 
----
+**O que pode ocasionar:** fila lenta ou falha após 2s → campanha **conta envio OK** enquanto a mensagem falha depois (131049, 131000, token, etc.). Relatório de campanha **mentiroso**; decisões comerciais erradas.
 
-### C6 — Já corrigido (HEAD): parse UTC de `YYYY-MM-DD`
-
-Commit `5b0beb54` + testes Vitest com `America/Sao_Paulo` — evita o clássico “dia anterior” com `new Date("YYYY-MM-DD")`. **Não reabrir.**
+**Crítico?** Não para entrega individual (mensagem ainda pode falhar na UI), mas **grave** para governança de disparos em massa.
 
 ---
 
-## 4. Categoria da causa
+### 4. `can_reply?` ≠ janela real da Meta — **Grave (entrega), médio em volume**
 
-| Item | Categoria |
-|------|-----------|
-| C1 | Incomplete filter pipeline (client-only) |
-| C2 | Timezone bound mismatch (server UTC vs browser local) |
-| C3 | Default filter interaction (UX) |
-| C6 | Fixed timezone parse (historical) |
+**Evidência:** `Conversation#can_reply?` usa só **última mensagem incoming** + 24h (`conversation.rb:124-163`). Não consulta estado da Graph API nem janelas abertas por template utility/auth.
 
----
+**O que pode ocasionar:**
 
-## 5. O que NÃO é bug
+- Fora da janela Meta mas `can_reply?` true → `send_session_message` → **131047** (re-engagement) ou outro erro.
+- Dentro de janela aberta por template, mas sem incoming recente → força template (`template_params` ou `!can_reply?`) → mais **marketing** e **131049**.
 
-- Operadores nomeados `is_greater_than` / `is_less_than` com SQL `>=` / `<=` no WIP: intencional (dia inteiro inclusivo).
-- Re-filtro client-side **depois** do fetch: defesa em profundidade; só vira problema se C2 estiver ativo.
-- Labels assignee derivados dos contatos carregados: limitação UX, não quebra o filtro de data.
+**Crítico?** Não; **grave** em contas com muito follow-up (caso AGTU).
 
 ---
 
-## 6. Confiança
+### 5. `template_params` presente força template mesmo dentro de 24h — **Médio/Grave (custo e 131049)**
 
-| Afirmação | Confiança |
-|-----------|-----------|
-| C1 existe no HEAD | **alta** (diff + leitura direta do payload) |
-| WIP fecha C1 | **alta** (código + specs Ruby/Vitest no WT) |
-| C2 é real em produção se Time.zone=UTC | **média-alta** (código + ausência de `config.time_zone`; falta confirmar `Time.zone` no runtime) |
-| Parse FE de data OK | **alta** (testes + commit) |
+**Evidência:** `should_send_template_message = template_params.present? || !message.conversation.can_reply?` (`send_on_whatsapp_service.rb:19-21`).
+
+**O que pode ocasionar:** automações/macros/campanhas com `template_params` sempre pagam categoria template e contam limite de marketing, mesmo quando texto livre seria permitido na sessão.
+
+**Crítico?** Não; alinha com dor **131049** do relatório AGTU.
 
 ---
 
-## 7. Próximo passo (sem mutação até aprovação)
+### 6. Status webhook ignorado se mensagem ainda não tem `source_id` — **Médio**
 
-Ver `debug_outputs/PATCH_PLAN.md`. Prioridade: **entregar WIP (C1)**; em seguida alinhar fuso do bound de data (C2) se o runtime for UTC.
+**Evidência:** `process_statuses` faz `return unless find_message_by_source_id(...)` (`incoming_message_base_service.rb:46-48`). `source_id` só é gravado após resposta HTTP em `process_response`.
+
+**O que pode ocasionar:** corrida entre webhook `delivered`/`read`/`failed` e `SendReplyJob` → status **não atualiza**; UI pode ficar desatualizada (permanece `sent`). Falha tardia via webhook pode não refletir se o lookup falhar.
+
+**Crítico?** Não.
+
+---
+
+### 7. Webhooks descartados com canal em `reauthorization_required` — **Médio (perda enquanto dura)**
+
+**Evidência:** `Webhooks::WhatsappEventsJob#channel_is_inactive?` retorna true se `reauthorization_required?` (`whatsapp_events_job.rb:81-86`).
+
+**O que pode ocasionar:** durante token inválido/expirado, **mensagens recebidas não entram** até reconectar (Meta não reenvia indefinidamente).
+
+**Crítico?** Não — comportamento defensivo; impacto **grave** só se reconexão demorar.
+
+---
+
+### 8. Resolução de canal por payload Meta frágil — **Médio**
+
+**Evidência:** `get_channel_from_wb_payload` exige `phone_number` **e** `phone_number_id` iguais ao DB; senão tenta eco (`whatsapp_events_job.rb:101-113`).
+
+**O que pode ocasionar:** `provider_config['phone_number_id']` desatualizado → canal `nil` → webhook **logado e ignorado** (`Inactive WhatsApp channel`).
+
+**Crítico?** Não; configuração/ops.
+
+---
+
+### 9. Versão Graph `v13.0` no envio vs `v22.0` em templates — **Baixo (débito técnico)**
+
+**Evidência:** `phone_id_path` fixo em v13.0; `api_version` default v22.0 (`whatsapp_cloud_service.rb:102-117`, TODO no arquivo).
+
+**O que pode ocasionar:** em teoria, comportamento divergente ou depreciação futura; **não há prova** de ser causa dos 131000 (maioria dos envios funciona).
+
+**Crítico?** Não.
+
+---
+
+### 10. Corpo completo do erro Meta não persistido — **Baixo (observabilidade)**
+
+**Evidência:** `process_response` grava só `external_error` humanizado (`whatsapp_cloud_service.rb:251-260`).
+
+**O que pode ocasionar:** suporte sem `fbtrace_id` no banco; diagnóstico mais lento (já citado nos relatórios AGTU).
+
+---
+
+## O que **não** classificamos como bug crítico de código
+
+| Sintoma relatório AGTU | Causa principal verificada |
+|------------------------|----------------------------|
+| 79,5% falhas 131049 | Limite marketing Meta + qualidade YELLOW + volume |
+| 131000 com destino “correto” | Meta / throttling / genérico — maioria dos casos |
+| Token OK em health check | Canal não “desconectado” no sentido de credencial |
+
+---
+
+## Referências de código
+
+| Arquivo | Tema |
+|---------|------|
+| `app/services/whatsapp/send_on_whatsapp_service.rb` | Destino saída, template vs sessão |
+| `app/controllers/webhooks/whatsapp_controller.rb` | Webhook POST |
+| `app/jobs/webhooks/whatsapp_events_job.rb` | Canal inativo, roteamento |
+| `app/jobs/campaigns/send_contact_job.rb` | `sleep(2)` sucesso campanha |
+| `app/models/conversation.rb` | `can_reply?` |
+| `app/services/whatsapp/incoming_message_base_service.rb` | Status webhook |
+| `app/services/whatsapp/providers/whatsapp_cloud_service.rb` | Envio, erros, versão API |
