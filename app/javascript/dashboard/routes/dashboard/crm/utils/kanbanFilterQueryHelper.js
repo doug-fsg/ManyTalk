@@ -2,6 +2,7 @@ import { matchesKanbanDateRange, normalizeKanbanDateRange } from './kanbanDateFi
 import {
   getCreatedAt,
   getDealValue,
+  getEnteredAt,
   getWinLostStatus,
 } from './pipelinePositionsHelper';
 
@@ -10,24 +11,30 @@ import {
  * Datas no wire: YYYY-MM-DD; o backend expande o dia em America/Sao_Paulo.
  */
 
-export function buildKanbanFilterPayloadItems(filters = {}, { labels = [] } = {}) {
-  const items = [];
-  const {
-    dealValueMin,
-    dealValueMax,
-    assignees,
-    winLost,
-    labels: selectedLabelIds,
-  } = filters;
+export const KANBAN_DATE_FIELD_KEYS = {
+  created_at: '_pipeline_created_at',
+  entered_at: '_pipeline_entered_at',
+  win_lost: '_pipeline_win_lost_at',
+};
 
-  const { dateFrom, dateTo } = normalizeKanbanDateRange(
-    filters.dateFrom,
-    filters.dateTo
-  );
+export const DEFAULT_KANBAN_DATE_FIELD = 'created_at';
 
+export function pipelineStageNames(attributeValues = []) {
+  if (!Array.isArray(attributeValues)) return [];
+  return attributeValues
+    .map(value => {
+      if (typeof value === 'object' && value !== null) {
+        return value.name || value.value || String(value);
+      }
+      return String(value);
+    })
+    .filter(Boolean);
+}
+
+function pushDateRangeItems(items, attributeKey, dateFrom, dateTo) {
   if (dateFrom) {
     items.push({
-      attribute_key: '_pipeline_created_at',
+      attribute_key: attributeKey,
       filter_operator: 'is_greater_than',
       values: [dateFrom],
       query_operator: 'AND',
@@ -36,29 +43,101 @@ export function buildKanbanFilterPayloadItems(filters = {}, { labels = [] } = {}
 
   if (dateTo) {
     items.push({
-      attribute_key: '_pipeline_created_at',
+      attribute_key: attributeKey,
       filter_operator: 'is_less_than',
       values: [dateTo],
       query_operator: 'AND',
     });
   }
+}
 
-  if (dealValueMin !== null && dealValueMin !== undefined && dealValueMin !== '') {
+function contactDateValue(contact, pipelineId, dateField) {
+  if (dateField === 'entered_at') {
+    return getEnteredAt(contact, pipelineId);
+  }
+  if (dateField === 'win_lost') {
+    return getWinLostStatus(contact, pipelineId)?.date || null;
+  }
+  return getCreatedAt(contact, pipelineId);
+}
+
+function daysInCurrentStage(contact, pipelineId) {
+  const enteredAt = getEnteredAt(contact, pipelineId);
+  if (!enteredAt) return null;
+  const timestamp = new Date(enteredAt).getTime();
+  if (Number.isNaN(timestamp)) return null;
+  return (Date.now() - timestamp) / (1000 * 60 * 60 * 24);
+}
+
+export function buildKanbanFilterPayloadItems(filters = {}, { labels = [] } = {}) {
+  const items = [];
+  const {
+    dealValueMin,
+    dealValueMax,
+    dealPresence,
+    assignees,
+    winLost,
+    labels: selectedLabelIds,
+    stages,
+    staleDays,
+  } = filters;
+
+  const { dateFrom, dateTo } = normalizeKanbanDateRange(
+    filters.dateFrom,
+    filters.dateTo
+  );
+  const dateField = filters.dateField || DEFAULT_KANBAN_DATE_FIELD;
+  const dateAttributeKey =
+    KANBAN_DATE_FIELD_KEYS[dateField] || KANBAN_DATE_FIELD_KEYS.created_at;
+
+  pushDateRangeItems(items, dateAttributeKey, dateFrom, dateTo);
+
+  if (Array.isArray(stages) && stages.length > 0) {
     items.push({
-      attribute_key: '_pipeline_deal_value',
-      filter_operator: 'is_greater_than',
-      values: [dealValueMin],
+      attribute_key: '_pipeline_stage_id',
+      filter_operator: 'equal_to',
+      values: stages,
       query_operator: 'AND',
     });
   }
 
-  if (dealValueMax !== null && dealValueMax !== undefined && dealValueMax !== '') {
+  const parsedStaleDays = Number(staleDays);
+  if (staleDays !== null && staleDays !== undefined && staleDays !== '' && parsedStaleDays > 0) {
     items.push({
-      attribute_key: '_pipeline_deal_value',
-      filter_operator: 'is_less_than',
-      values: [dealValueMax],
+      attribute_key: '_pipeline_stale_days',
+      filter_operator: 'is_greater_than',
+      values: [parsedStaleDays],
       query_operator: 'AND',
     });
+  }
+
+  if (dealPresence === 'with' || dealPresence === 'without') {
+    items.push({
+      attribute_key: '_pipeline_deal_presence',
+      filter_operator: 'equal_to',
+      values: [dealPresence],
+      query_operator: 'AND',
+    });
+  }
+
+  if (dealPresence !== 'without') {
+    if (dealValueMin !== null && dealValueMin !== undefined && dealValueMin !== '') {
+      items.push({
+        attribute_key: '_pipeline_deal_value',
+        filter_operator: 'is_greater_than',
+        values: [dealValueMin],
+        query_operator: 'AND',
+      });
+    }
+
+    if (dealValueMax !== null && dealValueMax !== undefined && dealValueMax !== '') {
+      items.push({
+        attribute_key: '_pipeline_deal_value',
+        filter_operator: 'is_less_than',
+        values: [dealValueMax],
+        query_operator: 'AND',
+      });
+    }
   }
 
   if (Array.isArray(assignees) && assignees.length > 0) {
@@ -88,12 +167,23 @@ export function buildKanbanFilterPayloadItems(filters = {}, { labels = [] } = {}
       .filter(Boolean);
 
     if (titles.length) {
-      items.push({
-        attribute_key: 'labels',
-        filter_operator: 'equal_to',
-        values: titles,
-        query_operator: 'AND',
-      });
+      if (filters.labelMatchMode === 'all' && titles.length > 1) {
+        titles.forEach(title => {
+          items.push({
+            attribute_key: '_labels',
+            filter_operator: 'equal_to',
+            values: [title],
+            query_operator: 'AND',
+          });
+        });
+      } else {
+        items.push({
+          attribute_key: '_labels',
+          filter_operator: 'equal_to',
+          values: titles,
+          query_operator: 'AND',
+        });
+      }
     }
   }
 
@@ -125,23 +215,56 @@ export function contactMatchesKanbanFilters(
   }
 
   if (filters.labels?.length) {
-    const contactLabelIds = (contact.labels || []).map(l => l.id);
-    if (!filters.labels.some(id => contactLabelIds.includes(id))) return false;
+    const contactLabelIds = (contact.labels || [])
+      .map(label => (label && typeof label === 'object' ? label.id : label))
+      .filter(id => id != null);
+    const hasLabel = id => contactLabelIds.includes(id) || contactLabelIds.includes(Number(id));
+    const matchesLabels =
+      filters.labelMatchMode === 'all'
+        ? filters.labels.every(hasLabel)
+        : filters.labels.some(hasLabel);
+    if (!matchesLabels) return false;
   }
 
   if (pipelineId != null) {
-    const dealValue = getDealValue(contact, pipelineId) || 0;
-    if (filters.dealValueMin !== null && filters.dealValueMin !== undefined && filters.dealValueMin !== '') {
-      if (dealValue < parseFloat(filters.dealValueMin)) return false;
+    const position = contact.pipeline_positions?.find(
+      p => p.pipeline_id === pipelineId || p.pipeline_id === parseInt(pipelineId, 10)
+    );
+
+    if (filters.stages?.length) {
+      if (!filters.stages.includes(position?.stage_id)) return false;
     }
-    if (filters.dealValueMax !== null && filters.dealValueMax !== undefined && filters.dealValueMax !== '') {
-      if (dealValue > parseFloat(filters.dealValueMax)) return false;
+
+    const parsedStaleDays = Number(filters.staleDays);
+    if (
+      filters.staleDays !== null &&
+      filters.staleDays !== undefined &&
+      filters.staleDays !== '' &&
+      parsedStaleDays > 0
+    ) {
+      const days = daysInCurrentStage(contact, pipelineId);
+      if (days == null || days < parsedStaleDays) return false;
+    }
+
+    const dealValue = getDealValue(contact, pipelineId);
+    if (filters.dealPresence === 'with' && !(dealValue > 0)) return false;
+    if (filters.dealPresence === 'without' && dealValue > 0) return false;
+
+    if (filters.dealPresence !== 'without') {
+      const numericDealValue = dealValue || 0;
+      if (filters.dealValueMin !== null && filters.dealValueMin !== undefined && filters.dealValueMin !== '') {
+        if (numericDealValue < parseFloat(filters.dealValueMin)) return false;
+      }
+      if (filters.dealValueMax !== null && filters.dealValueMax !== undefined && filters.dealValueMax !== '') {
+        if (numericDealValue > parseFloat(filters.dealValueMax)) return false;
+      }
     }
 
     if (filters.dateFrom || filters.dateTo) {
+      const dateField = filters.dateField || DEFAULT_KANBAN_DATE_FIELD;
       if (
         !matchesKanbanDateRange(
-          getCreatedAt(contact, pipelineId),
+          contactDateValue(contact, pipelineId, dateField),
           filters.dateFrom,
           filters.dateTo
         )
@@ -151,16 +274,13 @@ export function contactMatchesKanbanFilters(
     }
 
     if (filters.assignees?.length) {
-      const position = contact.pipeline_positions?.find(
-        p => p.pipeline_id === pipelineId || p.pipeline_id === parseInt(pipelineId, 10)
-      );
       const assigneeId = position?.assignee?.id || null;
       const selectedIds = filters.assignees.map(a => a.id);
       if (!selectedIds.includes(assigneeId) && !(selectedIds.includes(null) && assigneeId === null)) {
         return false;
       }
     }
-  } else if (filters.dateFrom || filters.dateTo) {
+  } else if (filters.dateFrom || filters.dateTo || filters.stages?.length || filters.staleDays) {
     return false;
   }
 

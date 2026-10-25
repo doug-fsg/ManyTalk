@@ -194,29 +194,9 @@
     </div>
 
     <div class="flex justify-between items-center text-sm">
-      <div class="flex gap-1 flex-wrap">
-        <span 
-          v-for="(label, index) in (contact.labels || []).slice(
-            0,
-            2
-          )" 
-          :key="index"
-          class="px-2 py-0.5 rounded-full text-white text-[11px]"
-          :style="{ backgroundColor: getLabelColor(label) }"
-        >
-          {{ label }}
-        </span>
-        <span 
-          v-if="contact.labels && contact.labels.length > 2" 
-          class="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-[11px]"
-        >
-          +{{ contact.labels.length - 2 }}
-        </span>
-      </div>
       <div class="flex items-center gap-2">
-        <!-- Etiquetas primeiro -->
-        <div 
-          v-if="allLabels.length" 
+        <div
+          v-if="allLabels.length"
           class="flex items-center gap-1 flex-wrap"
         >
           <!-- Etiquetas usando woot-label -->
@@ -482,10 +462,15 @@ export default {
       return this.lastOpenConversation?.labels || [];
     },
     allLabels() {
-      // Combina etiquetas da conversa e do contato, removendo duplicatas
-      const contactLabels = this.contact.labels || [];
-      const allLabelsList = [...this.conversationLabels, ...contactLabels];
-      return [...new Set(allLabelsList)];
+      const titles = [];
+      (this.contact.labels || []).forEach(label => {
+        const title = label && typeof label === 'object' ? label.title || label.name : label;
+        if (title) titles.push(title);
+      });
+      this.conversationLabels.forEach(title => {
+        if (title) titles.push(title);
+      });
+      return [...new Set(titles)];
     },
     displayedLabelsInBadge() {
       if (this.showAllLabels || this.allLabels.length <= 2) {
@@ -645,6 +630,17 @@ export default {
   },
   methods: {
     getLabelColor(label) {
+      const fromContact = (this.contact.labels || []).find(item => {
+        if (!item || typeof item !== 'object') return item === label;
+        return item.title === label || item.name === label;
+      });
+      if (fromContact?.color) return fromContact.color;
+
+      const fromAccount = (this.$store.getters['labels/getLabels'] || []).find(
+        item => item.title === label
+      );
+      if (fromAccount?.color) return fromAccount.color;
+
       if (!this.colorMap[label]) {
         this.colorMap[label] = getRandomColor(Object.keys(this.colorMap).length);
       }

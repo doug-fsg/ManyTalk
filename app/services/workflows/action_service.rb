@@ -12,8 +12,7 @@ module Workflows
 
     def perform_action(action_name, action_params)
       @conversation.reload
-      send(action_name, action_params)
-      true
+      send(action_name, action_params) != false
     rescue StandardError => e
       ChatwootExceptionTracker.new(e, account: @account).capture_exception
       Rails.logger.error do

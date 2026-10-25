@@ -12,6 +12,7 @@
       :pipeline-id="selectedAttribute ? selectedAttribute.id : null"
       :filters="kanbanFilters"
       :show-assignee-filter="isAdmin"
+      :attribute-values="selectedAttribute ? selectedAttribute.attribute_values || [] : []"
       :sort-by="sortBy"
       @update:current-view="currentView = $event"
       @select-pipeline="selectPipeline"
@@ -389,6 +390,16 @@ import {
   buildKanbanFilterPayloadItems,
   contactMatchesKanbanFilters,
 } from '../utils/kanbanFilterQueryHelper';
+import {
+  kanbanFiltersEqual,
+  mergeKanbanFilters,
+} from '../utils/kanbanFilterState';
+import {
+  KANBAN_FILTER_QUERY_KEYS,
+  mergeRouteQueryWithKanbanFilters,
+  parseKanbanFiltersFromQuery,
+  serializeKanbanFiltersToQuery,
+} from '../utils/kanbanFilterQuerySync';
 import { parseOpenCardModalPayload } from '../utils/crmNavigationHelper';
 
 // Criar um barramento de eventos global compartilhado
@@ -473,15 +484,7 @@ export default {
       showAddContactModal: false,
       selectedStageForContact: '',
       // Filtros do Kanban
-      kanbanFilters: {
-        labels: [],
-        dealValueMin: null,
-        dealValueMax: null,
-        dateFrom: null,
-        dateTo: null,
-        assignees: [],
-        winLost: 'open',
-      },
+      kanbanFilters: mergeKanbanFilters(),
       // Modal de detalhes do card
       showCardModal: false,
       selectedCardContact: {},
@@ -633,6 +636,9 @@ export default {
         (filters.dealValueMax !== null && filters.dealValueMax !== '');
       const hasDateRange = filters.dateFrom || filters.dateTo;
       const hasAssignees = filters.assignees && filters.assignees.length > 0;
+      const hasStages = filters.stages && filters.stages.length > 0;
+      const hasStaleDays = !!filters.staleDays;
+      const hasDealPresence = filters.dealPresence && filters.dealPresence !== 'all';
 
       return (
         hasSearch ||
@@ -640,7 +646,10 @@ export default {
         hasLabels ||
         hasDealValue ||
         hasDateRange ||
-        hasAssignees
+        hasAssignees ||
+        hasStages ||
+        hasStaleDays ||
+        hasDealPresence
       );
     },
     isColumnDragDisabled() {
@@ -802,6 +811,7 @@ export default {
     '$route.query': {
       handler() {
         this.tryOpenCardFromQuery();
+        this.applyCrmRouteQueryFilters();
       },
     },
   },
@@ -1084,17 +1094,20 @@ export default {
       }
 
       const pipelineId = this.selectedAttribute?.id ?? null;
-      this.filteredColumns = this.columns.map(column => ({
-        ...column,
-        items: column.items.filter(contact =>
-          contactMatchesKanbanFilters(contact, {
-            searchQuery: this.searchQuery,
-            winLostFilter: this.winLostFilter,
-            filters: this.kanbanFilters,
-            pipelineId,
-          })
-        ),
-      }));
+      const selectedStages = this.kanbanFilters?.stages || [];
+      this.filteredColumns = this.columns
+        .filter(column => !selectedStages.length || selectedStages.includes(column.title))
+        .map(column => ({
+          ...column,
+          items: column.items.filter(contact =>
+            contactMatchesKanbanFilters(contact, {
+              searchQuery: this.searchQuery,
+              winLostFilter: this.winLostFilter,
+              filters: this.kanbanFilters,
+              pipelineId,
+            })
+          ),
+        }));
     },
 
     handleSearch(query) {
@@ -2567,14 +2580,15 @@ export default {
         filters.dateFrom,
         filters.dateTo
       );
-      this.kanbanFilters = {
+      this.kanbanFilters = mergeKanbanFilters({
         ...filters,
         dateFrom,
         dateTo,
         dealValueMin: filters.dealValueMin ?? null,
         dealValueMax: filters.dealValueMax ?? null,
-      };
-      this.winLostFilter = filters.winLost || 'open';
+      });
+      this.winLostFilter = this.kanbanFilters.winLost || 'open';
+      this.syncKanbanFiltersToRoute();
       this.reloadContactsForActiveFilters();
     },
     async reloadContactsForActiveFilters() {
@@ -2736,31 +2750,39 @@ export default {
       this.cardModalInitialTab = null;
       this.cardModalHighlightActivityId = null;
     },
+    hasKanbanFilterQuery() {
+      return KANBAN_FILTER_QUERY_KEYS.some(key => this.$route.query[key]);
+    },
     applyCrmRouteQueryFilters() {
-      const { assignee_id: assigneeId } = this.$route.query;
-      if (!assigneeId || assigneeId === 'all') return;
+      if (!this.hasKanbanFilterQuery()) return;
 
-      const parsedAssigneeId = Number(assigneeId);
-      if (Number.isNaN(parsedAssigneeId)) return;
+      const parsed = parseKanbanFiltersFromQuery(this.$route.query, {
+        agents: this.$store.getters['agents/getAgents'] || [],
+        currentUser: this.currentUser,
+        t: this.$t.bind(this),
+      });
+      if (kanbanFiltersEqual(parsed, this.kanbanFilters)) return;
 
-      const agents = this.$store.getters['agents/getAgents'] || [];
-      const agent = agents.find(a => a.id === parsedAssigneeId);
-      if (!agent) return;
-
-      const alreadySelected = this.kanbanFilters.assignees?.some(
-        a => a.id === parsedAssigneeId
+      this.kanbanFilters = parsed;
+      this.winLostFilter = parsed.winLost || 'open';
+      this.reloadContactsForActiveFilters();
+    },
+    syncKanbanFiltersToRoute() {
+      if (!this.$router) return;
+      const filterQuery = serializeKanbanFiltersToQuery(this.kanbanFilters, {
+        currentUserId: this.currentUser?.id,
+      });
+      const nextQuery = mergeRouteQueryWithKanbanFilters(
+        this.$route.query,
+        filterQuery
       );
-      if (alreadySelected) return;
-
-      this.kanbanFilters = {
-        ...this.kanbanFilters,
-        assignees: [
-          {
-            id: agent.id,
-            name: agent.available_name || agent.name,
-          },
-        ],
-      };
+      const current = this.$route.query || {};
+      const keys = new Set([...Object.keys(current), ...Object.keys(nextQuery)]);
+      const unchanged = [...keys].every(
+        key => String(current[key] || '') === String(nextQuery[key] || '')
+      );
+      if (unchanged) return;
+      this.$router.replace({ query: nextQuery }).catch(() => {});
     },
     async tryOpenCardFromQuery() {
       const { contactId, pipelineId, tab } = this.$route.query;

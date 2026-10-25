@@ -58,6 +58,52 @@ RSpec.describe Workflows::OrchestratorService do
     end
   end
 
+  describe 'action node failure' do
+    let(:action_chain_graph) do
+      {
+        'nodes' => [
+          {
+            'id' => 'trigger_1',
+            'type' => 'trigger',
+            'data' => { 'event_name' => 'conversation_created', 'conditions' => [] }
+          },
+          {
+            'id' => 'action_fail',
+            'type' => 'action',
+            'data' => { 'action_name' => 'send_whatsapp_external', 'action_params' => [0, '', 'msg'] }
+          },
+          {
+            'id' => 'action_next',
+            'type' => 'action',
+            'data' => { 'action_name' => 'add_label', 'action_params' => ['should_not_apply'] }
+          }
+        ],
+        'edges' => [
+          { 'id' => 'e1', 'source' => 'trigger_1', 'target' => 'action_fail' },
+          { 'id' => 'e2', 'source' => 'action_fail', 'target' => 'action_next' }
+        ],
+        'settings' => Workflows::Constants::DEFAULT_SETTINGS
+      }
+    end
+
+    let!(:workflow) { create(:workflow, account: account, active: true, graph: action_chain_graph) }
+
+    it 'does not advance to the next node when an action fails' do
+      described_class.on_event(
+        event_name: 'conversation_created',
+        account_id: account.id,
+        conversation_id: conversation.id
+      )
+
+      enrollment = WorkflowEnrollment.last
+      execution = enrollment.workflow_step_executions.find_by!(node_id: 'action_fail')
+
+      expect(execution.status).to eq('failed')
+      expect(enrollment.reload.current_node_id).to eq('action_fail')
+      expect(conversation.reload.label_list).not_to include('should_not_apply')
+    end
+  end
+
   describe 'wait node' do
     let(:wait_graph) do
       {

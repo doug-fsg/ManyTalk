@@ -148,6 +148,41 @@ describe Contacts::FilterService do
       end
     end
 
+    context 'with _labels matching contact or conversation tags' do
+      it 'includes contacts whose conversation has the label' do
+        Conversation.find_by(contact: el_contact).update_labels('support')
+
+        params[:payload] = [
+          {
+            attribute_key: '_labels',
+            filter_operator: 'equal_to',
+            values: ['support'],
+            query_operator: nil
+          }.with_indifferent_access
+        ]
+
+        ids = filter_service.new(account, first_user, params).perform[:contacts].pluck(:id)
+        expect(ids).to include(el_contact.id, en_contact.id, cs_contact.id)
+      end
+
+      it 'keeps the contact-only labels filter unchanged' do
+        Conversation.find_by(contact: el_contact).update_labels('support')
+
+        params[:payload] = [
+          {
+            attribute_key: 'labels',
+            filter_operator: 'equal_to',
+            values: ['support'],
+            query_operator: nil
+          }.with_indifferent_access
+        ]
+
+        ids = filter_service.new(account, first_user, params).perform[:contacts].pluck(:id)
+        expect(ids).to include(en_contact.id, cs_contact.id)
+        expect(ids).not_to include(el_contact.id)
+      end
+    end
+
     context 'with standard attributes - last_activity_at' do
       before do
         Time.zone = 'UTC'
@@ -448,6 +483,101 @@ describe Contacts::FilterService do
 
         result = filter_service.new(account, first_user, params).perform
         expect(result[:contacts].pluck(:id)).to eq([won_contact.id])
+      end
+
+      it 'filters by pipeline stage' do
+        params[:payload] = [
+          kanban_present_filter,
+          {
+            attribute_key: '_pipeline_stage_id',
+            filter_operator: 'equal_to',
+            values: ['Estágio 2'],
+            query_operator: nil
+          }.with_indifferent_access
+        ]
+
+        expect(filter_service.new(account, first_user, params).perform[:contacts].pluck(:id))
+          .to eq([won_contact.id])
+      end
+
+      it 'filters cards without deal value' do
+        empty_value = create(:contact, account: account, name: 'Empty Value')
+        create(:contact_pipeline_position,
+               contact: empty_value,
+               pipeline: pipeline,
+               stage_id: 'Estágio 1',
+               deal_value: nil)
+
+        params[:payload] = [
+          kanban_present_filter,
+          {
+            attribute_key: '_pipeline_deal_presence',
+            filter_operator: 'equal_to',
+            values: ['without'],
+            query_operator: nil
+          }.with_indifferent_access
+        ]
+
+        ids = filter_service.new(account, first_user, params).perform[:contacts].pluck(:id)
+        expect(ids).to include(empty_value.id)
+        expect(ids).not_to include(in_range_contact.id, won_contact.id)
+      end
+
+      it 'filters cards stuck in stage for at least N days' do
+        stale = create(:contact, account: account, name: 'Stale Card')
+        fresh = create(:contact, account: account, name: 'Fresh Card')
+        create(:contact_pipeline_position,
+               contact: stale,
+               pipeline: pipeline,
+               stage_id: 'Estágio 1',
+               entered_at: 10.days.ago,
+               created_at: 10.days.ago)
+        create(:contact_pipeline_position,
+               contact: fresh,
+               pipeline: pipeline,
+               stage_id: 'Estágio 1',
+               entered_at: 1.day.ago,
+               created_at: 1.day.ago)
+
+        params[:payload] = [
+          kanban_present_filter,
+          {
+            attribute_key: '_pipeline_stale_days',
+            filter_operator: 'is_greater_than',
+            values: [7],
+            query_operator: nil
+          }.with_indifferent_access
+        ]
+
+        ids = filter_service.new(account, first_user, params).perform[:contacts].pluck(:id)
+        expect(ids).to include(stale.id)
+        expect(ids).not_to include(fresh.id)
+      end
+
+      it 'filters by win_lost date range' do
+        won_contact.contact_pipeline_positions.find_by(pipeline: pipeline).update!(
+          metadata: { 'win_lost' => { 'status' => 'won', 'date' => '2026-10-06T18:00:00.000Z' } }
+        )
+
+        params[:payload] = [
+          kanban_present_filter,
+          {
+            attribute_key: '_pipeline_win_lost_at',
+            filter_operator: 'is_greater_than',
+            values: ['2026-10-06'],
+            query_operator: 'AND'
+          }.with_indifferent_access,
+          {
+            attribute_key: '_pipeline_win_lost_at',
+            filter_operator: 'is_less_than',
+            values: ['2026-10-06'],
+            query_operator: nil
+          }.with_indifferent_access
+        ]
+
+        ids = filter_service.new(account, first_user, params).perform[:contacts].pluck(:id)
+        expect(ids).to include(won_contact.id)
+        expect(ids).not_to include(in_range_contact.id)
       end
     end
   end

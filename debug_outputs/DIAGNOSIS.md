@@ -1,156 +1,51 @@
-# Diagnóstico — WhatsApp Cloud (ManyTalks)
+# Diagnóstico: chat em `/app/accounts/67/dashboard`
 
-**Data:** 2026-10-21  
-**Modo:** safe-debug (somente leitura do código + relatórios existentes em `docs/reports/`)  
-**Escopo:** problemas **verificáveis** no código; sem patch aplicado.
+**Data:** 24/10/2026  
+**Escopo:** rota home de conversas (conta `67`, dev local)  
+**Método:** reprodução no browser (`localhost:3002`), chamadas API autenticadas, leitura de código e logs (`development.log`, terminal overmind).
 
----
+## Veredito
 
-## Resumo
+**Não há bug crítico bloqueando o chat na conta 67 no ambiente correto (Rails em `3002`).** A lista carrega 1 conversa, ao abrir `#/conversations/1` as 9 mensagens são buscadas e renderizadas no DOM.
 
-Além do bug já documentado (destino na **saída** sem alinhar variantes BR do `contact_inbox.source_id`), há **outros defeitos reais**, mas **nenhum** equivale a “plataforma inteira fora do ar”. O que mais degrada operação em produção continua sendo **limites e qualidade Meta** (ex.: 131049), não regressão única no core.
+Há **problemas de ambiente**, **performance no painel do contato** e **comportamentos que parecem defeito** mas são esperados pelo produto.
 
-Classificação usada:
+## Evidências
 
-| Nível | Significado |
-|-------|-------------|
-| **Crítico** | Perda silenciosa massiva, segurança grave explotável com baixo esforço, ou canal inutilizável para todos os clientes por bug de código |
-| **Grave** | Falhas frequentes de envio/recebimento, métricas falsas em campanha, ou risco de segurança relevante |
-| **Médio** | Impacto limitado a subset de contatos/fluxos ou inconsistência de status/UI |
-| **Baixo** | Edge case, observabilidade, débito técnico |
+| Sintoma / observação | Severidade | Causa provável | Evidência |
+|----------------------|------------|----------------|-----------|
+| Abrir `localhost:3000` não mostra o dashboard Chatwoot | **Alta (ambiente)** | Porta `3000` ocupada por `next-server` (ManyTalks IA); Rails/Puma em **`127.0.0.1:3002`** | `ss -tlnp`: `3000` → next, `3002` → ruby; curl em `3000` retorna HTML Next.js 404 |
+| Spinner no painel direito ao entrar no dashboard | **Baixa (transitório)** | `EmptyState` exibe loading enquanto `listLoadingStatus` ou `inboxes.isFetching` | `EmptyState.vue` L4–6; após carga `listLoading: false` no Vuex |
+| Só a lista de conversas no `/dashboard` (sem thread) | **Info (UX)** | Layout **expandido**: `showMessageView = !isOnExpandedLayout` sem `conversationId` | `ConversationView.vue` L104–108 |
+| Preview “Please rate the support” vs última atividade “John adicionou comercial” | **Info** | Card usa `last_non_activity_message`; array `messages` no payload traz só a última linha (inclui atividade) | API lista: `messages[0]` = atividade, `last_non_activity_message` = CSAT |
+| `GET .../contacts/192/contactable_inboxes` repetido + Bullet “AVOID eager loading” | **Média (perf)** | Painel lateral / compose chama `fetchContactableInbox`; `fetch_contact` faz `includes` que o Bullet considera desnecessário para essa action | Terminal overmind; `contacts_controller.rb` L303–306 |
+| `contactable_inboxes` → `payload: []` | **Info** | WebWidget: não permite novo contato se já existe conversa no inbox | `ContactableInboxesService#website_contactable_inbox` L37–43 |
+| Thread “só uma mensagem” no snapshot a11y | **Falso positivo** | 9 mensagens no Vuex e `#message11`…`#message19` no DOM | CDP `Runtime.evaluate` após abrir conversa 1 |
 
----
+### Conta 67 (dados)
 
-## Achados confirmados (ordenados por severidade)
+- Nome: **Acme Inc**
+- Inbox: `164` (Acme Support, WebWidget)
+- Conversa: `display_id` **1** (`id` interno 131), contato **jane** (`192`)
+- APIs com token: lista `200`, mensagens `/conversations/1/messages` `200` (9 mensagens)
 
-### 1. Webhook POST sem validação `X-Hub-Signature-256` — **Grave (segurança)**
+### O que **não** é defeito do chat nesta rota
 
-**Evidência:** não há referência a `Hub-Signature` / `X-Hub` no repositório. O controller aceita qualquer corpo e enfileira o job:
+- Alterações locais em `App.vue` / `conversations/actions.js` (Sentry diagnostics) não mudam fluxo de mensagens.
+- Jobs `Notification::*` com `DeserializationError` no log são ruído de dev (notificações apagadas), não da thread.
 
-- `app/controllers/webhooks/whatsapp_controller.rb` → `perform_later(params.to_unsafe_hash)` + `head :ok`
-- Rota: `POST webhooks/whatsapp/:phone_number` (`config/routes.rb`)
+## Confiança
 
-**O que pode ocasionar:** quem conhece ou descobre o número E.164 na URL pode **injetar eventos falsos** (mensagens/status), poluir conversas, disparar automações ou confundir atendentes. A verificação GET (`hub.verify_token`) **não protege** POSTs.
+| Item | Confiança |
+|------|-----------|
+| Chat funcional em `3002` conta 67 | **Alta** (reproduzido) |
+| Conflito de porta 3000 | **Alta** |
+| Preview lista vs atividade | **Alta** (payload API) |
+| Bullet / contactable_inboxes | **Média** (log + código; impacto depende de uso do painel) |
 
-**Nota:** padrão herdado do Chatwoot upstream; ainda assim é **verdadeiro** no fork.
+## Reprodução recomendada
 
-**Crítico?** Não automaticamente — depende de exposição da URL e camadas externas (WAF, secret na URL). Para SaaS multi-tenant, tratar como **grave** até haver assinatura com App Secret.
-
----
-
-### 2. Assimetria entrada/saída do destino BR (9º dígito) — **Grave (entrega), baixa frequência global**
-
-**Evidência:**
-
-- Entrada: `Contacts::BrazilPhoneNormalizer` em `ContactInboxWithContactBuilder` / `processed_waid`
-- Saída template: sempre `contact_inbox.source_id` (`send_on_whatsapp_service.rb:35`)
-- Saída sessão: `source_id` cru, fallback só para UUID (`send_on_whatsapp_service.rb:115-121`)
-
-**O que pode ocasionar:** POST rejeitado pela Meta (ex. **131000**), mensagem `failed`, campanhas/follow-ups perdidos para contatos com mismatch (286 na inbox 610 no relatório AGTU).
-
-**Crítico?** **Não** — ~0,12% dos 131000 em 30 dias no caso AGTU; **grave** para contatos afetados e para confiança em BR.
-
----
-
-### 3. Campanha WhatsApp marca sucesso com `sleep(2)` — **Grave (dados operacionais)**
-
-**Evidência:** `app/jobs/campaigns/send_contact_job.rb` cria mensagem (assíncrono `SendReplyJob`) e após **2 segundos** considera sucesso se `message.failed?` for falso.
-
-**O que pode ocasionar:** fila lenta ou falha após 2s → campanha **conta envio OK** enquanto a mensagem falha depois (131049, 131000, token, etc.). Relatório de campanha **mentiroso**; decisões comerciais erradas.
-
-**Crítico?** Não para entrega individual (mensagem ainda pode falhar na UI), mas **grave** para governança de disparos em massa.
-
----
-
-### 4. `can_reply?` ≠ janela real da Meta — **Grave (entrega), médio em volume**
-
-**Evidência:** `Conversation#can_reply?` usa só **última mensagem incoming** + 24h (`conversation.rb:124-163`). Não consulta estado da Graph API nem janelas abertas por template utility/auth.
-
-**O que pode ocasionar:**
-
-- Fora da janela Meta mas `can_reply?` true → `send_session_message` → **131047** (re-engagement) ou outro erro.
-- Dentro de janela aberta por template, mas sem incoming recente → força template (`template_params` ou `!can_reply?`) → mais **marketing** e **131049**.
-
-**Crítico?** Não; **grave** em contas com muito follow-up (caso AGTU).
-
----
-
-### 5. `template_params` presente força template mesmo dentro de 24h — **Médio/Grave (custo e 131049)**
-
-**Evidência:** `should_send_template_message = template_params.present? || !message.conversation.can_reply?` (`send_on_whatsapp_service.rb:19-21`).
-
-**O que pode ocasionar:** automações/macros/campanhas com `template_params` sempre pagam categoria template e contam limite de marketing, mesmo quando texto livre seria permitido na sessão.
-
-**Crítico?** Não; alinha com dor **131049** do relatório AGTU.
-
----
-
-### 6. Status webhook ignorado se mensagem ainda não tem `source_id` — **Médio**
-
-**Evidência:** `process_statuses` faz `return unless find_message_by_source_id(...)` (`incoming_message_base_service.rb:46-48`). `source_id` só é gravado após resposta HTTP em `process_response`.
-
-**O que pode ocasionar:** corrida entre webhook `delivered`/`read`/`failed` e `SendReplyJob` → status **não atualiza**; UI pode ficar desatualizada (permanece `sent`). Falha tardia via webhook pode não refletir se o lookup falhar.
-
-**Crítico?** Não.
-
----
-
-### 7. Webhooks descartados com canal em `reauthorization_required` — **Médio (perda enquanto dura)**
-
-**Evidência:** `Webhooks::WhatsappEventsJob#channel_is_inactive?` retorna true se `reauthorization_required?` (`whatsapp_events_job.rb:81-86`).
-
-**O que pode ocasionar:** durante token inválido/expirado, **mensagens recebidas não entram** até reconectar (Meta não reenvia indefinidamente).
-
-**Crítico?** Não — comportamento defensivo; impacto **grave** só se reconexão demorar.
-
----
-
-### 8. Resolução de canal por payload Meta frágil — **Médio**
-
-**Evidência:** `get_channel_from_wb_payload` exige `phone_number` **e** `phone_number_id` iguais ao DB; senão tenta eco (`whatsapp_events_job.rb:101-113`).
-
-**O que pode ocasionar:** `provider_config['phone_number_id']` desatualizado → canal `nil` → webhook **logado e ignorado** (`Inactive WhatsApp channel`).
-
-**Crítico?** Não; configuração/ops.
-
----
-
-### 9. Versão Graph `v13.0` no envio vs `v22.0` em templates — **Baixo (débito técnico)**
-
-**Evidência:** `phone_id_path` fixo em v13.0; `api_version` default v22.0 (`whatsapp_cloud_service.rb:102-117`, TODO no arquivo).
-
-**O que pode ocasionar:** em teoria, comportamento divergente ou depreciação futura; **não há prova** de ser causa dos 131000 (maioria dos envios funciona).
-
-**Crítico?** Não.
-
----
-
-### 10. Corpo completo do erro Meta não persistido — **Baixo (observabilidade)**
-
-**Evidência:** `process_response` grava só `external_error` humanizado (`whatsapp_cloud_service.rb:251-260`).
-
-**O que pode ocasionar:** suporte sem `fbtrace_id` no banco; diagnóstico mais lento (já citado nos relatórios AGTU).
-
----
-
-## O que **não** classificamos como bug crítico de código
-
-| Sintoma relatório AGTU | Causa principal verificada |
-|------------------------|----------------------------|
-| 79,5% falhas 131049 | Limite marketing Meta + qualidade YELLOW + volume |
-| 131000 com destino “correto” | Meta / throttling / genérico — maioria dos casos |
-| Token OK em health check | Canal não “desconectado” no sentido de credencial |
-
----
-
-## Referências de código
-
-| Arquivo | Tema |
-|---------|------|
-| `app/services/whatsapp/send_on_whatsapp_service.rb` | Destino saída, template vs sessão |
-| `app/controllers/webhooks/whatsapp_controller.rb` | Webhook POST |
-| `app/jobs/webhooks/whatsapp_events_job.rb` | Canal inativo, roteamento |
-| `app/jobs/campaigns/send_contact_job.rb` | `sleep(2)` sucesso campanha |
-| `app/models/conversation.rb` | `can_reply?` |
-| `app/services/whatsapp/incoming_message_base_service.rb` | Status webhook |
-| `app/services/whatsapp/providers/whatsapp_cloud_service.rb` | Envio, erros, versão API |
+1. Usar **`http://localhost:3002/app/accounts/67/dashboard`** (ou alinhar `Procfile.dev` / matar processo na 3000).
+2. Login `john@acme.inc` (seed).
+3. Abrir conversa **jane** → rota `/conversations/1`.
+4. DevTools → Network: `conversations?status=open`, `conversations/1/messages`, opcional `contacts/192/contactable_inboxes`.

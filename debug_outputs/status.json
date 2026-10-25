@@ -1,25 +1,42 @@
 {
-  "skill": "safe-debug",
-  "scope": "whatsapp_cloud_integration",
-  "date": "2026-10-21",
-  "code_modified": false,
-  "patch_requires_approval": true,
-  "findings_count": 10,
-  "critical_code_bugs": 0,
-  "severe_findings": 4,
-  "artifacts": [
-    "debug_outputs/DIAGNOSIS.md",
-    "debug_outputs/PATCH_PLAN.md",
-    "debug_outputs/status.json"
+  "scope": "/app/accounts/67/dashboard",
+  "account_id": 67,
+  "environment": "development",
+  "rails_url": "http://127.0.0.1:3002",
+  "port_conflict": {
+    "3000": "next-server (ManyTalks IA)",
+    "3002": "puma/rails (Chatwoot)"
+  },
+  "phase": "root_cause_investigation_complete",
+  "code_changes_applied": false,
+  "chat_functional_on_correct_port": true,
+  "conversation_display_id_tested": 1,
+  "messages_loaded_count": 9,
+  "issues": [
+    {
+      "id": "env-port-3000",
+      "severity": "high",
+      "category": "environment",
+      "summary": "Dashboard Chatwoot não está na porta 3000 neste host"
+    },
+    {
+      "id": "contactable-inboxes-bullet",
+      "severity": "medium",
+      "category": "performance",
+      "summary": "Eager loading desnecessário em fetch_contact/contactable_inboxes"
+    },
+    {
+      "id": "preview-last-non-activity",
+      "severity": "low",
+      "category": "ux_expected",
+      "summary": "Preview da lista usa última mensagem não-atividade, não última atividade"
+    },
+    {
+      "id": "webwidget-empty-contactable",
+      "severity": "low",
+      "category": "ux_expected",
+      "summary": "contactable_inboxes vazio quando já existe conversa WebWidget"
+    }
   ],
-  "top_verified_issues": [
-    "webhook_post_no_signature_validation",
-    "outbound_br_phone_destination_asymmetry",
-    "campaign_sleep_2_false_success",
-    "can_reply_not_meta_window"
-  ],
-  "agtu_context": {
-    "primary_failure_driver": "meta_131049_marketing_limits",
-    "code_contributes": "partial_131000_via_source_id_mismatch"
-  }
+  "next_step": "Aprovar item 1 (ambiente) ou item 2 (perf) antes de patch"
 }

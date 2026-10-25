@@ -73,9 +73,13 @@ class AutomationRules::ConditionsFilterService < FilterService
     message_filter = @message_filters[query_hash['attribute_key']]
 
     if conversation_filter
-      @query_string += conversation_query_string('conversations', conversation_filter, query_hash.with_indifferent_access, current_index)
+      with_filter_config(entity: 'Conversation', table_name: 'conversations') do
+        @query_string += conversation_query_string(conversation_filter, query_hash.with_indifferent_access, current_index)
+      end
     elsif contact_filter
-      @query_string += contact_query_string(contact_filter, query_hash.with_indifferent_access, current_index)
+      with_filter_config(entity: 'Contact', table_name: 'contacts') do
+        @query_string += contact_query_string(contact_filter, query_hash.with_indifferent_access, current_index)
+      end
     elsif message_filter
       @query_string += message_query_string(message_filter, query_hash.with_indifferent_access, current_index)
     elsif custom_attribute(query_hash['attribute_key'], @account, query_hash['custom_attribute_type'])
@@ -138,34 +142,49 @@ class AutomationRules::ConditionsFilterService < FilterService
     attribute_key = query_hash['attribute_key']
     query_operator = query_hash['query_operator']
 
-    filter_operator_value = filter_operation(query_hash, current_index)
-
     case current_filter['attribute_type']
     when 'additional_attributes'
+      filter_operator_value = filter_operation(query_hash, current_index)
       " contacts.additional_attributes ->> '#{attribute_key}' #{filter_operator_value} #{query_operator} "
     when 'standard'
+      return " #{tag_filter_query(query_hash, current_index)} " if current_filter['data_type'] == 'labels'
+
+      filter_operator_value = filter_operation(query_hash, current_index)
       " contacts.#{attribute_key} #{filter_operator_value} #{query_operator} "
     end
   end
 
-  def conversation_query_string(table_name, current_filter, query_hash, current_index)
+  def conversation_query_string(current_filter, query_hash, current_index)
     attribute_key = query_hash['attribute_key']
     query_operator = query_hash['query_operator']
-    filter_operator_value = filter_operation(query_hash, current_index)
 
     case current_filter['attribute_type']
     when 'additional_attributes'
-      " #{table_name}.additional_attributes ->> '#{attribute_key}' #{filter_operator_value} #{query_operator} "
+      filter_operator_value = filter_operation(query_hash, current_index)
+      " #{filter_config[:table_name]}.additional_attributes ->> '#{attribute_key}' #{filter_operator_value} #{query_operator} "
     when 'standard'
-      if attribute_key == 'labels'
-        " tags.id #{filter_operator_value} #{query_operator} "
-      else
-        " #{table_name}.#{attribute_key} #{filter_operator_value} #{query_operator} "
-      end
+      # Reuse FilterService#tag_filter_query (EXISTS on taggings/tags) — same path as listagem.
+      # Never reference tags.id without a JOIN; that aborts the PG transaction under with_lock.
+      return " #{tag_filter_query(query_hash, current_index)} " if current_filter['data_type'] == 'labels'
+
+      filter_operator_value = filter_operation(query_hash, current_index)
+      " #{filter_config[:table_name]}.#{attribute_key} #{filter_operator_value} #{query_operator} "
     end
   end
 
+  def filter_config
+    @filter_config || { entity: 'Conversation', table_name: 'conversations' }
+  end
+
   private
+
+  def with_filter_config(entity:, table_name:)
+    previous = @filter_config
+    @filter_config = { entity: entity, table_name: table_name }
+    yield
+  ensure
+    @filter_config = previous
+  end
 
   def base_relation
     records = Conversation.where(id: @conversation.id).joins(

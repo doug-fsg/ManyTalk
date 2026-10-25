@@ -106,6 +106,7 @@
           :pipeline-id="pipelineId"
           :filters="filters"
           :show-assignee-filter="showAssigneeFilter"
+          :attribute-values="attributeValues"
           @filters-changed="handleFiltersChanged"
           @win-lost-filter="handleWinLostFilter"
         />
@@ -221,6 +222,7 @@ import { directive as onClickaway } from 'vue-clickaway';
 import KanbanFilters from './KanbanFilters.vue';
 import KanbanSort from './KanbanSort.vue';
 import { DEFAULT_KANBAN_SORT } from '../utils/kanbanSortHelper';
+import { DEFAULT_KANBAN_FILTERS } from '../utils/kanbanFilterState';
 
 export default {
   name: 'KanbanHeader',
@@ -255,19 +257,15 @@ export default {
     },
     filters: {
       type: Object,
-      default: () => ({
-        labels: [],
-        dealValueMin: null,
-        dealValueMax: null,
-        dateFrom: null,
-        dateTo: null,
-        assignees: [],
-        winLost: 'open',
-      }),
+      default: () => ({ ...DEFAULT_KANBAN_FILTERS }),
     },
     showAssigneeFilter: {
       type: Boolean,
       default: false,
+    },
+    attributeValues: {
+      type: Array,
+      default: () => [],
     },
     sortBy: {
       type: String,

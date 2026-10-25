@@ -98,6 +98,10 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
     contacts = filter_by_account_form(contacts) if params[:account_form_id].present?
     @contacts_count = contacts.count
     @contacts = fetch_contacts(contacts)
+    @contact_labels_by_id = Contacts::KanbanLabelsPreloader.new(
+      Current.account,
+      @contacts.map(&:id)
+    ).labels_by_contact_id
   rescue CustomExceptions::CustomFilter::InvalidAttribute,
          CustomExceptions::CustomFilter::InvalidOperator,
          CustomExceptions::CustomFilter::InvalidValue => e

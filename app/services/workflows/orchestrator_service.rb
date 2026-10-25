@@ -226,7 +226,8 @@ module Workflows
         when 'trigger'
           move_to_next(workflow, enrollment, conversation, node_id, depth: depth)
         when 'action'
-          execute_action(workflow, enrollment, conversation, node)
+          return unless execute_action(workflow, enrollment, conversation, node)
+
           move_to_next(workflow, enrollment, conversation, node_id, depth: depth)
         when 'ai_outreach'
           execute_ai_outreach(workflow, enrollment, conversation, node)
@@ -254,7 +255,7 @@ module Workflows
       def execute_action(workflow, enrollment, conversation, node)
         data = node['data'] || {}
         items = Workflows::ActionNodeData.items(data)
-        return if items.blank?
+        return true if items.blank?
 
         conversation = enrollment.reload.conversation
         service = Workflows::ActionService.new(
@@ -281,13 +282,15 @@ module Workflows
               executed_at: Time.current
             )
             Workflows::ActivityLogger.log_failed(conversation, workflow)
-            return
+            return false
           end
 
-          return if enrollment_stopped?(enrollment)
+          return false if enrollment_stopped?(enrollment)
 
           wait_after_send_action(action_name, index, items.length)
         end
+
+        true
       end
 
       def wait_after_send_action(action_name, current_index, total)
@@ -464,10 +467,10 @@ module Workflows
 
         case node['type']
         when 'action'
-          execute_action(workflow, enrollment, conversation, node)
-          execution = enrollment.workflow_step_executions.find_by(node_id: node['id'])
-          mark_step_completed(enrollment, node['id']) unless execution&.status == 'failed'
-          move_to_next(workflow, enrollment.reload, conversation, node['id'], depth: 0)
+          if execute_action(workflow, enrollment, conversation, node)
+            mark_step_completed(enrollment, node['id'])
+            move_to_next(workflow, enrollment.reload, conversation, node['id'], depth: 0)
+          end
         when 'ai_outreach'
           execute_ai_outreach(workflow, enrollment, conversation, node)
           mark_step_completed(enrollment, node['id'])

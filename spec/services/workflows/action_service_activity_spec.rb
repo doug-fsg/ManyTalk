@@ -11,6 +11,10 @@ RSpec.describe Workflows::ActionService do
 
   after { Current.reset }
 
+  it 'returns false when send_whatsapp_external params are invalid' do
+    expect(service.perform_action('send_whatsapp_external', [0, '', 'Olá'])).to be(false)
+  end
+
   it 'logs webhook activity after sending' do
     expect(WebhookJob).to receive(:perform_later)
     expect(Conversations::ActivityMessageJob).to receive(:perform_later).with(

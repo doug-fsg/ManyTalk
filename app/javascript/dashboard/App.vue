@@ -47,6 +47,7 @@ import {
   verifyServiceWorkerExistence,
 } from './helper/pushHelper';
 import ReconnectService from 'dashboard/helper/ReconnectService';
+import { syncSentryUserContext } from 'dashboard/helper/sentryDiagnostics';
 
 export default {
   name: 'App',
@@ -96,17 +97,20 @@ export default {
       if (!this.hasAccounts) {
         this.showAddAccountModal = true;
       }
+      this.syncSentryContext();
     },
     currentAccountId() {
       if (this.currentAccountId) {
         this.initializeAccount();
       }
+      this.syncSentryContext();
     },
   },
   mounted() {
     this.initializeColorTheme();
     this.listenToThemeChanges();
     this.setLocale(window.chatwootConfig.selectedLocale);
+    this.syncSentryContext();
   },
   beforeDestroy() {
     if (this.reconnectService) {
@@ -114,6 +118,12 @@ export default {
     }
   },
   methods: {
+    syncSentryContext() {
+      syncSentryUserContext({
+        user: this.currentUser,
+        accountId: this.currentAccountId,
+      });
+    },
     initializeColorTheme() {
       setColorTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
     },

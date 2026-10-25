@@ -6,5 +6,6 @@ end
 json.payload do
   json.array! @contacts do |contact|
     json.partial! 'api/v1/models/contact', formats: [:json], resource: contact, with_contact_inboxes: @include_contact_inboxes
+    json.labels(@contact_labels_by_id&.dig(contact.id) || [])
   end
 end

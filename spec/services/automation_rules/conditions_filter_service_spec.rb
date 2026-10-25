@@ -63,6 +63,73 @@ RSpec.describe AutomationRules::ConditionsFilterService do
       end
     end
 
+    context 'when conditions based on conversation labels' do
+      before do
+        create(:label, account: account, title: 'passou_preco')
+        conversation.add_labels(['passou_preco'])
+      end
+
+      it 'returns true when conversation has the label (equal_to)' do
+        rule.conditions = [
+          { 'values' => ['passou_preco'], 'attribute_key' => 'labels', 'query_operator' => nil, 'filter_operator' => 'equal_to' }
+        ]
+        rule.save
+
+        expect(described_class.new(rule, conversation, { changed_attributes: {} }).perform).to be(true)
+      end
+
+      it 'returns false when conversation does not have the label (equal_to)' do
+        rule.conditions = [
+          { 'values' => ['outra_label'], 'attribute_key' => 'labels', 'query_operator' => nil, 'filter_operator' => 'equal_to' }
+        ]
+        rule.save
+
+        expect(described_class.new(rule, conversation, { changed_attributes: {} }).perform).to be(false)
+      end
+
+      it 'returns true when conversation does not have the label (not_equal_to)' do
+        rule.conditions = [
+          { 'values' => ['outra_label'], 'attribute_key' => 'labels', 'query_operator' => nil, 'filter_operator' => 'not_equal_to' }
+        ]
+        rule.save
+
+        expect(described_class.new(rule, conversation, { changed_attributes: {} }).perform).to be(true)
+      end
+
+      it 'returns true when any label is present (is_present)' do
+        rule.conditions = [
+          { 'values' => [], 'attribute_key' => 'labels', 'query_operator' => nil, 'filter_operator' => 'is_present' }
+        ]
+        rule.save
+
+        expect(described_class.new(rule, conversation, { changed_attributes: {} }).perform).to be(true)
+      end
+
+      it 'returns false when no labels (is_not_present)' do
+        conversation.update!(label_list: [])
+        rule.conditions = [
+          { 'values' => [], 'attribute_key' => 'labels', 'query_operator' => nil, 'filter_operator' => 'is_not_present' }
+        ]
+        rule.save
+
+        expect(described_class.new(rule, conversation, { changed_attributes: {} }).perform).to be(true)
+      end
+
+      it 'does not abort the surrounding transaction when evaluating labels' do
+        rule.conditions = [
+          { 'values' => ['passou_preco'], 'attribute_key' => 'labels', 'query_operator' => nil, 'filter_operator' => 'equal_to' }
+        ]
+        rule.save
+
+        expect do
+          ActiveRecord::Base.transaction do
+            expect(described_class.new(rule, conversation, { changed_attributes: {} }).perform).to be(true)
+            conversation.update!(updated_at: Time.current)
+          end
+        end.not_to raise_error
+      end
+    end
+
     context 'when conditions based on messages attributes' do
       context 'when filter_operator is equal_to' do
         before do

@@ -13,6 +13,7 @@ import {
 } from './helpers/actionHelpers';
 import messageReadActions from './actions/messageReadActions';
 import messageTranslateActions from './actions/messageTranslateActions';
+import { withOperationDiagnostics } from 'dashboard/helper/sentryDiagnostics';
 
 export const hasMessageFailedWithExternalError = pendingMessage => {
   // This helper is used to check if the message has failed with an external error.
@@ -80,10 +81,20 @@ const actions = {
   },
 
   fetchPreviousMessages: async ({ commit }, data) => {
+    const diagnosticContext = {
+      conversation_id: data.conversationId,
+      before: data.before,
+      after: data.after,
+    };
+
     try {
       const {
         data: { meta, payload },
-      } = await MessageApi.getPreviousMessages(data);
+      } = await withOperationDiagnostics(
+        'conversation.fetch_previous_messages',
+        diagnosticContext,
+        () => MessageApi.getPreviousMessages(data)
+      );
       commit(`conversationMetadata/${types.SET_CONVERSATION_METADATA}`, {
         id: data.conversationId,
         data: meta,
@@ -96,7 +107,7 @@ const actions = {
         commit(types.SET_ALL_MESSAGES_LOADED);
       }
     } catch (error) {
-      // Handle error
+      // Handle error (failure already reported to Sentry when diagnostics are enabled)
     }
   },
 
