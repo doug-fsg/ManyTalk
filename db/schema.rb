@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_10_07_020000) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_29_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -169,6 +169,32 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_07_020000) do
     t.boolean "capitao", default: false, null: false
     t.index ["account_id"], name: "index_agent_bots_on_account_id"
     t.index ["capitao"], name: "index_agent_bots_unique_capitao", unique: true, where: "(capitao IS TRUE)"
+  end
+
+  create_table "ai_attendant_configs", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.integer "inbox_id", null: false
+    t.boolean "active", default: false, null: false
+    t.string "pause_reason"
+    t.string "digital_agent_name"
+    t.text "agent_role"
+    t.text "agent_duties"
+    t.text "agent_objective"
+    t.jsonb "behavior_steps", default: [], null: false
+    t.text "company_context"
+    t.jsonb "topics_to_avoid", default: [], null: false
+    t.text "handoff_conditions"
+    t.text "handoff_customer_message"
+    t.string "schedule_mode", default: "always", null: false
+    t.boolean "detect_language", default: false, null: false
+    t.integer "debounce_seconds", default: 5, null: false
+    t.string "many_ia_config_id"
+    t.bigint "sender_user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "inbox_id"], name: "index_ai_attendant_configs_on_account_id_and_inbox_id", unique: true
+    t.index ["account_id"], name: "index_ai_attendant_configs_on_account_id"
+    t.index ["sender_user_id"], name: "index_ai_attendant_configs_on_sender_user_id"
   end
 
   create_table "applied_slas", force: :cascade do |t|
@@ -1259,6 +1285,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_07_020000) do
   add_foreign_key "activities", "inboxes"
   add_foreign_key "activities", "users"
   add_foreign_key "activities", "users", column: "assignee_id"
+  add_foreign_key "ai_attendant_configs", "accounts"
+  add_foreign_key "ai_attendant_configs", "users", column: "sender_user_id"
   add_foreign_key "contact_inboxes", "contacts", on_delete: :cascade
   add_foreign_key "contact_inboxes", "inboxes", on_delete: :cascade
   add_foreign_key "contact_pipeline_events", "accounts"

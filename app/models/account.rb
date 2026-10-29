@@ -45,6 +45,7 @@ class Account < ApplicationRecord
   has_many :workflows, dependent: :destroy_async
   has_many :workflow_schedules, dependent: :destroy_async
   has_many :account_forms, dependent: :destroy_async
+  has_many :ai_attendant_configs, dependent: :destroy_async
   has_many :workflow_enrollments, dependent: :destroy_async
   has_many :macros, dependent: :destroy_async
   has_many :campaigns, dependent: :destroy_async
