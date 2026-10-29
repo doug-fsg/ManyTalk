@@ -135,3 +135,5 @@
   enabled: false
 - name: custom_roles
   enabled: false
+- name: atendimento_ia_nativo
+  enabled: false

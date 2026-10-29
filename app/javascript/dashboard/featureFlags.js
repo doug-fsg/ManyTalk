@@ -2,6 +2,7 @@ export const FEATURE_FLAGS = {
   AGENT_BOTS: 'agent_bots',
   WOOFED: 'kanban',
   IA: 'inteligencia_artificial',
+  ATENDIMENTO_IA_NATIVO: 'atendimento_ia_nativo',
   AGENT_MANAGEMENT: 'agent_management',
   AUTO_RESOLVE_CONVERSATIONS: 'auto_resolve_conversations',
   AUTOMATIONS: 'automations',
