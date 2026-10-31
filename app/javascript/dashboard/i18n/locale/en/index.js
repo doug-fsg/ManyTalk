@@ -38,6 +38,7 @@ import customRole from './customRole.json';
 import inbox from './inbox.json';
 import general from './general.json';
 import datePicker from './datePicker.json';
+import aiAttendant from './aiAttendant.json';
 
 export default {
   ...activities,
@@ -80,4 +81,5 @@ export default {
   ...inbox,
   ...general,
   ...datePicker,
+  ...aiAttendant,
 };

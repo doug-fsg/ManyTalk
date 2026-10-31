@@ -1,0 +1,266 @@
+{
+  "AI_ATTENDANT": {
+    "HEADER": "AI attendant",
+    "DESCRIPTION": "Configure the digital attendant per inbox. The AI model is managed by the platform.",
+    "HEADER_BTN_TXT": "Add configuration",
+    "LOADING": "Loading AI configurations",
+    "ERROR": "Something went wrong. Please try again",
+    "USAGE": {
+      "TITLE": "Quota usage",
+      "SUBTITLE": "AI attendance consumption on this account.",
+      "STAT_LIMIT": "Quota",
+      "STAT_USED": "Used",
+      "STAT_REMAINING": "Remaining",
+      "PROGRESS_LABEL": "Quota consumption",
+      "LIMIT": "Quota: {limit}",
+      "USED": "Used: {used}",
+      "REMAINING": "Remaining: {remaining}",
+      "UNLIMITED": "Unlimited",
+      "PAUSED": "Paused. Quota reached",
+      "PAUSED_HELP": "AI attendance is paused because the quota was reached. Contact Manytalks support.",
+      "TOGGLE": "Quota usage",
+      "TOGGLE_HIDE": "Hide quota"
+    },
+    "LIST": {
+      "404": "No AI attendant configurations on this account.",
+      "INBOX": "Inbox",
+      "AGENT": "Attendant",
+      "SCHEDULE": "Schedule",
+      "STATUS": "Status",
+      "ACTIONS": "Actions",
+      "UNNAMED_AGENT": "Unnamed",
+      "UNKNOWN_INBOX": "Inbox #{id}",
+      "ACTIVE": "Active",
+      "INACTIVE": "Inactive",
+      "PAUSED_ADMIN": "Paused by administrator",
+      "PAUSED_CREDITS": "Paused for credits"
+    },
+    "SCHEDULE": {
+      "always": "Always",
+      "within_inbox_hours": "During inbox hours",
+      "outside_inbox_hours": "Outside inbox hours"
+    },
+    "FORM": {
+      "INBOX": {
+        "LABEL": "Inboxes",
+        "PLACEHOLDER": "Select one or more inboxes",
+        "ERROR": "Select at least one inbox"
+      },
+      "AVATAR": {
+        "LABEL": "Avatar",
+        "OPEN": "Choose avatar",
+        "ERROR": "Choose an avatar",
+        "OPTIONS": {
+          "avatar_1": "Avatar 1",
+          "avatar_2": "Avatar 2",
+          "avatar_3": "Avatar 3",
+          "avatar_4": "Avatar 4",
+          "avatar_5": "Avatar 5",
+          "avatar_6": "Avatar 6"
+        }
+      },
+      "NAME": {
+        "LABEL": "Attendant name",
+        "PLACEHOLDER": "e.g. Lia",
+        "ERROR": "Enter an attendant name before activating"
+      },
+      "ROLE": {
+        "LABEL": "Who they are",
+        "PLACEHOLDER": "Describe the attendant's role"
+      },
+      "DUTIES": {
+        "LABEL": "What they do",
+        "PLACEHOLDER": "List the responsibilities"
+      },
+      "OBJECTIVE": {
+        "LABEL": "Objective",
+        "PLACEHOLDER": "What outcome is expected"
+      },
+      "STEPS": {
+        "LABEL": "Service playbook",
+        "HINT": "Order matters: the AI follows these steps in sequence.",
+        "PLACEHOLDER": "One step per line",
+        "MODE_LABEL": "Mode",
+        "MODE_GUIDE": "Guide",
+        "MODE_STRICT": "Strict",
+        "MODE_GUIDE_HELP": "All steps stay visible. Follow the order.",
+        "MODE_STRICT_HELP": "Only the current step is visible until it is done.",
+        "STEP_TITLE": "Step {n}",
+        "INSTRUCTION": "What to do in this step",
+        "INSTRUCTION_PLACEHOLDER": "E.g. Greet and ask for their name.",
+        "COMPLETION": "Consider complete when",
+        "COMPLETION_PLACEHOLDER": "E.g. The customer provided their name.",
+        "ADD": "Add step",
+        "REMOVE": "Remove",
+        "DRAG": "Reorder step",
+        "PREVIEW_TITLE": "Prompt preview",
+        "PREVIEW_EMPTY": "Add at least one step to see the preview.",
+        "PREVIEW_SIMULATE": "Simulate current step (strict mode)"
+      },
+      "COMPANY": {
+        "LABEL": "Company context",
+        "PLACEHOLDER": "Information the attendant should know"
+      },
+      "TOPICS": {
+        "LABEL": "Topics to avoid",
+        "PLACEHOLDER": "One topic per line",
+        "SHOW": "Topics to avoid (optional)",
+        "HIDE": "Hide topics to avoid"
+      },
+      "HANDOFF_CONDITIONS": {
+        "LABEL": "When to hand off to a human",
+        "PLACEHOLDER": "Conditions to call a human agent",
+        "OPEN": "Choose situations",
+        "EMPTY": "No situations selected",
+        "SUMMARY": "{count} situations selected",
+        "SUMMARY_WITH_EXTRA": "{count} situations + extra text",
+        "SUMMARY_CUSTOM": "Custom text",
+        "MODAL_TITLE": "Human handoff",
+        "MODAL_HELP": "Choose when the AI should hand off to a human.",
+        "EXTRA_LABEL": "Another reason (optional)",
+        "EXTRA_PLACEHOLDER": "Describe a case that is not in the list",
+        "APPLY": "Apply"
+      },
+      "HANDOFF_PRESETS": {
+        "ask_human": "The customer asked to speak with a human",
+        "complaint": "The customer is unhappy or complaining",
+        "unknown": "The AI cannot answer with confidence",
+        "cancel": "Cancellation or refund request",
+        "payment": "Payment, invoice, or billing question",
+        "legal": "Legal, contract, or privacy matter",
+        "urgent": "Urgent or high-risk situation"
+      },
+      "HANDOFF_MESSAGE": {
+        "LABEL": "Handoff message",
+        "PLACEHOLDER": "Optional. Sent if no agent is available",
+        "SHOW": "Handoff message (optional)",
+        "HIDE": "Hide handoff message"
+      },
+      "SCHEDULE": {
+        "LABEL": "When to attend"
+      },
+      "DETECT_LANGUAGE": {
+        "LABEL": "Detect contact language"
+      },
+      "DEBOUNCE": {
+        "LABEL": "Wait between messages (seconds)",
+        "HELP": "From 1 to 30. Default: 5."
+      },
+      "ACTIVE": {
+        "LABEL": "Enable attendant"
+      },
+      "VARIABLES_HINT": "Type { to insert an attachment in text fields.",
+      "FILES": {
+        "LABEL": "Files the AI can send",
+        "HELP": "Use { in text fields to reference an attachment.",
+        "INSERT": "Use in field",
+        "INSERTED": "{token} was inserted into the focused field",
+        "COPIED": "{token} copied. Paste it in any field or type { to pick one.",
+        "COPY_ERROR": "Unable to copy the variable",
+        "DROP_LABEL": "Drop a file here or click to choose",
+        "DROP_HINT": "Up to 10 files, 10 MB each.",
+        "UPLOADING": "Uploading…",
+        "REMOVE": "Remove file",
+        "MAX_ERROR": "You already added the maximum of 10 files",
+        "SIZE_ERROR": "{name} is larger than 10 MB",
+        "UPLOAD_ERROR": "Unable to upload {name}",
+        "NAME_LABEL": "Short variable name",
+        "NAME_PLACEHOLDER": "e.g. catalog",
+        "NAME_ERROR": "Use 2 to 24 characters: letters, numbers, hyphen, or underscore.",
+        "NAME_REQUIRED": "Give every attachment a short name before saving",
+        "NAME_TAKEN": "An attachment named {name} already exists",
+        "TOKEN_LINKED": "File {name} is in your attachments",
+        "TOKEN_MISSING": "No attachment named \"{name}\" in the list",
+        "TOKEN_SAVE_BLOCKED": "Fix attachment {token} before saving. It does not match any file in the list."
+      },
+      "SUBMIT": "Save",
+      "CANCEL": "Cancel"
+    },
+    "TABS": {
+      "IDENTITY": "Identity",
+      "PLAYBOOK": "Playbook",
+      "RULES": "Context and handoff",
+      "OPERATION": "Operation",
+      "IDENTITY_HELP": "Inbox, attendant name, and personality.",
+      "PLAYBOOK_HELP": "Sequential steps the AI should follow.",
+      "RULES_HELP": "Company information, boundaries, and human handoff.",
+      "OPERATION_HELP": "Schedule, message wait time, and activation."
+    },
+    "SECTIONS": {
+      "SETUP": "Inbox and identity",
+      "SETUP_HELP": "Choose where the attendant runs and how it is identified in conversations.",
+      "PERSONA": "Personality",
+      "PERSONA_HELP": "Role, responsibilities, and goal.",
+      "PLAYBOOK": "Service playbook",
+      "PLAYBOOK_HELP": "Sequential steps the AI should follow during the conversation.",
+      "KNOWLEDGE": "Context and boundaries",
+      "KNOWLEDGE_HELP": "Company information and topics the attendant should avoid.",
+      "HANDOFF": "Human handoff",
+      "HANDOFF_HELP": "When to transfer the conversation and what to tell the customer.",
+      "OPERATION": "Operation",
+      "OPERATION_HELP": "Schedule, wait time between messages, and advanced options."
+    },
+    "ADD": {
+      "TITLE": "New AI configuration",
+      "DESC": "Set up the attendant for an inbox.",
+      "API": {
+        "SUCCESS_MESSAGE": "Configuration created successfully",
+        "ERROR_MESSAGE": "Unable to create the configuration"
+      }
+    },
+    "EDIT": {
+      "TITLE": "Edit AI configuration",
+      "DESC": "Changes apply to new conversations.",
+      "TOOLTIP": "Edit",
+      "API": {
+        "SUCCESS_MESSAGE": "Configuration updated successfully",
+        "ERROR_MESSAGE": "Unable to update the configuration"
+      }
+    },
+    "DELETE": {
+      "TOOLTIP": "Delete",
+      "CONFIRM": {
+        "TITLE": "Delete configuration",
+        "MESSAGE": "Are you sure you want to delete",
+        "YES": "Yes, delete",
+        "NO": "No, keep it"
+      },
+      "API": {
+        "SUCCESS_MESSAGE": "Configuration deleted successfully",
+        "ERROR_MESSAGE": "Unable to delete the configuration"
+      }
+    },
+    "TEST": {
+      "TITLE": "Test attendant",
+      "DESC": "Simulate a message and preview the reply.",
+      "CONTEXT": "{agent} · {inbox}",
+      "TOOLTIP": "Test",
+      "MESSAGE_LABEL": "Customer message",
+      "PLACEHOLDER": "Type as the customer would in chat…",
+      "SUBMIT": "Run test",
+      "CLOSE": "Close",
+      "REPLY": "Reply",
+      "CUSTOMER_LABEL": "Customer",
+      "AGENT_LABEL": "AI attendant",
+      "HANDOFF": "Hand off to human",
+      "HANDOFF_YES": "Yes",
+      "HANDOFF_NO": "No",
+      "EMPTY": "No reply",
+      "HINT": "Send as the customer. Close or reset to start over.",
+      "RUNNING": "Typing…",
+      "RESET": "Reset conversation",
+      "HANDOFF_NOTICE": "The attendant requested a human handoff (simulation).",
+      "HANDOFF_FOOTER": "Simulated handoff. Reset the conversation to test again.",
+      "UNNAMED_AGENT": "Unnamed attendant",
+      "ERROR_MESSAGE": "Unable to test the attendant",
+      "EXAMPLES": {
+        "HELLO": "Hi, I need help",
+        "HOURS": "What are your business hours?",
+        "PRICE": "How much does it cost?"
+      }
+    },
+    "TOGGLE": {
+      "ERROR_ACTIVE": "Enter an attendant name before enabling"
+    }
+  }
+}

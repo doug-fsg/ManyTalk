@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 module Workflows
-  # Single outbound URL for all workflow AI nodes.
-  # Distinguish behavior on the receiver by payload `event`:
-  #   workflow.ai_outreach | workflow.ai_conversation_analysis | workflow.ai_wait_for_intent
+  # DEPRECATED: workflow AI nodes (outreach, analysis, wait-for-intent) now call
+  # PlatformAi::ChatClient via Workflows::PlatformAiCompletion. Do not add new
+  # callers. WORKFLOW_AI_URL remains only until dashboard/layout stop reading it.
   module AiWebhook
     ENV_KEY = 'WORKFLOW_AI_URL'
 

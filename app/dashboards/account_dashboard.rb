@@ -26,7 +26,9 @@ class AccountDashboard < Administrate::BaseDashboard
     conversations: CountField,
     locale: Field::Select.with_options(collection: LANGUAGES_CONFIG.map { |_x, y| y[:iso_639_1_code] }),
     status: Field::Select.with_options(collection: [%w[Active active], %w[Suspended suspended]]),
-    account_users: Field::HasMany
+    account_users: Field::HasMany,
+    ai_credit_limit: Field::Number.with_options(decimals: 4),
+    ai_credits_used: Field::Number.with_options(decimals: 4)
   }.merge(enterprise_attribute_types).freeze
 
   # COLLECTION_ATTRIBUTES
@@ -55,6 +57,8 @@ class AccountDashboard < Administrate::BaseDashboard
     status
     conversations
     account_users
+    ai_credit_limit
+    ai_credits_used
   ] + enterprise_show_page_attributes).freeze
 
   # FORM_ATTRIBUTES
@@ -65,6 +69,8 @@ class AccountDashboard < Administrate::BaseDashboard
     name
     locale
     status
+    ai_credit_limit
+    ai_credits_used
   ] + enterprise_form_attributes).freeze
 
   # COLLECTION_FILTERS

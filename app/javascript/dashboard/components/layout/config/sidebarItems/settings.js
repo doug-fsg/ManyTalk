@@ -48,6 +48,8 @@ const settings = accountId => ({
     'settings_teams_new',
     'sla_list',
     'settings_ia',
+    'settings_ia_new',
+    'settings_ia_edit',
   ],
   menuItems: [
     {
@@ -217,11 +219,11 @@ const settings = accountId => ({
       label: 'INTELLIGENCE_AI',
       hasSubMenu: false,
       meta: {
-        permissions: ['administrator', 'agent'],
+        permissions: ['administrator'],
       },
       toState: frontendURL(`accounts/${accountId}/settings/ia`),
       toStateName: 'settings_ia',
-      featureFlag: FEATURE_FLAGS.IA,
+      featureFlag: FEATURE_FLAGS.ATENDIMENTO_IA_NATIVO,
     },
   ],
 });

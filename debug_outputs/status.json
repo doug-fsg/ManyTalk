@@ -1,42 +1,8 @@
 {
-  "scope": "/app/accounts/67/dashboard",
-  "account_id": 67,
-  "environment": "development",
-  "rails_url": "http://127.0.0.1:3002",
-  "port_conflict": {
-    "3000": "next-server (ManyTalks IA)",
-    "3002": "puma/rails (Chatwoot)"
-  },
-  "phase": "root_cause_investigation_complete",
-  "code_changes_applied": false,
-  "chat_functional_on_correct_port": true,
-  "conversation_display_id_tested": 1,
-  "messages_loaded_count": 9,
-  "issues": [
-    {
-      "id": "env-port-3000",
-      "severity": "high",
-      "category": "environment",
-      "summary": "Dashboard Chatwoot não está na porta 3000 neste host"
-    },
-    {
-      "id": "contactable-inboxes-bullet",
-      "severity": "medium",
-      "category": "performance",
-      "summary": "Eager loading desnecessário em fetch_contact/contactable_inboxes"
-    },
-    {
-      "id": "preview-last-non-activity",
-      "severity": "low",
-      "category": "ux_expected",
-      "summary": "Preview da lista usa última mensagem não-atividade, não última atividade"
-    },
-    {
-      "id": "webwidget-empty-contactable",
-      "severity": "low",
-      "category": "ux_expected",
-      "summary": "contactable_inboxes vazio quando já existe conversa WebWidget"
-    }
-  ],
-  "next_step": "Aprovar item 1 (ambiente) ou item 2 (perf) antes de patch"
+  "task": "analise-anexos-ia-settings-edit",
+  "phase": "fix_applied",
+  "code_changed": true,
+  "primary_root_cause": "reply_blocks_only_resolved_exact_token_blocks",
+  "fix": "ReferenceVariables.inline_attachment + ReplyBlocks.blocks_for split inline token",
+  "specs": "reply_blocks_spec, reference_variables_spec, response_sender_spec"
 }

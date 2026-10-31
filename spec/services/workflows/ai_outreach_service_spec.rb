@@ -28,7 +28,8 @@ RSpec.describe Workflows::AiOutreachService do
       }
     }
   end
-  let(:ai_url) { 'https://n8n.example.com/webhook/ai' }
+  let(:generated_text) { 'Oi João, que tal retomarmos o assunto?' }
+  let(:chat_result) { { content: generated_text, tool_calls: nil, total_tokens: 1000 } }
 
   subject(:service) do
     described_class.new(
@@ -41,39 +42,56 @@ RSpec.describe Workflows::AiOutreachService do
 
   before do
     account.enable_features!('inteligencia_artificial')
-    allow(Workflows::AiWebhook).to receive(:url).and_return(ai_url)
+    allow(PlatformAi::ChatClient).to receive(:complete).and_return(chat_result)
+    allow(PlatformAi::QuotaGuard).to receive(:allow?).and_call_original
+    allow(PlatformAi::QuotaGuard).to receive(:charge!)
   end
 
   describe '#perform!' do
-    it 'enqueues webhook with workflow.ai_outreach event and composed prompt' do
-      expect(WebhookJob).to receive(:perform_later).with(
-        ai_url,
-        hash_including(
-          event: 'workflow.ai_outreach',
-          prompt: include('Tom amigável e próximo.', 'cliente'),
-          account_id: account.id,
-          workflow_id: workflow.id,
-          workflow_node_id: 'ai_1',
-          enrollment_id: enrollment.id,
-          ai_config: hash_including(
-            objective_preset: 'reengagement',
-            tone_preset: 'friendly',
-            language: 'client',
-            include_last_messages: true
-          )
-        )
-      )
+    it 'does not enqueue WORKFLOW_AI_URL webhook' do
+      expect(WebhookJob).not_to receive(:perform_later)
+      expect(Workflows::AiWebhook).not_to receive(:url)
 
       result = service.perform!
       expect(result[:success]).to be true
     end
 
-    it 'includes the selected inbox_id in the webhook payload' do
+    it 'sends ChatClient text as a public outgoing message' do
+      expect { service.perform! }.to change { conversation.messages.where(private: false).count }.by(1)
+      message = conversation.messages.where(private: false).last
+      expect(message.content).to eq(generated_text)
+      expect(message.message_type).to eq('outgoing')
+    end
+
+    it 'calls ChatClient with tone prefix, prompt and outreach contract fields' do
+      expect(PlatformAi::ChatClient).to receive(:complete) do |messages:, **|
+        user_payload = JSON.parse(messages.find { |m| m[:role] == 'user' }[:content])
+        expect(user_payload['event']).to eq('workflow.ai_outreach')
+        expect(user_payload['prompt']).to include('Tom amigável e próximo.', 'cliente')
+        expect(user_payload['account_id']).to eq(account.id)
+        expect(user_payload['workflow_id']).to eq(workflow.id)
+        expect(user_payload['workflow_node_id']).to eq('ai_1')
+        expect(user_payload['enrollment_id']).to eq(enrollment.id)
+        expect(user_payload['ai_config']).to include(
+          'objective_preset' => 'reengagement',
+          'tone_preset' => 'friendly',
+          'language' => 'client',
+          'include_last_messages' => true
+        )
+        chat_result
+      end
+
+      service.perform!
+    end
+
+    it 'includes the selected inbox_id in the ChatClient payload' do
       node['data']['inbox_id'] = inbox.id
 
-      expect(WebhookJob).to receive(:perform_later) do |_url, payload|
-        expect(payload[:inbox_id]).to eq(inbox.id)
-        expect(payload[:ai_config][:inbox_id]).to eq(inbox.id)
+      expect(PlatformAi::ChatClient).to receive(:complete) do |messages:, **|
+        user_payload = JSON.parse(messages.find { |m| m[:role] == 'user' }[:content])
+        expect(user_payload['inbox_id']).to eq(inbox.id)
+        expect(user_payload.dig('ai_config', 'inbox_id')).to eq(inbox.id)
+        chat_result
       end
 
       service.perform!
@@ -82,9 +100,11 @@ RSpec.describe Workflows::AiOutreachService do
     it 'sends only interpolated prompt when prompt_customized is true' do
       node['data']['prompt_customized'] = true
 
-      expect(WebhookJob).to receive(:perform_later) do |_url, payload|
-        expect(payload[:prompt]).to eq('Retome o contato com o cliente de forma amigável.')
-        expect(payload[:prompt]).not_to include('Tom amigável')
+      expect(PlatformAi::ChatClient).to receive(:complete) do |messages:, **|
+        user_payload = JSON.parse(messages.find { |m| m[:role] == 'user' }[:content])
+        expect(user_payload['prompt']).to eq('Retome o contato com o cliente de forma amigável.')
+        expect(user_payload['prompt']).not_to include('Tom amigável')
+        chat_result
       end
 
       service.perform!
@@ -93,23 +113,47 @@ RSpec.describe Workflows::AiOutreachService do
     it 'always includes last messages in context' do
       create(:message, conversation: conversation, account: account, inbox: inbox, content: 'Olá', message_type: :incoming)
 
-      expect(WebhookJob).to receive(:perform_later) do |_url, payload|
-        contents = payload[:context][:last_messages].pluck(:content)
+      expect(PlatformAi::ChatClient).to receive(:complete) do |messages:, **|
+        user_payload = JSON.parse(messages.find { |m| m[:role] == 'user' }[:content])
+        contents = user_payload.dig('context', 'last_messages').pluck('content')
         expect(contents).to include('Olá')
+        chat_result
       end
 
       service.perform!
     end
 
-    context 'when WORKFLOW_AI_URL is missing' do
-      let(:ai_url) { nil }
+    it 'charges QuotaGuard after a successful completion' do
+      expect(PlatformAi::QuotaGuard).to receive(:charge!).with(account: account, credits: 1)
 
-      it 'records webhook_url_missing without enqueueing webhook' do
+      service.perform!
+    end
+
+    context 'when quota is exceeded' do
+      before do
+        account.update!(ai_credit_limit: 1, ai_credits_used: 1)
+      end
+
+      it 'skips ChatClient and does not send a message' do
+        expect(PlatformAi::ChatClient).not_to receive(:complete)
         expect(WebhookJob).not_to receive(:perform_later)
 
         result = service.perform!
         expect(result[:success]).to be false
-        expect(result[:error]).to eq('webhook_url_missing')
+        expect(result[:error]).to eq('quota_exceeded')
+        expect(conversation.messages.where(private: false)).to be_empty
+      end
+    end
+
+    context 'when feature is disabled' do
+      before { account.disable_features!('inteligencia_artificial') }
+
+      it 'returns feature_disabled without calling ChatClient' do
+        expect(PlatformAi::ChatClient).not_to receive(:complete)
+
+        result = service.perform!
+        expect(result[:success]).to be false
+        expect(result[:error]).to eq('feature_disabled')
       end
     end
   end

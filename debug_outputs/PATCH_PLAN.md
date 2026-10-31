@@ -1,50 +1,66 @@
-# Plano de patch (conservador) — chat `/accounts/67/dashboard`
+# Plano de correção (propostas — aguardando aprovação)
 
-**Requer aprovação explícita antes de alterar código** (política safe-debug).
-
-## 1. Ambiente: porta do dashboard (prioridade alta, sem mudança de app)
-
-**Problema:** `FRONTEND_URL`/hábito de usar `:3000` enquanto Puma está em `:3002` e `3000` é outro serviço.
-
-**Patch sugerido (escolher um):**
-
-- A) Documentar no README/dev: `overmind` usa `tmp/Procfile.dev.3001` ou matar `next-server` na 3000 e subir Rails em 3000.
-- B) Ajustar script de dev para falhar rápido se `3000` não for Puma (healthcheck).
-
-**Risco:** baixo. **Escopo:** config/docs apenas.
+Nenhum patch aplicado nesta análise (safe-debug).
 
 ---
 
-## 2. Performance: `contactable_inboxes` + `fetch_contact` (prioridade média)
+## Opção A — Corrigir na resolução de blocos (recomendada para robustez)
 
-**Problema:** Bullet reporta eager loading não usado ao abrir contato no chat (`includes(:contact_inboxes, :contact_pipeline_positions)` em `fetch_contact`).
+**Objetivo:** quando a IA (ou o passo) colocar texto + `{{anexo:key}}` na mesma linha/bloco, dividir em texto + attachment.
 
-**Patch sugerido (mínimo):**
+**Escopo mínimo:**
 
-- Carregar `contact_pipeline_positions` só em actions que renderizam Kanban no contato (ex.: `show`), não em `contactable_inboxes`.
-- Em `ContactableInboxesService`, evitar `includes([:inbox])` onde o Bullet apontou, ou usar `preload` só para inboxes retornados.
+1. Em `AiAttendant::ReplyBlocks` (ou helper em `ReferenceVariables`), após obter conteúdo de texto:
+   - Se houver exatamente um `TOKEN_CAPTURE` e texto além dele, emitir bloco `:text` (texto sem token) + bloco `:attachment`.
+   - Manter comportamento atual para bloco 100% token.
+2. Specs em `reply_blocks_spec.rb` para:
+   - `"Olá! {{anexo:img_5612}}"`
+   - passo-like `"de uma saudacao , e envie isso {{anexo:img_5612}}"` como **saída** da IA (simulada).
 
-**Verificação:** repetir fluxo painel do contato na conversa 1; Bullet sem aviso; mesma resposta JSON.
-
-**Risco:** médio (N+1 se remover includes demais). **Savepoint:** branch dedicado + spec/request existente.
-
----
-
-## 3. Consistência do último message no payload da lista (prioridade baixa)
-
-**Problema:** `json.messages` usa `conversation.messages...last` sem `reorder` explícito; `setActiveChat` pagina com `before: data.messages[0].id`. Hoje funciona na conta 67, mas é frágil se ordem default mudar.
-
-**Patch sugerido:**
-
-- Em `_conversation.json.jbuilder`, usar o mesmo critério de `last_non_activity_message` ou `order(id: :desc).first` para o único item de `messages`.
-
-**Verificação:** spec de jbuilder ou request spec da lista; abrir conversa e confirmar histórico completo.
-
-**Risco:** baixo/médio. **Aprovação:** recomendada antes de merge.
+**Risco:** baixo/médio — múltiplos tokens na mesma linha devem continuar indivisíveis (já rejeitados por `extract_key`).
 
 ---
 
-## 4. Não recomendado agora
+## Opção B — Alinhar prompt + editor (complementar)
 
-- Mudar regra de `website_contactable_inbox` (comportamento upstream Chatwoot).
-- Alterar layout expandido/condensado sem pedido de produto.
+1. **Prompt:** em `files_section`, explicitar: “Se precisar falar algo antes do arquivo, use `\n\n` e em seguida um bloco só com `{{anexo:…}}`.”
+2. **Editor:** ao inserir token via “Inserir” / menção `{`, opcionalmente inserir quebra de linha antes do token se o campo não estiver vazio.
+3. **Validação suave:** detectar `{{anexo:` na mesma linha que outro texto em `behavior_steps` e mostrar hint (não bloquear save).
+
+**Risco:** baixo — não garante compliance do modelo sozinho.
+
+---
+
+## Opção C — Teste com rascunho (produto)
+
+Estender `POST .../test` para aceitar overlay opcional (ex.: `behavior_steps`, `company_context`, `reference_file_blob_ids` temporários) ou exigir save + aviso “Salve para testar anexos novos”.
+
+**Risco:** médio (auth, tamanho payload, paridade com produção).
+
+---
+
+## Opção D — Histórico multi-turn com anexos
+
+Em `conversation_history`, para mensagens outgoing com attachments e `content` blank, usar token derivado de `ReferenceVariables.entries` ou metadado salvo na mensagem.
+
+**Risco:** médio — exige regra clara quando há vários anexos.
+
+---
+
+## Sugestão de ordem
+
+1. **A** (fix objetivo para config 296 e casos inline).  
+2. **B** (reduzir recorrência).  
+3. **C** ou aviso UX rápido no botão Testar.  
+4. **D** se houver queixa de “IA manda de novo / não lembra”.
+
+---
+
+## Correção imediata sem código (config 296)
+
+Reescrever o passo para forçar formato compatível com o parser atual, por exemplo:
+
+- Instrução: “Dê uma saudação. Depois envie o arquivo do passo seguinte.”
+- Passo 2: “Envie apenas: `{{anexo:img_5612}}`”  
+
+Ou uma única instrução com duas mensagens explícitas separadas por `\n\n` no texto que a IA deve **emitir**, não só no roteiro interno.

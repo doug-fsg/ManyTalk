@@ -2,6 +2,13 @@
 
 module Workflows
   class AiConversationAnalysisService
+    SYSTEM_PROMPT = <<~PROMPT.squish
+      Analise a conversa. Responda APENAS um JSON objeto cujas chaves são os analysis_types
+      pedidos e os valores são strings. Sem markdown.
+    PROMPT
+
+    TYPE_LABELS = ConversationAnalysisTextBuilder::TYPE_LABELS
+
     pattr_initialize [:workflow!, :enrollment!, :conversation!, :node!]
 
     def perform!
@@ -12,7 +19,7 @@ module Workflows
         return deliver_whatsapp_analysis(data)
       end
 
-      perform_webhook_analysis(data, destination)
+      perform_platform_ai_analysis(data, destination)
     rescue StandardError => e
       ChatwootExceptionTracker.new(e, account: workflow.account).capture_exception
       record_result(success: false, error: 'send_failed', detail: e.message)
@@ -52,21 +59,29 @@ module Workflows
       end
     end
 
-    def perform_webhook_analysis(data, destination)
+    def perform_platform_ai_analysis(data, destination)
       unless workflow.account.feature_enabled?('inteligencia_artificial')
         return record_result(success: false, error: 'feature_disabled')
       end
 
-      webhook_url = AiWebhook.url
-      return record_result(success: false, error: 'webhook_url_missing') if webhook_url.blank?
+      analysis_types = resolved_analysis_types(data)
+      completion = PlatformAiCompletion.complete(
+        account: workflow.account,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: build_payload(data, destination, analysis_types).to_json }
+        ]
+      )
+      return record_quota_or_llm_error(completion) if completion[:error]
 
-      WebhookJob.perform_later(webhook_url, build_payload(data, destination))
+      parsed = parse_analysis_json(completion[:content])
+      return record_result(success: false, error: 'invalid_json') if parsed.blank?
+
+      persist_private_note(format_note(data, analysis_types, parsed))
       record_result(success: true)
     end
 
-    def build_payload(data, destination)
-      analysis_types = resolved_analysis_types(data)
-
+    def build_payload(data, destination, analysis_types)
       output = { destination: destination }
       output[:note_prefix] = data['note_prefix'].presence || 'Análise IA'
 
@@ -100,6 +115,44 @@ module Workflows
           created_at: message.created_at
         }
       end
+    end
+
+    def parse_analysis_json(content)
+      json = content.to_s[/{.*}/m]
+      return {} if json.blank?
+
+      parsed = JSON.parse(json)
+      parsed.is_a?(Hash) ? parsed : {}
+    rescue JSON::ParserError
+      {}
+    end
+
+    def format_note(data, analysis_types, parsed)
+      prefix = data['note_prefix'].presence || 'Análise IA'
+      lines = [prefix]
+      analysis_types.each do |type|
+        value = parsed[type].presence || parsed[type.to_sym]
+        next if value.blank?
+
+        label = TYPE_LABELS[type] || type.humanize
+        lines << "#{label}: #{value}"
+      end
+      lines << parsed.values.map(&:to_s).join("\n") if lines.size == 1
+      lines.join("\n")
+    end
+
+    def persist_private_note(content)
+      params = {
+        content: content,
+        private: true,
+        content_attributes: { workflow_id: workflow.id, workflow_node_id: node['id'] }
+      }
+      Messages::MessageBuilder.new(nil, conversation, params).perform
+    end
+
+    def record_quota_or_llm_error(completion)
+      error = completion[:error] == :quota_exceeded ? 'quota_exceeded' : 'llm_error'
+      record_result(success: false, error: error, detail: completion[:detail])
     end
 
     def record_result(success:, error: nil, detail: nil, delivery: nil)

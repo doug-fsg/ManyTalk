@@ -3,6 +3,8 @@
 # Table name: accounts
 #
 #  id                    :integer          not null, primary key
+#  ai_credit_limit       :decimal(16, 4)
+#  ai_credits_used       :decimal(16, 4)   default(0.0), not null
 #  auto_resolve_duration :integer
 #  custom_attributes     :jsonb
 #  domain                :string(100)

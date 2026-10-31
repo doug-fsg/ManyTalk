@@ -1,0 +1,266 @@
+{
+  "AI_ATTENDANT": {
+    "HEADER": "Atendente IA",
+    "DESCRIPTION": "Configure o atendente digital por caixa de entrada. O modelo de IA é gerenciado pela plataforma.",
+    "HEADER_BTN_TXT": "Adicionar configuração",
+    "LOADING": "Carregando configurações de IA",
+    "ERROR": "Ocorreu um erro, por favor tente novamente",
+    "USAGE": {
+      "TITLE": "Uso da cota",
+      "SUBTITLE": "Consumo de atendimentos IA nesta conta.",
+      "STAT_LIMIT": "Cota",
+      "STAT_USED": "Usado",
+      "STAT_REMAINING": "Restante",
+      "PROGRESS_LABEL": "Consumo da cota",
+      "LIMIT": "Cota: {limit}",
+      "USED": "Usado: {used}",
+      "REMAINING": "Restante: {remaining}",
+      "UNLIMITED": "Ilimitada",
+      "PAUSED": "Pausado por falta de créditos",
+      "PAUSED_HELP": "O atendimento IA está pausado por falta de créditos. Fale com o suporte Manytalks.",
+      "TOGGLE": "Uso da cota",
+      "TOGGLE_HIDE": "Ocultar cota"
+    },
+    "LIST": {
+      "404": "Nenhuma configuração de atendente IA nesta conta.",
+      "INBOX": "Caixa de entrada",
+      "AGENT": "Atendente",
+      "SCHEDULE": "Horário",
+      "STATUS": "Status",
+      "ACTIONS": "Ações",
+      "UNNAMED_AGENT": "Sem nome",
+      "UNKNOWN_INBOX": "Caixa de entrada #{id}",
+      "ACTIVE": "Ativo",
+      "INACTIVE": "Inativo",
+      "PAUSED_ADMIN": "Pausado pelo administrador",
+      "PAUSED_CREDITS": "Pausado por créditos"
+    },
+    "SCHEDULE": {
+      "always": "Sempre",
+      "within_inbox_hours": "Dentro do horário da caixa",
+      "outside_inbox_hours": "Fora do horário da caixa"
+    },
+    "FORM": {
+      "INBOX": {
+        "LABEL": "Caixas de entrada",
+        "PLACEHOLDER": "Selecione uma ou mais caixas",
+        "ERROR": "Selecione ao menos uma caixa de entrada"
+      },
+      "AVATAR": {
+        "LABEL": "Avatar",
+        "OPEN": "Escolher avatar",
+        "ERROR": "Escolha um avatar",
+        "OPTIONS": {
+          "avatar_1": "Avatar 1",
+          "avatar_2": "Avatar 2",
+          "avatar_3": "Avatar 3",
+          "avatar_4": "Avatar 4",
+          "avatar_5": "Avatar 5",
+          "avatar_6": "Avatar 6"
+        }
+      },
+      "NAME": {
+        "LABEL": "Nome do atendente",
+        "PLACEHOLDER": "Ex.: Lia",
+        "ERROR": "Informe o nome do atendente para ativar"
+      },
+      "ROLE": {
+        "LABEL": "Quem é",
+        "PLACEHOLDER": "Descreva o papel do atendente"
+      },
+      "DUTIES": {
+        "LABEL": "O que faz",
+        "PLACEHOLDER": "Liste as responsabilidades"
+      },
+      "OBJECTIVE": {
+        "LABEL": "Objetivo",
+        "PLACEHOLDER": "Qual o resultado esperado"
+      },
+      "STEPS": {
+        "LABEL": "Roteiro de atendimento",
+        "HINT": "A IA segue os passos na ordem abaixo.",
+        "PLACEHOLDER": "Um passo por linha",
+        "MODE_LABEL": "Modo",
+        "MODE_GUIDE": "Guia",
+        "MODE_STRICT": "Estrito",
+        "MODE_GUIDE_HELP": "Todos os passos ficam visíveis. Respeite a ordem.",
+        "MODE_STRICT_HELP": "Só o passo atual fica visível até concluir.",
+        "STEP_TITLE": "Passo {n}",
+        "INSTRUCTION": "O que fazer neste passo",
+        "INSTRUCTION_PLACEHOLDER": "Ex.: Cumprimente e pergunte o nome.",
+        "COMPLETION": "Considerar concluído quando",
+        "COMPLETION_PLACEHOLDER": "Ex.: O cliente informou o nome.",
+        "ADD": "Adicionar passo",
+        "REMOVE": "Remover",
+        "DRAG": "Reordenar passo",
+        "PREVIEW_TITLE": "Prévia no prompt",
+        "PREVIEW_EMPTY": "Preencha ao menos um passo para ver a prévia.",
+        "PREVIEW_SIMULATE": "Simular passo atual (modo estrito)"
+      },
+      "COMPANY": {
+        "LABEL": "Contexto da empresa",
+        "PLACEHOLDER": "Informações que o atendente deve conhecer"
+      },
+      "TOPICS": {
+        "LABEL": "Temas a evitar",
+        "PLACEHOLDER": "Um tema por linha",
+        "SHOW": "Temas a evitar (opcional)",
+        "HIDE": "Ocultar temas a evitar"
+      },
+      "HANDOFF_CONDITIONS": {
+        "LABEL": "Quando encaminhar para humano",
+        "PLACEHOLDER": "Condições para chamar um atendente",
+        "OPEN": "Escolher situações",
+        "EMPTY": "Nenhuma situação selecionada",
+        "SUMMARY": "{count} situações selecionadas",
+        "SUMMARY_WITH_EXTRA": "{count} situações + texto extra",
+        "SUMMARY_CUSTOM": "Texto personalizado",
+        "MODAL_TITLE": "Encaminhamento para humano",
+        "MODAL_HELP": "Marque quando a IA deve passar para um humano.",
+        "EXTRA_LABEL": "Outro motivo (opcional)",
+        "EXTRA_PLACEHOLDER": "Descreva um caso que não está na lista",
+        "APPLY": "Aplicar"
+      },
+      "HANDOFF_PRESETS": {
+        "ask_human": "Cliente pediu para falar com um humano",
+        "complaint": "Cliente está insatisfeito ou reclamando",
+        "unknown": "A IA não consegue responder com segurança",
+        "cancel": "Pedido de cancelamento ou estorno",
+        "payment": "Dúvida de pagamento, boleto ou cobrança",
+        "legal": "Assunto jurídico, contrato ou LGPD",
+        "urgent": "Situação urgente ou de risco"
+      },
+      "HANDOFF_MESSAGE": {
+        "LABEL": "Mensagem ao encaminhar",
+        "PLACEHOLDER": "Opcional. Enviada se ninguém estiver disponível",
+        "SHOW": "Mensagem ao encaminhar (opcional)",
+        "HIDE": "Ocultar mensagem ao encaminhar"
+      },
+      "SCHEDULE": {
+        "LABEL": "Quando atender"
+      },
+      "DETECT_LANGUAGE": {
+        "LABEL": "Detectar idioma do contato"
+      },
+      "DEBOUNCE": {
+        "LABEL": "Espera entre mensagens (segundos)",
+        "HELP": "De 1 a 30. Padrão: 5."
+      },
+      "ACTIVE": {
+        "LABEL": "Ativar atendente"
+      },
+      "VARIABLES_HINT": "Digite { para inserir anexo nos campos de texto.",
+      "FILES": {
+        "LABEL": "Arquivos que a IA pode enviar",
+        "HELP": "Use { nos campos de texto para referenciar o anexo.",
+        "INSERT": "Usar no campo",
+        "INSERTED": "{token} foi inserida no campo em foco",
+        "COPIED": "{token} copiada. Cole em qualquer campo ou digite { para escolher.",
+        "COPY_ERROR": "Não foi possível copiar a variável",
+        "DROP_LABEL": "Solte o arquivo aqui ou clique para escolher",
+        "DROP_HINT": "Até 10 arquivos, 10 MB cada.",
+        "UPLOADING": "Enviando…",
+        "REMOVE": "Remover arquivo",
+        "MAX_ERROR": "Você já adicionou o máximo de 10 arquivos",
+        "SIZE_ERROR": "{name} passa de 10 MB",
+        "UPLOAD_ERROR": "Não foi possível enviar {name}",
+        "NAME_LABEL": "Nome curto da variável",
+        "NAME_PLACEHOLDER": "Ex.: catalogo",
+        "NAME_ERROR": "Use 2 a 24 caracteres: letras, números, hífen ou underline.",
+        "NAME_REQUIRED": "Dê um nome curto a cada anexo antes de salvar",
+        "NAME_TAKEN": "Já existe um anexo chamado {name}",
+        "TOKEN_LINKED": "Arquivo {name} na lista de anexos",
+        "TOKEN_MISSING": "Não há anexo \"{name}\" na lista",
+        "TOKEN_SAVE_BLOCKED": "Corrija o anexo {token} antes de salvar. O nome não bate com nenhum arquivo da lista."
+      },
+      "SUBMIT": "Salvar",
+      "CANCEL": "Cancelar"
+    },
+    "TABS": {
+      "IDENTITY": "Identidade",
+      "PLAYBOOK": "Roteiro",
+      "RULES": "Contexto e transferência",
+      "OPERATION": "Operação",
+      "IDENTITY_HELP": "Caixa, nome e personalidade.",
+      "PLAYBOOK_HELP": "Passos que a IA deve seguir.",
+      "RULES_HELP": "Empresa, limites e encaminhamento.",
+      "OPERATION_HELP": "Horário, espera e ativação."
+    },
+    "SECTIONS": {
+      "SETUP": "Caixa de entrada e identidade",
+      "SETUP_HELP": "Escolha onde o atendente atua e como ele será identificado nas conversas.",
+      "PERSONA": "Personalidade",
+      "PERSONA_HELP": "Papel, responsabilidades e objetivo.",
+      "PLAYBOOK": "Roteiro de atendimento",
+      "PLAYBOOK_HELP": "Passos em sequência que a IA deve seguir durante a conversa.",
+      "KNOWLEDGE": "Contexto e limites",
+      "KNOWLEDGE_HELP": "Informações da empresa e assuntos que o atendente deve evitar.",
+      "HANDOFF": "Encaminhamento para humano",
+      "HANDOFF_HELP": "Quando transferir e o que avisar ao cliente.",
+      "OPERATION": "Funcionamento",
+      "OPERATION_HELP": "Horários, tempo de espera entre mensagens e opções avançadas."
+    },
+    "ADD": {
+      "TITLE": "Nova configuração de IA",
+      "DESC": "Configure o atendente para uma caixa de entrada.",
+      "API": {
+        "SUCCESS_MESSAGE": "Configuração criada com sucesso",
+        "ERROR_MESSAGE": "Não foi possível criar a configuração"
+      }
+    },
+    "EDIT": {
+      "TITLE": "Editar configuração de IA",
+      "DESC": "Mudanças valem nas próximas conversas.",
+      "TOOLTIP": "Editar",
+      "API": {
+        "SUCCESS_MESSAGE": "Configuração atualizada com sucesso",
+        "ERROR_MESSAGE": "Não foi possível atualizar a configuração"
+      }
+    },
+    "DELETE": {
+      "TOOLTIP": "Excluir",
+      "CONFIRM": {
+        "TITLE": "Excluir configuração",
+        "MESSAGE": "Tem certeza que deseja excluir",
+        "YES": "Sim, excluir",
+        "NO": "Não, manter"
+      },
+      "API": {
+        "SUCCESS_MESSAGE": "Configuração excluída com sucesso",
+        "ERROR_MESSAGE": "Não foi possível excluir a configuração"
+      }
+    },
+    "TEST": {
+      "TITLE": "Testar atendente",
+      "DESC": "Simule uma mensagem e veja a resposta.",
+      "CONTEXT": "{agent} · {inbox}",
+      "TOOLTIP": "Testar",
+      "MESSAGE_LABEL": "Mensagem do cliente",
+      "PLACEHOLDER": "Digite como se fosse o cliente no WhatsApp ou chat…",
+      "SUBMIT": "Enviar teste",
+      "CLOSE": "Fechar",
+      "REPLY": "Resposta",
+      "CUSTOMER_LABEL": "Cliente",
+      "AGENT_LABEL": "Atendente IA",
+      "HANDOFF": "Encaminhar para humano",
+      "HANDOFF_YES": "Sim",
+      "HANDOFF_NO": "Não",
+      "EMPTY": "Nenhuma resposta",
+      "HINT": "Envie como cliente. Feche ou reinicie para começar de novo.",
+      "RUNNING": "Digitando…",
+      "RESET": "Reiniciar conversa",
+      "HANDOFF_NOTICE": "O atendente sinalizou encaminhamento para humano (simulação).",
+      "HANDOFF_FOOTER": "Encaminhamento simulado. Reinicie a conversa para testar de novo.",
+      "UNNAMED_AGENT": "Atendente sem nome",
+      "ERROR_MESSAGE": "Não foi possível testar o atendente",
+      "EXAMPLES": {
+        "HELLO": "Olá, preciso de ajuda",
+        "HOURS": "Qual o horário de atendimento?",
+        "PRICE": "Quanto custa o serviço?"
+      }
+    },
+    "TOGGLE": {
+      "ERROR_ACTIVE": "Informe o nome do atendente antes de ativar"
+    }
+  }
+}

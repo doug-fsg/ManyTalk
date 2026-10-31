@@ -290,7 +290,6 @@ RSpec.describe Workflows::OrchestratorService do
   end
 
   describe 'ai_outreach node' do
-    let(:ai_url) { 'https://n8n.example.com/webhook/ai' }
     let(:api_inbox) { create(:inbox, account: account) }
     let(:api_contact) { create(:contact, account: account, name: 'Maria') }
     let(:api_contact_inbox) { create(:contact_inbox, contact: api_contact, inbox: api_inbox) }
@@ -332,18 +331,15 @@ RSpec.describe Workflows::OrchestratorService do
 
     before do
       account.enable_features!('inteligencia_artificial')
-      allow(Workflows::AiWebhook).to receive(:url).and_return(ai_url)
+      allow(PlatformAi::ChatClient).to receive(:complete).and_return(
+        content: 'Oi, vamos retomar o assunto?',
+        tool_calls: nil,
+        total_tokens: 20
+      )
     end
 
-    it 'enqueues WORKFLOW_AI_URL webhook when enrollment reaches ai_outreach node' do
-      expect(WebhookJob).to receive(:perform_later).with(
-        ai_url,
-        hash_including(
-          event: 'workflow.ai_outreach',
-          prompt: include('cliente'),
-          workflow_node_id: 'ai_1'
-        )
-      )
+    it 'runs native PlatformAi outreach when enrollment reaches ai_outreach node' do
+      expect(WebhookJob).not_to receive(:perform_later)
 
       described_class.on_event(
         event_name: 'conversation_created',
@@ -352,6 +348,7 @@ RSpec.describe Workflows::OrchestratorService do
       )
 
       expect(WorkflowEnrollment.last.status).to eq('completed')
+      expect(api_conversation.messages.where(private: false).last.content).to eq('Oi, vamos retomar o assunto?')
     end
   end
 

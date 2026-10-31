@@ -29,11 +29,12 @@ RSpec.describe Workflows::IntentClassificationJob, type: :job do
   let(:message) { create(:message, conversation: conversation, message_type: :incoming, content: 'quero o cardápio') }
 
   before do
-    allow(Workflows::AiWebhook).to receive(:url).and_return('https://example.com/intent')
-    allow(Workflows::AiWebhook).to receive(:configured?).and_return(true)
     account.enable_features!('inteligencia_artificial')
-    stub_request(:post, 'https://example.com/intent')
-      .to_return(status: 200, body: '{"matched":false}')
+    allow(PlatformAi::ChatClient).to receive(:complete).and_return(
+      content: '{"matched":false}',
+      tool_calls: nil,
+      total_tokens: 8
+    )
   end
 
   describe '#perform' do
@@ -63,8 +64,11 @@ RSpec.describe Workflows::IntentClassificationJob, type: :job do
 
     context 'when AI returns matched: true' do
       before do
-        stub_request(:post, 'https://example.com/intent')
-          .to_return(status: 200, body: '{"matched":true}')
+        allow(PlatformAi::ChatClient).to receive(:complete).and_return(
+          content: '{"matched":true}',
+          tool_calls: nil,
+          total_tokens: 8
+        )
       end
 
       it 'calls on_intent_detected' do

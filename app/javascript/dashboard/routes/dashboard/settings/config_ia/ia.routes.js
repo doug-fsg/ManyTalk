@@ -1,86 +1,55 @@
 import { frontendURL } from 'dashboard/helper/URLHelper';
-import store from '../../../../store';
-import { useAlert } from 'dashboard/composables';
+
+const SettingsContent = () => import('../Wrapper.vue');
+const SettingsWrapper = () => import('../SettingsWrapper.vue');
+const Index = () => import('./Index.vue');
+const Editor = () => import('./Editor.vue');
 
 export default {
   routes: [
     {
       path: frontendURL('accounts/:accountId/settings/ia'),
-      name: 'settings_ia',
-      meta: {
-        permissions: ['administrator'], // Permissões necessárias
+      component: SettingsWrapper,
+      children: [
+        {
+          path: '',
+          name: 'settings_ia',
+          component: Index,
+          meta: {
+            permissions: ['administrator'],
+          },
+        },
+      ],
+    },
+    {
+      path: frontendURL('accounts/:accountId/settings/ia'),
+      component: SettingsContent,
+      props: () => {
+        return {
+          headerTitle: 'AI_ATTENDANT.HEADER',
+          icon: 'window-new',
+          showBackButton: true,
+          backUrl: { name: 'settings_ia' },
+        };
       },
-      beforeEnter(to, from, next) {
-        console.log('beforeEnter: Rota interceptada.');
-
-        // Obtendo informações do usuário logado
-        const user = store.getters.getCurrentUser;
-        console.log('Usuário logado:', user);
-
-        if (!user) {
-          console.warn('Usuário não encontrado. Redirecionando...');
-          useAlert('Usuário não autenticado.');
-          next(false);
-          return;
-        }
-
-        const email = user?.account_id
-          ? `${user.account_id}@manytalks.com.br`
-          : '';
-
-        const name = user?.name || 'Desconhecido';
-        const accountId = user?.account_id || 'Sem Account ID';
-        const image = user?.avatar_url || 'Sem Avatar';
-
-        console.log('Email:', email);
-        console.log('Nome:', name);
-        console.log('Account ID:', accountId);
-        console.log('Imagem:', image);
-
-        const apiURL = process.env.VUE_APP_API_URL;
-        console.log('API URL:', apiURL);
-
-        if (!apiURL) {
-          console.error('VUE_APP_API_URL não está definido.');
-          useAlert('Erro interno: URL da API não configurada.');
-          next(false);
-          return;
-        }
-
-        // Faz a requisição para obter o token
-        const fetchURL = `${apiURL}?email=${email}`;
-        console.log('Fazendo requisição para:', fetchURL);
-
-        fetch(fetchURL)
-          .then(response => {
-            console.log('Resposta recebida:', response);
-            if (!response.ok) {
-              throw new Error(`Erro HTTP! Status: ${response.status}`);
-            }
-            return response.json();
-          })
-          .then(data => {
-            console.log('Dados recebidos:', data);
-            if (data.token) {
-              const redirectURL = `${apiURL}?email=${email}&name=${encodeURIComponent(
-                name
-              )}&manytalksAccountId=${accountId}&image=${image}&token=${
-                data.token
-              }`;
-              console.log('Redirecionando para:', redirectURL);
-              window.open(redirectURL, '_blank'); // Abre a URL em uma nova aba
-            } else {
-              console.warn('Token não recebido:', data);
-              useAlert('Erro ao obter informações. Tente novamente.');
-            }
-          })
-          .catch(error => {
-            console.error('Erro ao buscar token:', error);
-            useAlert('Ocorreu um erro, por favor tente novamente mais tarde.');
-          });
-
-        next(false); // Impede a navegação interna para esta rota
-      },
+      children: [
+        {
+          path: ':configId/edit',
+          name: 'settings_ia_edit',
+          component: Editor,
+          meta: {
+            permissions: ['administrator'],
+          },
+        },
+        {
+          path: 'new',
+          name: 'settings_ia_new',
+          component: Editor,
+          meta: {
+            permissions: ['administrator'],
+          },
+        },
+      ],
     },
   ],
 };

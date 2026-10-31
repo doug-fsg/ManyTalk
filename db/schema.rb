@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_10_29_180000) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_30_210000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -77,6 +77,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_29_180000) do
     t.jsonb "limits", default: {}
     t.jsonb "custom_attributes", default: {}
     t.integer "status", default: 0
+    t.decimal "ai_credit_limit", precision: 16, scale: 4
+    t.decimal "ai_credits_used", precision: 16, scale: 4, default: "0.0", null: false
     t.index ["status"], name: "index_accounts_on_status"
   end
 
@@ -171,9 +173,17 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_29_180000) do
     t.index ["capitao"], name: "index_agent_bots_unique_capitao", unique: true, where: "(capitao IS TRUE)"
   end
 
+  create_table "ai_attendant_config_inboxes", force: :cascade do |t|
+    t.bigint "ai_attendant_config_id", null: false
+    t.integer "inbox_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ai_attendant_config_id"], name: "index_ai_attendant_config_inboxes_on_ai_attendant_config_id"
+    t.index ["inbox_id"], name: "index_ai_attendant_config_inboxes_on_inbox_id", unique: true
+  end
+
   create_table "ai_attendant_configs", force: :cascade do |t|
     t.bigint "account_id", null: false
-    t.integer "inbox_id", null: false
     t.boolean "active", default: false, null: false
     t.string "pause_reason"
     t.string "digital_agent_name"
@@ -192,9 +202,27 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_29_180000) do
     t.bigint "sender_user_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["account_id", "inbox_id"], name: "index_ai_attendant_configs_on_account_id_and_inbox_id", unique: true
+    t.string "behavior_step_mode", default: "guide", null: false
+    t.string "avatar_id", default: "avatar_1", null: false
     t.index ["account_id"], name: "index_ai_attendant_configs_on_account_id"
     t.index ["sender_user_id"], name: "index_ai_attendant_configs_on_sender_user_id"
+  end
+
+  create_table "ai_attendant_runs", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.integer "conversation_id", null: false
+    t.integer "inbox_id", null: false
+    t.string "status", null: false
+    t.string "skip_reason"
+    t.integer "tokens", default: 0, null: false
+    t.text "error_message"
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "created_at"], name: "index_ai_attendant_runs_on_account_id_and_created_at"
+    t.index ["account_id"], name: "index_ai_attendant_runs_on_account_id"
+    t.index ["conversation_id"], name: "index_ai_attendant_runs_on_conversation_id"
+    t.index ["inbox_id"], name: "index_ai_attendant_runs_on_inbox_id"
   end
 
   create_table "applied_slas", force: :cascade do |t|
@@ -1285,8 +1313,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_29_180000) do
   add_foreign_key "activities", "inboxes"
   add_foreign_key "activities", "users"
   add_foreign_key "activities", "users", column: "assignee_id"
+  add_foreign_key "ai_attendant_config_inboxes", "ai_attendant_configs"
   add_foreign_key "ai_attendant_configs", "accounts"
   add_foreign_key "ai_attendant_configs", "users", column: "sender_user_id"
+  add_foreign_key "ai_attendant_runs", "accounts"
   add_foreign_key "contact_inboxes", "contacts", on_delete: :cascade
   add_foreign_key "contact_inboxes", "inboxes", on_delete: :cascade
   add_foreign_key "contact_pipeline_events", "accounts"

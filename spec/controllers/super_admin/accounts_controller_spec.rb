@@ -92,6 +92,68 @@ RSpec.describe 'Super Admin accounts API', type: :request do
     end
   end
 
+  describe 'PATCH /super_admin/accounts/{account_id}' do
+    let(:account) { create(:account, ai_credit_limit: 100, ai_credits_used: 100) }
+    let(:administrator) { create(:user, account: account, role: :administrator) }
+
+    def patch_account_quota(attrs)
+      sign_in(super_admin, scope: :super_admin)
+      patch "/super_admin/accounts/#{account.id}", params: {
+        account: {
+          name: account.name,
+          locale: account.locale,
+          status: account.status
+        }.merge(attrs)
+      }
+    end
+
+    def get_ai_usage
+      administrator.create_new_auth_token.except('Authorization').then do |headers|
+        get "/api/v1/accounts/#{account.id}/ai_usage", headers: headers, as: :json
+      end
+    end
+
+    context 'when Super Admin restores credits' do
+      it 'unpauses configs paused for no_credits and GET paused agrees' do
+        config = create(:ai_attendant_config, account: account, active: false, pause_reason: 'no_credits')
+        admin_paused = create(:ai_attendant_config, account: account, active: false, pause_reason: 'admin')
+
+        patch_account_quota(ai_credits_used: 0)
+
+        expect(response).to have_http_status(:redirect)
+        expect(account.reload.ai_credits_used).to eq(0)
+        expect(config.reload).to have_attributes(active: true, pause_reason: nil)
+        expect(admin_paused.reload).to have_attributes(active: false, pause_reason: 'admin')
+
+        get_ai_usage
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body['paused']).to be(false)
+        expect(response.parsed_body['used']).to eq(0)
+      end
+    end
+
+    context 'when Super Admin lowers the limit below used' do
+      it 'pauses active configs for no_credits and GET paused agrees' do
+        account.update!(ai_credits_used: 50, ai_credit_limit: 100)
+        config = create(:ai_attendant_config, account: account, active: true)
+        admin_paused = create(:ai_attendant_config, account: account, active: false, pause_reason: 'admin')
+
+        patch_account_quota(ai_credit_limit: 40)
+
+        expect(response).to have_http_status(:redirect)
+        expect(account.reload.ai_credit_limit).to eq(40)
+        expect(config.reload).to have_attributes(active: false, pause_reason: 'no_credits')
+        expect(admin_paused.reload).to have_attributes(active: false, pause_reason: 'admin')
+
+        get_ai_usage
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body['paused']).to be(true)
+      end
+    end
+  end
+
   describe 'DELETE /super_admin/accounts/{account_id}' do
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do
