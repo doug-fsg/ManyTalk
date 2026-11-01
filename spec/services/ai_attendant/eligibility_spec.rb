@@ -68,7 +68,7 @@ RSpec.describe AiAttendant::Eligibility do
 
       expect(message.content_type).to eq('text')
       expect(message.attachments.first.file_type).to eq('image')
-      expect(result).to eq(eligible: false, reason: 'unsupported_type')
+      expect(result).to eq(eligible: false, reason: 'unsupported_media')
     end
 
     it 'rejects incoming audio with reason audio_unsupported' do
@@ -77,10 +77,17 @@ RSpec.describe AiAttendant::Eligibility do
       expect(result).to eq(eligible: false, reason: 'audio_unsupported')
     end
 
-    it 'rejects contacts with ai_handoff_at' do
-      conversation.contact.update!(custom_attributes: { 'ai_handoff_at' => Time.current.iso8601 })
+    it 'rejects the conversation after handoff' do
+      conversation.update!(additional_attributes: { 'ai_handoff_at' => Time.current.iso8601 })
 
-      expect(result[:eligible]).to be(false)
+      expect(result).to eq(eligible: false, reason: 'handoff')
+    end
+
+    it 'keeps the contact eligible when only the contact has ai_handoff_at' do
+      conversation.contact.update!(custom_attributes: { 'ai_handoff_at' => Time.current.iso8601, 'idioma' => 'pt-BR' })
+
+      expect(result).to eq(eligible: true, reason: nil)
+      expect(conversation.contact.reload.custom_attributes['idioma']).to eq('pt-BR')
     end
 
     it 'rejects when the feature flag is off' do

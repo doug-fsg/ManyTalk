@@ -81,6 +81,11 @@ class AiAttendant::ChatService
           messages << tool_result_message(tool_call, content)
           refresh_system_prompt!(messages) if behavior_step_tool?(tool_call)
         end
+        if handed_off
+          credits = sandbox? ? 0 : credits_from(tokens)
+          PlatformAi::QuotaGuard.charge!(account: account, credits: credits) unless sandbox?
+          return result(text: nil, handoff: true, tokens: tokens, credits_charged: credits)
+        end
         next
       end
 
@@ -191,13 +196,10 @@ class AiAttendant::ChatService
   def current_behavior_step_index
     if sandbox?
       @sandbox_step_index
-    elsif conversation.contact.blank?
+    elsif conversation.blank? || !conversation.persisted?
       0
     else
-      AiAttendant::BehaviorProgress.load(
-        contact: conversation.contact,
-        conversation: conversation
-      ).step_index
+      AiAttendant::BehaviorProgress.load(conversation: conversation).step_index
     end
   end
 
@@ -227,7 +229,6 @@ class AiAttendant::ChatService
     end
 
     AiAttendant::BehaviorProgress.advance!(
-      contact: conversation.contact,
       conversation: conversation,
       script: behavior_script,
       evidence: evidence

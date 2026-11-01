@@ -2,38 +2,26 @@
 
 module AiAttendant
   class BehaviorProgress
-    ATTRIBUTE_KEY = 'ai_behavior_progress'
-
     Progress = Struct.new(:conversation_id, :step_index, keyword_init: true)
 
     class << self
-      def load(contact:, conversation:)
-        raw = (contact&.custom_attributes || {})[ATTRIBUTE_KEY]
-        return fresh(conversation) unless raw.is_a?(Hash)
-
-        stored_conversation_id = raw['conversation_id'].to_i
-        return fresh(conversation) if stored_conversation_id != conversation.id
-
+      def load(conversation:)
         Progress.new(
-          conversation_id: conversation.id,
-          step_index: raw['step_index'].to_i
+          conversation_id: conversation&.id,
+          step_index: AiAttendant::ConversationState.step_index(conversation)
         )
       end
 
-      def fresh(conversation)
-        Progress.new(conversation_id: conversation.id, step_index: 0)
-      end
+      def advance!(conversation:, script:, evidence:)
+        raise ArgumentError, 'conversation required' if conversation.blank?
 
-      def advance!(contact:, conversation:, script:, evidence:)
-        raise ArgumentError, 'contact required' if contact.blank?
-
-        progress = load(contact: contact, conversation: conversation)
+        progress = load(conversation: conversation)
         return failure('already_complete') if script.step_count.zero?
         return failure('already_complete') if progress.step_index >= script.step_count
 
         previous_index = progress.step_index
         new_index = previous_index + 1
-        persist!(contact, conversation, new_index)
+        AiAttendant::ConversationState.write_progress!(conversation, new_index)
 
         {
           ok: true,
@@ -60,16 +48,6 @@ module AiAttendant
       end
 
       private
-
-      def persist!(contact, conversation, step_index)
-        merged = (contact.custom_attributes || {}).merge(
-          ATTRIBUTE_KEY => {
-            'conversation_id' => conversation.id,
-            'step_index' => step_index
-          }
-        )
-        contact.update!(custom_attributes: merged)
-      end
 
       def failure(error)
         { ok: false, error: error }

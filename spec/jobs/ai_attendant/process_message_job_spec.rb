@@ -6,14 +6,13 @@ RSpec.describe AiAttendant::ProcessMessageJob, type: :job do
   let(:account) { create(:account) }
   let(:inbox) { create(:inbox, account: account) }
   let(:conversation) { create(:conversation, account: account, inbox: inbox) }
-  let(:sender_user) { create(:user, account: account) }
+  let(:sender) { config.message_sender }
   let(:config) do
     create(
       :ai_attendant_config,
       account: account,
       inbox_id: inbox.id,
       active: true,
-      sender_user: sender_user,
       schedule_mode: 'always'
     )
   end
@@ -44,6 +43,7 @@ RSpec.describe AiAttendant::ProcessMessageJob, type: :job do
   after { message_buffer.clear! }
 
   before do
+    sender
     config
     incoming_message
     allow(AiAttendant::WorkingHoursPolicy).to receive(:allow?).and_return(true)
@@ -68,7 +68,7 @@ RSpec.describe AiAttendant::ProcessMessageJob, type: :job do
         )
         expect(AiAttendant::ResponseSender).to have_received(:new).with(
           conversation: conversation,
-          sender: sender_user,
+          sender: sender,
           text: 'Olá, em que posso ajudar?',
           config: config
         )
@@ -93,26 +93,22 @@ RSpec.describe AiAttendant::ProcessMessageJob, type: :job do
         )
       end
 
-      it 'sends the public fallback, calls HandoffService, and records an error run' do
+      it 'sends a retry and does not hand off' do
         perform_job
 
         expect(AiAttendant::ResponseSender).to have_received(:new).with(
           conversation: conversation,
-          sender: sender_user,
-          text: 'Não consegui processar; vou chamar um atendente',
+          sender: sender,
+          text: AiAttendant::CustomerNotice::RETRY,
           config: config
         )
         expect(response_sender).to have_received(:perform)
-        expect(AiAttendant::HandoffService).to have_received(:new).with(
-          conversation: conversation,
-          summary: 'Não consegui processar; vou chamar um atendente',
-          config: config
-        )
-        expect(handoff_service).to have_received(:perform)
+        expect(AiAttendant::HandoffService).not_to have_received(:new)
 
         run = AiAttendantRun.last
         expect(run.status).to eq('error')
         expect(run.inbox_id).to eq(inbox.id)
+        expect(conversation.reload.additional_attributes['ai_handoff_at']).to be_blank
       end
     end
 
@@ -121,13 +117,13 @@ RSpec.describe AiAttendant::ProcessMessageJob, type: :job do
         allow(AiAttendant::WorkingHoursPolicy).to receive(:allow?).and_return(false)
       end
 
-      it 'persists a skipped run and does not call ChatService or post a message' do
-        expect(Messages::MessageBuilder).not_to receive(:new)
-
+      it 'posts an out-of-office message and skips the model' do
         perform_job
 
         expect(AiAttendant::ChatService).not_to have_received(:new)
-        expect(AiAttendant::ResponseSender).not_to have_received(:new)
+        expect(AiAttendant::ResponseSender).to have_received(:new).with(
+          hash_including(text: AiAttendant::CustomerNotice::CLOSED)
+        )
         expect(AiAttendant::HandoffService).not_to have_received(:new)
 
         run = AiAttendantRun.last
@@ -146,7 +142,6 @@ RSpec.describe AiAttendant::ProcessMessageJob, type: :job do
         perform_job
 
         expect(message_buffer.push(message_id: incoming_message.id + 2, content: 'depois do skip', debounce_seconds: 5)).to eq(:leader)
-        expect(AiAttendant::ResponseSender).not_to have_received(:new)
         expect(AiAttendantRun.last.skip_reason).to eq('working_hours')
       end
     end
@@ -156,15 +151,17 @@ RSpec.describe AiAttendant::ProcessMessageJob, type: :job do
         allow(PlatformAi::QuotaGuard).to receive(:allow?).and_return(false)
       end
 
-      it 'skips without posting and clears the debounce buffer' do
+      it 'hands the conversation to a human and clears the debounce buffer' do
         expect(seed_buffer_as_follower).to eq(:follower)
 
         perform_job
 
         expect(AiAttendant::ChatService).not_to have_received(:new)
-        expect(AiAttendant::ResponseSender).not_to have_received(:new)
+        expect(AiAttendant::HandoffService).to have_received(:new).with(
+          hash_including(customer_notice: AiAttendant::CustomerNotice::NO_CREDITS)
+        )
         expect(message_buffer.push(message_id: incoming_message.id + 2, content: 'depois do skip', debounce_seconds: 5)).to eq(:leader)
-        expect(AiAttendantRun.last).to have_attributes(status: 'skipped', skip_reason: 'no_credits')
+        expect(AiAttendantRun.last).to have_attributes(status: 'handoff', skip_reason: 'no_credits')
       end
     end
   end

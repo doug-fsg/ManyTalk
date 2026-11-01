@@ -77,12 +77,9 @@ class AiAttendant::PromptBuilder
 
   def behavior_step_index(script)
     return behavior_step_index_override.to_i unless behavior_step_index_override.nil?
-    return 0 if conversation.blank? || conversation.contact.blank?
+    return 0 if conversation.blank?
 
-    AiAttendant::BehaviorProgress.load(
-      contact: conversation.contact,
-      conversation: conversation
-    ).step_index
+    AiAttendant::BehaviorProgress.load(conversation: conversation).step_index
   end
 
   def company_context_section
@@ -114,9 +111,16 @@ class AiAttendant::PromptBuilder
   end
 
   def handoff_section
-    return if config.handoff_conditions.blank?
+    conditions = config.handoff_conditions.presence || 'Quando o cliente pedir para falar com uma pessoa.'
 
-    "Condições para encaminhar ao humano\n#{config.handoff_conditions}"
+    <<~TEXT.strip
+      Condições para encaminhar ao humano
+      #{conditions}
+
+      Se a mensagem do cliente se encaixar nessas condições, chame a ferramenta handoff_to_human.
+      No summary, descreva o motivo em uma frase.
+      Não diga ao cliente que a conversa foi transferida sem chamar essa ferramenta.
+    TEXT
   end
 
   def fixed_rules_section

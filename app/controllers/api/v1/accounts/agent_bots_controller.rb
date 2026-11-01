@@ -4,7 +4,7 @@ class Api::V1::Accounts::AgentBotsController < Api::V1::Accounts::BaseController
   before_action :agent_bot, except: [:index, :create]
 
   def index
-    @agent_bots = AgentBot.where(account_id: [nil, Current.account.id])
+    @agent_bots = AgentBot.configurable.where(account_id: [nil, Current.account.id])
   end
 
   def show; end
@@ -34,6 +34,7 @@ class Api::V1::Accounts::AgentBotsController < Api::V1::Accounts::BaseController
   def agent_bot
     @agent_bot = AgentBot.where(account_id: [nil, Current.account.id]).find(params[:id]) if params[:action] == 'show'
     @agent_bot ||= Current.account.agent_bots.find(params[:id])
+    raise ActiveRecord::RecordNotFound if @agent_bot.ai_attendant?
   end
 
   def permitted_params

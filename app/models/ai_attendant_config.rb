@@ -25,17 +25,17 @@
 #  account_id               :bigint           not null
 #  avatar_id                :string           default("avatar_1"), not null
 #  many_ia_config_id        :string
-#  sender_user_id           :bigint
+#  sender_agent_bot_id      :bigint
 #
 # Indexes
 #
-#  index_ai_attendant_configs_on_account_id      (account_id)
-#  index_ai_attendant_configs_on_sender_user_id  (sender_user_id)
+#  index_ai_attendant_configs_on_account_id           (account_id)
+#  index_ai_attendant_configs_on_sender_agent_bot_id  (sender_agent_bot_id)
 #
 # Foreign Keys
 #
 #  fk_rails_...  (account_id => accounts.id)
-#  fk_rails_...  (sender_user_id => users.id)
+#  fk_rails_...  (sender_agent_bot_id => agent_bots.id)
 #
 class AiAttendantConfig < ApplicationRecord
   SCHEDULE_MODES = %w[always within_inbox_hours outside_inbox_hours].freeze
@@ -43,7 +43,7 @@ class AiAttendantConfig < ApplicationRecord
   BEHAVIOR_STEP_MODES = AiAttendant::BehaviorScript::STEP_MODES
 
   belongs_to :account
-  belongs_to :sender_user, class_name: 'User', optional: true
+  belongs_to :sender_agent_bot, class_name: 'AgentBot', optional: true
   has_many :ai_attendant_config_inboxes, dependent: :destroy
   has_many :inboxes, through: :ai_attendant_config_inboxes
   has_many_attached :reference_files
@@ -55,6 +55,7 @@ class AiAttendantConfig < ApplicationRecord
   validates :debounce_seconds, numericality: { only_integer: true, greater_than_or_equal_to: 1, less_than_or_equal_to: 30 }
   validates :behavior_step_mode, inclusion: { in: BEHAVIOR_STEP_MODES }
 
+  before_destroy :destroy_sender_bot
   before_validation :normalize_behavior_steps_storage
 
   scope :for_inbox, lambda { |inbox_id|
@@ -69,11 +70,25 @@ class AiAttendantConfig < ApplicationRecord
     inbox_ids.first
   end
 
+  def message_sender
+    return sender_agent_bot if sender_agent_bot.present?
+
+    AiAttendant::EnsureSenderBot.for(config: self)
+  end
+
   def avatar_url
     AiAttendant::Avatars.url_for(avatar_id)
   end
 
   private
+
+  def destroy_sender_bot
+    bot = sender_agent_bot
+    return if bot.blank?
+
+    update_column(:sender_agent_bot_id, nil)
+    bot.destroy!
+  end
 
   def must_have_at_least_one_inbox_link
     return if ai_attendant_config_inboxes.any?

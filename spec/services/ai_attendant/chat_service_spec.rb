@@ -133,12 +133,11 @@ RSpec.describe AiAttendant::ChatService do
       before do
         allow(AiAttendant::HandoffService).to receive(:new).and_return(handoff_service)
         allow(PlatformAi::ChatClient).to receive(:complete).and_return(
-          completion(content: nil, tool_calls: tool_calls, total_tokens: 40),
-          completion(content: 'Vou te transferir para um atendente.', total_tokens: 60)
+          completion(content: nil, tool_calls: tool_calls, total_tokens: 40)
         )
       end
 
-      it 'runs HandoffService and returns handoff true with the final text' do
+      it 'runs HandoffService, stops, and does not send a follow-up model reply' do
         result = perform_service
 
         expect(AiAttendant::HandoffService).to have_received(:new).with(
@@ -147,10 +146,11 @@ RSpec.describe AiAttendant::ChatService do
           config: config
         )
         expect(handoff_service).to have_received(:perform)
-        expect(result[:text]).to eq('Vou te transferir para um atendente.')
+        expect(result[:text]).to be_nil
         expect(result[:handoff]).to be(true)
-        expect(result[:tokens]).to eq(100)
-        expect(result[:credits_charged]).to eq(BigDecimal('0.1'))
+        expect(result[:tokens]).to eq(40)
+        expect(result[:credits_charged]).to eq(BigDecimal('0.04'))
+        expect(PlatformAi::ChatClient).to have_received(:complete).once
       end
     end
 
@@ -190,7 +190,7 @@ RSpec.describe AiAttendant::ChatService do
       it 'advances persisted progress and includes the step tool' do
         result = perform_service
 
-        stored = conversation.contact.reload.custom_attributes['ai_behavior_progress']
+        stored = conversation.reload.additional_attributes['ai_behavior_progress']
         expect(stored['step_index']).to eq(1)
         expect(result[:text]).to eq('Qual cidade você está?')
         expect(PlatformAi::ChatClient).to have_received(:complete).with(
@@ -228,18 +228,17 @@ RSpec.describe AiAttendant::ChatService do
         allow(AiAttendant::HandoffService).to receive(:new)
         allow(PlatformAi::QuotaGuard).to receive(:charge!)
         allow(PlatformAi::ChatClient).to receive(:complete).and_return(
-          completion(content: nil, tool_calls: tool_calls, total_tokens: 40),
-          completion(content: 'Vou te transferir para um atendente.', total_tokens: 60)
+          completion(content: nil, tool_calls: tool_calls, total_tokens: 40)
         )
       end
 
       it 'returns handoff true without charging quota or calling HandoffService' do
         result = perform_sandbox
 
-        expect(PlatformAi::ChatClient).to have_received(:complete).at_least(:once)
+        expect(PlatformAi::ChatClient).to have_received(:complete).once
         expect(AiAttendant::HandoffService).not_to have_received(:new)
         expect(PlatformAi::QuotaGuard).not_to have_received(:charge!)
-        expect(result[:text]).to eq('Vou te transferir para um atendente.')
+        expect(result[:text]).to be_nil
         expect(result[:handoff]).to be(true)
         expect(result[:credits_charged]).to eq(0)
         expect(account.reload.ai_credits_used).to eq(1)

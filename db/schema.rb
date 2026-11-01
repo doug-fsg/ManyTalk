@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_10_30_210000) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_31_223000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -199,13 +199,13 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_30_210000) do
     t.boolean "detect_language", default: false, null: false
     t.integer "debounce_seconds", default: 5, null: false
     t.string "many_ia_config_id"
-    t.bigint "sender_user_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "behavior_step_mode", default: "guide", null: false
     t.string "avatar_id", default: "avatar_1", null: false
+    t.bigint "sender_agent_bot_id"
     t.index ["account_id"], name: "index_ai_attendant_configs_on_account_id"
-    t.index ["sender_user_id"], name: "index_ai_attendant_configs_on_sender_user_id"
+    t.index ["sender_agent_bot_id"], name: "index_ai_attendant_configs_on_sender_agent_bot_id"
   end
 
   create_table "ai_attendant_runs", force: :cascade do |t|
@@ -1315,7 +1315,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_30_210000) do
   add_foreign_key "activities", "users", column: "assignee_id"
   add_foreign_key "ai_attendant_config_inboxes", "ai_attendant_configs"
   add_foreign_key "ai_attendant_configs", "accounts"
-  add_foreign_key "ai_attendant_configs", "users", column: "sender_user_id"
+  add_foreign_key "ai_attendant_configs", "agent_bots", column: "sender_agent_bot_id"
   add_foreign_key "ai_attendant_runs", "accounts"
   add_foreign_key "contact_inboxes", "contacts", on_delete: :cascade
   add_foreign_key "contact_inboxes", "inboxes", on_delete: :cascade

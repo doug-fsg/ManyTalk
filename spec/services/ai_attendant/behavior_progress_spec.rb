@@ -24,7 +24,6 @@ RSpec.describe AiAttendant::BehaviorProgress do
   describe '.advance!' do
     it 'increments step index for the same conversation' do
       result = described_class.advance!(
-        contact: contact,
         conversation: conversation,
         script: script,
         evidence: 'Cliente disse oi'
@@ -34,21 +33,21 @@ RSpec.describe AiAttendant::BehaviorProgress do
       expect(result[:previous_index]).to eq(0)
       expect(result[:current_index]).to eq(1)
 
-      progress = described_class.load(contact: contact, conversation: conversation)
+      progress = described_class.load(conversation: conversation)
       expect(progress.step_index).to eq(1)
     end
 
     it 'resets when conversation_id changes' do
       described_class.advance!(
-        contact: contact,
         conversation: conversation,
         script: script,
         evidence: 'ok'
       )
 
       other_conversation = create(:conversation, account: account, inbox: inbox, contact: contact)
-      progress = described_class.load(contact: contact, conversation: other_conversation)
+      progress = described_class.load(conversation: other_conversation)
       expect(progress.step_index).to eq(0)
+      expect(contact.reload.custom_attributes).not_to have_key('ai_behavior_progress')
     end
   end
 end

@@ -29,12 +29,21 @@ class AgentBot < ApplicationRecord
   belongs_to :account, optional: true
   enum bot_type: { webhook: 0, csml: 1 }
 
+  AI_ATTENDANT_KIND = 'ai_attendant'
+
   validate :validate_agent_bot_config
   validates :outgoing_url, length: { maximum: Limits::URL_LENGTH_LIMIT }
 
   before_save :clear_other_capitao_flags, if: :will_save_change_to_capitao?
 
   scope :capitao, -> { where(capitao: true) }
+  scope :configurable, lambda {
+    where("COALESCE(bot_config ->> 'kind', '') <> ?", AI_ATTENDANT_KIND)
+  }
+
+  def ai_attendant?
+    bot_config.is_a?(Hash) && bot_config['kind'] == AI_ATTENDANT_KIND
+  end
 
   def self.capitao_bot
     find_by(capitao: true)

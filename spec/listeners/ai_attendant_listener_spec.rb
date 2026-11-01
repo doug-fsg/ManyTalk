@@ -53,6 +53,69 @@ RSpec.describe AiAttendantListener do
         .not_to have_enqueued_job(AiAttendant::ProcessMessageJob)
     end
 
+    it 'replies to audio without calling the model' do
+      message.attachments.create!(account_id: account.id, file_type: :audio)
+
+      expect { listener.message_created(event) }
+        .not_to have_enqueued_job(AiAttendant::ProcessMessageJob)
+
+      reply = conversation.messages.outgoing.last
+      expect(reply.content).to eq(AiAttendant::CustomerNotice::AUDIO)
+      expect(reply.sender).to be_a(AgentBot)
+    end
+
+    it 'returns the conversation to the AI when the agent unassigns it' do
+      agent = create(:user, account: account, role: :agent)
+      conversation.update!(
+        assignee: agent,
+        additional_attributes: { 'ai_handoff_at' => Time.current.iso8601 }
+      )
+      conversation.update!(assignee: nil)
+      updated = Events::Base.new(
+        'conversation.updated',
+        Time.zone.now,
+        conversation: conversation,
+        changed_attributes: { 'assignee_id' => [agent.id, nil] }
+      )
+
+      listener.conversation_updated(updated)
+
+      expect(conversation.reload.additional_attributes).not_to have_key('ai_handoff_at')
+      expect(conversation.assignee_id).to be_nil
+
+      follow_up = Events::Base.new('message.created', Time.zone.now, message: message)
+      expect { listener.message_created(follow_up) }
+        .to have_enqueued_job(AiAttendant::ProcessMessageJob)
+        .with(account.id, inbox.id, conversation.id, [message.id])
+    end
+
+    it 'keeps the handoff while the conversation stays with an agent' do
+      agent = create(:user, account: account, role: :agent)
+      conversation.update!(
+        assignee: agent,
+        additional_attributes: { 'ai_handoff_at' => Time.current.iso8601 }
+      )
+      updated = Events::Base.new(
+        'conversation.updated',
+        Time.zone.now,
+        conversation: conversation,
+        changed_attributes: { 'assignee_id' => [nil, agent.id] }
+      )
+
+      listener.conversation_updated(updated)
+
+      expect(conversation.reload.additional_attributes).to have_key('ai_handoff_at')
+    end
+
+    it 'clears handoff when the conversation is resolved' do
+      conversation.update!(additional_attributes: { 'ai_handoff_at' => Time.current.iso8601 })
+      resolved = Events::Base.new('conversation.resolved', Time.zone.now, conversation: conversation)
+
+      listener.conversation_resolved(resolved)
+
+      expect(conversation.reload.additional_attributes).not_to have_key('ai_handoff_at')
+    end
+
     it 'enqueues only once when a second rapid message is a buffer follower' do
       second_message = create(
         :message,

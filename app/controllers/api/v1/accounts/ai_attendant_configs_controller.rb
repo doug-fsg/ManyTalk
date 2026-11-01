@@ -16,7 +16,7 @@ class Api::V1::Accounts::AiAttendantConfigsController < Api::V1::Accounts::BaseC
     ActiveRecord::Base.transaction do
       @ai_attendant_config.save!
       sync_inbox_links!(@ai_attendant_config)
-      assign_sender_user!
+      assign_sender_bot!
     end
     sync_reference_files
   rescue ActiveRecord::RecordInvalid => e
@@ -27,7 +27,7 @@ class Api::V1::Accounts::AiAttendantConfigsController < Api::V1::Accounts::BaseC
     ActiveRecord::Base.transaction do
       @ai_attendant_config.update!(config_params)
       sync_inbox_links!(@ai_attendant_config) if inbox_ids_param_present?
-      assign_sender_user!
+      assign_sender_bot!
     end
     @ai_attendant_config.reload
     sync_reference_files
@@ -60,6 +60,11 @@ class Api::V1::Accounts::AiAttendantConfigsController < Api::V1::Accounts::BaseC
       combined_text: params.require(:message),
       at: Time.current
     )
+
+    if AiAttendant::ExplicitHandoff.match?(params[:message].to_s)
+      render json: { reply: nil, handoff: true, messages: [] }
+      return
+    end
 
     result = AiAttendant::ChatService.new(
       conversation: sandbox_conversation,
@@ -107,9 +112,8 @@ class Api::V1::Accounts::AiAttendantConfigsController < Api::V1::Accounts::BaseC
     end
   end
 
-  def assign_sender_user!
-    @ai_attendant_config.sender_user = AiAttendant::EnsureSenderUser.for(config: @ai_attendant_config)
-    @ai_attendant_config.save! if @ai_attendant_config.sender_user_id_changed?
+  def assign_sender_bot!
+    @ai_attendant_config.message_sender
   end
 
   def sandbox_conversation
@@ -270,7 +274,7 @@ class Api::V1::Accounts::AiAttendantConfigsController < Api::V1::Accounts::BaseC
       behavior_steps: %i[instruction completion_criterion],
       topics_to_avoid: []
     )
-    permitted.except(:account_id, :sender_user_id)
+    permitted.except(:account_id, :sender_agent_bot_id)
   end
 
   def config_param_source

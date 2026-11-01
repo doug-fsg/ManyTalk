@@ -33,9 +33,9 @@ RSpec.describe AiAttendant::PromptBuilder do
       config.update!(behavior_step_mode: 'strict')
       contact = create(:contact, account: account)
       conversation = create(:conversation, account: account, inbox: inbox, contact: contact)
-      contact.update!(
-        custom_attributes: {
-          'ai_behavior_progress' => { 'conversation_id' => conversation.id, 'step_index' => 1 }
+      conversation.update!(
+        additional_attributes: {
+          'ai_behavior_progress' => { 'step_index' => 1 }
         }
       )
 
@@ -61,6 +61,7 @@ RSpec.describe AiAttendant::PromptBuilder do
       expect(prompt).to include('Tirar dúvidas e qualificar leads')
       expect(prompt).to include('Ajudar o cliente a encontrar o produto certo')
       expect(prompt).to include('Quando o cliente pedir um humano')
+      expect(prompt).to include('handoff_to_human')
       expect(prompt).to include('não invent').or include('Não invent')
       expect(prompt).to include('\n\n')
     end

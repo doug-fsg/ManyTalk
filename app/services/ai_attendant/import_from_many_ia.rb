@@ -26,8 +26,7 @@ module AiAttendant
       config.assign_attributes(mapped_attributes)
       config.save!
       config.ai_attendant_config_inboxes.find_or_create_by!(inbox_id: owned_inbox.id)
-      config.sender_user = EnsureSenderUser.for(config: config)
-      config.save! if config.sender_user_id_changed?
+      EnsureSenderBot.for(config: config)
       config
     end
 

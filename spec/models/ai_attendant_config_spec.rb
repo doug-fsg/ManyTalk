@@ -25,7 +25,7 @@ RSpec.describe AiAttendantConfig do
 
   describe 'associations' do
     it { is_expected.to belong_to(:account) }
-    it { is_expected.to belong_to(:sender_user).class_name('User').optional }
+    it { is_expected.to belong_to(:sender_agent_bot).class_name('AgentBot').optional }
     it { is_expected.to have_many(:ai_attendant_config_inboxes).dependent(:destroy) }
     it { is_expected.to have_many(:inboxes).through(:ai_attendant_config_inboxes) }
     it { is_expected.to have_many_attached(:reference_files) }

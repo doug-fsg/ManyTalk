@@ -132,10 +132,12 @@ RSpec.describe 'Ai Attendant Configs API', type: :request do
         created = account.ai_attendant_configs.last
         expect(created.inbox_ids).to eq([inbox.id])
         expect(created.digital_agent_name).to eq('Lia')
-        expect(created.sender_user_id).to be_present
-        expect(created.sender_user.email).to eq("funcionario-digital-#{account.id}-config-#{created.id}@manytalks.internal")
+        expect(created.sender_agent_bot).to be_present
+        expect(created.sender_agent_bot.bot_config['kind']).to eq('ai_attendant')
+        expect(created.sender_agent_bot.account_id).to eq(account.id)
+        expect(account.users.where(id: created.sender_agent_bot_id)).to be_empty
         expect(created.avatar_id).to eq('avatar_1')
-        expect(json_body['sender_user_id']).to eq(created.sender_user_id)
+        expect(json_body).not_to have_key('sender_user_id')
         expect(secret_keys_in(json_body)).to be_empty
       end
 
@@ -371,7 +373,7 @@ RSpec.describe 'Ai Attendant Configs API', type: :request do
           end.not_to change { Message.where(private: false, message_type: :outgoing).count }
 
           expect(response).to have_http_status(:success)
-          expect(json_body['reply']).to eq('Vou te transferir.')
+          expect(json_body['reply']).to be_nil
           expect(json_body['handoff']).to be(true)
           expect(AiAttendant::HandoffService).not_to have_received(:new)
           expect(PlatformAi::QuotaGuard).not_to have_received(:charge!)
@@ -431,7 +433,7 @@ RSpec.describe 'Ai Attendant Configs API', type: :request do
         expect(created.many_ia_config_id).to eq('many-ia-cfg-import')
         expect(created.digital_agent_name).to eq('Lia Import')
         expect(created.schedule_mode).to eq('always')
-        expect(created.sender_user_id).to be_present
+        expect(created.sender_agent_bot_id).to be_present
         expect(json_body['many_ia_config_id']).to eq('many-ia-cfg-import')
         expect(secret_keys_in(json_body)).to be_empty
       end

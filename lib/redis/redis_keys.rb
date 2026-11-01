@@ -35,6 +35,7 @@ module Redis::RedisKeys
   MESSAGE_SOURCE_KEY = 'MESSAGE_SOURCE_KEY::%<id>s'.freeze
   OPENAI_CONVERSATION_KEY = 'OPEN_AI_CONVERSATION_KEY::%<event_name>s::%<conversation_id>d::%<updated_at>d'.freeze
   AI_ATTENDANT_BUFFER = 'AI_ATTENDANT_BUFFER::%<account_id>d::%<inbox_id>d::%<conversation_id>d'.freeze
+  AI_ATTENDANT_NOTICE = 'AI_ATTENDANT_NOTICE::%<conversation_id>d::%<reason>s'.freeze
 
   ## Sempahores / Locks
   # We don't want to process messages from the same sender concurrently to prevent creating double conversations

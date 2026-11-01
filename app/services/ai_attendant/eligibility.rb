@@ -20,11 +20,13 @@ module AiAttendant
     def call
       return reject('feature_disabled') unless feature_enabled?
       return reject('config_missing') if config.blank?
+      return reject('no_credits') if paused_for_credits?
       return reject('config_inactive') unless config.active?
       return reject('not_incoming') unless message.incoming?
       return reject('private') if message.private?
       return reject('not_webhook_sendable') unless message.webhook_sendable?
       return reject('unsupported_type') if unsupported_type?
+      return reject('unsupported_media') if unsupported_media?
       return reject('audio_unsupported') if audio?
       return reject('assigned') if assigned?
       return reject('handoff') if handoff?
@@ -48,8 +50,16 @@ module AiAttendant
       @config ||= AiAttendantConfig.for_inbox(message.inbox_id).find_by(account_id: message.account_id)
     end
 
+    def paused_for_credits?
+      !config.active? && config.pause_reason == 'no_credits'
+    end
+
     def unsupported_type?
-      message.activity? || sticker? || reaction? || gif?
+      message.activity? || reaction?
+    end
+
+    def unsupported_media?
+      sticker? || gif?
     end
 
     def sticker?
@@ -98,7 +108,7 @@ module AiAttendant
     end
 
     def handoff?
-      message.conversation.contact&.custom_attributes&.[]('ai_handoff_at').present?
+      AiAttendant::ConversationState.handed_off?(message.conversation)
     end
   end
 end

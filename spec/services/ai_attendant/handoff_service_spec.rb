@@ -5,7 +5,6 @@ require 'rails_helper'
 RSpec.describe AiAttendant::HandoffService do
   let(:account) { create(:account) }
   let(:inbox) { create(:inbox, account: account, enable_auto_assignment: false) }
-  let(:sender_user) { create(:user, account: account) }
   let(:agent) { create(:user, account: account) }
   let(:conversation) { create(:conversation, account: account, inbox: inbox, status: :pending) }
   let(:contact) { conversation.contact }
@@ -16,7 +15,6 @@ RSpec.describe AiAttendant::HandoffService do
       :ai_attendant_config,
       account: account,
       inbox_id: inbox.id,
-      sender_user: sender_user,
       handoff_customer_message: handoff_customer_message
     )
   end
@@ -40,7 +38,7 @@ RSpec.describe AiAttendant::HandoffService do
         end
       end
 
-      it 'creates a private note, assigns the agent, and records ai_handoff_at' do
+      it 'creates a private note, assigns the agent, and records handoff on the conversation' do
         freeze_time do
           result = perform_handoff
 
@@ -53,13 +51,15 @@ RSpec.describe AiAttendant::HandoffService do
           expect(private_note).to be_present
           expect(private_note.content).to include('[IA → Humano]')
           expect(private_note.content).to include(summary)
-          expect(private_note.sender).to eq(sender_user)
+          expect(private_note.sender).to eq(config.message_sender)
+          expect(private_note.sender).to be_a(AgentBot)
           expect(private_note).to be_outgoing
 
           expect(conversation.reload).to be_open
           expect(conversation.assignee_id).to eq(agent.id)
-          expect(contact.reload.custom_attributes['ai_handoff_at']).to eq(Time.current.iso8601)
-          expect(contact.custom_attributes['idioma']).to eq('pt-BR')
+          expect(conversation.additional_attributes['ai_handoff_at']).to eq(Time.current.iso8601)
+          expect(contact.reload.custom_attributes['idioma']).to eq('pt-BR')
+          expect(contact.custom_attributes).not_to have_key('ai_handoff_at')
           expect(conversation.messages.where(private: false, message_type: :outgoing)).to be_empty
 
           expect(result).to eq(assigned: true, assignee_id: agent.id)
@@ -76,18 +76,20 @@ RSpec.describe AiAttendant::HandoffService do
           public_message = conversation.messages.find_by(private: false, message_type: :outgoing)
           expect(public_message).to be_present
           expect(public_message.content).to eq(handoff_customer_message)
-          expect(public_message.sender).to eq(sender_user)
-          expect(contact.reload.custom_attributes['ai_handoff_at']).to eq(Time.current.iso8601)
+          expect(public_message.sender).to eq(config.message_sender)
+          expect(conversation.reload.additional_attributes['ai_handoff_at']).to eq(Time.current.iso8601)
+          expect(contact.reload.custom_attributes['idioma']).to eq('pt-BR')
           expect(result).to eq(assigned: false, assignee_id: nil)
         end
       end
 
-      it 'does not send a public message when handoff_customer_message is blank' do
+      it 'sends the default public message when handoff_customer_message is blank' do
         config.update!(handoff_customer_message: nil)
 
         perform_handoff
 
-        expect(conversation.messages.where(private: false, message_type: :outgoing)).to be_empty
+        public_message = conversation.messages.find_by(private: false, message_type: :outgoing)
+        expect(public_message.content).to eq(described_class::DEFAULT_CUSTOMER_MESSAGE)
       end
     end
   end

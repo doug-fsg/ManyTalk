@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 class AiAttendant::HandoffService
-  pattr_initialize [:conversation!, :summary!, :config!]
+  DEFAULT_CUSTOMER_MESSAGE = 'Vou te encaminhar para um atendente. Se ninguém estiver disponível agora, a conversa fica na fila.'
+
+  pattr_initialize [:conversation!, :summary!, :config!, { customer_notice: nil }]
 
   def perform
     create_private_note
@@ -20,7 +22,7 @@ class AiAttendant::HandoffService
 
   def create_private_note
     Messages::MessageBuilder.new(
-      config.sender_user,
+      config.message_sender,
       conversation,
       { content: "[IA → Humano] #{summary}", private: true }
     ).perform
@@ -40,18 +42,19 @@ class AiAttendant::HandoffService
 
   def send_customer_message_if_unassigned
     return if conversation.assignee_id.present?
-    return if config.handoff_customer_message.blank?
 
     Messages::MessageBuilder.new(
-      config.sender_user,
+      config.message_sender,
       conversation,
-      { content: config.handoff_customer_message, private: false }
+      { content: public_handoff_text, private: false }
     ).perform
   end
 
+  def public_handoff_text
+    customer_notice.presence || config.handoff_customer_message.presence || DEFAULT_CUSTOMER_MESSAGE
+  end
+
   def persist_handoff_timestamp
-    contact = conversation.contact
-    merged = (contact.custom_attributes || {}).merge('ai_handoff_at' => Time.current.iso8601)
-    contact.update!(custom_attributes: merged)
+    AiAttendant::ConversationState.mark_handoff!(conversation)
   end
 end

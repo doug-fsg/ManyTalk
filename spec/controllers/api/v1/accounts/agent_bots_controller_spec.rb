@@ -6,6 +6,10 @@ RSpec.describe 'Agent Bot API', type: :request do
   let(:admin) { create(:user, account: account, role: :administrator) }
   let(:agent) { create(:user, account: account, role: :agent) }
 
+  def dashboard_headers(user)
+    user.create_new_auth_token.except('Authorization')
+  end
+
   describe 'GET /api/v1/accounts/{account.id}/agent_bots' do
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do
@@ -28,6 +32,23 @@ RSpec.describe 'Agent Bot API', type: :request do
         expect(response.body).to include(agent_bot.access_token.token)
         expect(response.body).not_to include(global_bot.access_token.token)
       end
+
+      it 'hides the AI attendant bot from the agent list' do
+        hidden = create(
+          :agent_bot,
+          account: account,
+          name: 'Atendente Oculto',
+          bot_config: { 'kind' => AgentBot::AI_ATTENDANT_KIND }
+        )
+
+        get "/api/v1/accounts/#{account.id}/agent_bots",
+            headers: dashboard_headers(agent),
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).not_to include(hidden.name)
+        expect(response.body).to include(agent_bot.name)
+      end
     end
   end
 
@@ -49,6 +70,21 @@ RSpec.describe 'Agent Bot API', type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include(agent_bot.name)
         expect(response.body).to include(agent_bot.access_token.token)
+      end
+
+      it 'does not show an AI attendant bot' do
+        hidden = create(
+          :agent_bot,
+          account: account,
+          name: 'Atendente Oculto',
+          bot_config: { 'kind' => AgentBot::AI_ATTENDANT_KIND }
+        )
+
+        get "/api/v1/accounts/#{account.id}/agent_bots/#{hidden.id}",
+            headers: dashboard_headers(agent),
+            as: :json
+
+        expect(response).to have_http_status(:not_found)
       end
 
       it 'will show a global agent bot' do

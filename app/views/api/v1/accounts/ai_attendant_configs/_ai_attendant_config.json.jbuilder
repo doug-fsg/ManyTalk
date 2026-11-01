@@ -20,7 +20,6 @@ json.schedule_mode resource.schedule_mode
 json.detect_language resource.detect_language
 json.debounce_seconds resource.debounce_seconds
 json.many_ia_config_id resource.many_ia_config_id
-json.sender_user_id resource.sender_user_id
 reference_files = resource.reference_files.attached? ? resource.reference_files.to_a : []
 json.reference_files(AiAttendant::ReferenceVariables.entries(reference_files)) do |entry|
   file = entry[:file]

@@ -59,8 +59,10 @@ RSpec.describe AiAttendant::ImportFromManyIa do
       expect(config.company_context).to eq('Somos a Manytalks')
       expect(config.topics_to_avoid).to eq(['preço interno', 'política salarial'])
       expect(config.handoff_conditions).to eq('Quando pedir humano')
-      expect(config.sender_user).to be_present
-      expect(config.sender_user.email).to eq("funcionario-digital-#{account.id}-config-#{config.id}@manytalks.internal")
+      expect(config.sender_agent_bot).to be_present
+      expect(config.sender_agent_bot.name).to eq('Lia Digital')
+      expect(config.sender_agent_bot.bot_config['kind']).to eq('ai_attendant')
+      expect(account.users).to be_empty
     end
 
     it 'maps horarioAtendimento to schedule_mode' do
@@ -192,7 +194,7 @@ RSpec.describe AiAttendant::ImportFromManyIa do
         )
         expect(updated.digital_agent_name).to eq('Lia Atualizada')
         expect(updated.schedule_mode).to eq('within_inbox_hours')
-        expect(updated.sender_user).to be_present
+        expect(updated.sender_agent_bot).to be_present
       end.not_to change(AiAttendantConfig, :count)
     end
   end

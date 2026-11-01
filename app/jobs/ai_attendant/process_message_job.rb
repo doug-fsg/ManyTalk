@@ -4,7 +4,7 @@ class AiAttendant::ProcessMessageJob < ApplicationJob
   queue_as :high
 
   HISTORY_LIMIT = 10
-  LLM_FALLBACK_TEXT = 'Não consegui processar; vou chamar um atendente'
+  LLM_FALLBACK_TEXT = AiAttendant::CustomerNotice::RETRY
 
   def perform(account_id, inbox_id, conversation_id, message_ids = [])
     account = Account.find_by(id: account_id)
@@ -23,21 +23,22 @@ class AiAttendant::ProcessMessageJob < ApplicationJob
     return persist_run(account: account, conversation: conversation, inbox: inbox, status: 'skipped', skip_reason: 'config_missing') if config.blank?
 
     unless AiAttendant::WorkingHoursPolicy.allow?(inbox: inbox, schedule_mode: config.schedule_mode)
-      return persist_run(
-        account: account,
-        conversation: conversation,
-        inbox: inbox,
-        status: 'skipped',
-        skip_reason: 'working_hours'
-      )
+      handle_outside_schedule(account: account, conversation: conversation, inbox: inbox, config: config)
+      return
     end
 
     unless PlatformAi::QuotaGuard.allow?(account: account)
+      AiAttendant::HandoffService.new(
+        conversation: conversation,
+        summary: AiAttendant::CustomerNotice::NO_CREDITS,
+        config: config,
+        customer_notice: AiAttendant::CustomerNotice::NO_CREDITS
+      ).perform
       return persist_run(
         account: account,
         conversation: conversation,
         inbox: inbox,
-        status: 'skipped',
+        status: 'handoff',
         skip_reason: 'no_credits'
       )
     end
@@ -49,6 +50,20 @@ class AiAttendant::ProcessMessageJob < ApplicationJob
         inbox: inbox,
         status: 'skipped',
         skip_reason: 'empty_content'
+      )
+    end
+
+    if AiAttendant::ExplicitHandoff.match?(combined_content)
+      AiAttendant::HandoffService.new(
+        conversation: conversation,
+        summary: AiAttendant::ExplicitHandoff.summary,
+        config: config
+      ).perform
+      return persist_run(
+        account: account,
+        conversation: conversation,
+        inbox: inbox,
+        status: 'handoff'
       )
     end
 
@@ -105,7 +120,7 @@ class AiAttendant::ProcessMessageJob < ApplicationJob
     if text.present?
       AiAttendant::ResponseSender.new(
         conversation: conversation,
-        sender: config.sender_user,
+        sender: config.message_sender,
         text: text,
         config: config
       ).perform
@@ -132,11 +147,10 @@ class AiAttendant::ProcessMessageJob < ApplicationJob
 
     AiAttendant::ResponseSender.new(
       conversation: conversation,
-      sender: config.sender_user,
+      sender: config.message_sender,
       text: LLM_FALLBACK_TEXT,
       config: config
     ).perform
-    AiAttendant::HandoffService.new(conversation: conversation, summary: LLM_FALLBACK_TEXT, config: config).perform
     persist_run(
       account: account,
       conversation: conversation,
@@ -145,6 +159,39 @@ class AiAttendant::ProcessMessageJob < ApplicationJob
       tokens: tokens,
       error_message: LLM_FALLBACK_TEXT,
       metadata: metadata
+    )
+  end
+
+  def handle_outside_schedule(account:, conversation:, inbox:, config:)
+    if config.schedule_mode == 'outside_inbox_hours'
+      AiAttendant::HandoffService.new(
+        conversation: conversation,
+        summary: AiAttendant::CustomerNotice::OFFICE_HOURS,
+        config: config,
+        customer_notice: AiAttendant::CustomerNotice::OFFICE_HOURS
+      ).perform
+      return persist_run(
+        account: account,
+        conversation: conversation,
+        inbox: inbox,
+        status: 'handoff',
+        skip_reason: 'working_hours'
+      )
+    end
+
+    text = inbox.out_of_office_message.presence || AiAttendant::CustomerNotice::CLOSED
+    AiAttendant::ResponseSender.new(
+      conversation: conversation,
+      sender: config.message_sender,
+      text: text,
+      config: config
+    ).perform
+    persist_run(
+      account: account,
+      conversation: conversation,
+      inbox: inbox,
+      status: 'skipped',
+      skip_reason: 'working_hours'
     )
   end
 
