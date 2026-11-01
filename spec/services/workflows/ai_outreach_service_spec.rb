@@ -41,7 +41,7 @@ RSpec.describe Workflows::AiOutreachService do
   end
 
   before do
-    account.enable_features!('inteligencia_artificial')
+    account.enable_features!('inteligencia_artificial', 'atendimento_ia_nativo')
     allow(PlatformAi::ChatClient).to receive(:complete).and_return(chat_result)
     allow(PlatformAi::QuotaGuard).to receive(:allow?).and_call_original
     allow(PlatformAi::QuotaGuard).to receive(:charge!)
@@ -142,6 +142,23 @@ RSpec.describe Workflows::AiOutreachService do
         expect(result[:success]).to be false
         expect(result[:error]).to eq('quota_exceeded')
         expect(conversation.messages.where(private: false)).to be_empty
+      end
+    end
+
+    context 'when atendimento_ia_nativo is disabled' do
+      before { account.disable_features!('atendimento_ia_nativo') }
+
+      it 'enqueues the legacy inteligencia_artificial webhook' do
+        allow(Workflows::AiWebhook).to receive(:url).and_return('https://ia.example/hook')
+        expect(WebhookJob).to receive(:perform_later).with(
+          'https://ia.example/hook',
+          hash_including(event: 'workflow.ai_outreach')
+        )
+
+        result = service.perform!
+
+        expect(result[:success]).to be true
+        expect(PlatformAi::ChatClient).not_to have_received(:complete)
       end
     end
 

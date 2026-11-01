@@ -1,9 +1,8 @@
 # frozen_string_literal: true
 
 module Workflows
-  # DEPRECATED: workflow AI nodes (outreach, analysis, wait-for-intent) now call
-  # PlatformAi::ChatClient via Workflows::PlatformAiCompletion. Do not add new
-  # callers. WORKFLOW_AI_URL remains only until dashboard/layout stop reading it.
+  # Outbound URL for workflow AI nodes while atendimento_ia_nativo is off.
+  # Accounts with that flag use PlatformAi::ChatClient instead.
   module AiWebhook
     ENV_KEY = 'WORKFLOW_AI_URL'
 

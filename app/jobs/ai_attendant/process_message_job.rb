@@ -18,6 +18,7 @@ class AiAttendant::ProcessMessageJob < ApplicationJob
       conversation_id: conversation.id,
       message_ids: message_ids
     )
+    return unless account.feature_enabled?(AiAttendant::Eligibility::FEATURE_NAME)
 
     config = AiAttendantConfig.for_inbox(inbox.id).find_by(account_id: account.id)
     return persist_run(account: account, conversation: conversation, inbox: inbox, status: 'skipped', skip_reason: 'config_missing') if config.blank?

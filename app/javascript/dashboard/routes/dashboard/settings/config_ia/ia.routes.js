@@ -1,9 +1,93 @@
 import { frontendURL } from 'dashboard/helper/URLHelper';
+import store from '../../../../store';
+import { useAlert } from 'dashboard/composables';
+import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
 const SettingsContent = () => import('../Wrapper.vue');
 const SettingsWrapper = () => import('../SettingsWrapper.vue');
 const Index = () => import('./Index.vue');
 const Editor = () => import('./Editor.vue');
+
+function accountFeatureEnabled(accountId, feature) {
+  return store.getters['accounts/isFeatureEnabledonAccount'](
+    Number(accountId),
+    feature
+  );
+}
+
+function nativeAiEnabled(accountId) {
+  return accountFeatureEnabled(accountId, FEATURE_FLAGS.ATENDIMENTO_IA_NATIVO);
+}
+
+function openLegacyManyIa(next) {
+  const user = store.getters.getCurrentUser;
+
+  if (!user) {
+    useAlert('Usuário não autenticado.');
+    next(false);
+    return;
+  }
+
+  const email = user.account_id ? `${user.account_id}@manytalks.com.br` : '';
+  const name = user.name || 'Desconhecido';
+  const accountId = user.account_id || 'Sem Account ID';
+  const image = user.avatar_url || 'Sem Avatar';
+  const apiURL = process.env.VUE_APP_API_URL;
+
+  if (!apiURL) {
+    useAlert('Erro interno: URL da API não configurada.');
+    next(false);
+    return;
+  }
+
+  fetch(`${apiURL}?email=${email}`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Erro HTTP! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (!data.token) {
+        useAlert('Erro ao obter informações. Tente novamente.');
+        return;
+      }
+
+      const redirectURL = `${apiURL}?email=${email}&name=${encodeURIComponent(
+        name
+      )}&manytalksAccountId=${accountId}&image=${image}&token=${data.token}`;
+      window.open(redirectURL, '_blank');
+    })
+    .catch(() => {
+      useAlert('Ocorreu um erro, por favor tente novamente mais tarde.');
+    });
+
+  next(false);
+}
+
+function guardIaIndex(to, _from, next) {
+  const accountId = to.params.accountId;
+  if (nativeAiEnabled(accountId)) {
+    next();
+    return;
+  }
+
+  if (accountFeatureEnabled(accountId, FEATURE_FLAGS.IA)) {
+    openLegacyManyIa(next);
+    return;
+  }
+
+  next(false);
+}
+
+function guardNativeEditor(to, _from, next) {
+  if (nativeAiEnabled(to.params.accountId)) {
+    next();
+    return;
+  }
+
+  next(false);
+}
 
 export default {
   routes: [
@@ -18,6 +102,7 @@ export default {
           meta: {
             permissions: ['administrator'],
           },
+          beforeEnter: guardIaIndex,
         },
       ],
     },
@@ -40,6 +125,7 @@ export default {
           meta: {
             permissions: ['administrator'],
           },
+          beforeEnter: guardNativeEditor,
         },
         {
           path: 'new',
@@ -48,6 +134,7 @@ export default {
           meta: {
             permissions: ['administrator'],
           },
+          beforeEnter: guardNativeEditor,
         },
       ],
     },

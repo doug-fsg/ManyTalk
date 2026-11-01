@@ -43,6 +43,7 @@ RSpec.describe AiAttendant::ProcessMessageJob, type: :job do
   after { message_buffer.clear! }
 
   before do
+    account.enable_features!('atendimento_ia_nativo')
     sender
     config
     incoming_message
@@ -53,6 +54,15 @@ RSpec.describe AiAttendant::ProcessMessageJob, type: :job do
   end
 
   describe '#perform' do
+    it 'does nothing when atendimento_ia_nativo is disabled' do
+      account.disable_features!('atendimento_ia_nativo')
+
+      perform_job
+
+      expect(AiAttendant::ChatService).not_to have_received(:new)
+      expect(AiAttendant::ResponseSender).not_to have_received(:new)
+    end
+
     context 'when ChatService returns text' do
       before do
         allow(chat_service).to receive(:perform).and_return(

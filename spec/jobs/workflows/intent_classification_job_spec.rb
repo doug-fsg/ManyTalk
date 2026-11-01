@@ -29,7 +29,7 @@ RSpec.describe Workflows::IntentClassificationJob, type: :job do
   let(:message) { create(:message, conversation: conversation, message_type: :incoming, content: 'quero o cardápio') }
 
   before do
-    account.enable_features!('inteligencia_artificial')
+    account.enable_features!('inteligencia_artificial', 'atendimento_ia_nativo')
     allow(PlatformAi::ChatClient).to receive(:complete).and_return(
       content: '{"matched":false}',
       tool_calls: nil,

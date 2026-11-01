@@ -19,7 +19,11 @@ module Workflows
         return deliver_whatsapp_analysis(data)
       end
 
-      perform_platform_ai_analysis(data, destination)
+      if workflow.account.feature_enabled?('atendimento_ia_nativo')
+        perform_platform_ai_analysis(data, destination)
+      else
+        perform_webhook_analysis(data, destination)
+      end
     rescue StandardError => e
       ChatwootExceptionTracker.new(e, account: workflow.account).capture_exception
       record_result(success: false, error: 'send_failed', detail: e.message)
@@ -57,6 +61,19 @@ module Workflows
       else
         record_result(success: false, error: result[:error], detail: result[:detail])
       end
+    end
+
+    def perform_webhook_analysis(data, destination)
+      unless workflow.account.feature_enabled?('inteligencia_artificial')
+        return record_result(success: false, error: 'feature_disabled')
+      end
+
+      webhook_url = AiWebhook.url
+      return record_result(success: false, error: 'webhook_url_missing') if webhook_url.blank?
+
+      analysis_types = resolved_analysis_types(data)
+      WebhookJob.perform_later(webhook_url, build_payload(data, destination, analysis_types))
+      record_result(success: true)
     end
 
     def perform_platform_ai_analysis(data, destination)

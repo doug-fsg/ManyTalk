@@ -330,7 +330,7 @@ RSpec.describe Workflows::OrchestratorService do
     let!(:workflow) { create(:workflow, account: account, active: true, graph: ai_graph) }
 
     before do
-      account.enable_features!('inteligencia_artificial')
+      account.enable_features!('inteligencia_artificial', 'atendimento_ia_nativo')
       allow(PlatformAi::ChatClient).to receive(:complete).and_return(
         content: 'Oi, vamos retomar o assunto?',
         tool_calls: nil,

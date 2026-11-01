@@ -26,6 +26,8 @@ module Workflows
         return { matched: false }
       end
 
+      return classify_with_webhook!(intent_data) unless native_attendant?
+
       started_at = Time.current
       completion = PlatformAiCompletion.complete(
         account: @enrollment.account,
@@ -52,6 +54,30 @@ module Workflows
     end
 
     private
+
+    def native_attendant?
+      @enrollment.account.feature_enabled?('atendimento_ia_nativo')
+    end
+
+    def classify_with_webhook!(intent_data)
+      unless AiWebhook.configured?
+        log_metric('error', skip_reason: 'no_webhook_url')
+        return { matched: false }
+      end
+
+      started_at = Time.current
+      result = SyncWebhookClient.post_json(
+        AiWebhook.url,
+        build_payload(intent_data),
+        timeout: SyncWebhookClient::TIMEOUT
+      )
+      duration_ms = ((Time.current - started_at) * 1000).round
+
+      outcome = result[:matched] ? 'matched' : 'not_matched'
+      outcome = 'error' unless result[:ok]
+      log_metric(outcome, duration_ms: duration_ms)
+      result
+    end
 
     def resolve_intent_data
       watch = @enrollment.intent_watch

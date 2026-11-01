@@ -168,6 +168,20 @@ export default {
       isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
       globalConfig: 'globalConfig/get',
     }),
+    isMenuFeatureEnabled() {
+      const flags = this.menuItem.featureFlags;
+      if (Array.isArray(flags) && flags.length) {
+        return flags.some(flag =>
+          this.isFeatureEnabledonAccount(this.accountId, flag)
+        );
+      }
+      if (!this.menuItem.featureFlag) return true;
+
+      return this.isFeatureEnabledonAccount(
+        this.accountId,
+        this.menuItem.featureFlag
+      );
+    },
     isCountZero() {
       return this.menuItem.count === 0;
     },
@@ -185,24 +199,15 @@ export default {
         return !!this.globalConfig[this.menuItem.globalConfigFlag];
       }
 
-      let isFeatureEnabled = true;
-      if (this.menuItem.featureFlag) {
-        isFeatureEnabled = this.isFeatureEnabledonAccount(
-          this.accountId,
-          this.menuItem.featureFlag
-        );
-      }
+      const isFeatureEnabled = this.isMenuFeatureEnabled;
 
       if (this.menuItem.isEnterpriseOnly) {
         if (!this.isEnterprise) return false;
         return isFeatureEnabled || this.globalConfig.displayManifest;
       }
 
-      if (this.menuItem.featureFlag) {
-        return this.isFeatureEnabledonAccount(
-          this.accountId,
-          this.menuItem.featureFlag
-        );
+      if (this.menuItem.featureFlag || this.menuItem.featureFlags) {
+        return this.isMenuFeatureEnabled;
       }
 
       return isFeatureEnabled;

@@ -40,6 +40,30 @@ RSpec.describe AgentBot do
     end
   end
 
+  describe '#push_event_data' do
+    it 'exposes the avatar as thumbnail so the chat can render it' do
+      agent_bot = create(:agent_bot, name: 'Lia')
+      allow(agent_bot).to receive(:avatar_url).and_return('https://cdn.example/lia.png')
+
+      payload = agent_bot.push_event_data
+
+      expect(payload[:avatar_url]).to eq('https://cdn.example/lia.png')
+      expect(payload[:thumbnail]).to eq('https://cdn.example/lia.png')
+      expect(payload[:available_name]).to eq('Lia')
+    end
+
+    it 'uses the inbox avatar when the bot has none' do
+      agent_bot = create(:agent_bot)
+      inbox = instance_double(Inbox, avatar_url: 'https://cdn.example/inbox.png')
+      allow(agent_bot).to receive(:avatar_url).and_return('')
+
+      payload = agent_bot.push_event_data(inbox)
+
+      expect(payload[:thumbnail]).to eq('https://cdn.example/inbox.png')
+      expect(payload[:avatar_url]).to eq('https://cdn.example/inbox.png')
+    end
+  end
+
   describe 'capitao flag' do
     it 'allows only one capitao bot at a time' do
       first_bot = create(:agent_bot, capitao: true)

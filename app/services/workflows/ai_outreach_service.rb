@@ -16,6 +16,8 @@ module Workflows
       end
 
       data = node['data'] || {}
+      return perform_webhook!(data) unless native_attendant?
+
       completion = PlatformAiCompletion.complete(
         account: workflow.account,
         messages: chat_messages(data)
@@ -33,6 +35,18 @@ module Workflows
     end
 
     private
+
+    def native_attendant?
+      workflow.account.feature_enabled?('atendimento_ia_nativo')
+    end
+
+    def perform_webhook!(data)
+      webhook_url = AiWebhook.url
+      return record_result(success: false, error: 'webhook_url_missing') if webhook_url.blank?
+
+      WebhookJob.perform_later(webhook_url, build_payload(data))
+      record_result(success: true)
+    end
 
     def chat_messages(data)
       [

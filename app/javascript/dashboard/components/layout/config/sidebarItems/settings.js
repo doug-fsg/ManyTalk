@@ -219,11 +219,11 @@ const settings = accountId => ({
       label: 'INTELLIGENCE_AI',
       hasSubMenu: false,
       meta: {
-        permissions: ['administrator'],
+        permissions: ['administrator', 'agent'],
       },
       toState: frontendURL(`accounts/${accountId}/settings/ia`),
       toStateName: 'settings_ia',
-      featureFlag: FEATURE_FLAGS.ATENDIMENTO_IA_NATIVO,
+      featureFlags: [FEATURE_FLAGS.IA, FEATURE_FLAGS.ATENDIMENTO_IA_NATIVO],
     },
   ],
 });

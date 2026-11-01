@@ -45,7 +45,7 @@ RSpec.describe Workflows::AiConversationAnalysisService do
   end
 
   before do
-    account.enable_features!('inteligencia_artificial')
+    account.enable_features!('inteligencia_artificial', 'atendimento_ia_nativo')
     allow(PlatformAi::ChatClient).to receive(:complete).and_return(chat_result)
     allow(PlatformAi::QuotaGuard).to receive(:charge!)
   end

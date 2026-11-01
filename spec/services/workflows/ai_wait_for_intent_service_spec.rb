@@ -29,7 +29,7 @@ RSpec.describe Workflows::AiWaitForIntentService do
   subject(:service) { described_class.new(enrollment, message) }
 
   before do
-    account.enable_features!('inteligencia_artificial')
+    account.enable_features!('inteligencia_artificial', 'atendimento_ia_nativo')
     allow(PlatformAi::QuotaGuard).to receive(:charge!)
   end
 
