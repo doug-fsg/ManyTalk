@@ -171,13 +171,25 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   end
 
   def export_filter_params
-    permitted = params.permit(:label, :account_form_id, column_names: [], payload: {})
-    # payload is an array of filter hashes; permit! keeps nested structure for FilterService
+    permitted = params.permit(:label, :account_form_id, column_names: [])
     {
-      payload: params[:payload],
+      payload: serializable_export_payload(params[:payload]),
       label: permitted[:label],
       account_form_id: permitted[:account_form_id]
     }
+  end
+
+  # ActiveJob cannot serialize ActionController::Parameters (UnfilteredParameters).
+  def serializable_export_payload(raw_payload)
+    return [] if raw_payload.blank?
+
+    Array(raw_payload).map do |filter|
+      if filter.is_a?(ActionController::Parameters)
+        filter.permit!.to_h
+      else
+        filter.to_h
+      end
+    end
   end
 
   # TODO: Move this to a finder class
