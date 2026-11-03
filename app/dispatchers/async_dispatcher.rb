@@ -21,7 +21,8 @@ class AsyncDispatcher < BaseDispatcher
       ParticipationListener.instance,
       ReportingEventListener.instance,
       WebhookListener.instance,
-      AiAttendantListener.instance
+      AiAttendantListener.instance,
+      KanbanOwnershipListener.instance
     ]
   end
 end

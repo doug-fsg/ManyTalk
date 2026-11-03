@@ -3,7 +3,9 @@ class Contacts::ContactableInboxesService
 
   def get
     account = contact.account
-    account.inboxes.filter_map { |inbox| get_contactable_inbox(inbox) }
+    account.inboxes
+           .includes(:channel, :portal, { avatar_attachment: [:blob] })
+           .filter_map { |inbox| get_contactable_inbox(inbox) }
   end
 
   private

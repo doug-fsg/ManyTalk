@@ -12,6 +12,7 @@
       :pipeline-id="selectedAttribute ? selectedAttribute.id : null"
       :filters="kanbanFilters"
       :show-assignee-filter="isAdmin"
+      :ownership-mode="pipelineOwnershipMode"
       :attribute-values="selectedAttribute ? selectedAttribute.attribute_values || [] : []"
       :sort-by="sortBy"
       @update:current-view="currentView = $event"
@@ -52,114 +53,22 @@
       :columns="displayColumns"
       :pipeline-id="selectedAttribute.id"
       :pipeline-name="selectedAttribute.attribute_display_name"
+      :ownership-mode="pipelineOwnershipMode"
       @view-contact="openContact"
     />
 
-    <!-- List View -->
-    <div
+    <kanban-list-view
       v-else-if="currentView === 'list' && selectedAttribute && !uiFlags.isFetching"
-      class="list-view-container p-6 bg-slate-50 dark:bg-slate-900"
-    >
-      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-soft border border-slate-200 dark:border-slate-700 hover:shadow-soft-lg transition-all duration-300 ease-smooth">
-        <div class="p-4 border-b border-slate-200 dark:border-slate-700">
-          <h2 class="text-xl font-semibold text-slate-900 dark:text-white">
-            {{ $t('KANBAN.LIST_VIEW.TITLE') }}
-          </h2>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-slate-50 dark:bg-slate-700/50">
-              <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                  {{ $t('KANBAN.LIST_VIEW.NAME') }}
-                </th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                  {{ $t('CONTACT_FORM.FORM.PHONE_NUMBER.LABEL') }}
-                </th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                  {{ $t('KANBAN.LIST_VIEW.STAGE') }}
-                </th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                  {{ $t('KANBAN.LIST_VIEW.VALUE') }}
-                </th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                  {{ $t('KANBAN.LIST_VIEW.TIME_IN_STAGE') }}
-                </th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-              <tr
-                v-for="contact in paginatedContacts"
-                :key="contact.id"
-                @click="handleOpenCardModal(contact)"
-                class="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors duration-150 ease-smooth"
-              >
-                <td class="px-4 py-3 whitespace-nowrap">
-                  <div class="text-sm font-medium text-slate-900 dark:text-white">
-                    {{ contact.name }}
-                  </div>
-                  <div v-if="contact.email" class="text-sm text-slate-500 dark:text-slate-400">
-                    {{ contact.email }}
-                  </div>
-                </td>
-                <td class="px-4 py-3 whitespace-nowrap">
-                  <span v-if="contact.phone_number" class="text-sm text-slate-900 dark:text-white">
-                    {{ contact.phone_number }}
-                  </span>
-                  <span v-else class="text-sm text-slate-400 dark:text-slate-500">
-                    -
-                  </span>
-                </td>
-                <td class="px-4 py-3 whitespace-nowrap">
-                  <span class="text-sm text-slate-900 dark:text-white">
-                    {{ getContactStage(contact) }}
-                  </span>
-                </td>
-                <td class="px-4 py-3 whitespace-nowrap">
-                  <span class="text-sm font-medium text-slate-900 dark:text-white">
-                    {{ formatContactValue(contact) }}
-                  </span>
-                </td>
-                <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
-                  {{ getContactTimeInStage(contact) }}
-                </td>
-              </tr>
-              <tr v-if="!filteredContacts.length">
-                <td colspan="5" class="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
-                  {{ $t('KANBAN.LIST_VIEW.NO_CONTACTS') }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        
-        <!-- Paginação -->
-        <div v-if="filteredContacts.length > 0 && totalListPages > 1" class="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
-          <div class="text-sm text-slate-600 dark:text-slate-400">
-            Mostrando {{ (listCurrentPage - 1) * listItemsPerPage + 1 }} - {{ Math.min(listCurrentPage * listItemsPerPage, filteredContacts.length) }} de {{ totalListContacts }}
-          </div>
-          <div class="flex items-center gap-2">
-            <button
-              @click="loadListPage(listCurrentPage - 1)"
-              :disabled="listCurrentPage === 1"
-              class="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Anterior
-            </button>
-            <span class="text-sm text-slate-600 dark:text-slate-400">
-              Página {{ listCurrentPage }} de {{ totalListPages }}
-            </span>
-            <button
-              @click="loadListPage(listCurrentPage + 1)"
-              :disabled="listCurrentPage === totalListPages"
-              class="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Próxima
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+      :contacts="paginatedContacts"
+      :pipeline-id="selectedAttribute.id"
+      :ownership-mode="pipelineOwnershipMode"
+      :current-page="listCurrentPage"
+      :total-pages="totalListPages"
+      :total-count="totalListContacts"
+      :per-page="listItemsPerPage"
+      @open-card="handleOpenCardModal"
+      @change-page="loadListPage"
+    />
 
     <!-- Kanban View -->
     <div
@@ -327,6 +236,7 @@
       :available-stages="selectedAttribute ? selectedAttribute.attribute_values || [] : []"
       :initial-tab="cardModalInitialTab"
       :highlight-activity-id="cardModalHighlightActivityId"
+      :ownership-mode="pipelineOwnershipMode"
       @close="handleCloseCardModal"
       @value-updated="handleDealValueUpdate"
       @stage-changed="handleStageChangeFromModal"
@@ -353,6 +263,7 @@ import Vue from 'vue';
 import KanbanColumn from './KanbanColumn.vue';
 import KanbanHeader from './Header.vue';
 import KanbanDashboard from './KanbanDashboard.vue';
+import KanbanListView from './KanbanListView.vue';
 import EditKanbanPipeline from './EditKanbanPipeline.vue';
 import CreateAttributeModal from './CreateAttributeModal.vue';
 import WinLostModal from './WinLostModal.vue';
@@ -371,9 +282,7 @@ import ContactAPI from 'dashboard/api/contacts';
 import { LOCAL_STORAGE_KEYS } from 'dashboard/constants/localStorage';
 import {
   getStage,
-  getDealValue,
-  getMetadata,
-  getEnteredAt,
+  getPipelineOwnershipMode,
 } from '../utils/pipelinePositionsHelper';
 import {
   DEFAULT_KANBAN_SORT,
@@ -415,6 +324,7 @@ export default {
     KanbanColumn,
     KanbanHeader,
     KanbanDashboard,
+    KanbanListView,
     EditKanbanPipeline,
     CreateAttributeModal,
     WinLostModal,
@@ -557,6 +467,9 @@ export default {
       isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
       workflowSchedules: 'workflowSchedules/getSchedules',
     }),
+    pipelineOwnershipMode() {
+      return getPipelineOwnershipMode(this.selectedAttribute);
+    },
     // Permissão efetiva do pipeline atual (API user_permission)
     // supervisor é serializado como 'admin' no backend
     currentPipelinePermission() {
@@ -2604,30 +2517,6 @@ export default {
       await this.loadAllContacts();
       this.setupColumns();
     },
-    getContactStage(contact) {
-      // Verificar primeiro nas colunas filtradas, depois nas colunas originais
-      const column = this.displayColumns.find(col =>
-        col.items.some(item => item.id === contact.id)
-      ) || this.columns.find(col =>
-        col.items.some(item => item.id === contact.id)
-      );
-      
-      // Se não encontrou na coluna, buscar pelo pipeline_positions
-      if (!column && this.selectedAttribute) {
-        const stageValue = getStage(contact, this.selectedAttribute.id);
-        return stageValue || '';
-      }
-      
-      return column ? column.title : '';
-    },
-    formatContactValue(contact) {
-      if (!this.selectedAttribute) return '';
-      const dealValue = getDealValue(contact, this.selectedAttribute.id) || 0;
-      return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-      }).format(dealValue);
-    },
     // Carregar uma página de contatos (modo lista) — filtros kanban vão no payload da API
     async loadContactsPage(page = 1) {
       if (!this.selectedAttribute) return;
@@ -2649,19 +2538,6 @@ export default {
       if (page < 1 || page > this.totalListPages) return;
       this.listCurrentPage = page;
       await this.loadContactsPage(page);
-    },
-    getContactTimeInStage(contact) {
-      if (!this.selectedAttribute) return '-';
-      const enteredAt = getEnteredAt(contact, this.selectedAttribute.id);
-      
-      if (!enteredAt) return '-';
-      
-      const enteredAtTime = new Date(enteredAt).getTime();
-      const now = Date.now();
-      const timeDiff = now - enteredAtTime;
-      const days = Math.floor(timeDiff / 86400000);
-      
-      return `${days}d`;
     },
     handleOpenWinModal(data) {
       this.winLostModalContact = data.contact;

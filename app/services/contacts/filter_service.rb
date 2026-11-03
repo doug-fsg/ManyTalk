@@ -42,6 +42,8 @@ class Contacts::FilterService < FilterService
         @query_string += " #{build_any_list_query(query_hash, current_index).strip}"
       elsif PIPELINE_POSITION_FILTER_KEYS.include?(attribute_key)
         @query_string += " #{build_pipeline_position_filter_query(query_hash, current_index).strip}"
+      elsif attribute_key == '_conversation_assignee_id'
+        @query_string += " #{build_conversation_assignee_query(query_hash, current_index).strip}"
       elsif attribute_key == '_labels'
         @query_string += " #{build_contact_or_conversation_labels_query(query_hash, current_index).strip}"
       else
@@ -475,6 +477,44 @@ class Contacts::FilterService < FilterService
     else
       raise CustomExceptions::CustomFilter::InvalidValue.new(attribute_name: '_pipeline_win_lost')
     end
+  end
+
+  def build_conversation_assignee_query(query_hash, current_index)
+    operator = query_hash[:filter_operator].to_s
+    unless operator == 'equal_to'
+      raise CustomExceptions::CustomFilter::InvalidOperator.new(
+        attribute_name: '_conversation_assignee_id',
+        allowed_keys: %w[equal_to]
+      )
+    end
+
+    values = Array(query_hash['values'] || query_hash[:values])
+    raise CustomExceptions::CustomFilter::InvalidValue.new(attribute_name: '_conversation_assignee_id') if values.empty?
+
+    include_unassigned = values.any?(&:nil?)
+    assignee_ids = values.compact.map(&:to_i)
+    conditions = []
+
+    if assignee_ids.any?
+      bind_key = "value_#{current_index}"
+      @filter_values[bind_key] = assignee_ids
+      conditions << "conversations.assignee_id IN (:#{bind_key})"
+    end
+    conditions << 'conversations.assignee_id IS NULL' if include_unassigned
+
+    account_bind = "conversation_account_#{current_index}"
+    @filter_values[account_bind] = @account.id
+
+    query_operator = query_hash[:query_operator].presence || 'AND'
+    <<~SQL.squish
+      contacts.id IN (
+        SELECT conversations.contact_id
+        FROM conversations
+        WHERE conversations.account_id = :#{account_bind}
+          AND conversations.status IN (#{Conversation.statuses[:open]}, #{Conversation.statuses[:pending]})
+          AND (#{conditions.join(' OR ')})
+      ) #{query_operator}
+    SQL
   end
 
   # YYYY-MM-DD → início/fim do dia civil em America/Sao_Paulo (não depende do Time.zone da app).

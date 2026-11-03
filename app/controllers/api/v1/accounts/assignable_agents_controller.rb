@@ -8,8 +8,10 @@ class Api::V1::Accounts::AssignableAgentsController < Api::V1::Accounts::BaseCon
       member_ids
     end
     agent_ids = agent_ids.inject(:&)
-    agents = Current.account.users.where(id: agent_ids)
-    @assignable_agents = (agents + Current.account.administrators).uniq
+    agent_preloads = [:account_users, { avatar_attachment: [:blob] }]
+    agents = Current.account.users.where(id: agent_ids).includes(*agent_preloads)
+    administrators = Current.account.administrators.includes(*agent_preloads)
+    @assignable_agents = (agents + administrators).uniq
   end
 
   private

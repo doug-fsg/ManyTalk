@@ -150,6 +150,26 @@ describe('kanbanFilterQueryHelper', () => {
     ]);
   });
 
+  it('includes conversation attendant ids separately from pipeline assignees', () => {
+    const items = buildKanbanFilterPayloadItems({
+      assignees: [{ id: 5, name: 'Alice' }],
+      attendants: [{ id: 8, name: 'Bruno' }, { id: null, name: 'Unassigned' }],
+    });
+
+    expect(items).toContainEqual({
+      attribute_key: '_pipeline_assignee_id',
+      filter_operator: 'equal_to',
+      values: [5],
+      query_operator: 'AND',
+    });
+    expect(items).toContainEqual({
+      attribute_key: '_conversation_assignee_id',
+      filter_operator: 'equal_to',
+      values: [8, null],
+      query_operator: 'AND',
+    });
+  });
+
   it('includes open winLost and assignee ids', () => {
     const items = buildKanbanFilterPayloadItems({
       winLost: 'open',
@@ -243,6 +263,31 @@ describe('kanbanFilterQueryHelper', () => {
     expect(
       contactMatchesKanbanFilters(contact, {
         filters: { dealPresence: 'with' },
+        pipelineId: 10,
+      })
+    ).toBe(false);
+  });
+
+  it('matches attendant by any open or pending conversation', () => {
+    const contact = {
+      name: 'Ana',
+      conversations: [
+        { status: 'resolved', assignee_id: 5 },
+        { status: 'pending', assignee: { id: 8 } },
+      ],
+      pipeline_positions: [{ pipeline_id: 10 }],
+    };
+
+    expect(
+      contactMatchesKanbanFilters(contact, {
+        filters: { attendants: [{ id: 8 }] },
+        pipelineId: 10,
+      })
+    ).toBe(true);
+
+    expect(
+      contactMatchesKanbanFilters(contact, {
+        filters: { attendants: [{ id: 5 }] },
         pipelineId: 10,
       })
     ).toBe(false);

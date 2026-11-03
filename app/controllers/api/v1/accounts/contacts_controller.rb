@@ -102,6 +102,10 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
       Current.account,
       @contacts.map(&:id)
     ).labels_by_contact_id
+    @conversation_assignees_by_position_id = Contacts::KanbanConversationAssigneesPreloader.new(
+      Current.account,
+      @contacts
+    ).by_position_id
   rescue CustomExceptions::CustomFilter::InvalidAttribute,
          CustomExceptions::CustomFilter::InvalidOperator,
          CustomExceptions::CustomFilter::InvalidValue => e
@@ -225,7 +229,7 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
                            .page(@current_page).per(per_page)
 
     contacts_with_avatar = contacts_with_avatar.includes(contact_pipeline_positions: :assignee)
-    return contacts_with_avatar.includes([{ contact_inboxes: [:inbox] }]) if @include_contact_inboxes
+    return contacts_with_avatar.includes(contact_inboxes: { inbox: inbox_preload_associations }) if @include_contact_inboxes
 
     contacts_with_avatar
   end
@@ -313,9 +317,21 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   end
 
   def fetch_contact
-    @contact = Current.account.contacts
-                        .includes(contact_inboxes: [:inbox], contact_pipeline_positions: [])
-                        .find(params[:id])
+    @contact = contact_find_scope.find(params[:id])
+  end
+
+  def contact_find_scope
+    scope = Current.account.contacts
+    return scope if action_name == 'contactable_inboxes'
+
+    scope.includes(
+      contact_pipeline_positions: :assignee,
+      contact_inboxes: { inbox: inbox_preload_associations }
+    )
+  end
+
+  def inbox_preload_associations
+    [:channel, :portal, { avatar_attachment: [:blob] }]
   end
 
   def process_avatar_from_url

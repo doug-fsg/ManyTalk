@@ -242,7 +242,7 @@
         <div 
           v-if="cardAssignee"
           class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-full p-0 text-[10px] font-medium text-slate-700 dark:text-slate-200 cursor-pointer transition-all duration-200 w-5 h-5 justify-center hover:bg-slate-200 dark:hover:bg-slate-700 hover:scale-105"
-          v-tooltip="`Responsável: ${cardAssignee.name}`"
+          v-tooltip="assigneeTooltip"
           @click.stop
         >
           <img 
@@ -295,21 +295,44 @@
           v-for="conversation in sortedConversations" 
           :key="conversation.id"
           class="p-2 border-b border-slate-100 dark:border-slate-800 cursor-pointer transition-colors duration-200 hover:bg-slate-50 dark:hover:bg-slate-800 last:border-b-0"
-          @click.stop="openConversation(conversation)"
+          :class="{ 'bg-woot-25 dark:bg-woot-900/20': isPrimaryConversation(conversation) }"
+          @click.stop="selectPrimaryConversation(conversation)"
         >
-          <div class="flex justify-between items-center mb-1">
-            <span 
-              class="text-[11px] px-2 py-0.5 rounded-xl font-medium transition-all duration-200"
-              :style="{
-                backgroundColor: getStatusColor(conversation.status).bg,
-                color: getStatusColor(conversation.status).text
-              }"
-            >
-              {{ getStatusLabel(conversation.status) }}
-            </span>
-            <span class="text-[11px] text-slate-500 dark:text-slate-400">{{ formatTime(conversation.created_at) }}</span>
+          <div class="flex justify-between items-center mb-1 gap-2">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span
+                class="w-2.5 h-2.5 rounded-full border border-slate-300 dark:border-slate-500 shrink-0"
+                :class="{ 'bg-woot-500 border-woot-500': isPrimaryConversation(conversation) }"
+                aria-hidden="true"
+              />
+              <span 
+                class="text-[11px] px-2 py-0.5 rounded-xl font-medium transition-all duration-200"
+                :style="{
+                  backgroundColor: getStatusColor(conversation.status).bg,
+                  color: getStatusColor(conversation.status).text
+                }"
+              >
+                {{ getStatusLabel(conversation.status) }}
+              </span>
+              <span
+                v-if="inboxName(conversation)"
+                class="text-[11px] text-slate-500 dark:text-slate-400 truncate"
+              >
+                {{ inboxName(conversation) }}
+              </span>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="text-[11px] text-slate-500 dark:text-slate-400">{{ formatTime(conversation.created_at) }}</span>
+              <button
+                type="button"
+                class="text-[11px] text-woot-600 dark:text-woot-400 hover:underline"
+                @click.stop="openConversation(conversation)"
+              >
+                {{ $t('KANBAN.OWNERSHIP.OPEN_CONVERSATION') }}
+              </button>
+            </div>
           </div>
-          <div class="text-xs text-slate-700 dark:text-slate-200 whitespace-nowrap overflow-hidden text-ellipsis">
+          <div class="text-xs text-slate-700 dark:text-slate-200 whitespace-nowrap overflow-hidden text-ellipsis pl-4">
             {{ getMessageContent(conversation) }}
           </div>
         </div>
@@ -325,6 +348,7 @@
 import { formatUnixDate } from 'shared/helpers/DateHelper';
 import { getRandomColor } from 'dashboard/helper/labelColor';
 import { frontendURL } from 'dashboard/helper/URLHelper';
+import { useAlert } from 'dashboard/composables';
 import FluentIcon from 'shared/components/FluentIcon/DashboardIcon.vue';
 import WootLabel from 'dashboard/components/ui/Label.vue';
 import ContactAPI from 'dashboard/api/contacts';
@@ -334,7 +358,10 @@ import {
   getEnteredAt,
   getWinLostStatus,
   getPipelinePosition,
-  getStage
+  getStage,
+  getPipelineOwnershipMode,
+  isLinkedOwnership,
+  withPrimaryConversation,
 } from '../utils/pipelinePositionsHelper';
 
 export default {
@@ -448,8 +475,26 @@ export default {
       });
       return sorted.slice(0, 5);
     },
-    lastOpenConversation() {
-      return this.conversations.find(conv => conv.status === 'open') || null;
+    primaryConversation() {
+      const conversations = this.conversations || [];
+      if (!conversations.length) return null;
+
+      const storedId = this.storedPrimaryConversationId;
+      if (storedId != null) {
+        const selected = conversations.find(
+          conversation => Number(conversation.id) === Number(storedId)
+        );
+        if (selected) return selected;
+      }
+
+      const active = conversations.filter(
+        conversation => conversation.status === 'open' || conversation.status === 'pending'
+      );
+      if (!active.length) return null;
+
+      return [...active].sort(
+        (left, right) => (right.last_activity_at || 0) - (left.last_activity_at || 0)
+      )[0];
     },
     cardAssignee() {
       // Buscar assignee direto do pipeline_positions
@@ -458,16 +503,36 @@ export default {
       );
       return position?.assignee || null;
     },
+    pipelineAttribute() {
+      const attributes = this.$store.getters['attributes/getAttributes'] || [];
+      const pipelineId = Number(this.pipelineId);
+      return attributes.find(attribute => Number(attribute.id) === pipelineId) || null;
+    },
+    isLinkedOwnership() {
+      return isLinkedOwnership(getPipelineOwnershipMode(this.pipelineAttribute));
+    },
+    assigneeTooltip() {
+      if (!this.cardAssignee) return '';
+      const key = this.isLinkedOwnership
+        ? 'KANBAN.OWNERSHIP.ATTENDANT_TOOLTIP'
+        : 'KANBAN.OWNERSHIP.DEAL_TOOLTIP';
+      return this.$t(key, { name: this.cardAssignee.name });
+    },
+    storedPrimaryConversationId() {
+      const position = getPipelinePosition(this.contact, this.pipelineId);
+      return position?.metadata?.primary_conversation_id || null;
+    },
     conversationLabels() {
-      return this.lastOpenConversation?.labels || [];
+      return this.primaryConversation?.labels || [];
     },
     allLabels() {
+      if (this.primaryConversation) {
+        return [...new Set((this.conversationLabels || []).filter(Boolean))];
+      }
+
       const titles = [];
       (this.contact.labels || []).forEach(label => {
         const title = label && typeof label === 'object' ? label.title || label.name : label;
-        if (title) titles.push(title);
-      });
-      this.conversationLabels.forEach(title => {
         if (title) titles.push(title);
       });
       return [...new Set(titles)];
@@ -698,6 +763,40 @@ export default {
       
       const conversationUrl = frontendURL(`accounts/${this.$route.params.accountId}/conversations/${conversation.id}`);
       window.open(conversationUrl, '_blank');
+    },
+    inboxName(conversation) {
+      if (!conversation) return '';
+      if (conversation.inbox_name) return conversation.inbox_name;
+      if (conversation.inbox?.name) return conversation.inbox.name;
+      const inboxes = this.$store.getters['inboxes/getInboxes'] || [];
+      const inbox = inboxes.find(item => item.id === conversation.inbox_id);
+      return inbox?.name || '';
+    },
+    isPrimaryConversation(conversation) {
+      return Number(this.primaryConversation?.id) === Number(conversation?.id);
+    },
+    async selectPrimaryConversation(conversation) {
+      const currentPosition = getPipelinePosition(this.contact, this.pipelineId);
+      if (!currentPosition || !conversation?.id) return;
+
+      const metadata = withPrimaryConversation(currentPosition.metadata, conversation.id);
+      try {
+        const { data } = await ContactAPI.updatePipelinePosition(
+          this.contact.id,
+          this.pipelineId,
+          currentPosition.stage_id,
+          currentPosition.position || 0,
+          currentPosition.entered_at,
+          currentPosition.deal_value,
+          metadata
+        );
+        this.$set(currentPosition, 'metadata', data?.metadata || metadata);
+        if (data && Object.prototype.hasOwnProperty.call(data, 'assignee')) {
+          this.$set(currentPosition, 'assignee', data.assignee);
+        }
+      } catch (error) {
+        useAlert(this.$t('KANBAN.OWNERSHIP.UPDATE_FAILED'));
+      }
     },
     formatCurrency(value) {
       return new Intl.NumberFormat('pt-BR', {

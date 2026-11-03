@@ -114,6 +114,26 @@
                 {{ $t('ATTRIBUTES_MGMT.ADD.FORM.DESC.ERROR') }}
               </span>
             </div>
+
+            <fieldset class="mt-4 space-y-2">
+              <legend class="block mb-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
+                {{ $t('KANBAN.OWNERSHIP.MODE_LABEL') }}
+              </legend>
+              <label class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
+                <input v-model="ownershipMode" type="radio" value="linked" class="mt-1" />
+                <span>
+                  <span class="font-medium">{{ $t('KANBAN.OWNERSHIP.LINKED') }}</span>
+                  <span class="block text-xs text-slate-500 dark:text-slate-400">{{ $t('KANBAN.OWNERSHIP.LINKED_HELP') }}</span>
+                </span>
+              </label>
+              <label class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
+                <input v-model="ownershipMode" type="radio" value="split" class="mt-1" />
+                <span>
+                  <span class="font-medium">{{ $t('KANBAN.OWNERSHIP.SPLIT') }}</span>
+                  <span class="block text-xs text-slate-500 dark:text-slate-400">{{ $t('KANBAN.OWNERSHIP.SPLIT_HELP') }}</span>
+                </span>
+              </label>
+            </fieldset>
           </div>
         </div>
       </div>
@@ -327,6 +347,7 @@ import FunnelAgentsPermissions from 'dashboard/routes/dashboard/crm/components/F
 import ColorPicker from 'dashboard/components/widgets/ColorPicker.vue';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { getPipelineOwnershipMode } from '../utils/pipelinePositionsHelper';
 
 export default {
   components: {
@@ -361,6 +382,8 @@ export default {
       options: [],
       isTouched: true,
       agentPermissions: {},
+      ownershipMode: 'linked',
+      initialOwnershipMode: 'linked',
       stagesExpanded: true,
       basicDataExpanded: true,
       newStageName: '',
@@ -471,6 +494,7 @@ export default {
         stages,
         stage_order: stageOrder,
         permissions: this.agentPermissions,
+        ownership_mode: this.ownershipMode || 'linked',
       };
     },
     isButtonDisabled() {
@@ -510,10 +534,11 @@ export default {
       const stagesChanged = JSON.stringify(currentStages) !== JSON.stringify(initialStages);
       
       // Verificar se há mudanças nas permissões
-      const permissionsChanged = JSON.stringify(this.agentPermissions) !== 
+      const permissionsChanged = JSON.stringify(this.agentPermissions) !==
                                 JSON.stringify(this.initialAgentPermissions);
-      
-      return nameChanged || descChanged || stagesChanged || permissionsChanged;
+      const ownershipChanged = this.ownershipMode !== this.initialOwnershipMode;
+
+      return nameChanged || descChanged || stagesChanged || permissionsChanged || ownershipChanged;
     },
     deleteStageMessage() {
       if (!this.stageToDelete || !this.stageToDelete.name) {
@@ -823,6 +848,8 @@ export default {
       } else {
         this.agentPermissions = {};
       }
+      this.ownershipMode = getPipelineOwnershipMode(this.selectedAttribute);
+      this.initialOwnershipMode = this.ownershipMode;
       
       // Salvar estados iniciais para rastreamento de mudanças
       this.initialDisplayName = this.displayName;
@@ -864,6 +891,7 @@ export default {
         this.initialDescription = this.description;
         this.initialValues = JSON.parse(JSON.stringify(this.values));
         this.initialAgentPermissions = JSON.parse(JSON.stringify(this.agentPermissions));
+        this.initialOwnershipMode = this.ownershipMode;
         
         this.$emit('on-close');
       } catch (error) {

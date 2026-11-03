@@ -485,6 +485,26 @@ describe Contacts::FilterService do
         expect(result[:contacts].pluck(:id)).to eq([won_contact.id])
       end
 
+      it 'filters by conversation assignee on open or pending conversations' do
+        create(:conversation, account: account, inbox: inbox, contact: in_range_contact, assignee: first_user, status: :open)
+        create(:conversation, account: account, inbox: inbox, contact: out_of_range_contact, assignee: second_user, status: :open)
+        create(:conversation, account: account, inbox: inbox, contact: won_contact, assignee: first_user, status: :resolved)
+
+        params[:payload] = [
+          kanban_present_filter,
+          {
+            attribute_key: '_conversation_assignee_id',
+            filter_operator: 'equal_to',
+            values: [first_user.id],
+            query_operator: nil
+          }.with_indifferent_access
+        ]
+
+        ids = filter_service.new(account, first_user, params).perform[:contacts].pluck(:id)
+        expect(ids).to include(in_range_contact.id)
+        expect(ids).not_to include(out_of_range_contact.id, won_contact.id)
+      end
+
       it 'filters by pipeline stage' do
         params[:payload] = [
           kanban_present_filter,

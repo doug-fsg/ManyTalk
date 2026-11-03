@@ -111,3 +111,54 @@ export function getAssignee(contact, pipelineId) {
   return position?.assignee || null;
 }
 
+export function getConversationAssignee(contact, pipelineId) {
+  const position = getPipelinePosition(contact, pipelineId);
+  if (position?.conversation_assignee) return position.conversation_assignee;
+
+  const conversations = contact?.conversations || [];
+  if (!conversations.length) return null;
+
+  const storedId = position?.metadata?.primary_conversation_id;
+  const match =
+    storedId != null
+      ? conversations.find(
+          conversation =>
+            Number(conversation.id) === Number(storedId) ||
+            Number(conversation.display_id) === Number(storedId)
+        )
+      : null;
+  const conversation =
+    match ||
+    [...conversations]
+      .filter(item => item.status === 'open' || item.status === 'pending')
+      .sort((left, right) => (right.last_activity_at || 0) - (left.last_activity_at || 0))[0];
+
+  return (
+    conversation?.meta?.assignee ||
+    conversation?.assignee ||
+    null
+  );
+}
+
+export function getPipelineOwnershipMode(attribute) {
+  if (!attribute) return 'linked';
+  const values = attribute.attribute_values;
+  const mode =
+    attribute.ownership_mode ||
+    attribute.ownershipMode ||
+    (values && !Array.isArray(values) ? values.ownership_mode : null);
+  return mode === 'split' ? 'split' : 'linked';
+}
+
+export function isLinkedOwnership(attributeOrMode) {
+  if (typeof attributeOrMode === 'string') return attributeOrMode !== 'split';
+  return getPipelineOwnershipMode(attributeOrMode) !== 'split';
+}
+
+export function withPrimaryConversation(metadata, conversationId) {
+  return {
+    ...(metadata || {}),
+    primary_conversation_id: conversationId,
+  };
+}
+

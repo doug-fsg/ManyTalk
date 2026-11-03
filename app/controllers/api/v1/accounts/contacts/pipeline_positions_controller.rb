@@ -382,6 +382,23 @@ class Api::V1::Accounts::Contacts::PipelinePositionsController < Api::V1::Accoun
     }
   end
 
+  def primary_conversation_changed?(position)
+    return false unless position.will_save_change_to_metadata?
+
+    previous, current = position.metadata_change
+    previous_id = previous.is_a?(Hash) ? previous['primary_conversation_id'] : nil
+    current_id = current.is_a?(Hash) ? current['primary_conversation_id'] : nil
+    previous_id.to_s != current_id.to_s
+  end
+
+  def assign_metadata!(position)
+    incoming = params[:metadata]
+    incoming = incoming.to_unsafe_h if incoming.respond_to?(:to_unsafe_h)
+    return unless incoming.is_a?(Hash)
+
+    position.metadata = incoming.deep_stringify_keys
+  end
+
   def find_or_build_pipeline_position(pipeline_id)
     @contact.contact_pipeline_positions.find_or_initialize_by(pipeline_id: pipeline_id)
   end
@@ -394,7 +411,7 @@ class Api::V1::Accounts::Contacts::PipelinePositionsController < Api::V1::Accoun
 
     position.entered_at = params[:entered_at] if params[:entered_at].present?
     position.deal_value = params[:deal_value] if params[:deal_value].present?
-    position.metadata = params[:metadata] if params[:metadata].present?
+    assign_metadata!(position) if params[:metadata].present?
 
     return true unless params.key?(:assignee_id)
 
@@ -408,7 +425,14 @@ class Api::V1::Accounts::Contacts::PipelinePositionsController < Api::V1::Accoun
   end
 
   def save_pipeline_position!(position)
+    assignee_changed = position.will_save_change_to_assignee_id?
+    primary_changed = primary_conversation_changed?(position)
     if position.save
+      if assignee_changed
+        Contacts::KanbanOwnershipSyncService.sync_pipeline_assignee_to_conversation(position)
+      elsif primary_changed
+        Contacts::KanbanOwnershipSyncService.sync_owner_from_primary_conversation(position)
+      end
       position = ContactPipelinePosition.includes(:assignee).find(position.id)
       render json: pipeline_position_json(position)
     else

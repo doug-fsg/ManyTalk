@@ -31,6 +31,7 @@ if resource.respond_to?(:contact_pipeline_positions)
       else
         json.assignee nil
       end
+      json.conversation_assignee(@conversation_assignees_by_position_id&.dig(position.id))
     end
   end
 end

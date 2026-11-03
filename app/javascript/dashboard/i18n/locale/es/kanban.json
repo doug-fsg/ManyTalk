@@ -17,6 +17,19 @@
       },
       "FUNNEL_ENTRY_DATE": "Fecha de entrada al embudo · {date}"
     },
+    "OWNERSHIP": {
+      "ATTENDANT": "Agente",
+      "DEAL": "Responsable",
+      "ATTENDANT_TOOLTIP": "Agente: {name}",
+      "DEAL_TOOLTIP": "Responsable: {name}",
+      "OPEN_CONVERSATION": "Abrir conversación",
+      "UPDATE_FAILED": "Error al actualizar",
+      "MODE_LABEL": "Modo de responsable",
+      "LINKED": "Responsable único",
+      "LINKED_HELP": "Quien cuida el negocio también atiende la conversación vinculada.",
+      "SPLIT": "Responsables separados",
+      "SPLIT_HELP": "El responsable del negocio y el agente de la conversación pueden ser personas distintas."
+    },
     "PERMISSIONS": {
       "TITLE": "Permisos",
       "VIEWER": "Visualizador",
@@ -116,6 +129,8 @@
       "ASSIGNEE": "Responsable",
       "ASSIGNEE_PLACEHOLDER": "Seleccione responsables",
       "NO_ASSIGNEE": "Sin responsable",
+      "ATTENDANT_PLACEHOLDER": "Seleccione agentes",
+      "NO_ATTENDANT": "Sin agente",
       "CLEAR_ALL": "Limpiar todo",
       "APPLY": "Aplicar",
       "MINE": "Solo míos",
@@ -154,9 +169,18 @@
       "AVERAGE_TIME": "Tiempo Promedio en Etapa",
       "AVERAGE_DEAL_VALUE": "Valor Promedio por Negocio",
       "BY_STAGE": "Distribución por Etapa",
+      "BY_ASSIGNEE_AND_STAGE": "Distribución por Agente y Etapa",
+      "BY_DEAL_AND_STAGE": "Distribución por Responsable y Etapa",
+      "BY_ATTENDANT_AND_STAGE": "Distribución por Agente y Etapa",
       "LONGEST_IN_STAGE": "Más Tiempo en Etapa",
-      "TOP_ASSIGNEES": "Top Responsables",
-      "NO_CARDS": "No se encontraron tarjetas"
+      "TOP_ASSIGNEES": "Top Agentes",
+      "TOP_DEAL_OWNERS": "Top Responsables",
+      "TOP_ATTENDANTS": "Top Agentes",
+      "UNASSIGNED_DEAL": "Sin responsable",
+      "UNASSIGNED_ATTENDANT": "Sin agente",
+      "NO_CARDS": "No se encontraron tarjetas",
+      "NO_ASSIGNEE_DATA": "No hay datos de responsables",
+      "NO_ATTENDANT_DATA": "No hay datos de agentes"
     },
     "LIST_VIEW": {
       "TITLE": "Lista de Contactos",
@@ -170,7 +194,12 @@
       "WON": "Ganado",
       "LOST": "Perdido",
       "OPEN": "Abierto",
-      "NO_CONTACTS": "No se encontraron contactos"
+      "NO_CONTACTS": "No se encontraron contactos",
+      "UNASSIGNED": "—",
+      "PAGINATION": "Mostrando {from} - {to} de {total}",
+      "PAGE": "Página {page} de {pages}",
+      "PREVIOUS": "Anterior",
+      "NEXT": "Siguiente"
     },
     "SEARCH_PLACEHOLDER": "Buscar contactos por nombre o número",
     "LOADING_CONTACTS": "Cargando contactos...",

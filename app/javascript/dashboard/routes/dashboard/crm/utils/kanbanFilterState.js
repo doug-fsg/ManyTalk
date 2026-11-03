@@ -12,6 +12,7 @@ export const DEFAULT_KANBAN_FILTERS = {
   dateField: DEFAULT_KANBAN_DATE_FIELD,
   staleDays: null,
   assignees: [],
+  attendants: [],
   winLost: 'open',
 };
 
@@ -22,6 +23,7 @@ export function mergeKanbanFilters(filters = {}) {
     labels: Array.isArray(filters.labels) ? [...filters.labels] : [],
     stages: Array.isArray(filters.stages) ? [...filters.stages] : [],
     assignees: Array.isArray(filters.assignees) ? [...filters.assignees] : [],
+    attendants: Array.isArray(filters.attendants) ? [...filters.attendants] : [],
     labelMatchMode: filters.labelMatchMode === 'all' ? 'all' : 'any',
     dateField: filters.dateField || DEFAULT_KANBAN_DATE_FIELD,
     dealPresence: filters.dealPresence || 'all',
@@ -88,6 +90,7 @@ export function kanbanFiltersEqual(left, right) {
     JSON.stringify([...(a.stages || [])].sort()) ===
       JSON.stringify([...(b.stages || [])].sort()) &&
     assigneeIds(a.assignees) === assigneeIds(b.assignees) &&
+    assigneeIds(a.attendants) === assigneeIds(b.attendants) &&
     a.labelMatchMode === b.labelMatchMode &&
     String(a.dealValueMin ?? '') === String(b.dealValueMin ?? '') &&
     String(a.dealValueMax ?? '') === String(b.dealValueMax ?? '') &&
@@ -102,7 +105,7 @@ export function kanbanFiltersEqual(left, right) {
 
 export function buildActiveFilterChips(
   filters = {},
-  { labels = [], t = key => key } = {}
+  { labels = [], t = key => key, ownershipMode = 'linked' } = {}
 ) {
   const merged = mergeKanbanFilters(filters);
   const chips = [];
@@ -197,16 +200,37 @@ export function buildActiveFilterChips(
     }
   }
 
+  const assigneeLabel =
+    ownershipMode === 'split'
+      ? t('KANBAN.OWNERSHIP.DEAL')
+      : t('KANBAN.OWNERSHIP.ATTENDANT');
   merged.assignees.forEach(assignee => {
     const name =
       assignee?.id == null
-        ? t('KANBAN.FILTERS.NO_ASSIGNEE')
+        ? t(
+            ownershipMode === 'split'
+              ? 'KANBAN.FILTERS.NO_ASSIGNEE'
+              : 'KANBAN.FILTERS.NO_ATTENDANT'
+          )
         : assignee.name || assignee.id;
     chips.push({
       id: `assignee:${assigneeKey(assignee)}`,
       type: 'assignee',
       value: assignee?.id ?? null,
-      label: `${t('KANBAN.FILTERS.ASSIGNEE')}: ${name}`,
+      label: `${assigneeLabel}: ${name}`,
+    });
+  });
+
+  merged.attendants.forEach(attendant => {
+    const name =
+      attendant?.id == null
+        ? t('KANBAN.FILTERS.NO_ATTENDANT')
+        : attendant.name || attendant.id;
+    chips.push({
+      id: `attendant:${assigneeKey(attendant)}`,
+      type: 'attendant',
+      value: attendant?.id ?? null,
+      label: `${t('KANBAN.OWNERSHIP.ATTENDANT')}: ${name}`,
     });
   });
 
@@ -248,6 +272,12 @@ export function removeKanbanFilterChip(filters, chip) {
     case 'assignee':
       next.assignees = next.assignees.filter(assignee => {
         const id = assignee?.id ?? null;
+        return id !== chip.value;
+      });
+      break;
+    case 'attendant':
+      next.attendants = next.attendants.filter(attendant => {
+        const id = attendant?.id ?? null;
         return id !== chip.value;
       });
       break;

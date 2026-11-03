@@ -94,6 +94,26 @@
                   {{ $t('KANBAN.CREATE_PIPELINE.FORM.DESCRIPTION.ERROR') }}
                 </span>
               </div>
+
+              <fieldset class="mt-4 space-y-2">
+                <legend class="block mb-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
+                  {{ $t('KANBAN.OWNERSHIP.MODE_LABEL') }}
+                </legend>
+                <label class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
+                  <input v-model="ownershipMode" type="radio" value="linked" class="mt-1" />
+                  <span>
+                    <span class="font-medium">{{ $t('KANBAN.OWNERSHIP.LINKED') }}</span>
+                    <span class="block text-xs text-slate-500 dark:text-slate-400">{{ $t('KANBAN.OWNERSHIP.LINKED_HELP') }}</span>
+                  </span>
+                </label>
+                <label class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
+                  <input v-model="ownershipMode" type="radio" value="split" class="mt-1" />
+                  <span>
+                    <span class="font-medium">{{ $t('KANBAN.OWNERSHIP.SPLIT') }}</span>
+                    <span class="block text-xs text-slate-500 dark:text-slate-400">{{ $t('KANBAN.OWNERSHIP.SPLIT_HELP') }}</span>
+                  </span>
+                </label>
+              </fieldset>
             </div>
           </div>
         </div>
@@ -313,6 +333,7 @@ export default {
       basicDataExpanded: true,
       stagesExpanded: true,
       agentPermissions: {},
+      ownershipMode: 'linked',
     };
   },
   validations: {
@@ -490,6 +511,7 @@ export default {
       this.basicDataExpanded = true;
       this.stagesExpanded = true;
       this.agentPermissions = {};
+      this.ownershipMode = 'linked';
       this.$v.$reset();
     },
     async createAttribute() {
@@ -523,7 +545,8 @@ export default {
         const attributeValues = {
           stages: validStages,
           stage_order: stageOrder,
-          permissions: this.agentPermissions || {}
+          permissions: this.agentPermissions || {},
+          ownership_mode: this.ownershipMode || 'linked',
         };
         
         const attributeData = {

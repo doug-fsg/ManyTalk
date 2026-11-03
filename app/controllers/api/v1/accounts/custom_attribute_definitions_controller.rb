@@ -132,6 +132,7 @@ class Api::V1::Accounts::CustomAttributeDefinitionsController < Api::V1::Account
     params.require(:custom_attribute_definition).permit(
       *BASE_PAYLOAD_KEYS,
       attribute_values: [
+        :ownership_mode,
         { stages: {} },
         { permissions: {} },
         { stage_order: [] }
@@ -155,7 +156,8 @@ class Api::V1::Accounts::CustomAttributeDefinitionsController < Api::V1::Account
       payload[:attribute_values] = build_kanban_attribute_values(
         stages: attribute_values,
         permissions: {},
-        stage_order: nil
+        stage_order: nil,
+        ownership_mode: normalize_ownership_mode(nil)
       )
       return
     end
@@ -165,6 +167,7 @@ class Api::V1::Accounts::CustomAttributeDefinitionsController < Api::V1::Account
     stages = attribute_values['stages'] || attribute_values[:stages] || {}
     permissions = attribute_values['permissions'] || attribute_values[:permissions] || {}
     stage_order = attribute_values['stage_order'] || attribute_values[:stage_order]
+    ownership_mode = attribute_values['ownership_mode'] || attribute_values[:ownership_mode]
 
     if stages.is_a?(Array)
       stages_hash = {}
@@ -192,11 +195,20 @@ class Api::V1::Accounts::CustomAttributeDefinitionsController < Api::V1::Account
     payload[:attribute_values] = build_kanban_attribute_values(
       stages: stages,
       permissions: permissions,
-      stage_order: stage_order
+      stage_order: stage_order,
+      ownership_mode: normalize_ownership_mode(ownership_mode)
     )
   end
 
-  def build_kanban_attribute_values(stages:, permissions:, stage_order:)
+  def normalize_ownership_mode(mode)
+    mode = mode.to_s
+    return mode if CustomAttributeDefinition::KANBAN_OWNERSHIP_MODES.include?(mode)
+
+    existing = @custom_attribute_definition&.kanban_ownership_mode
+    existing.presence || CustomAttributeDefinition::KANBAN_OWNERSHIP_LINKED
+  end
+
+  def build_kanban_attribute_values(stages:, permissions:, stage_order:, ownership_mode:)
     stages_hash = if stages.is_a?(Hash)
                     stages.each_with_object({}) do |(name, data), memo|
                       memo[name.to_s] = {
@@ -214,7 +226,8 @@ class Api::V1::Accounts::CustomAttributeDefinitionsController < Api::V1::Account
     {
       'stages' => stages_hash,
       'permissions' => permissions || {},
-      'stage_order' => normalized_order
+      'stage_order' => normalized_order,
+      'ownership_mode' => ownership_mode
     }
   end
 

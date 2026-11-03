@@ -150,6 +150,19 @@
         "CANCEL": "Cancel"
       }
     },
+    "OWNERSHIP": {
+      "ATTENDANT": "Assignee",
+      "DEAL": "Owner",
+      "ATTENDANT_TOOLTIP": "Assignee: {name}",
+      "DEAL_TOOLTIP": "Owner: {name}",
+      "OPEN_CONVERSATION": "Open conversation",
+      "UPDATE_FAILED": "Could not update",
+      "MODE_LABEL": "Ownership mode",
+      "LINKED": "Single owner",
+      "LINKED_HELP": "The deal owner is also the assignee of the linked conversation.",
+      "SPLIT": "Separate owners",
+      "SPLIT_HELP": "The deal owner and the conversation assignee can be different people."
+    },
     "WIN_LOST_MODAL": {
       "TITLE_WON": "Mark as Won",
       "TITLE_LOST": "Mark as Lost",
@@ -197,6 +210,8 @@
       "ASSIGNEE": "Assignee",
       "ASSIGNEE_PLACEHOLDER": "Select assignees",
       "NO_ASSIGNEE": "No assignee",
+      "ATTENDANT_PLACEHOLDER": "Select agents",
+      "NO_ATTENDANT": "No agent",
       "CLEAR_ALL": "Clear all",
       "APPLY": "Apply",
       "MINE": "Mine only",
@@ -236,11 +251,18 @@
       "AVERAGE_DEAL_VALUE": "Average Deal Value",
       "BY_STAGE": "Distribution by Stage",
       "BY_ASSIGNEE_AND_STAGE": "Distribution by Assignee and Stage",
+      "BY_DEAL_AND_STAGE": "Distribution by Owner and Stage",
+      "BY_ATTENDANT_AND_STAGE": "Distribution by Assignee and Stage",
       "LONGEST_IN_STAGE": "Items with Longest Time in Stage",
       "TOP_ASSIGNEES": "Top Assignees",
+      "TOP_DEAL_OWNERS": "Top Owners",
+      "TOP_ATTENDANTS": "Top Assignees",
+      "UNASSIGNED_DEAL": "No owner",
+      "UNASSIGNED_ATTENDANT": "No assignee",
       "NO_CARDS": "No cards found",
       "NO_STAGE_DATA": "No stage data available",
-      "NO_ASSIGNEE_DATA": "No assignee data available",
+      "NO_ASSIGNEE_DATA": "No owner data available",
+      "NO_ATTENDANT_DATA": "No assignee data available",
       "TOTAL": "Total",
       "ITEMS": "items",
       "ITEM": "item"
@@ -257,7 +279,12 @@
       "WON": "Won",
       "LOST": "Lost",
       "OPEN": "Open",
-      "NO_CONTACTS": "No contacts found"
+      "NO_CONTACTS": "No contacts found",
+      "UNASSIGNED": "—",
+      "PAGINATION": "Showing {from} - {to} of {total}",
+      "PAGE": "Page {page} of {pages}",
+      "PREVIOUS": "Previous",
+      "NEXT": "Next"
     },
     "ADD_CONTACT_TO_STAGE": "Add contact to {stage}",
     "ADD_CONTACT": {

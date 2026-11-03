@@ -13,8 +13,9 @@ json.created_at resource.created_at
 json.updated_at resource.updated_at
 
 # Incluir permissões para pipelines Kanban
-if resource.is_kanban && resource.attribute_values.is_a?(Hash)
-  json.permissions resource.attribute_values['permissions'] || {}
+if resource.is_kanban
+  json.ownership_mode resource.kanban_ownership_mode
+  json.permissions resource.attribute_values.is_a?(Hash) ? (resource.attribute_values['permissions'] || {}) : {}
   # Incluir permissão do usuário atual
   if Current.user.present?
     json.user_permission resource.user_permission(Current.user).to_s

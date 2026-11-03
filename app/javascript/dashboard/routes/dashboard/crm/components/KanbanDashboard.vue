@@ -140,16 +140,32 @@
       </div>
     </div>
 
-    <!-- Distribuição por Responsável e Estágio -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-soft p-6 border border-slate-200 dark:border-slate-700 mb-6 hover:shadow-soft-lg transition-all duration-300 ease-smooth">
-      <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-        {{ $t('KANBAN.DASHBOARD.BY_ASSIGNEE_AND_STAGE') }}
-      </h3>
-      <div v-if="assigneeStageChartData.labels.length === 0" class="text-center text-slate-500 dark:text-slate-400 py-8">
-        {{ $t('KANBAN.DASHBOARD.NO_ASSIGNEE_DATA') }}
+    <div :class="isSplitOwnership ? 'grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6' : 'mb-6'">
+      <div
+        v-if="isSplitOwnership"
+        class="bg-white dark:bg-slate-800 rounded-xl shadow-soft p-6 border border-slate-200 dark:border-slate-700 hover:shadow-soft-lg transition-all duration-300 ease-smooth"
+      >
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+          {{ $t('KANBAN.DASHBOARD.BY_DEAL_AND_STAGE') }}
+        </h3>
+        <div v-if="assigneeStageChartData.labels.length === 0" class="text-center text-slate-500 dark:text-slate-400 py-8">
+          {{ $t('KANBAN.DASHBOARD.NO_ASSIGNEE_DATA') }}
+        </div>
+        <div v-else style="height: 24rem;">
+          <stacked-bar-chart :collection="assigneeStageChartData" />
+        </div>
       </div>
-      <div v-else style="height: 24rem;">
-        <stacked-bar-chart :collection="assigneeStageChartData" />
+
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-soft p-6 border border-slate-200 dark:border-slate-700 hover:shadow-soft-lg transition-all duration-300 ease-smooth">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+          {{ attendantChartTitle }}
+        </h3>
+        <div v-if="attendantStageChartData.labels.length === 0" class="text-center text-slate-500 dark:text-slate-400 py-8">
+          {{ $t('KANBAN.DASHBOARD.NO_ATTENDANT_DATA') }}
+        </div>
+        <div v-else style="height: 24rem;">
+          <stacked-bar-chart :collection="attendantStageChartData" />
+        </div>
       </div>
     </div>
 
@@ -182,34 +198,69 @@
       </div>
     </div>
 
-    <!-- Top Responsáveis (se houver dados) -->
-    <div 
-      v-if="topAssignees.length"
-      class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6 border border-slate-200 dark:border-slate-700"
+    <div
+      v-if="topDealOwners.length || topAttendants.length"
+      :class="isSplitOwnership ? 'grid grid-cols-1 xl:grid-cols-2 gap-6' : ''"
     >
-      <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-        {{ $t('KANBAN.DASHBOARD.TOP_ASSIGNEES') }}
-      </h3>
-      <div class="space-y-3">
-        <div
-          v-for="assignee in topAssignees"
-          :key="assignee.id"
-          class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"
-        >
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
-              {{ assignee.initials }}
+      <div
+        v-if="isSplitOwnership && topDealOwners.length"
+        class="bg-white dark:bg-slate-800 rounded-xl shadow-soft p-6 border border-slate-200 dark:border-slate-700"
+      >
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+          {{ $t('KANBAN.DASHBOARD.TOP_DEAL_OWNERS') }}
+        </h3>
+        <div class="space-y-3">
+          <div
+            v-for="person in topDealOwners"
+            :key="`deal-${person.id}`"
+            class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"
+          >
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-full bg-woot-500 flex items-center justify-center text-white font-semibold shrink-0">
+                {{ person.initials }}
+              </div>
+              <div class="min-w-0">
+                <p class="font-medium text-slate-900 dark:text-white truncate">{{ person.name }}</p>
+                <p class="text-sm text-slate-600 dark:text-slate-400">
+                  {{ person.count }} {{ person.count === 1 ? $t('KANBAN.DASHBOARD.ITEM') : $t('KANBAN.DASHBOARD.ITEMS') }}
+                </p>
+              </div>
             </div>
-            <div>
-              <p class="font-medium text-slate-900 dark:text-white">{{ assignee.name }}</p>
-              <p class="text-sm text-slate-600 dark:text-slate-400">
-                {{ assignee.count }} {{ assignee.count === 1 ? $t('KANBAN.DASHBOARD.ITEM') : $t('KANBAN.DASHBOARD.ITEMS') }}
-              </p>
-            </div>
+            <p class="font-medium text-slate-900 dark:text-white shrink-0">
+              {{ formatCurrency(person.value) }}
+            </p>
           </div>
-          <p class="font-medium text-slate-900 dark:text-white">
-            {{ formatCurrency(assignee.value) }}
-          </p>
+        </div>
+      </div>
+
+      <div
+        v-if="topAttendants.length"
+        class="bg-white dark:bg-slate-800 rounded-xl shadow-soft p-6 border border-slate-200 dark:border-slate-700"
+      >
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+          {{ topAttendantsTitle }}
+        </h3>
+        <div class="space-y-3">
+          <div
+            v-for="person in topAttendants"
+            :key="`attendant-${person.id}`"
+            class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"
+          >
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-full bg-woot-500 flex items-center justify-center text-white font-semibold shrink-0">
+                {{ person.initials }}
+              </div>
+              <div class="min-w-0">
+                <p class="font-medium text-slate-900 dark:text-white truncate">{{ person.name }}</p>
+                <p class="text-sm text-slate-600 dark:text-slate-400">
+                  {{ person.count }} {{ person.count === 1 ? $t('KANBAN.DASHBOARD.ITEM') : $t('KANBAN.DASHBOARD.ITEMS') }}
+                </p>
+              </div>
+            </div>
+            <p class="font-medium text-slate-900 dark:text-white shrink-0">
+              {{ formatCurrency(person.value) }}
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -221,10 +272,10 @@ import ContactAPI from 'dashboard/api/contacts';
 import {
   getStage,
   getDealValue,
-  getMetadata,
   getWinLostStatus,
   getEnteredAt,
   getAssignee,
+  getConversationAssignee,
 } from '../utils/pipelinePositionsHelper';
 import StackedBarChart from 'dashboard/components/widgets/chart/StackedBarChart';
 
@@ -249,6 +300,10 @@ export default {
     pipelineName: {
       type: String,
       default: '',
+    },
+    ownershipMode: {
+      type: String,
+      default: 'linked',
     },
   },
   data() {
@@ -378,109 +433,143 @@ export default {
 
       return [];
     },
-    topAssignees() {
-      // Placeholder - implementar quando houver dados de responsável
-      return [];
+    isSplitOwnership() {
+      return this.ownershipMode === 'split';
     },
-    // Gráfico de barras empilhadas por responsável e estágio
+    attendantChartTitle() {
+      return this.isSplitOwnership
+        ? this.$t('KANBAN.DASHBOARD.BY_ATTENDANT_AND_STAGE')
+        : this.$t('KANBAN.DASHBOARD.BY_ASSIGNEE_AND_STAGE');
+    },
+    topAttendantsTitle() {
+      return this.isSplitOwnership
+        ? this.$t('KANBAN.DASHBOARD.TOP_ATTENDANTS')
+        : this.$t('KANBAN.DASHBOARD.TOP_ASSIGNEES');
+    },
+    topDealOwners() {
+      return this.rankPeople(contact => getAssignee(contact, this.numericPipelineId));
+    },
+    topAttendants() {
+      const getter = this.isSplitOwnership
+        ? contact => getConversationAssignee(contact, this.numericPipelineId)
+        : contact => getAssignee(contact, this.numericPipelineId);
+      return this.rankPeople(getter);
+    },
+    numericPipelineId() {
+      return typeof this.pipelineId === 'string' ? parseInt(this.pipelineId, 10) : this.pipelineId;
+    },
     assigneeStageChartData() {
+      return this.buildPersonStageChart(
+        contact => getAssignee(contact, this.numericPipelineId),
+        this.$t('KANBAN.DASHBOARD.UNASSIGNED_DEAL')
+      );
+    },
+    attendantStageChartData() {
+      const getter = this.isSplitOwnership
+        ? contact => getConversationAssignee(contact, this.numericPipelineId)
+        : contact => getAssignee(contact, this.numericPipelineId);
+      return this.buildPersonStageChart(
+        getter,
+        this.$t('KANBAN.DASHBOARD.UNASSIGNED_ATTENDANT')
+      );
+    },
+  },
+  methods: {
+    personInitials(name) {
+      if (!name) return '';
+      const parts = String(name).trim().split(/\s+/);
+      if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    },
+    rankPeople(getPerson) {
+      const people = new Map();
+      (this.contacts || []).forEach(contact => {
+        const person = getPerson(contact);
+        if (!person?.id) return;
+        const name = person.available_name || person.name || '';
+        if (!people.has(person.id)) {
+          people.set(person.id, { id: person.id, name, count: 0, value: 0 });
+        }
+        const row = people.get(person.id);
+        row.count += 1;
+        row.value += parseFloat(getDealValue(contact, this.numericPipelineId) || 0);
+      });
+      return Array.from(people.values())
+        .sort((left, right) => right.value - left.value || right.count - left.count)
+        .slice(0, 8)
+        .map(person => ({ ...person, initials: this.personInitials(person.name) }));
+    },
+    buildPersonStageChart(getPerson, unassignedLabel) {
       if (!this.contacts || this.contacts.length === 0) {
-        return {
-          labels: [],
-          datasets: [],
-        };
+        return { labels: [], datasets: [] };
       }
 
-      const pipelineId = typeof this.pipelineId === 'string' ? parseInt(this.pipelineId, 10) : this.pipelineId;
-      
-      // Obter todos os estágios únicos
       const stageSet = new Set();
       this.contacts.forEach(contact => {
-        const stage = getStage(contact, pipelineId);
-        if (stage) {
-          stageSet.add(stage);
-        }
+        const stage = getStage(contact, this.numericPipelineId);
+        if (stage) stageSet.add(stage);
       });
-      
-      // Ordenar estágios conforme ordem das colunas
-      const stages = Array.from(stageSet).sort((a, b) => {
-        const indexA = this.columns.findIndex(col => col.title === a);
-        const indexB = this.columns.findIndex(col => col.title === b);
+
+      const stages = Array.from(stageSet).sort((left, right) => {
+        const indexA = this.columns.findIndex(col => col.title === left);
+        const indexB = this.columns.findIndex(col => col.title === right);
         if (indexA === -1 && indexB === -1) return 0;
         if (indexA === -1) return 1;
         if (indexB === -1) return -1;
         return indexA - indexB;
       });
 
-      // Agrupar por responsável
-      const assigneeMap = new Map();
-      
+      const peopleMap = new Map();
       this.contacts.forEach(contact => {
-        const assignee = getAssignee(contact, pipelineId);
-        const assigneeKey = assignee ? assignee.id : 'unassigned';
-        const assigneeName = assignee ? (assignee.name || assignee.available_name || 'Sem nome') : 'Sem responsável';
-        
-        if (!assigneeMap.has(assigneeKey)) {
-          assigneeMap.set(assigneeKey, {
-            id: assigneeKey,
-            name: assigneeName,
-            avatar: assignee?.avatar_url || assignee?.thumbnail || null,
-            stages: {},
-          });
+        const person = getPerson(contact);
+        const key = person?.id || 'unassigned';
+        const name = person
+          ? person.available_name || person.name || ''
+          : unassignedLabel;
+
+        if (!peopleMap.has(key)) {
+          peopleMap.set(key, { id: key, name, stages: {} });
         }
-        
-        const assigneeData = assigneeMap.get(assigneeKey);
-        const stage = getStage(contact, pipelineId);
-        
-        if (stage) {
-          if (!assigneeData.stages[stage]) {
-            assigneeData.stages[stage] = 0;
-          }
-          assigneeData.stages[stage]++;
-        }
+
+        const stage = getStage(contact, this.numericPipelineId);
+        if (!stage) return;
+        const row = peopleMap.get(key);
+        row.stages[stage] = (row.stages[stage] || 0) + 1;
       });
 
-      // Converter para arrays ordenados
-      const assignees = Array.from(assigneeMap.values()).sort((a, b) => {
-        // Ordenar: primeiro "Sem responsável", depois por nome
-        if (a.id === 'unassigned' && b.id !== 'unassigned') return 1;
-        if (a.id !== 'unassigned' && b.id === 'unassigned') return -1;
-        return a.name.localeCompare(b.name);
+      const people = Array.from(peopleMap.values()).sort((left, right) => {
+        if (left.id === 'unassigned' && right.id !== 'unassigned') return 1;
+        if (left.id !== 'unassigned' && right.id === 'unassigned') return -1;
+        return left.name.localeCompare(right.name);
       });
 
-      // Criar datasets para cada estágio
-      const datasets = stages.map((stage, index) => {
-        // Gerar cores diferentes para cada estágio
-        const colors = [
-          '#3b82f6', // blue
-          '#10b981', // green
-          '#f59e0b', // amber
-          '#ef4444', // red
-          '#8b5cf6', // purple
-          '#ec4899', // pink
-          '#06b6d4', // cyan
-          '#84cc16', // lime
-          '#f97316', // orange
-          '#6366f1', // indigo
-        ];
-        const color = colors[index % colors.length];
-        
-        return {
-          label: stage,
-          backgroundColor: color,
-          borderColor: color,
-          borderWidth: 0,
-          data: assignees.map(assignee => assignee.stages[stage] || 0),
-        };
-      });
+      const colors = [
+        '#3b82f6',
+        '#10b981',
+        '#f59e0b',
+        '#ef4444',
+        '#8b5cf6',
+        '#ec4899',
+        '#06b6d4',
+        '#84cc16',
+        '#f97316',
+        '#6366f1',
+      ];
 
       return {
-        labels: assignees.map(assignee => assignee.name),
-        datasets,
+        labels: people.map(person => person.name),
+        datasets: stages.map((stage, index) => {
+          const color = colors[index % colors.length];
+          return {
+            label: stage,
+            backgroundColor: color,
+            borderColor: color,
+            borderWidth: 0,
+            data: people.map(person => person.stages[stage] || 0),
+          };
+        }),
       };
     },
-  },
-  methods: {
     // Calcular estatísticas gerais baseadas nos contatos filtrados
     calculateStatsFromContacts() {
       if (!this.contacts || this.contacts.length === 0) {

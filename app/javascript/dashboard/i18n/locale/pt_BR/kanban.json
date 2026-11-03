@@ -181,6 +181,19 @@
         "CANCEL": "Cancelar"
       }
     },
+    "OWNERSHIP": {
+      "ATTENDANT": "Atendente",
+      "DEAL": "Responsável",
+      "ATTENDANT_TOOLTIP": "Atendente: {name}",
+      "DEAL_TOOLTIP": "Responsável: {name}",
+      "OPEN_CONVERSATION": "Abrir conversa",
+      "UPDATE_FAILED": "Erro ao atualizar",
+      "MODE_LABEL": "Modo de responsável",
+      "LINKED": "Responsável único",
+      "LINKED_HELP": "Quem cuida do negócio também é o atendente da conversa vinculada.",
+      "SPLIT": "Responsáveis separados",
+      "SPLIT_HELP": "O responsável pelo negócio e o atendente da conversa podem ser pessoas diferentes."
+    },
     "WIN_LOST_MODAL": {
       "TITLE_WON": "Marcar como Ganho",
       "TITLE_LOST": "Marcar como Perdido",
@@ -228,6 +241,8 @@
       "ASSIGNEE": "Responsável",
       "ASSIGNEE_PLACEHOLDER": "Selecione responsáveis",
       "NO_ASSIGNEE": "Sem responsável",
+      "ATTENDANT_PLACEHOLDER": "Selecione atendentes",
+      "NO_ATTENDANT": "Sem atendente",
       "CLEAR_ALL": "Limpar todos",
       "APPLY": "Aplicar",
       "MINE": "Só meus",
@@ -266,12 +281,19 @@
       "AVERAGE_TIME": "Tempo Médio na Etapa",
       "AVERAGE_DEAL_VALUE": "Valor Médio por Negócio",
       "BY_STAGE": "Distribuição por Etapa",
-      "BY_ASSIGNEE_AND_STAGE": "Distribuição por Responsável e Etapa",
+      "BY_ASSIGNEE_AND_STAGE": "Distribuição por Atendente e Etapa",
+      "BY_DEAL_AND_STAGE": "Distribuição por Responsável e Etapa",
+      "BY_ATTENDANT_AND_STAGE": "Distribuição por Atendente e Etapa",
       "LONGEST_IN_STAGE": "Itens com Mais Tempo na Etapa",
-      "TOP_ASSIGNEES": "Top Responsáveis",
+      "TOP_ASSIGNEES": "Top Atendentes",
+      "TOP_DEAL_OWNERS": "Top Responsáveis",
+      "TOP_ATTENDANTS": "Top Atendentes",
+      "UNASSIGNED_DEAL": "Sem responsável",
+      "UNASSIGNED_ATTENDANT": "Sem atendente",
       "NO_CARDS": "Nenhum card encontrado",
       "NO_STAGE_DATA": "Nenhum dado de etapa disponível",
       "NO_ASSIGNEE_DATA": "Nenhum dado de responsável disponível",
+      "NO_ATTENDANT_DATA": "Nenhum dado de atendente disponível",
       "TOTAL": "Total",
       "ITEMS": "itens",
       "ITEM": "item"
@@ -288,7 +310,12 @@
       "WON": "Ganho",
       "LOST": "Perdido",
       "OPEN": "Aberto",
-      "NO_CONTACTS": "Nenhum contato encontrado"
+      "NO_CONTACTS": "Nenhum contato encontrado",
+      "UNASSIGNED": "—",
+      "PAGINATION": "Mostrando {from} - {to} de {total}",
+      "PAGE": "Página {page} de {pages}",
+      "PREVIOUS": "Anterior",
+      "NEXT": "Próxima"
     }
   }
 } 

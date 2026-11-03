@@ -37,6 +37,23 @@ RSpec.describe '/api/v1/accounts/{account.id}/contacts/:id/conversations', type:
 
           expect(json_response['payload'].length).to eq 4
         end
+
+        it 'serializes inbox, team and labels without missing associations' do
+          team = create(:team, account: account)
+          conversation = contact.conversations.first
+          conversation.update!(team: team)
+          conversation.update_labels('vip')
+
+          get "/api/v1/accounts/#{account.id}/contacts/#{contact.id}/conversations",
+              headers: admin.create_new_auth_token
+
+          expect(response).to have_http_status(:success)
+          payload = response.parsed_body['payload'].find { |item| item['id'] == conversation.display_id }
+
+          expect(payload['inbox_name']).to eq(conversation.inbox.name)
+          expect(payload['labels']).to include('vip')
+          expect(payload['meta']['team']['id']).to eq(team.id)
+        end
       end
 
       context 'with user as agent' do

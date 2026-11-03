@@ -16,6 +16,8 @@ export const KANBAN_FILTER_QUERY_KEYS = [
   'mine',
   'assignee_id',
   'assignee_ids',
+  'attendant_id',
+  'attendant_ids',
 ];
 
 function splitList(value, separator = ',') {
@@ -26,9 +28,13 @@ function splitList(value, separator = ',') {
     .filter(Boolean);
 }
 
-function resolveAssignee(id, { agents = [], currentUser, t } = {}) {
+function resolveAssignee(
+  id,
+  { agents = [], currentUser, t } = {},
+  noneKey = 'KANBAN.FILTERS.NO_ASSIGNEE'
+) {
   if (id === 'none' || id === 'null') {
-    return { id: null, name: t ? t('KANBAN.FILTERS.NO_ASSIGNEE') : '' };
+    return { id: null, name: t ? t(noneKey) : '' };
   }
   const numericId = Number(id);
   if (Number.isNaN(numericId)) return null;
@@ -86,6 +92,15 @@ export function serializeKanbanFiltersToQuery(filters = {}, { currentUserId } = 
     query.assignee_ids = assigneeIds.join(',');
   }
 
+  const attendantIds = (merged.attendants || []).map(attendant =>
+    attendant?.id == null ? 'none' : String(attendant.id)
+  );
+  if (attendantIds.length === 1) {
+    query.attendant_id = attendantIds[0];
+  } else if (attendantIds.length > 1) {
+    query.attendant_ids = attendantIds.join(',');
+  }
+
   return query;
 }
 
@@ -121,6 +136,14 @@ export function parseKanbanFiltersFromQuery(query = {}, context = {}) {
   }
   filters.assignees = assigneeTokens
     .map(token => resolveAssignee(token, context))
+    .filter(Boolean);
+
+  const attendantTokens = splitList(query.attendant_ids);
+  if (!attendantTokens.length && query.attendant_id) {
+    attendantTokens.push(String(query.attendant_id));
+  }
+  filters.attendants = attendantTokens
+    .map(token => resolveAssignee(token, context, 'KANBAN.FILTERS.NO_ATTENDANT'))
     .filter(Boolean);
 
   return filters;

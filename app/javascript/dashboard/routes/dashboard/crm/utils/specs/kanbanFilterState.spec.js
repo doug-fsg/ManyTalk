@@ -37,6 +37,28 @@ describe('kanbanFilterState', () => {
     expect(next.winLost).toBe('won');
   });
 
+  it('labels assignee chips by ownership mode and removes attendant chips', () => {
+    const filters = mergeKanbanFilters({
+      assignees: [{ id: 7, name: 'Ana' }],
+      attendants: [{ id: 8, name: 'Bruno' }],
+    });
+    const linkedChips = buildActiveFilterChips(filters, { t, ownershipMode: 'linked' });
+    expect(linkedChips.map(chip => chip.label)).toEqual([
+      'KANBAN.OWNERSHIP.ATTENDANT: Ana',
+      'KANBAN.OWNERSHIP.ATTENDANT: Bruno',
+    ]);
+
+    const splitChips = buildActiveFilterChips(filters, { t, ownershipMode: 'split' });
+    expect(splitChips.map(chip => chip.label)).toEqual([
+      'KANBAN.OWNERSHIP.DEAL: Ana',
+      'KANBAN.OWNERSHIP.ATTENDANT: Bruno',
+    ]);
+
+    const next = removeKanbanFilterChip(filters, splitChips[1]);
+    expect(next.attendants).toEqual([]);
+    expect(next.assignees).toEqual([{ id: 7, name: 'Ana' }]);
+  });
+
   it('starts the local week on Monday', () => {
     const wednesday = new Date(2026, 9, 21);
     expect(startOfLocalWeek(wednesday).getDay()).toBe(1);
@@ -65,6 +87,17 @@ describe('kanbanFilterQuerySync', () => {
       currentUser: { id: 7, name: 'Ana' },
       t,
     });
+    expect(kanbanFiltersEqual(filters, parsed)).toBe(true);
+  });
+
+  it('round-trips attendant filters in the route query', () => {
+    const filters = mergeKanbanFilters({
+      attendants: [{ id: 8, name: 'Bruno' }, { id: null, name: 'KANBAN.FILTERS.NO_ATTENDANT' }],
+    });
+    const query = serializeKanbanFiltersToQuery(filters);
+    expect(query.attendant_ids).toBe('8,none');
+
+    const parsed = parseKanbanFiltersFromQuery(query, { t });
     expect(kanbanFiltersEqual(filters, parsed)).toBe(true);
   });
 

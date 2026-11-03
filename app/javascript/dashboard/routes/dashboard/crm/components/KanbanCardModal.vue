@@ -89,63 +89,41 @@
       <div class="modal-body-two-columns">
         <!-- Coluna Esquerda: Accordions -->
         <div class="left-column">
-          <!-- Seção: Responsável -->
           <accordion-item
-            title="Responsável"
+            :title="$t('KANBAN.OWNERSHIP.ATTENDANT')"
+            :is-open="accordionSections.conversationAssignee"
+            compact
+            @click="accordionSections.conversationAssignee = !accordionSections.conversationAssignee"
+          >
+            <div class="multiselect-wrap--small">
+              <multiselect-dropdown
+                :options="agentsList"
+                :selected-item="attendantAgent"
+                :multiselector-title="$t('KANBAN.OWNERSHIP.ATTENDANT')"
+                :multiselector-placeholder="$t('AGENT_MGMT.MULTI_SELECTOR.PLACEHOLDER')"
+                :no-search-result="$t('AGENT_MGMT.MULTI_SELECTOR.SEARCH.NO_RESULTS.AGENT')"
+                :input-placeholder="$t('AGENT_MGMT.MULTI_SELECTOR.SEARCH.PLACEHOLDER.AGENT')"
+                @click="onClickAssignAttendant"
+              />
+            </div>
+          </accordion-item>
+          <accordion-item
+            v-if="!isLinkedOwnership"
+            :title="$t('KANBAN.OWNERSHIP.DEAL')"
             :is-open="accordionSections.assignee"
             compact
             @click="accordionSections.assignee = !accordionSections.assignee"
           >
-            <div v-if="isAdmin" class="multiselect-wrap--small">
-              <div v-if="showSelfAssign" class="mb-2">
-                <woot-button
-                  icon="arrow-right"
-                  variant="link"
-                  size="small"
-                  @click="onSelfAssign"
-                >
-                  {{ $t('CONVERSATION_SIDEBAR.SELF_ASSIGN') }}
-                </woot-button>
-              </div>
+            <div class="multiselect-wrap--small">
               <multiselect-dropdown
                 :options="agentsList"
                 :selected-item="assignedAgent"
-                :multiselector-title="$t('AGENT_MGMT.MULTI_SELECTOR.TITLE.AGENT')"
+                :multiselector-title="$t('KANBAN.OWNERSHIP.DEAL')"
                 :multiselector-placeholder="$t('AGENT_MGMT.MULTI_SELECTOR.PLACEHOLDER')"
-                :no-search-result="
-                  $t('AGENT_MGMT.MULTI_SELECTOR.SEARCH.NO_RESULTS.AGENT')
-                "
-                :input-placeholder="
-                  $t('AGENT_MGMT.MULTI_SELECTOR.SEARCH.PLACEHOLDER.AGENT')
-                "
+                :no-search-result="$t('AGENT_MGMT.MULTI_SELECTOR.SEARCH.NO_RESULTS.AGENT')"
+                :input-placeholder="$t('AGENT_MGMT.MULTI_SELECTOR.SEARCH.PLACEHOLDER.AGENT')"
                 @click="onClickAssignAgent"
               />
-            </div>
-            <div v-else class="p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
-              <div v-if="cardAssignee" class="flex items-center gap-2">
-                <img 
-                  v-if="cardAssignee.thumbnail" 
-                  :src="cardAssignee.thumbnail" 
-                  :alt="cardAssignee.name"
-                  class="w-8 h-8 rounded-full object-cover"
-                />
-                <div v-else class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  {{ getAssigneeInitials(cardAssignee) }}
-                </div>
-                <span class="text-sm font-medium text-slate-900 dark:text-white">{{ cardAssignee.name }}</span>
-              </div>
-              <div v-else class="flex flex-col gap-2">
-                <span class="text-sm text-slate-500 dark:text-slate-400">Sem dono</span>
-                <!-- EXCEÇÃO: Agentes podem atribuir para si mesmos quando o card não tem dono -->
-                <woot-button
-                  icon="arrow-right"
-                  variant="smooth"
-                  size="small"
-                  @click="onSelfAssign"
-                >
-                  {{ $t('CONVERSATION_SIDEBAR.SELF_ASSIGN') }}
-                </woot-button>
-              </div>
             </div>
           </accordion-item>
 
@@ -326,13 +304,16 @@ import ContactTimeline from '../../contacts/components/profile/ContactTimeline.v
 import MultiselectDropdown from 'shared/components/ui/MultiselectDropdown.vue';
 import { useAlert } from 'dashboard/composables';
 import ContactAPI from 'dashboard/api/contacts';
+import ConversationAPI from 'dashboard/api/inbox/conversation';
 import { mapGetters } from 'vuex';
 import agentMixin from 'dashboard/mixins/agentMixin';
 import {
   getDealValue,
   getEnteredAt,
   getStage,
-  getPipelinePosition
+  getPipelinePosition,
+  getPipelineOwnershipMode,
+  isLinkedOwnership,
 } from '../utils/pipelinePositionsHelper';
 import {
   getActivityCountForContact,
@@ -384,6 +365,10 @@ export default {
       type: [Number, String],
       default: null,
     },
+    ownershipMode: {
+      type: String,
+      default: 'linked',
+    },
   },
   data() {
     return {
@@ -392,6 +377,7 @@ export default {
       selectedStage: '',
       accordionSections: {
         assignee: true,
+        conversationAssignee: true,
         dealValue: true,
         labels: true,
         customAttributes: true,
@@ -406,6 +392,7 @@ export default {
       currentUser: 'getCurrentUser',
       currentAccountId: 'getCurrentAccountId',
       agents: 'agents/getAgents',
+      attributes: 'attributes/getAttributes',
       getPendingCountByContactId: 'activities/getPendingCountByContactId',
       getOverdueCountByContactId: 'activities/getOverdueCountByContactId',
     }),
@@ -428,9 +415,6 @@ export default {
     },
     effectiveHighlightActivityId() {
       return this.localHighlightActivityId || this.highlightActivityId;
-    },
-    isAdmin() {
-      return this.currentUser?.role === 'administrator';
     },
     // Sobrescrever assignableAgents do agentMixin para usar agents/getAgents ao invés de inboxAssignableAgents
     assignableAgents() {
@@ -471,20 +455,51 @@ export default {
         this.changeAssignee(agent);
       },
     },
-    showSelfAssign() {
-      if (!this.isAdmin) {
-        return false;
-      }
-      if (!this.cardAssignee) {
-        return true;
-      }
-      return false;
+    attendantAgent() {
+      return this.isLinkedOwnership ? this.cardAssignee : this.conversationAssignee;
     },
     cardAssignee() {
       const position = this.contact.pipeline_positions?.find(
         p => p.pipeline_id === this.pipelineId || p.pipeline_id === parseInt(this.pipelineId, 10)
       );
       return position?.assignee || null;
+    },
+    resolvedOwnershipMode() {
+      const attribute = (this.attributes || []).find(
+        item => Number(item.id) === Number(this.pipelineId)
+      );
+      return getPipelineOwnershipMode(attribute || { ownership_mode: this.ownershipMode });
+    },
+    isLinkedOwnership() {
+      return isLinkedOwnership(this.resolvedOwnershipMode);
+    },
+    conversations() {
+      if (this.isLinkedOwnership || !this.contact?.id) return [];
+      return this.$store.state.contactConversations.records[this.contact.id] || [];
+    },
+    activeConversations() {
+      return this.conversations.filter(
+        conversation => conversation.status === 'open' || conversation.status === 'pending'
+      );
+    },
+    pipelinePosition() {
+      return getPipelinePosition(this.contact, this.pipelineId);
+    },
+    primaryConversation() {
+      if (this.isLinkedOwnership) return null;
+      const storedId = this.pipelinePosition?.metadata?.primary_conversation_id;
+      if (storedId != null) {
+        const selected = this.activeConversations.find(
+          conversation => Number(conversation.id) === Number(storedId)
+        );
+        if (selected) return selected;
+      }
+      return [...this.activeConversations].sort(
+        (a, b) => (b.last_activity_at || 0) - (a.last_activity_at || 0)
+      )[0] || null;
+    },
+    conversationAssignee() {
+      return this.primaryConversation?.meta?.assignee || null;
     },
     dealValue() {
       return getDealValue(this.contact, this.pipelineId) || null;
@@ -539,11 +554,10 @@ export default {
         if (newValue) {
           this.selectedStage = this.currentStage;
           this.applyInitialTab();
-          const attributes = this.$store.getters['attributes/getAttributes'];
-          if (!attributes || !attributes.length) {
+          if (!this.attributes || !this.attributes.length) {
             this.$store.dispatch('attributes/get', 0);
           }
-          this.$store.dispatch('agents/get');
+          this.ensureAgentsLoaded();
         }
       },
     },
@@ -562,18 +576,54 @@ export default {
         // Atualizar selectedStage quando o contato mudar
         if (newContact && newContact.id) {
           this.selectedStage = this.currentStage;
+          if (!this.isLinkedOwnership) {
+            this.loadContactConversations();
+          }
         }
-        // Forçar atualização quando o contato mudar para garantir que dealValue seja recalculado
-        this.$forceUpdate();
       },
     },
   },
   mounted() {
     this.selectedStage = this.currentStage;
-    // Carregar agents quando o modal é montado
-    this.$store.dispatch('agents/get');
+    this.ensureAgentsLoaded();
+    if (!this.isLinkedOwnership) {
+      this.loadContactConversations();
+    }
   },
   methods: {
+    ensureAgentsLoaded() {
+      if (this.agents && this.agents.length) return;
+      this.$store.dispatch('agents/get');
+    },
+    loadContactConversations() {
+      if (!this.contact?.id) return;
+      this.$store.dispatch('contactConversations/get', this.contact.id);
+    },
+    onClickAssignAttendant(agent) {
+      if (this.isLinkedOwnership) {
+        this.onClickAssignAgent(agent);
+        return;
+      }
+      this.changeConversationAssignee(agent);
+    },
+    async changeConversationAssignee(agent) {
+      if (!this.primaryConversation?.id) return;
+      const agentId = agent && agent.id ? agent.id : 0;
+      try {
+        await ConversationAPI.assignAgent({
+          conversationId: this.primaryConversation.id,
+          agentId,
+        });
+        const records = this.$store.state.contactConversations.records[this.contact.id] || [];
+        const conversation = records.find(item => item.id === this.primaryConversation.id);
+        if (conversation) {
+          if (!conversation.meta) this.$set(conversation, 'meta', {});
+          this.$set(conversation.meta, 'assignee', agentId ? agent : null);
+        }
+      } catch (error) {
+        useAlert(this.$t('KANBAN.OWNERSHIP.UPDATE_FAILED'));
+      }
+    },
     applyInitialTab() {
       this.activeTab = resolveCardModalTab({
         initialTab: this.initialTab,
@@ -597,30 +647,6 @@ export default {
     onActivitiesChanged() {
       this.$refs.contactTimeline?.refresh?.();
     },
-    onSelfAssign() {
-      const {
-        account_id,
-        availability_status,
-        available_name,
-        email,
-        id,
-        name,
-        role,
-        avatar_url,
-      } = this.currentUser;
-      const selfAssign = {
-        account_id,
-        availability_status,
-        available_name,
-        email,
-        id,
-        name,
-        role,
-        thumbnail: avatar_url,
-      };
-      // Chamar changeAssignee diretamente para funcionar tanto para admin quanto para agentes
-      this.changeAssignee(selfAssign);
-    },
     onClickAssignAgent(selectedItem) {
       if (this.assignedAgent && this.assignedAgent.id === selectedItem.id) {
         this.assignedAgent = null;
@@ -628,33 +654,10 @@ export default {
         this.assignedAgent = selectedItem;
       }
     },
-    getAssigneeInitials(assignee) {
-      if (!assignee || !assignee.name) return '';
-      const names = assignee.name.trim().split(' ');
-      if (names.length === 1) {
-        return names[0].charAt(0).toUpperCase();
-      }
-      return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
-    },
     async changeAssignee(assignee) {
       const currentPosition = getPipelinePosition(this.contact, this.pipelineId);
-      const currentAssigneeId = currentPosition?.assignee?.id || null;
       const assigneeId = (assignee && assignee.id !== 0 && assignee.id !== null && assignee.id !== undefined) ? assignee.id : null;
-      
-      // Verificar permissão: apenas admin pode trocar dono
-      // EXCEÇÃO: Agentes podem atribuir para si mesmos quando o card não tem dono
-      if (!this.isAdmin) {
-        // Se não é admin, só pode atribuir para si mesmo quando card não tem dono
-        const currentUserId = this.currentUser?.id;
-        const isSelfAssign = assigneeId === currentUserId;
-        const hasNoOwner = currentAssigneeId === null;
-        
-        if (!(isSelfAssign && hasNoOwner)) {
-          useAlert('Sem permissão para trocar dono');
-          return;
-        }
-      }
-      
+
       try {
         const stageId = currentPosition?.stage_id || getStage(this.contact, this.pipelineId);
         const position = currentPosition?.position || 0;
@@ -692,9 +695,8 @@ export default {
           assignee: assigneeId ? assignee : null,
         });
         
-        useAlert('Responsável atualizado');
       } catch (error) {
-        useAlert('Erro ao atualizar responsável');
+        useAlert(this.$t('KANBAN.OWNERSHIP.UPDATE_FAILED'));
       }
     },
     onClose() {

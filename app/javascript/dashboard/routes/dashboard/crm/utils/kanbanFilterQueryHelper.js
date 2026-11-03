@@ -61,6 +61,20 @@ function contactDateValue(contact, pipelineId, dateField) {
   return getCreatedAt(contact, pipelineId);
 }
 
+function conversationAssigneeIds(contact) {
+  return (contact.conversations || [])
+    .filter(
+      conversation => conversation.status === 'open' || conversation.status === 'pending'
+    )
+    .map(
+      conversation =>
+        conversation.meta?.assignee?.id ??
+        conversation.assignee?.id ??
+        conversation.assignee_id ??
+        null
+    );
+}
+
 function daysInCurrentStage(contact, pipelineId) {
   const enteredAt = getEnteredAt(contact, pipelineId);
   if (!enteredAt) return null;
@@ -76,6 +90,7 @@ export function buildKanbanFilterPayloadItems(filters = {}, { labels = [] } = {}
     dealValueMax,
     dealPresence,
     assignees,
+    attendants,
     winLost,
     labels: selectedLabelIds,
     stages,
@@ -145,6 +160,15 @@ export function buildKanbanFilterPayloadItems(filters = {}, { labels = [] } = {}
       attribute_key: '_pipeline_assignee_id',
       filter_operator: 'equal_to',
       values: assignees.map(a => (a && typeof a === 'object' ? a.id : a)),
+      query_operator: 'AND',
+    });
+  }
+
+  if (Array.isArray(attendants) && attendants.length > 0) {
+    items.push({
+      attribute_key: '_conversation_assignee_id',
+      filter_operator: 'equal_to',
+      values: attendants.map(a => (a && typeof a === 'object' ? a.id : a)),
       query_operator: 'AND',
     });
   }
@@ -279,6 +303,18 @@ export function contactMatchesKanbanFilters(
       if (!selectedIds.includes(assigneeId) && !(selectedIds.includes(null) && assigneeId === null)) {
         return false;
       }
+    }
+
+    if (filters.attendants?.length) {
+      const selectedIds = filters.attendants.map(a => a.id);
+      const attendantIds = conversationAssigneeIds(contact);
+      const matchesAttendant =
+        attendantIds.length === 0
+          ? selectedIds.includes(null)
+          : attendantIds.some(
+              id => selectedIds.includes(id) || (id == null && selectedIds.includes(null))
+            );
+      if (!matchesAttendant) return false;
     }
   } else if (filters.dateFrom || filters.dateTo || filters.stages?.length || filters.staleDays) {
     return false;

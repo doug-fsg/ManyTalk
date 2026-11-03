@@ -41,7 +41,7 @@
         class="absolute left-0 mt-2 w-[36rem] max-w-[calc(100vw-2rem)] rounded-xl shadow-soft-xl bg-white dark:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-700 z-50 animate-scale-in flex flex-col overflow-visible"
       >
         <div class="overflow-visible p-4 space-y-4">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
             <div>
               <div class="flex items-center gap-1 mb-1">
                 <span class="text-xs font-medium text-slate-600 dark:text-slate-300">
@@ -68,25 +68,49 @@
               </div>
             </div>
 
-            <div v-if="showAssigneeFilter">
-              <span class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
-                {{ $t('KANBAN.FILTERS.ASSIGNEE') }}
-              </span>
-              <div class="multiselect-wrap--small" @click.stop>
-                <multiselect
-                  v-model="selectedAssigneeObjects"
-                  :options="assigneeMultiselectOptions"
-                  track-by="_key"
-                  label="name"
-                  :multiple="true"
-                  :close-on-select="false"
-                  :show-labels="false"
-                  :placeholder="$t('KANBAN.FILTERS.ASSIGNEE_PLACEHOLDER')"
-                  :select-label="$t('FORMS.MULTISELECT.ENTER_TO_SELECT')"
-                  deselect-label=""
-                  :max-height="160"
-                  class="no-margin"
-                />
+            <div v-if="showAssigneeFilter" class="space-y-4 min-w-0 w-full">
+              <div>
+                <span class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
+                  {{ assigneeFilterLabel }}
+                </span>
+                <div class="multiselect-wrap--small w-full" @click.stop>
+                  <multiselect
+                    v-model="selectedAssigneeObjects"
+                    :options="assigneeMultiselectOptions"
+                    track-by="_key"
+                    label="name"
+                    :multiple="true"
+                    :close-on-select="false"
+                    :show-labels="false"
+                    :placeholder="assigneeFilterPlaceholder"
+                    :select-label="$t('FORMS.MULTISELECT.ENTER_TO_SELECT')"
+                    deselect-label=""
+                    :max-height="160"
+                    class="no-margin w-full"
+                  />
+                </div>
+              </div>
+
+              <div v-if="isSplitOwnership">
+                <span class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
+                  {{ $t('KANBAN.OWNERSHIP.ATTENDANT') }}
+                </span>
+                <div class="multiselect-wrap--small w-full" @click.stop>
+                  <multiselect
+                    v-model="selectedAttendantObjects"
+                    :options="attendantMultiselectOptions"
+                    track-by="_key"
+                    label="name"
+                    :multiple="true"
+                    :close-on-select="false"
+                    :show-labels="false"
+                    :placeholder="$t('KANBAN.FILTERS.ATTENDANT_PLACEHOLDER')"
+                    :select-label="$t('FORMS.MULTISELECT.ENTER_TO_SELECT')"
+                    deselect-label=""
+                    :max-height="160"
+                    class="no-margin w-full"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -366,6 +390,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    ownershipMode: {
+      type: String,
+      default: 'linked',
+    },
     attributeValues: {
       type: Array,
       default: () => [],
@@ -384,6 +412,7 @@ export default {
       dateField: DEFAULT_KANBAN_DATE_FIELD,
       staleDays: null,
       selectedAssignees: [],
+      selectedAttendants: [],
       winLostFilter: 'open',
       labelMatchMode: 'any',
       staleDayPresets: [3, 7, 14, 30],
@@ -404,10 +433,29 @@ export default {
         'focus:outline-none focus:ring-1 focus:ring-woot-500',
       ];
     },
+    isSplitOwnership() {
+      return this.ownershipMode === 'split';
+    },
+    assigneeFilterLabel() {
+      return this.isSplitOwnership
+        ? this.$t('KANBAN.OWNERSHIP.DEAL')
+        : this.$t('KANBAN.OWNERSHIP.ATTENDANT');
+    },
+    assigneeFilterPlaceholder() {
+      return this.isSplitOwnership
+        ? this.$t('KANBAN.FILTERS.ASSIGNEE_PLACEHOLDER')
+        : this.$t('KANBAN.FILTERS.ATTENDANT_PLACEHOLDER');
+    },
     assigneeMultiselectOptions() {
       return this.assigneeOptions.map(assignee => ({
         ...assignee,
         _key: assignee.id == null ? '__none__' : assignee.id,
+      }));
+    },
+    attendantMultiselectOptions() {
+      return this.attendantOptions.map(attendant => ({
+        ...attendant,
+        _key: attendant.id == null ? '__none__' : attendant.id,
       }));
     },
     selectedAssigneeObjects: {
@@ -423,6 +471,25 @@ export default {
       },
       set(assignees) {
         this.selectedAssignees = (assignees || []).map(({ id, name }) => ({
+          id,
+          name,
+        }));
+        this.emitFilters();
+      },
+    },
+    selectedAttendantObjects: {
+      get() {
+        const selectedKeys = new Set(
+          this.selectedAttendants.map(attendant =>
+            attendant?.id == null ? '__none__' : attendant.id
+          )
+        );
+        return this.attendantMultiselectOptions.filter(option =>
+          selectedKeys.has(option._key)
+        );
+      },
+      set(attendants) {
+        this.selectedAttendants = (attendants || []).map(({ id, name }) => ({
           id,
           name,
         }));
@@ -541,12 +608,23 @@ export default {
       if (this.dateTo) count++;
       if (this.staleDays) count++;
       if (this.selectedAssignees.length > 0) count++;
+      if (this.isSplitOwnership && this.selectedAttendants.length > 0) count++;
       if (this.winLostFilter !== 'open') count++;
       return count;
     },
     assigneeOptions() {
       const options = [...this.availableAssignees];
-      options.unshift({ id: null, name: this.$t('KANBAN.FILTERS.NO_ASSIGNEE') });
+      options.unshift({
+        id: null,
+        name: this.isSplitOwnership
+          ? this.$t('KANBAN.FILTERS.NO_ASSIGNEE')
+          : this.$t('KANBAN.FILTERS.NO_ATTENDANT'),
+      });
+      return options;
+    },
+    attendantOptions() {
+      const options = [...this.availableAssignees];
+      options.unshift({ id: null, name: this.$t('KANBAN.FILTERS.NO_ATTENDANT') });
       return options;
     },
     statusOptions() {
@@ -572,6 +650,7 @@ export default {
         this.dateField = next.dateField;
         this.staleDays = next.staleDays;
         this.selectedAssignees = next.assignees;
+        this.selectedAttendants = next.attendants;
         this.winLostFilter = next.winLost;
         this.labelMatchMode = next.labelMatchMode;
       },
@@ -593,6 +672,12 @@ export default {
       const pruned = this.selectedStages.filter(stage => available.has(stage));
       if (pruned.length !== this.selectedStages.length) {
         this.selectedStages = pruned;
+        this.emitFilters();
+      }
+    },
+    ownershipMode() {
+      if (!this.isSplitOwnership && this.selectedAttendants.length) {
+        this.selectedAttendants = [];
         this.emitFilters();
       }
     },
@@ -654,6 +739,7 @@ export default {
       this.dateField = merged.dateField;
       this.staleDays = merged.staleDays;
       this.selectedAssignees = merged.assignees;
+      this.selectedAttendants = merged.attendants;
       this.winLostFilter = merged.winLost;
       this.labelMatchMode = merged.labelMatchMode;
       this.winLostTouchedByUser = merged.winLost && merged.winLost !== 'open';
@@ -721,6 +807,7 @@ export default {
         dateField: this.dateField,
         staleDays: this.staleDays,
         assignees: this.selectedAssignees,
+        attendants: this.isSplitOwnership ? this.selectedAttendants : [],
         winLost: this.winLostFilter,
         labelMatchMode: 'any',
       });

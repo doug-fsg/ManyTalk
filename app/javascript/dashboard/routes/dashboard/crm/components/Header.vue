@@ -106,6 +106,7 @@
           :pipeline-id="pipelineId"
           :filters="filters"
           :show-assignee-filter="showAssigneeFilter"
+          :ownership-mode="ownershipMode"
           :attribute-values="attributeValues"
           @filters-changed="handleFiltersChanged"
           @win-lost-filter="handleWinLostFilter"
@@ -262,6 +263,10 @@ export default {
     showAssigneeFilter: {
       type: Boolean,
       default: false,
+    },
+    ownershipMode: {
+      type: String,
+      default: 'linked',
     },
     attributeValues: {
       type: Array,

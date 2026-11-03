@@ -56,9 +56,21 @@ RSpec.describe CustomAttributeDefinition, type: :model do
     end
 
     describe 'kanban trait factory' do
+      it 'trata pipeline sem ownership_mode como responsável único' do
+        kanban_attr = create(:custom_attribute_definition, :kanban, account: account)
+        expect(kanban_attr.kanban_ownership_linked?).to be true
+        expect(kanban_attr.kanban_ownership_split?).to be false
+      end
+
+      it 'reconhece o modo separado' do
+        kanban_attr = create(:custom_attribute_definition, :kanban, account: account)
+        kanban_attr.update!(attribute_values: { 'ownership_mode' => 'split', 'stages' => {}, 'permissions' => {} })
+        expect(kanban_attr.kanban_ownership_split?).to be true
+      end
+
       it 'creates proper kanban attributes' do
         kanban_attr = create(:custom_attribute_definition, :kanban, account: account)
-        
+
         expect(kanban_attr.is_kanban).to be true
         expect(kanban_attr.attribute_display_type).to eq('list')
         expect(kanban_attr.attribute_model).to eq('contact_attribute')

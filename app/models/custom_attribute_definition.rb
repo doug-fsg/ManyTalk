@@ -51,6 +51,10 @@ class CustomAttributeDefinition < ApplicationRecord
     textarea: 9
   }
 
+  KANBAN_OWNERSHIP_LINKED = 'linked'.freeze
+  KANBAN_OWNERSHIP_SPLIT = 'split'.freeze
+  KANBAN_OWNERSHIP_MODES = [KANBAN_OWNERSHIP_LINKED, KANBAN_OWNERSHIP_SPLIT].freeze
+
   belongs_to :account
   has_many :contact_pipeline_positions, foreign_key: 'pipeline_id', dependent: :destroy
   
@@ -98,6 +102,21 @@ class CustomAttributeDefinition < ApplicationRecord
     
     self.attribute_values['permissions'].delete(user_id.to_s)
     save
+  end
+
+  def kanban_ownership_mode
+    return KANBAN_OWNERSHIP_LINKED unless is_kanban?
+
+    mode = attribute_values.is_a?(Hash) ? attribute_values['ownership_mode'].to_s : ''
+    KANBAN_OWNERSHIP_MODES.include?(mode) ? mode : KANBAN_OWNERSHIP_LINKED
+  end
+
+  def kanban_ownership_linked?
+    kanban_ownership_mode == KANBAN_OWNERSHIP_LINKED
+  end
+
+  def kanban_ownership_split?
+    kanban_ownership_mode == KANBAN_OWNERSHIP_SPLIT
   end
 
   def users_with_permissions
@@ -149,10 +168,12 @@ class CustomAttributeDefinition < ApplicationRecord
       # Se já é hash mas não tem permissions, adicionar preservando stage_order
       stages = self.attribute_values.is_a?(Hash) ? (self.attribute_values['stages'] || self.attribute_values.values) : []
       stage_order = self.attribute_values['stage_order']
+      ownership_mode = self.attribute_values['ownership_mode']
       self.attribute_values = {
         'stages' => stages,
         'permissions' => {},
-        'stage_order' => stage_order
+        'stage_order' => stage_order,
+        'ownership_mode' => ownership_mode
       }.compact
     end
   end
