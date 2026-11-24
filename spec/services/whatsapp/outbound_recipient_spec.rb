@@ -68,5 +68,29 @@ RSpec.describe Whatsapp::OutboundRecipient do
 
       expect(described_class.new(contact_inbox: contact_inbox).call).to eq('5595981072593')
     end
+
+    it 'keeps Meta wa_id for Peru when contact phone is E.164 international' do
+      contact_inbox = build_contact_inbox(source_id: '51987654321', phone_number: '+51987654321')
+
+      expect(described_class.new(contact_inbox: contact_inbox).call).to eq('51987654321')
+    end
+
+    it 'keeps Meta wa_id for Spain when contact phone is E.164 international' do
+      contact_inbox = build_contact_inbox(source_id: '34612345678', phone_number: '+34612345678')
+
+      expect(described_class.new(contact_inbox: contact_inbox).call).to eq('34612345678')
+    end
+
+    it 'keeps Meta wa_id for Chile when contact phone is E.164 international' do
+      contact_inbox = build_contact_inbox(source_id: '56912345678', phone_number: '+56912345678')
+
+      expect(described_class.new(contact_inbox: contact_inbox).call).to eq('56912345678')
+    end
+
+    it 'keeps 12-digit international wa_ids unchanged (e.g. India)' do
+      contact_inbox = build_contact_inbox(source_id: '919876543210', phone_number: '+919876543210')
+
+      expect(described_class.new(contact_inbox: contact_inbox).call).to eq('919876543210')
+    end
   end
 end

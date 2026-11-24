@@ -2,8 +2,6 @@
 <% attrs = (account.custom_attributes || {}).with_indifferent_access %>
 <% stripe_customer_id = attrs[:stripe_customer_id].presence %>
 <% billing_state = stripe_billing_state(attrs) %>
-<% seat_count = account.users.count %>
-<% licensed_seats = attrs[:subscribed_quantity] %>
 <% link_choices = stripe_link_choices %>
 
 <section class="main-content__body stripe-billing">
@@ -72,12 +70,6 @@
         <div class="stripe-billing__summary-item">
           <dt>Plano</dt>
           <dd><%= attrs[:plan_name].presence || '—' %></dd>
-        </div>
-        <div class="stripe-billing__summary-item">
-          <dt>Assentos</dt>
-          <dd class="is-mono">
-            <%= seat_count %><% if licensed_seats.present? %> / <%= licensed_seats %> licenciados<% end %>
-          </dd>
         </div>
         <div class="stripe-billing__summary-item">
           <dt>Status da assinatura</dt>

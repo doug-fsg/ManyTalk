@@ -317,6 +317,18 @@ RSpec.describe 'Ai Attendant Configs API', type: :request do
           )
         end
 
+        it 'returns handoff without calling ChatService when the guard fires' do
+          post "/api/v1/accounts/#{account.id}/ai_attendant_configs/#{config.id}/test",
+               params: { message: 'quero falar com um atendente' },
+               headers: auth_headers_for(administrator),
+               as: :json
+
+          expect(response).to have_http_status(:success)
+          expect(json_body['handoff']).to be(true)
+          expect(json_body['reply']).to be_nil
+          expect(AiAttendant::ChatService).not_to have_received(:new)
+        end
+
         it 'forwards conversation history to ChatService' do
           post "/api/v1/accounts/#{account.id}/ai_attendant_configs/#{config.id}/test",
                params: {

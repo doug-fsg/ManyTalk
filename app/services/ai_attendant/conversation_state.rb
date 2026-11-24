@@ -17,15 +17,11 @@ module AiAttendant
       end
 
       def clear_handoff!(conversation)
-        return if conversation.blank? || !conversation.persisted?
+        except_keys!(conversation, HANDOFF_KEY)
+      end
 
-        reload_if_dirty!(conversation)
-        conversation.with_lock do
-          current = attributes_for(conversation)
-          next if current[HANDOFF_KEY].blank?
-
-          conversation.update!(additional_attributes: current.except(HANDOFF_KEY))
-        end
+      def reset!(conversation)
+        except_keys!(conversation, HANDOFF_KEY, PROGRESS_KEY)
       end
 
       def step_index(conversation)
@@ -51,6 +47,18 @@ module AiAttendant
         conversation.with_lock do
           current = attributes_for(conversation)
           conversation.update!(additional_attributes: current.merge(patch.stringify_keys))
+        end
+      end
+
+      def except_keys!(conversation, *keys)
+        return if conversation.blank? || !conversation.persisted?
+
+        reload_if_dirty!(conversation)
+        conversation.with_lock do
+          current = attributes_for(conversation)
+          next if keys.none? { |key| current[key].present? }
+
+          conversation.update!(additional_attributes: current.except(*keys))
         end
       end
 

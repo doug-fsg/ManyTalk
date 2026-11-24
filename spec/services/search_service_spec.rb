@@ -77,6 +77,55 @@ describe SearchService do
         search = described_class.new(current_user: user, current_account: account, params: params, search_type: 'Message')
         expect(search.perform[:messages].map(&:id)).to eq([message2.id, message.id])
       end
+
+      it 'returns no messages when the query is blank' do
+        params = { q: '   ' }
+        search = described_class.new(current_user: user, current_account: account, params: params, search_type: 'Message')
+        expect(search.perform[:messages]).to be_empty
+      end
+
+      it 'does not treat user wildcards as ILIKE operators' do
+        wildcard_message = create(:message, account: account, inbox: inbox, content: '100% wizard')
+        params = { q: '%' }
+        search = described_class.new(current_user: user, current_account: account, params: params, search_type: 'Message')
+        expect(search.perform[:messages].map(&:id)).to eq([wildcard_message.id])
+      end
+
+      it 'excludes messages older than the lookback window' do
+        old_message = create(:message, account: account, inbox: inbox, content: 'Harry from last year', created_at: 4.months.ago)
+        params = { q: 'Harry' }
+        search = described_class.new(current_user: user, current_account: account, params: params, search_type: 'Message')
+        expect(search.perform[:messages].map(&:id)).not_to include(old_message.id)
+      end
+
+      it 'scopes by created_at before matching content' do
+        params = { q: 'Harry' }
+        search = described_class.new(current_user: user, current_account: account, params: params, search_type: 'Message')
+        sql = search.perform[:messages].to_sql
+        created_at_pos = sql.index('created_at')
+        content_pos = sql.index('ILIKE')
+
+        expect(created_at_pos).to be_present
+        expect(content_pos).to be_present
+        expect(created_at_pos).to be < content_pos
+      end
+
+      it 'orders with id as tiebreaker' do
+        params = { q: 'Harry' }
+        search = described_class.new(current_user: user, current_account: account, params: params, search_type: 'Message')
+        expect(search.perform[:messages].to_sql).to include('ORDER BY messages.created_at DESC, messages.id DESC')
+      end
+
+      it 'uses GIN search when MESSAGE_SEARCH_USE_GIN is enabled' do
+        allow(ENV).to receive(:fetch).and_call_original
+        allow(ENV).to receive(:fetch).with('MESSAGE_SEARCH_USE_GIN', false).and_return('true')
+        params = { q: 'Harry' }
+        search = described_class.new(current_user: user, current_account: account, params: params, search_type: 'Message')
+
+        expect(search).to receive(:filter_messages_with_gin).and_call_original
+        expect(search).not_to receive(:filter_messages_with_like)
+        expect(search.perform[:messages].map(&:id)).to include(message.id)
+      end
     end
 
     context 'when conversation search' do

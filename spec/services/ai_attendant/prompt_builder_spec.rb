@@ -64,6 +64,18 @@ RSpec.describe AiAttendant::PromptBuilder do
       expect(prompt).to include('handoff_to_human')
       expect(prompt).to include('não invent').or include('Não invent')
       expect(prompt).to include('\n\n')
+      expect(prompt).to include('Fonte da verdade')
+      expect(prompt).to include('mensagem_do_cliente')
+      expect(prompt).to include('português do Brasil')
+    end
+
+    it 'asks the model to match the client language when detect_language is on' do
+      config.update!(detect_language: true)
+
+      prompt = described_class.build_system(config: config)
+
+      expect(prompt).to include('Detecte o idioma')
+      expect(prompt).not_to include('português do Brasil')
     end
 
     it 'replaces [REFERENCIA] with the named file variable' do
@@ -109,7 +121,9 @@ RSpec.describe AiAttendant::PromptBuilder do
 
       expected_time = at.in_time_zone('America/Sao_Paulo').iso8601
       expect(prompt).to include(expected_time)
+      expect(prompt).to include('<mensagem_do_cliente>')
       expect(prompt).to include('Oi, quero um orçamento')
+      expect(prompt).to include('</mensagem_do_cliente>')
     end
   end
 end

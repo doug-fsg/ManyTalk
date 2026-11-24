@@ -31,7 +31,7 @@ class Mention < ApplicationRecord
   belongs_to :conversation
   belongs_to :user
 
-  after_commit :notify_mentioned_user
+  after_commit :notify_mentioned_user, on: :create
 
   scope :latest, -> { order(mentioned_at: :desc) }
 

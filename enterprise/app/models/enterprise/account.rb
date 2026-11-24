@@ -26,8 +26,7 @@ module Enterprise::Account
   end
 
   def agent_limits
-    subscribed_quantity = custom_attributes['subscribed_quantity']
-    subscribed_quantity || get_limits(:agents)
+    get_limits(:agents)
   end
 
   def get_limits(limit_name)

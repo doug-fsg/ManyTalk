@@ -26,6 +26,8 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
 
   def sync_templates
     templates = fetch_whatsapp_templates
+    return true if templates.nil?
+
     whatsapp_channel.update_columns(
       message_templates: templates,
       message_templates_last_updated: Time.now.utc
@@ -40,6 +42,11 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
     unless response.success?
       Rails.logger.error "[WHATSAPP] Template sync failed for channel #{whatsapp_channel.id}: #{response.code} - #{response.body}"
       record_authorization_error_from_meta!(response)
+      if meta_authorization_error?(response)
+        whatsapp_channel.mark_message_templates_updated
+        return nil
+      end
+
       raise StandardError, template_sync_error_message(response)
     end
 

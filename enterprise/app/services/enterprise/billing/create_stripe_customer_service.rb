@@ -19,8 +19,7 @@ class Enterprise::Billing::CreateStripeCustomerService
         stripe_customer_id: customer_id,
         stripe_price_id: subscription['plan']['id'],
         stripe_product_id: subscription['plan']['product'],
-        plan_name: default_plan['name'],
-        subscribed_quantity: subscription['quantity']
+        plan_name: default_plan['name']
       }
     )
   end

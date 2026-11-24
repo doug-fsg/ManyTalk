@@ -36,10 +36,17 @@ RSpec.describe AiAttendant::Eligibility do
       expect(result).to eq(eligible: true, reason: nil)
     end
 
-    it 'keeps incoming image messages eligible in v1' do
+    it 'keeps incoming image messages with caption eligible' do
       attach_file(file_type: :image, filename: 'photo.jpg', content_type: 'image/jpeg')
 
       expect(result).to eq(eligible: true, reason: nil)
+    end
+
+    it 'rejects image messages without caption' do
+      message.update!(content: '')
+      attach_file(file_type: :image, filename: 'photo.jpg', content_type: 'image/jpeg')
+
+      expect(result).to eq(eligible: false, reason: 'image_unsupported')
     end
 
     it 'rejects activity messages' do

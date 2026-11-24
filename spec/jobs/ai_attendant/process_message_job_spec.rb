@@ -156,6 +156,45 @@ RSpec.describe AiAttendant::ProcessMessageJob, type: :job do
       end
     end
 
+    context 'when the customer message hits a handoff guard' do
+      before do
+        incoming_message.update!(content: 'quero falar com um atendente')
+        message_buffer.push(
+          message_id: incoming_message.id,
+          content: incoming_message.content,
+          debounce_seconds: 5
+        )
+      end
+
+      it 'hands off without calling the model' do
+        perform_job
+
+        expect(AiAttendant::ChatService).not_to have_received(:new)
+        expect(AiAttendant::HandoffService).to have_received(:new).with(
+          hash_including(summary: AiAttendant::ExplicitHandoff.summary)
+        )
+        expect(AiAttendantRun.last).to have_attributes(status: 'handoff', skip_reason: 'explicit_request')
+      end
+    end
+
+    context 'when the model claims a transfer without calling the tool' do
+      before do
+        allow(chat_service).to receive(:perform).and_return(
+          { text: 'Vou te encaminhar para um atendente agora.', handoff: false, tokens: 40, credits_charged: 0.04 }
+        )
+      end
+
+      it 'runs HandoffService and does not send the model text' do
+        perform_job
+
+        expect(AiAttendant::HandoffService).to have_received(:new).with(
+          hash_including(summary: AiAttendant::HandoffGuard::CLAIMED_TRANSFER_SUMMARY)
+        )
+        expect(AiAttendant::ResponseSender).not_to have_received(:new)
+        expect(AiAttendantRun.last).to have_attributes(status: 'handoff', skip_reason: 'claimed_transfer')
+      end
+    end
+
     context 'when quota is exceeded' do
       before do
         allow(PlatformAi::QuotaGuard).to receive(:allow?).and_return(false)

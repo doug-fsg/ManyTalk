@@ -66,7 +66,6 @@ describe Enterprise::Billing::CreateStripeCustomerService do
           'stripe_customer_id' => 'cus_random_number',
           'stripe_price_id' => 'price_random_number',
           'stripe_product_id' => 'prod_random_number',
-          'subscribed_quantity' => 2,
           'plan_name' => 'A Plan Name',
           'onboarding_step' => 'keep-me'
         )
@@ -96,7 +95,6 @@ describe Enterprise::Billing::CreateStripeCustomerService do
           'stripe_customer_id' => customer.id,
           'stripe_price_id' => 'price_random_number',
           'stripe_product_id' => 'prod_random_number',
-          'subscribed_quantity' => 2,
           'plan_name' => 'A Plan Name'
         )
       end

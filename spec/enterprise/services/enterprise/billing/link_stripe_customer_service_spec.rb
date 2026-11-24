@@ -58,9 +58,16 @@ describe Enterprise::Billing::LinkStripeCustomerService do
         'stripe_price_id' => 'price_2',
         'stripe_product_id' => 'prod_startups',
         'plan_name' => 'Startups',
-        'subscribed_quantity' => 5,
         'subscription_status' => 'active'
       )
+    end
+
+    it 'does not persist Stripe quantity as subscribed_quantity' do
+      stub_usable_subscription
+
+      service.perform
+
+      expect(account.reload.custom_attributes).not_to have_key('subscribed_quantity')
     end
 
     it 'does not change features on link' do
@@ -171,8 +178,7 @@ describe Enterprise::Billing::LinkStripeCustomerService do
 
         expect(account.reload.custom_attributes).to include(
           'stripe_product_id' => 'prod_custom_client',
-          'plan_name' => 'Cliente Acme — 12 seats',
-          'subscribed_quantity' => 5
+          'plan_name' => 'Cliente Acme — 12 seats'
         )
       end
 

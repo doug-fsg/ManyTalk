@@ -5,7 +5,7 @@ class AiAttendantListener < BaseListener
     conversation = extract_conversation_and_account(event)[0]
     return if conversation.blank?
 
-    AiAttendant::ConversationState.clear_handoff!(conversation)
+    AiAttendant::ConversationState.reset!(conversation)
   end
 
   def conversation_updated(event)

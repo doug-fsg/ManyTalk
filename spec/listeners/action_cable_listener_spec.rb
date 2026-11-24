@@ -175,6 +175,28 @@ describe ActionCableListener do
     end
   end
 
+  describe '#conversation_mentioned' do
+    let(:event_name) { :'conversation.mentioned' }
+
+    it 'sends mention event to the mentioned user' do
+      event = Events::Base.new(event_name, Time.zone.now, conversation: conversation, user: agent)
+
+      expect(ActionCableBroadcastJob).to receive(:perform_later).with(
+        [agent.pubsub_token],
+        'conversation.mentioned',
+        conversation.push_event_data.merge(account_id: account.id)
+      )
+      listener.conversation_mentioned(event)
+    end
+
+    it 'does not broadcast when the mentioned user is missing' do
+      event = Events::Base.new(event_name, Time.zone.now, conversation: conversation, user: nil)
+
+      expect(ActionCableBroadcastJob).not_to receive(:perform_later)
+      listener.conversation_mentioned(event)
+    end
+  end
+
   describe '#conversation_updated' do
     let(:event_name) { :'conversation.updated' }
     let!(:event) { Events::Base.new(event_name, Time.zone.now, conversation: conversation, user: agent, is_private: false) }

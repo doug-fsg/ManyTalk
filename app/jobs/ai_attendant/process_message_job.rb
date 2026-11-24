@@ -54,17 +54,19 @@ class AiAttendant::ProcessMessageJob < ApplicationJob
       )
     end
 
-    if AiAttendant::ExplicitHandoff.match?(combined_content)
+    decision = AiAttendant::HandoffGuard.evaluate(text: combined_content, config: config)
+    if decision.forced?
       AiAttendant::HandoffService.new(
         conversation: conversation,
-        summary: AiAttendant::ExplicitHandoff.summary,
+        summary: decision.summary,
         config: config
       ).perform
       return persist_run(
         account: account,
         conversation: conversation,
         inbox: inbox,
-        status: 'handoff'
+        status: 'handoff',
+        skip_reason: decision.reason
       )
     end
 
@@ -101,14 +103,11 @@ class AiAttendant::ProcessMessageJob < ApplicationJob
   end
 
   def conversation_history(conversation, message_ids)
-    conversation.messages
-                .where(private: false, message_type: %i[incoming outgoing])
-                .where.not(id: Array(message_ids))
-                .order(created_at: :desc)
-                .limit(HISTORY_LIMIT)
-                .to_a
-                .reverse
-                .map { |message| { role: message.incoming? ? 'user' : 'assistant', content: message.content.to_s } }
+    AiAttendant::HistoryMapper.call(
+      conversation: conversation,
+      exclude_ids: message_ids,
+      limit: HISTORY_LIMIT
+    )
   end
 
   def handle_chat_result(account:, conversation:, inbox:, config:, result:)
@@ -117,6 +116,23 @@ class AiAttendant::ProcessMessageJob < ApplicationJob
     handed_off = ActiveModel::Type::Boolean.new.cast(payload[:handoff])
     tokens = payload[:tokens].to_i
     metadata = { 'credits_charged' => payload[:credits_charged] }.compact
+
+    if text.present? && !handed_off && AiAttendant::HandoffGuard.claimed_transfer?(text)
+      AiAttendant::HandoffService.new(
+        conversation: conversation,
+        summary: AiAttendant::HandoffGuard::CLAIMED_TRANSFER_SUMMARY,
+        config: config
+      ).perform
+      return persist_run(
+        account: account,
+        conversation: conversation,
+        inbox: inbox,
+        status: 'handoff',
+        skip_reason: 'claimed_transfer',
+        tokens: tokens,
+        metadata: metadata
+      )
+    end
 
     if text.present?
       AiAttendant::ResponseSender.new(

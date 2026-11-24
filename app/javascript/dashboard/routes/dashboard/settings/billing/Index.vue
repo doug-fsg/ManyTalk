@@ -28,9 +28,6 @@ const customAttributes = computed(
   () => currentAccount.value.custom_attributes || {}
 );
 const planName = computed(() => customAttributes.value.plan_name || '');
-const subscribedQuantity = computed(
-  () => customAttributes.value.subscribed_quantity
-);
 const subscriptionStatus = computed(
   () => customAttributes.value.subscription_status || ''
 );
@@ -105,23 +102,13 @@ const onToggleChatWindow = () => {
             </woot-button>
           </template>
           <div
-            v-if="
-              planName ||
-              subscribedQuantity ||
-              subscriptionEndsOn ||
-              subscriptionStatusLabel
-            "
+            v-if="planName || subscriptionEndsOn || subscriptionStatusLabel"
             class="grid lg:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-4 sm:gap-2 sm:divide-x sm:divide-slate-75 sm:dark:divide-slate-700/50"
           >
             <DetailItem
               v-if="planName"
               :label="$t('BILLING_SETTINGS.CURRENT_PLAN.TITLE')"
               :value="planName"
-            />
-            <DetailItem
-              v-if="subscribedQuantity"
-              :label="$t('BILLING_SETTINGS.CURRENT_PLAN.SEAT_COUNT')"
-              :value="subscribedQuantity"
             />
             <DetailItem
               v-if="subscriptionEndsOn"

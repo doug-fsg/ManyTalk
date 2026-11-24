@@ -116,6 +116,39 @@ RSpec.describe AiAttendantListener do
       expect(conversation.reload.additional_attributes).not_to have_key('ai_handoff_at')
     end
 
+    it 'resets behavior progress when the conversation is resolved' do
+      conversation.update!(
+        additional_attributes: {
+          'ai_handoff_at' => Time.current.iso8601,
+          'ai_behavior_progress' => { 'step_index' => 2 }
+        }
+      )
+      resolved = Events::Base.new('conversation.resolved', Time.zone.now, conversation: conversation)
+
+      listener.conversation_resolved(resolved)
+
+      attributes = conversation.reload.additional_attributes
+      expect(attributes).not_to have_key('ai_handoff_at')
+      expect(attributes).not_to have_key('ai_behavior_progress')
+    end
+
+    it 'replies to captionless images without calling the model' do
+      message.update!(content: '')
+      attachment = message.attachments.new(account_id: account.id, file_type: :image)
+      attachment.file.attach(
+        io: StringIO.new('media-bytes'),
+        filename: 'photo.jpg',
+        content_type: 'image/jpeg'
+      )
+      attachment.save!
+
+      expect { listener.message_created(event) }
+        .not_to have_enqueued_job(AiAttendant::ProcessMessageJob)
+
+      reply = conversation.messages.outgoing.last
+      expect(reply.content).to eq(AiAttendant::CustomerNotice::IMAGE)
+    end
+
     it 'enqueues only once when a second rapid message is a buffer follower' do
       second_message = create(
         :message,

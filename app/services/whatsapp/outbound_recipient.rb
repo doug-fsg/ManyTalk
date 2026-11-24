@@ -13,6 +13,7 @@ class Whatsapp::OutboundRecipient
     return phone_digits_from_contact if uuid?(source_id)
     return source_id if source_id.blank?
     return source_id unless digits_only?(source_id)
+    return source_id unless brazil_destination_resolution_applicable?(source_id)
 
     resolved = resolve_brazil_destination(source_id)
     log_normalization(source_id, resolved) if resolved != source_id
@@ -42,7 +43,8 @@ class Whatsapp::OutboundRecipient
     return source_id if contact_digits.blank?
 
     source_variants = Contacts::BrazilPhoneNormalizer.lookup_variants(source_id)
-    contact_variants = Contacts::BrazilPhoneNormalizer.lookup_variants(contact_digits)
+    # Preserve E.164 "+" so international numbers are not treated as local BR (10/11 digits).
+    contact_variants = Contacts::BrazilPhoneNormalizer.lookup_variants(contact&.phone_number)
 
     # No shared BR identity — keep Meta's stored source_id.
     overlap = source_variants & contact_variants
@@ -66,6 +68,30 @@ class Whatsapp::OutboundRecipient
     return contact_digits if overlap.include?(contact_digits)
 
     overlap.max_by(&:length)
+  end
+
+  # Only run ninth-digit / BR alignment when wa_id or contact phone is clearly Brazilian.
+  def brazil_destination_resolution_applicable?(source_id)
+    return true if brazil_international_form?(source_id)
+
+    contact_number = contact&.phone_number.to_s.strip
+    return false if contact_number.blank?
+
+    contact_digits = Contacts::BrazilPhoneNormalizer.digits(contact_number)
+    return true if brazil_international_form?(contact_digits)
+    return true if local_brazil_pair?(source_id, contact_number, contact_digits)
+
+    false
+  end
+
+  def brazil_international_form?(digits)
+    digits.present? && digits.length.in?([12, 13]) && digits.start_with?('55')
+  end
+
+  def local_brazil_pair?(source_id, contact_raw, contact_digits)
+    brazil_international_form?(source_id) &&
+      !contact_raw.start_with?('+') &&
+      contact_digits.length.in?([10, 11])
   end
 
   def log_normalization(original, resolved)

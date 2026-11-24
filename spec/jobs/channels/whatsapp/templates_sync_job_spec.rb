@@ -12,8 +12,17 @@ RSpec.describe Channels::Whatsapp::TemplatesSyncJob do
   context 'when called' do
     it 'calls sync_templates' do
       whatsapp_channel = double
+      allow(whatsapp_channel).to receive(:reauthorization_required?).and_return(false)
       allow(whatsapp_channel).to receive(:sync_templates).and_return(true)
       expect(whatsapp_channel).to receive(:sync_templates)
+      described_class.perform_now(whatsapp_channel)
+    end
+
+    it 'skips sync when the channel requires reauthorization' do
+      whatsapp_channel = double
+      allow(whatsapp_channel).to receive(:reauthorization_required?).and_return(true)
+
+      expect(whatsapp_channel).not_to receive(:sync_templates)
       described_class.perform_now(whatsapp_channel)
     end
   end

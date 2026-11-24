@@ -28,6 +28,7 @@ module AiAttendant
       return reject('unsupported_type') if unsupported_type?
       return reject('unsupported_media') if unsupported_media?
       return reject('audio_unsupported') if audio?
+      return reject('image_unsupported') if image_without_caption?
       return reject('assigned') if assigned?
       return reject('handoff') if handoff?
 
@@ -101,6 +102,10 @@ module AiAttendant
 
     def audio?
       message.attachments.any?(&:audio?)
+    end
+
+    def image_without_caption?
+      message.content.blank? && message.attachments.any?(&:image?) && !sticker? && !gif?
     end
 
     def assigned?

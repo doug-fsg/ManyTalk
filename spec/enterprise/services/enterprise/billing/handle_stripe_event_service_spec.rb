@@ -47,7 +47,6 @@ describe Enterprise::Billing::HandleStripeEventService do
         'stripe_price_id' => 'test',
         'stripe_product_id' => 'plan_id',
         'plan_name' => 'Hacker',
-        'subscribed_quantity' => '10',
         'subscription_ends_on' => Time.zone.at(1_686_567_520).as_json,
         'subscription_status' => 'active',
         'onboarding_step' => 'keep-me'
@@ -61,6 +60,14 @@ describe Enterprise::Billing::HandleStripeEventService do
       stripe_event_service.new.perform(event: event)
 
       expect(account.reload.custom_attributes['subscription_status']).to eq('active')
+    end
+
+    it 'does not persist Stripe quantity as subscribed_quantity' do
+      allow(event).to receive(:type).and_return('customer.subscription.updated')
+
+      stripe_event_service.new.perform(event: event)
+
+      expect(account.reload.custom_attributes).not_to have_key('subscribed_quantity')
     end
 
     it 'does not change features on customer.subscription.updated' do
@@ -188,7 +195,6 @@ describe Enterprise::Billing::HandleStripeEventService do
         'stripe_price_id' => 'test',
         'stripe_product_id' => 'plan_id_2',
         'plan_name' => 'Startups',
-        'subscribed_quantity' => '10',
         'subscription_ends_on' => Time.zone.at(1_686_567_520).as_json,
         'subscription_status' => 'active',
         'onboarding_step' => 'keep-me'

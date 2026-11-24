@@ -123,4 +123,18 @@ RSpec.describe User do
       expect(position.reload.assignee_id).to be_nil
     end
   end
+
+  describe 'destroying a user referenced by pipeline events' do
+    it 'nullifies user_id on contact pipeline events' do
+      account = create(:account)
+      agent = create(:user, account: account)
+      contact = create(:contact, account: account)
+      position = create(:contact_pipeline_position, contact: contact)
+      event = create(:contact_pipeline_event, account: account, contact: contact,
+                                                contact_pipeline_position: position, user: agent)
+
+      expect { agent.destroy! }.not_to raise_error
+      expect(event.reload.user_id).to be_nil
+    end
+  end
 end

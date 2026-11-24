@@ -61,7 +61,11 @@ class Api::V1::Accounts::AiAttendantConfigsController < Api::V1::Accounts::BaseC
       at: Time.current
     )
 
-    if AiAttendant::ExplicitHandoff.match?(params[:message].to_s)
+    decision = AiAttendant::HandoffGuard.evaluate(
+      text: params[:message].to_s,
+      config: @ai_attendant_config
+    )
+    if decision.forced?
       render json: { reply: nil, handoff: true, messages: [] }
       return
     end

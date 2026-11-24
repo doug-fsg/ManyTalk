@@ -3,13 +3,14 @@
 module AiAttendant
   class CustomerNotice
     AUDIO = 'Não consigo ouvir áudio. Manda em texto que eu te respondo.'
+    IMAGE = 'Não consigo ver imagens agora. Manda em texto que eu te respondo.'
     MEDIA = 'Não consigo ver figurinha nem GIF. Manda em texto que eu te respondo.'
     CLOSED = 'Estamos fora do horário de atendimento. Pode deixar sua mensagem que respondemos no próximo horário.'
     OFFICE_HOURS = 'Neste horário um atendente humano continua com você.'
     NO_CREDITS = 'Não consigo continuar o atendimento automático agora. Vou deixar sua conversa com um atendente.'
     RETRY = 'Tive um problema para responder agora. Pode enviar de novo?'
 
-    IMMEDIATE_REASONS = %w[audio_unsupported unsupported_media no_credits].freeze
+    IMMEDIATE_REASONS = %w[audio_unsupported unsupported_media image_unsupported no_credits].freeze
     NOTICE_TTL = 45
 
     def self.immediate?(reason)
@@ -59,7 +60,11 @@ module AiAttendant
     end
 
     def text_for_reason
-      reason == 'audio_unsupported' ? AUDIO : MEDIA
+      case reason
+      when 'audio_unsupported' then AUDIO
+      when 'image_unsupported' then IMAGE
+      else MEDIA
+      end
     end
 
     def config

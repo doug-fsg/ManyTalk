@@ -9,6 +9,34 @@ RSpec.describe Mention do
     it { is_expected.to belong_to(:conversation) }
   end
 
+  describe 'callbacks' do
+    let(:account) { create(:account) }
+    let(:user) { create(:user, account: account) }
+    let(:conversation) { create(:conversation, account: account) }
+
+    it 'notifies the mentioned user after create' do
+      expect(Rails.configuration.dispatcher).to receive(:dispatch).with(
+        Events::Types::CONVERSATION_MENTIONED,
+        kind_of(ActiveSupport::TimeWithZone),
+        hash_including(user: user, conversation: conversation)
+      )
+
+      create(:mention, account: account, conversation: conversation, user: user)
+    end
+
+    it 'does not notify when a mention is destroyed' do
+      mention = create(:mention, account: account, conversation: conversation, user: user)
+
+      expect(Rails.configuration.dispatcher).not_to receive(:dispatch).with(
+        Events::Types::CONVERSATION_MENTIONED,
+        anything,
+        anything
+      )
+
+      mention.destroy!
+    end
+  end
+
   describe 'Custom Sort' do
     let!(:account) { create(:account) }
     let!(:user_1) { create(:user, email: 'agent2@example.com', account: account) }

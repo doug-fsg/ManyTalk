@@ -39,7 +39,6 @@ class Enterprise::Billing::HandleStripeEventService
       stripe_price_id: Enterprise::Billing::SubscriptionAttributes.price_id(subscription, item_id: subscription_item_id),
       stripe_product_id: product_id,
       plan_name: plan_name,
-      subscribed_quantity: Enterprise::Billing::SubscriptionAttributes.quantity(subscription, item_id: subscription_item_id),
       subscription_status: status,
       subscription_ends_on: period_end.present? ? Time.zone.at(period_end) : nil
     )

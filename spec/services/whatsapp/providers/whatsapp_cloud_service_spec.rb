@@ -385,7 +385,7 @@ describe Whatsapp::Providers::WhatsappCloudService do
         expect(whatsapp_channel.reload.message_templates_last_updated).not_to eq(timstamp)
       end
 
-      it 'raises when template request fails' do
+      it 'records authorization errors without raising when Meta rejects credentials' do
         stub_request(:get, 'https://graph.facebook.com/v22.0/123456789/message_templates')
           .with(headers: { 'Authorization' => 'Bearer test_key' })
           .to_return(
@@ -395,8 +395,8 @@ describe Whatsapp::Providers::WhatsappCloudService do
           )
 
         timstamp = whatsapp_channel.reload.message_templates_last_updated
-        expect { subject.sync_templates }.to raise_error(StandardError, 'Invalid OAuth access token.')
-        expect(whatsapp_channel.reload.message_templates_last_updated).to eq(timstamp)
+        expect(subject.sync_templates).to be(true)
+        expect(whatsapp_channel.reload.message_templates_last_updated).not_to eq(timstamp)
         expect(whatsapp_channel.authorization_error_count).to eq(1)
         expect(whatsapp_channel.reauthorization_required?).to be(false)
       end
@@ -417,7 +417,7 @@ describe Whatsapp::Providers::WhatsappCloudService do
             }.to_json
           )
 
-        expect { subject.sync_templates }.to raise_error(StandardError)
+        expect(subject.sync_templates).to be(true)
         expect(whatsapp_channel.reauthorization_required?).to be(true)
       end
 

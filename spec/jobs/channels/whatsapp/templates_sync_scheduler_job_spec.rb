@@ -24,6 +24,16 @@ RSpec.describe Channels::Whatsapp::TemplatesSyncSchedulerJob do
       )
     end
 
+    it 'does not schedule sync for channels awaiting reauthorization' do
+      stub_request(:post, 'https://waba.360dialog.io/v1/configs/webhook')
+      channel = create(:channel_whatsapp, sync_templates: false, message_templates_last_updated: 6.hours.ago)
+      channel.prompt_reauthorization!
+
+      described_class.perform_now
+
+      expect(Channels::Whatsapp::TemplatesSyncJob).not_to have_been_enqueued.with(channel).on_queue('low')
+    end
+
     it 'schedules templates_sync_job for oldest synced channels first' do
       stub_const('Limits::BULK_EXTERNAL_HTTP_CALLS_LIMIT', 2)
       stub_request(:post, 'https://waba.360dialog.io/v1/configs/webhook')
